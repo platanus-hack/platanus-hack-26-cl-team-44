@@ -109,6 +109,13 @@ Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estil
 - **Inicio con 10 tarjetas (5×2):** se agregan **Servicios** (con los logos reales) y **Juegos** sin quitar nada. Las columnas de los bordes son 1,2× más anchas. Con el error medido del iPhone (mediana de 2,2° en el centro y ~2,7° en los bordes), cada tarjeta mide más de 2× el error de su zona: unos 4,9 × 6,5 cm en el centro y 5,9 cm de ancho en los bordes, en un portátil de 13".
 - **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse. Al jugar, el juego ocupa casi toda la pantalla y arriba solo queda una línea: "Primera vez: toca la bandera de España y luego «Crear usuario»" (así es la bienvenida real del sitio). Al salir de Juegos la partida se cierra.
 - **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
+
+  ```bash
+  brew install steipete/tap/spogo
+  ```
+
+  Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
 - **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
 - **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
 - **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
