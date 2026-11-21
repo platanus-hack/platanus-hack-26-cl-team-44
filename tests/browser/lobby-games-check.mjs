@@ -1,30 +1,31 @@
-// Run with the existing localhost:8000 prototype server and desktop Chrome.
+// Runs with installed Chrome and isolated camera, game and storage fixtures.
 import assert from 'node:assert/strict';
-import http from 'node:http';
+import {createRequire} from 'node:module';
 import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createAppsServer} from '../../software/apps-bridge/server.mjs';
 
 const directory=mkdtempSync(join(tmpdir(),'toki-game-test-'));
-process.env.TOKI_BRIDGE_SESSION_DIR=join(directory,'driver');
-const bridge=await import('../../software/browser-bridge/start.mjs');
+const require=createRequire(new URL('../../software/apps-bridge/package.json',import.meta.url));
+const {chromium}=require('playwright-core');
+const {renderGame}=await import('../../software/apps-bridge/game-renderer.mjs');
+const browser=await chromium.launch({channel:'chrome'});
+const host=await browser.newContext();
+const page=await host.newPage();
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const events=[];
 let aim='idle';
-const sink=http.createServer((req,res)=>{
-  if (req.method==='POST') {
-    let data=''; req.on('data',chunk=>data+=chunk);
-    req.on('end',()=>{events.push(JSON.parse(data));res.end();}); return;
-  }
-  res.setHeader('Content-Type','text/html');
-  res.end(`<style>*{margin:0}canvas{width:100vw;height:100vh}</style><canvas></canvas><script>
-    for(const type of ['mousemove','click']) document.addEventListener(type,e=>fetch('/',{method:'POST',body:JSON.stringify({type,x:e.clientX/innerWidth,y:e.clientY/innerHeight,trusted:e.isTrusted})}));
-  </script>`);
-});
-await new Promise(resolve=>sink.listen(0,'127.0.0.1',resolve));
-const foreign='http://localhost:'+sink.address().port;
-const site=createAppsServer({stateDir:directory});
+let launches=0;
+const site=createAppsServer({stateDir:directory,renderGame:opts=>renderGame(opts,async context=>{
+  launches++;
+  await context.exposeBinding('recordGameInput',(_,event)=>events.push(event));
+  await context.route(opts.url,route=>route.fulfill({contentType:'text/html',body:`
+    <style>*{margin:0}canvas{width:100vw;height:100vh;background:#246}</style><canvas></canvas>
+    <script>for(const type of ['mousemove','click'])document.addEventListener(type,e=>
+    recordGameInput({type,x:e.clientX/innerWidth,y:e.clientY/innerHeight,trusted:e.isTrusted}));</script>`}));
+
+})});
 const handler=site.listeners('request')[0];
 site.removeListener('request',handler);
 site.on('request',(req,res)=>{
@@ -40,13 +41,9 @@ site.on('request',(req,res)=>{
     let target='';
     setInterval(async()=>{target=await(await fetch('/test-aim')).text()},80);
     function feed(){
-      if(target==='close' && parent.sessionStorage.getItem('toki.bridge.token')) parent.close();
       NOSE.lastFace=performance.now(); WOKI.S.gazeLost=target==='lost';
       const f=parent.document.querySelector('.catalog-frame'), doc=f?.contentDocument;
       const game=doc?.querySelector('#externalGame');
-      if(game && parent.sessionStorage.getItem('toki.bridge.token') && !game.dataset.fixture) {
-        game.dataset.fixture='1'; game.src=${JSON.stringify(foreign)};
-      }
       const el=game || (target==='catalog' && doc?.querySelector('[data-act="external:play:1"]'));
       if(el && target!=='idle') {
         const g=el.getBoundingClientRect(),r=f.getBoundingClientRect();
@@ -58,14 +55,11 @@ site.on('request',(req,res)=>{
 });
 await new Promise(resolve=>site.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+site.address().port;
-const run=async expression=>{
-  const result=await bridge.cdp('Runtime.evaluate',{expression,returnByValue:true},bridge.sessionId);
-  if(result.exceptionDetails) throw Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
-  return result.result.value;
-};
+const run=expression=>page.evaluate(expression);
 async function until(fn,ms=16000){const start=Date.now();while(Date.now()-start<ms){if(await fn())return;await wait(100);}throw Error('Tiempo agotado: '+fn);}
 try {
-  await bridge.cdp('Page.navigate',{url:origin+'/prototype-lobby.html?start=games&acceso=elegir'},bridge.sessionId);
+  await page.goto(origin+'/?start=games&acceso=elegir', {waitUntil:'domcontentloaded'});
+  const originalURL=page.url();
   await until(()=>run('!!document.querySelector(".catalog-frame")?.contentWindow?.TOKI_EXTERNAL'));
   for(const mode of ['Mirada','Nariz']){
     await run(`document.querySelector('[data-pointer="${mode}"]').click()`);
@@ -80,9 +74,6 @@ try {
       aim='idle'; await run('document.querySelector("#tracking").click()');
     }
   }
-  // Actual launcher receives the selection, opens an isolated lobby and delivers
-  // native input to a different origin. No mouse events are fed into either tab.
-  process.env.TOKI_BRIDGE_SESSION_DIR=join(directory,'player');
   await until(()=>events.some(e=>e.trusted && e.type==='mousemove' && Math.abs(e.x-.65)<.04 && Math.abs(e.y-.38)<.04),25000);
   aim='lost';const clicks=events.filter(e=>e.type==='click').length;
   await wait(3300);assert.equal(events.filter(e=>e.type==='click').length,clicks);
@@ -91,12 +82,20 @@ try {
   await wait(3200);assert.equal(events.filter(e=>e.type==='click').length,clicks+1);
   aim='other';
   await until(()=>events.some(e=>e.trusted && e.type==='mousemove' && Math.abs(e.x-.32)<.04),4000);
-  console.log('PASS: eye/nose catalog dwell, tracking loss, ordinary lobby handoff, calibrated movement and a single trusted click on a cross-origin canvas.');
-} catch (error) { console.error(error); process.exitCode=1; } finally {
-  // The test-only calibration frame can close its own isolated tab.
-  aim='close';
-  await wait(250);
-  site.close();site.closeAllConnections();sink.close();sink.closeAllConnections();
-  bridge.shutdown();
+  assert.equal(launches,1);assert.equal(host.pages().length,1);assert.equal(page.url(),originalURL);
+  const catalog=page.frameLocator('.catalog-frame');
+  await catalog.locator('img#externalGame').evaluate(img=>{if(!img.complete||!img.naturalWidth)throw Error('Missing game image');});
+  await page.locator('#take-rest').click();
+  await page.locator('#resume-rest').waitFor();
+  const beforeRest=events.filter(e=>e.type==='click').length;
+  await wait(3200);assert.equal(events.filter(e=>e.type==='click').length,beforeRest);
+  await page.locator('#resume-rest').click();
+  await page.locator('#return-home').click();
+  await page.locator('[data-open="games"]').waitFor();
+  assert.equal(host.pages().length,1);
+  console.log('PASS: same tab and URL, eye/nose catalog selection, decoded game frames, trusted movement and dwell click, tracking loss, rest and return home.');
+} catch (error) { console.error(error, {launches, events:events.slice(-4), frame:await run('({body:document.querySelector(".catalog-frame")?.contentDocument?.querySelector("#gameContent")?.innerText, point:TokiAccess.gameInput(document.querySelector(".catalog-frame")?.contentWindow), visible:document.hasFocus()})')}); process.exitCode=1; } finally {
+  await browser.close();
+  site.close();site.closeAllConnections();
   rmSync(directory,{recursive:true,force:true});
 }

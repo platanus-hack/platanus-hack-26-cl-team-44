@@ -14,7 +14,7 @@ const server=createAppsServer({stateDir:dir,installed:async()=>({stdout:'fixture
     if(args.includes('play')){playing=true;current=args.find(x=>x.startsWith('spotify:track:'))||current;}
     if(args.includes('pause'))playing=false;
     return {is_playing:playing,item:{uri:current,name:'Canción de prueba',artists:['Artista de prueba']}};
-  },fetcher:async url=>url.includes('/static/feed-rss')?new Response(newsFixture):({ok:true,json:async()=>({items:[{full_name:'example/fixture-cli',html_url:'https://github.com/example/fixture-cli',description:'Synthetic test repository'}]})})
+  },fetcher:async url=>url.includes('youtube.com/oembed')?new Response(JSON.stringify({title:'Video de prueba',author_name:'Chile Travel'})):url.includes('/static/feed-rss')?new Response(newsFixture):({ok:true,json:async()=>({items:[{full_name:'example/fixture-cli',html_url:'https://github.com/example/fixture-cli',description:'Synthetic test repository'}]})})
 });
 server.listen(8791,'127.0.0.1',()=>console.log('Synthetic Apps test fixture on 8791'));
 for(const sig of ['SIGINT','SIGTERM'])process.on(sig,()=>{server.close(()=>{rmSync(dir,{recursive:true,force:true});});server.closeAllConnections();});
