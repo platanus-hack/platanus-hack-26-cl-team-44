@@ -6,7 +6,7 @@
 ![Firmware](https://img.shields.io/badge/Firmware-Arduino_C%2B%2B-174E42?style=flat-square)
 ![Monitor](https://img.shields.io/badge/Monitor-Python_3_%2B_HTML-174E42?style=flat-square)
 ![MVP](https://img.shields.io/badge/MVP-Web_%2B_TypeScript-174E42?style=flat-square)
-![3D](https://img.shields.io/badge/Impresión_3D-Por_diseñar-9B6B22?style=flat-square)
+![3D](https://img.shields.io/badge/Impresión_3D-3_STL-174E42?style=flat-square)
 ![Estado](https://img.shields.io/badge/Estado-Prototipo_en_validación-9B6B22?style=flat-square)
 
 > Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
@@ -59,6 +59,11 @@ Electrodos → MyoWare + Link Shield
 
 El Cable Shield es una pieza diferente y no participa en este montaje directo. Con electrodos sobre el cuerpo, el portátil debe estar solo a batería, sin cargador, dock ni monitor conectado a la red. Desconectar USB antes de cambiar conexiones. [Manual del fabricante](https://myoware.com/wp-content/uploads/2022/03/MyoWare_v2_QuickStartGuide.pdf).
 
+## Impresión 3D
+
+- **Consola de mesa.** Un soporte para el panel táctil de 7″ con webcam centrada y cuna trasera para la Raspberry Pi 4 en su case Vilros. [Descargar el STL](hardware/3d/consola-7/soporte.stl) · [Ver el montaje y la orientación de impresión](hardware/3d/README.md#consola-de-mesa).
+- **Brazalete.** Dos piezas independientes para el Arduino Uno con MyoWare y la batería Xiaomi PB2067. [STL, editables y guía de impresión](hardware/3d/README.md#brazalete-toki-para-arduino-uno-y-xiaomi-pb2067).
+
 ## Dónde está cada cosa
 
 | Carpeta | Contenido |
@@ -80,7 +85,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 | Mirada con iPhone (Face ID) | Calibración de 13+5 puntos; en el SO, 2,9° de error medio y 5,3° en el peor caso (24 calibraciones del equipo, puntos no vistos); sin movimiento de cabeza |
 | EMG → atajos en el SO | Integrado con calibración; rueda y SOS simulados probados sin hardware. Falta validar los gestos sostenidos sobre el cuerpo. |
 | WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |
-| Carcasas y soportes 3D | Estructura preparada; sin modelos imprimibles todavía |
+| Carcasas y soportes 3D | Tres STL disponibles. Falta validar el encaje y la estabilidad con el hardware real. |
 | BLE, Ray-Ban Meta, Alexa y actuadores | Entrada BLE dual disponible; falta probar ambos sensores reales juntos. El resto queda fuera del prototipo. |
 
 ## Esquemas y documentación
