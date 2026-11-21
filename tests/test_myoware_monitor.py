@@ -67,6 +67,10 @@ class MonitorTest(unittest.TestCase):
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
                 ('/iphone-gaze.js','text/javascript','window.IPHONE'),
                 ('/layout.css','text/css','.rest-wake'),
+                ('/magnetic-pointer.js?v=24','text/javascript','createMenuPointer'),
+                ('/magnetic-pointer.css?v=24','text/css','.dwell-outline'),
+                ('/tablet-keyboard.js?v=21','text/javascript','toki-'),
+                ('/tablet-keyboard.css?v=21','text/css','tablet'),
                 ('/eye-engine/connection.js','text/javascript','createConnection'),
                 ('/presets/index.json','application/json','calibracion-iphone'),
             ]:

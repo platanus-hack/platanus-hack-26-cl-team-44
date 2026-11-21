@@ -31,8 +31,9 @@ toki_assets={
     '/woki-os.html':'text/html',
     **{f'/{name}.js':'text/javascript' for name in (
         'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
+        'magnetic-pointer','tablet-keyboard',
     )},
-    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout')},
+    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard')},
 }
 dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
 legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
