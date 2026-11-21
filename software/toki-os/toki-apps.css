@@ -116,3 +116,17 @@ body.apps-open #content{padding:0!important;overflow:hidden!important}
 .spotify-open #location::before {content:"";width:1em;height:1em;background:center / contain no-repeat url("brands/spotify.svg")}
 
 .news-card strong{white-space:normal;flex-shrink:0}.news-card small{flex-shrink:0}
+
+/* Shared video surface; keep the official player unobscured and controls outside it. */
+.video-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);flex:1;min-height:0;gap:clamp(8px,1vw,16px)}
+.video-choices .video-card{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;min-width:0;padding:0;overflow:hidden;text-align:left;align-items:stretch}
+.video-card img{display:block;width:100%;height:100%;min-height:0;object-fit:contain;background:#131d23}
+.video-card strong{padding:8px 14px;font-size:clamp(16px,1.8vw,26px);line-height:1.15}
+@media(max-width:700px){.video-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.video-card strong{padding:6px 8px}}
+.ta-video-player{display:flex;flex:1;min-height:0;flex-direction:column;gap:10px}.ta-video-player h2{font-size:clamp(22px,2.4vw,32px);margin:0;flex:none}
+.ta-video-frame{flex:1;min-height:200px;min-width:200px;background:#000;display:flex;align-items:stretch;justify-content:center}.ta-video-frame iframe{width:100%;height:100%;min-height:200px;border:0}
+.ta-video-status{margin:0;min-height:28px;font-size:18px;line-height:1.3;color:var(--ta-muted)}.ta-video-status.has-error{color:#f5dfa5}
+.ta-video-controls{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ta-video-controls .ta-button{min-height:64px;padding:12px}
+@media(max-width:600px){.ta-video-controls{gap:8px}.ta-video-controls .ta-button{font-size:18px;padding:10px}.ta-video-status{font-size:16px;min-height:42px}.ta-video-player h2{font-size:23px}.ta-video-frame{flex:none;height:220px}.video-choices .ta-button{font-size:20px}}
+.ta-video-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ta-video-nav .ta-button{min-width:0}
+.ta-video-nav>.ta-button:only-child{grid-column:1/-1}

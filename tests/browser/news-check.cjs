@@ -6,7 +6,7 @@ async page=>{
  const token=(await(await page.request.get(base+'/api/session')).json()).token,headers={'x-toki-token':token,'Content-Type':'application/json'};
  const jobs=(await(await page.request.get(base+'/api/jobs',{headers})).json()).jobs;
  for(const j of jobs.filter(j=>j.app==='biobio'))await page.request.post(base+`/api/jobs/${j.id}/cancel`,{headers,data:{}});
- await page.goto(base+'/prototype-lobby.html?start=apps');await page.setViewportSize({width:1280,height:800});await page.waitForFunction(()=>TokiApps.active.adapters.length===2);
+ await page.goto(base+'/prototype-lobby.html?start=apps');await page.setViewportSize({width:1280,height:800});await page.waitForFunction(()=>TokiApps.active.adapters.some(a=>a.id==='biobio'));
  await page.locator('[data-value="biobio"]').click();
  if(await page.locator('[data-app-action="prepare"]').count())await click('prepare');
  await page.waitForFunction(()=>TokiApps.active.job?.status==='needs_test');await click('open-adapter');

@@ -31,6 +31,7 @@ La revisión personal no debe marcarse mediante una prueba automatizada contra d
 | Adaptación | Conexión | Tareas | Cuenta | Evidencia para revisar |
 |---|---|---|---|---|
 | Spotify 1.0.0 | spogo, Spotify.app/macOS | Estado, reproducción/pausa, siguiente; búsqueda de catálogo | Sesión web para buscar | search, play, pause |
+| YouTube 1.0.0 | IFrame Player API oficial y oEmbed | Elegir videos de Chile Travel, reproducir y pausar | Ninguna para la selección pública | list, play, pause |
 | BioBioChile 1.0.0 | RSS publicado por el medio | Listar titulares, seleccionar y leer extractos paginados | Ninguna | list, read |
 
 Spotify conserva portada y estado real al abrir, actualización sin sustituir el control enfocado, reproducción local y vista de configuración separada.
@@ -44,7 +45,7 @@ RSS se limita a 2 MB, tiempo de espera de 12 segundos, sin redirecciones, DTD ni
 1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK; REA cuando falte evidencia).
 2. Crear una fábrica en `adapters/` y su manifiesto, con acciones y validación explícitas.
 3. Añadirla al registro de `createAppsServer`; no añadir rutas específicas de HTTP ni otra lógica de revisión.
-4. Reutilizar una interfaz existente (`music` o `news`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
+4. Reutilizar una interfaz existente (`music`, `news` o `video`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
 5. Añadir el preset del catálogo si corresponde. Probar conexión, errores, cancelación, requisitos de cuenta y recorrido completo con el control acordado.
 6. Preparar, registrar evidencia funcional y realizar la prueba personal antes de marcarla lista.
 
@@ -73,3 +74,14 @@ Una prueba con un tercer adaptador sintético demuestra que registro, despacho y
 `generator/public-fetch.mjs` restringe HTTPS público, sin credenciales, puertos alternativos ni redirecciones; comprueba resolución DNS y fija la IP para la conexión TLS. Se mantienen límites RSS, extracción de texto y paginación de la implementación BioBio, ahora en `adapters/rss-reader.mjs`. Los fixtures inyectan transporte y generador sin acceder a Codex ni Internet.
 
 El servidor sigue siendo local de confianza: `appsAdmin` separa presentación, no privilegios. Generar requiere una configuración asistida de fuente. Los paquetes no son un formato de importación libre ni una tienda de código descargado.
+
+
+## Video: YouTube
+
+`adapters/youtube.mjs` registra la categoría `video`. Verifica la selección pública mediante oEmbed y ofrece `list`, `select` y `observe` por las rutas comunes. `select` devuelve un ticket ligado al trabajo, video y generación; no registra reproducción. `observe` acepta únicamente estados 1/2 del video seleccionado y exige reproducción previa para acreditar pausa. Cancelar/reintentar o elegir otro video invalida la observación anterior.
+
+`toki-video.js` usa la [API oficial de reproductor](https://developers.google.com/youtube/iframe_api_reference), con origen explícito, sin autoplay y controles de Toki fuera del iframe. La evidencia procede de eventos confirmados por el reproductor en el cliente local de confianza; no es una prueba criptográfica ni una consulta independiente del servidor a YouTube. El navegador local ya puede declarar la revisión funcional/personal. Los callbacks tardíos no cambian otras pantallas. La sincronización de solicitudes conserva el iframe; salir destruye el reproductor.
+
+El catálogo ofrece seis videos públicos de Chile Travel con miniaturas de YouTube. Sin búsqueda general, cuenta personal, suscripciones ni generación automática de adaptadores de video. Un video puede dejar de permitir reproducción integrada; la interfaz muestra error, reintento y regreso. La prueba real de play/pause funciona; la habilitación personal sigue pendiente.
+
+`tests/apps/youtube.test.mjs` comprueba aislamiento de observaciones, generación, selección, orden play/pause y errores. `tests/browser/youtube-check.cjs` usa un doble explícito de la API de YouTube sobre el fixture 8791 para comprobar tamaños, estabilidad, recuperación y salida. No escribe evidencia simulada en el registro real.
