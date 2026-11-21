@@ -114,5 +114,3 @@ El organizador solicita un logo PNG de **1000 × 1000 y máximo 500 KB**, y reco
 - Nicolas Vargas ([@MrUprizing](https://github.com/MrUprizing))
 - Manuel Torres ([@AmunM9](https://github.com/AmunM9))
 - Emmy Daniela Arias Pardo ([@estparcae](https://github.com/estparcae))
-
-Organización del README inspirada en [team-28 Bogotá](https://github.com/platanus-hack/platanus-hack-26-co-team-28): badges, mapa de servicios, estado demostrado y documentación navegable.
