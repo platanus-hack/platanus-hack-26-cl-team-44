@@ -1,0 +1,18 @@
+{
+  "contacts": [
+    {
+      "id": "sofia",
+      "name": "Sofía",
+      "relation": "hija",
+      "phone": "+99900000003001",
+      "tone": "cariñosa y bromista"
+    },
+    {
+      "id": "camila",
+      "name": "Camila",
+      "relation": "cuidadora",
+      "phone": "+99900000003002",
+      "tone": "cordial"
+    }
+  ]
+}

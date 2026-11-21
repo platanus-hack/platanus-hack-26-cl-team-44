@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+# datos reales de contactos: copiar profile.example.json a profile.json en local
+woki-bridge/profile.json
+
+# Toki: artefactos locales y datos de sensores
+__pycache__/
+*.py[cod]
+.venv/
+build/
+*.hex
+*.elf
+*.o
+data/local/
+!.env.example
