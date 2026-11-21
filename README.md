@@ -81,20 +81,6 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 | [docs/](docs/) | Guías, planes, investigación y requisitos del concurso |
 | [tests/](tests/) | Pruebas del monitor local |
 
-## Estado demostrado
-
-| Capacidad | Estado y límite |
-|---|---|
-| Firmware A0 para UNO/ATmega328P | Compilado y cargado en el UNO del equipo |
-| USB → monitor local | Se recibieron muestras reales; visualización en Chrome |
-| Respuesta muscular | Se observaron variaciones; falta separar contracción de artefactos y confirmar ENV |
-| SO accesible | Inicio de cinco tarjetas con acceso por mouse, nariz o mirada. En validación. |
-| Mirada con iPhone (Face ID) | Calibración de 13+5 puntos; en el SO, 2,9° de error medio y 5,3° en el peor caso (24 calibraciones del equipo, puntos no vistos); sin movimiento de cabeza |
-| EMG → atajos en el SO | Integrado con calibración; rueda y SOS simulados probados sin hardware. Falta validar los gestos sostenidos sobre el cuerpo. |
-| WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |
-| Carcasas y soportes 3D | Tres STL disponibles. Falta validar el encaje y la estabilidad con el hardware real. |
-| BLE, Ray-Ban Meta, Alexa y actuadores | Entrada BLE dual disponible; falta probar ambos sensores reales juntos. El resto queda fuera del prototipo. |
-
 ## Esquemas y documentación
 
 - [Diferencia entre las placas](hardware/schematics/myoware-componentes.png)
