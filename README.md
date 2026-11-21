@@ -43,6 +43,12 @@ python3 software/myoware-monitor/server.py --serial-port /dev/cu.usbserial-1130
 
 El programa no carga firmware automáticamente. [Compilación, carga y diagnóstico](software/myoware-monitor/README.md).
 
+## Adaptación de apps
+
+La skill [`adapt-app`](.agents/skills/adapt-app/SKILL.md) describe cómo investigar una conexión, preparar controles accesibles y comprobar las funciones reales de una app. Está incluida en el repositorio; el generador usa esta copia versionada.
+
+La generación automática disponible crea lectores de noticias RSS. Para ejecutarla, el computador del equipo necesita Codex CLI y una sesión iniciada; la prueba con la persona sigue pendiente hasta realizarla. [Preparar una adaptación](software/apps-bridge/README.md#generar-e-instalar-un-lector-nuevo) · [Contrato y límites](software/apps-bridge/ADAPTERS.md) · [Mantener la skill](.agents/skills/README.md).
+
 ## Cómo se conecta
 
 ```

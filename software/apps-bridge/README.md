@@ -23,7 +23,7 @@ El control local usa `spogo --engine applescript`; búsqueda usa el motor `conne
 
 ## Pedir otra app
 
-El paciente elige un preset, que aporta nombre y tareas sin formulario. El servicio consulta repositorios públicos en GitHub; los candidatos solo aparecen en la configuración del equipo. La API conserva la posibilidad de solicitudes personalizadas asistidas. Los resultados son pistas, no conectores validados. La solicitud queda pendiente del equipo para trabajar con `$adapt-app`. Spotify y BioBioChile ya tienen adaptadores incluidos; el descubrimiento se usa cuando no existe uno registrado. Para fuentes RSS asistidas, el generador ya ejecuta adapt-app con Codex y produce un paquete declarativo; no descarga código de los resultados de GitHub. La skill está instalada en el entorno del agente en `~/.codex/skills/adapt-app`.
+El paciente elige un preset, que aporta nombre y tareas sin formulario. El servicio consulta repositorios públicos en GitHub; los candidatos solo aparecen en la configuración del equipo. La API conserva la posibilidad de solicitudes personalizadas asistidas. Los resultados son pistas, no conectores validados. La solicitud queda pendiente del equipo para trabajar con `$adapt-app`. Spotify y BioBioChile ya tienen adaptadores incluidos; el descubrimiento se usa cuando no existe uno registrado. Para fuentes RSS asistidas, el generador ya ejecuta adapt-app con Codex y produce un paquete declarativo; no descarga código de los resultados de GitHub. La skill está versionada en [`.agents/skills/adapt-app/SKILL.md`](../../.agents/skills/adapt-app/SKILL.md); el generador lee esa copia del repositorio, sin depender de una instalación personal.
 
 Solicitudes y avance se guardan en `~/Library/Application Support/Toki/apps/requests.json`. No se guardan allí credenciales ni búsquedas musicales. El servidor se limita a loopback, valida host/origen y exige un token temporal para la API. Solo ejecuta acciones explícitas con argumentos separados; no recibe comandos arbitrarios.
 
@@ -62,7 +62,7 @@ Prueba adicional de navegador: `playwright-cli -s=toki-apps-test run-code --file
 
 ### Generar e instalar un lector nuevo
 
-En el computador del equipo: Codex CLI en PATH, `codex login` realizado y la skill `~/.codex/skills/adapt-app/SKILL.md` instalada. El servicio Apps debe estar corriendo. Preparación asistida, fuera del recorrido del paciente:
+En el computador del equipo: repositorio clonado completo, Codex CLI en PATH y `codex login` realizado. La skill viene incluida en `.agents/skills/adapt-app/SKILL.md`; no hace falta copiarla a la carpeta personal de Codex. El servicio Apps debe estar corriendo. La ruta de la skill se resuelve desde el módulo del generador, incluso al arrancar desde otra carpeta. Codex sigue necesitando su instalación y sesión local; la skill no las proporciona. Preparación asistida, fuera del recorrido del paciente:
 
 ```sh
 node software/apps-bridge/prepare-reader.mjs \

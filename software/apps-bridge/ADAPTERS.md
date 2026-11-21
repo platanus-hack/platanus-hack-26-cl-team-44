@@ -68,7 +68,7 @@ Una prueba con un tercer adaptador sintético demuestra que registro, despacho y
 
 ## Generación de lectores
 
-`generator/codex.mjs` compila una receta limitada bajo el contrato de adapt-app. `generator/packages.mjs` verifica que nombre, fuente, capacidades y campos coincidan con el pedido; tareas no soportadas no se instalan. El servidor fija ID derivado de la URL, versión y dominio de artículos. El paquete contiene solo datos, metadata y evidencia, nunca módulos ejecutables ni cuerpos de noticias. El instalador publica el índice atómicamente después de list/read reales; al reiniciar comprueba esquema y digest antes de registrar.
+`generator/codex.mjs` lee [la skill versionada](../../.agents/skills/adapt-app/SKILL.md) mediante una URL relativa a su propio módulo y compila una receta limitada bajo ese contrato. No busca una copia en la carpeta personal. `skillSha256` identifica el contenido exacto empleado al generar cada paquete. `generator/packages.mjs` verifica que nombre, fuente, capacidades y campos coincidan con el pedido; tareas no soportadas no se instalan. El servidor fija ID derivado de la URL, versión y dominio de artículos. El paquete contiene solo datos, metadata y evidencia, nunca módulos ejecutables ni cuerpos de noticias. El instalador publica el índice atómicamente después de list/read reales; al reiniciar comprueba esquema y digest antes de registrar.
 
 `generator/public-fetch.mjs` restringe HTTPS público, sin credenciales, puertos alternativos ni redirecciones; comprueba resolución DNS y fija la IP para la conexión TLS. Se mantienen límites RSS, extracción de texto y paginación de la implementación BioBio, ahora en `adapters/rss-reader.mjs`. Los fixtures inyectan transporte y generador sin acceder a Codex ni Internet.
 
