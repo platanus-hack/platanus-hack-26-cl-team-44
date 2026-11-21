@@ -33,6 +33,7 @@ La revisión personal no debe marcarse mediante una prueba automatizada contra d
 | Spotify 1.0.0 | spogo, Spotify.app/macOS | Estado, reproducción/pausa, siguiente; búsqueda de catálogo | Sesión web para buscar | search, play, pause |
 | YouTube 1.0.0 | IFrame Player API oficial y oEmbed | Elegir videos de Chile Travel, reproducir y pausar | Ninguna para la selección pública | list, play, pause |
 | BioBioChile 1.0.0 | RSS publicado por el medio | Listar titulares, seleccionar y leer extractos paginados | Ninguna | list, read |
+| Rappi Chile 0.1.0 (parcial) | Operaciones auditadas de Crafter Station + sesión invitada oficial | Categorías, restaurantes, productos, opciones; conexión local y carrito implementados | Cuenta y dirección chilena para carrito | search, products, select, cart, quote, order, tracking; las últimas etapas siguen pendientes |
 
 Spotify conserva portada y estado real al abrir, actualización sin sustituir el control enfocado, reproducción local y vista de configuración separada.
 
@@ -45,7 +46,7 @@ RSS se limita a 2 MB, tiempo de espera de 12 segundos, sin redirecciones, DTD ni
 1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK; REA cuando falte evidencia).
 2. Crear una fábrica en `adapters/` y su manifiesto, con acciones y validación explícitas.
 3. Añadirla al registro de `createAppsServer`; no añadir rutas específicas de HTTP ni otra lógica de revisión.
-4. Reutilizar una interfaz existente (`music`, `news` o `video`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
+4. Reutilizar una interfaz existente (`music`, `news`, `video` o `food`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
 5. Añadir el preset del catálogo si corresponde. Probar conexión, errores, cancelación, requisitos de cuenta y recorrido completo con el control acordado.
 6. Preparar, registrar evidencia funcional y realizar la prueba personal antes de marcarla lista.
 
@@ -85,3 +86,21 @@ El servidor sigue siendo local de confianza: `appsAdmin` separa presentación, n
 El catálogo ofrece seis videos públicos de Chile Travel con miniaturas de YouTube. Sin búsqueda general, cuenta personal, suscripciones ni generación automática de adaptadores de video. Un video puede dejar de permitir reproducción integrada; la interfaz muestra error, reintento y regreso. La prueba real de play/pause funciona; la habilitación personal sigue pendiente.
 
 `tests/apps/youtube.test.mjs` comprueba aislamiento de observaciones, generación, selección, orden play/pause y errores. `tests/browser/youtube-check.cjs` usa un doble explícito de la API de YouTube sobre el fixture 8791 para comprobar tamaños, estabilidad, recuperación y salida. No escribe evidencia simulada en el registro real.
+
+## Comida: Rappi Chile (parcial)
+
+`adapters/rappi.mjs` está incluido en el registro. El transporte Node de `connectors/rappi-client.mjs` implementa las operaciones verificadas de `crafter-station/rappi-cli@5c4e5b0` y el flujo de invitado observado en la web chilena. No instala código de GitHub ni levanta el servidor HTTP del CLI. Solo contacta `services.rappi.cl`; limita respuesta, tiempo, acciones y errores públicos.
+
+El paciente elige cuatro categorías, tres restaurantes/productos por página y dos opciones por página. No se exige escribir. Las búsquedas sin cuenta usan la ubicación predeterminada pública de Rappi Chile en Santiago, identificada en pantalla; no es una dirección de entrega. La selección procede de productos devueltos por la búsqueda, **no del menú completo**. Las opciones se consultan con una sesión de invitado mantenida solo en memoria. El shell compartido conserva retroceso, descanso y confirmación muscular.
+
+Para conectar una cuenta desde la configuración asistida: abrir `/?start=apps&appsAdmin=1`, elegir Rappi y «Conectar Rappi Chile». Se abre Chrome oficial; la persona introduce sus credenciales allí. «Comprobar sesión» valida la cuenta y lee la dirección activa chilena. Alternativamente:
+
+```sh
+node software/apps-bridge/connectors/rappi-login.mjs
+```
+
+El login valida origen exacto y respuesta de usuario antes de guardar `rappi-session.json` con permisos `0600`, bajo el directorio de estado (`TOKI_APPS_STATE_DIR` para el comando). El token nunca se devuelve al frontend ni se imprime. La ventana espera hasta diez minutos. Desconectar elimina el archivo local, no revoca otras sesiones del servicio.
+
+Carrito y recálculo están implementados y probados con fixtures; **falta validarlos con una cuenta real chilena**. Añadir requiere una selección reciente del mismo trabajo/generación/sesión, opciones válidas, dirección activa sin cambios y carrito previo vacío. La primera versión permite una unidad; no reemplaza carritos existentes. Un resultado incierto exige consultar el carrito; no se reenvía automáticamente. Los importes del carrito no se presentan como total final autorizado.
+
+No existe acción de crear pedido ni cobro: el checkout del CLI tiene un fallo abierto reportado y el flujo chileno actual debe verificarse con cuenta. La evidencia exigida incluye pedido, pago/cotización y seguimiento pendientes, por lo que esta versión no puede marcarse lista para comprar. No hay revisión personal acreditada. Investigación, comandos y resultados: [Rappi Chile](../../docs/research/rappi-chile/README.md).
