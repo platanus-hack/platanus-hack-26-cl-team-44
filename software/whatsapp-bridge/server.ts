@@ -1,8 +1,10 @@
 // woki-bridge/server.ts
 import http from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, existsSync, chmodSync } from "node:fs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
+import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
+import { sugOn, suggestReplies, expandInitials, type Sug, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
 
 // ---------- configuración ----------
 type Mode = "off" | "dry" | "sandbox" | "live";
@@ -24,9 +26,37 @@ const wapi = needsWapi
 // ---------- lista blanca ----------
 type Contact = { id: string; name: string; relation: string; phone: string; tone: string; lid?: string };
 const profileFile = process.env.PROFILE ?? "profile.json";
-const { contacts } = JSON.parse(readFileSync(new URL(profileFile, import.meta.url), "utf8")) as { contacts: Contact[] };
-const byId = new Map(contacts.map((c) => [c.id, c]));
+const profileUrl = new URL(profileFile, import.meta.url);
+let { contacts } = JSON.parse(readFileSync(profileUrl, "utf8")) as { contacts: Contact[] };
+let byId = new Map(contacts.map((c) => [c.id, c]));
 const digits = (s: string) => s.replace(/\D/g, "");
+const MAX_FAVS = 6; // contactos principales: caben en la grilla de la TV
+
+// Guarda la lista blanca (escritura atómica: archivo temporal + rename).
+function saveProfile(next: Contact[]) {
+  const tmp = new URL(profileFile + ".tmp", import.meta.url);
+  writeFileSync(tmp, JSON.stringify({ contacts: next }, null, 2) + "\n");
+  renameSync(tmp, profileUrl);
+  contacts = next;
+  byId = new Map(contacts.map((c) => [c.id, c]));
+}
+
+// Agenda de WhatsApp (vía wapi), en caché 2 min: no se guarda en disco.
+type WaContact = { jid: string; name: string; phone: string; lid?: string };
+let agenda: { at: number; list: WaContact[] } | null = null;
+async function loadAgenda(): Promise<WaContact[]> {
+  if (agenda && Date.now() - agenda.at < 120_000) return agenda.list;
+  const raw: any[] = await wapi!.contacts.list();
+  const list = raw
+    .filter((c) => String(c.jid ?? c.id ?? "").endsWith("@s.whatsapp.net"))
+    .map((c) => {
+      const phone = "+" + digits(String(c.phoneNumber ?? c.jid ?? c.id).split("@")[0]);
+      return { jid: String(c.jid ?? c.id), name: String(c.name || c.notify || c.verifiedName || phone), phone, lid: c.lid ? user(String(c.lid)) : undefined };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  agenda = { at: Date.now(), list };
+  return list;
+}
 const user = (jid?: string) => (jid ?? "").split("@")[0].split(":")[0];
 
 async function resolveLids() {
@@ -49,6 +79,86 @@ function emit(ev: Record<string, unknown>) {
   for (const r of tvs) r.write(line);
 }
 
+// ---------- historial de chat (en disco: history.json, solo dueño, fuera de git) ----------
+// wapi no guarda los mensajes recibidos: el historial se arma con los avisos que llegan
+// y se guarda en disco para que sobreviva a los reinicios. Solo contactos principales.
+type ChatMsg = { id: string; dir: "in" | "out"; text: string; at: number; via?: "tv" | "phone"; msgId?: number; status?: number };
+const HIST_MAX = 60;
+const histUrl = new URL("history.json", import.meta.url);
+const history = new Map<string, ChatMsg[]>(existsSync(histUrl) ? Object.entries(JSON.parse(readFileSync(histUrl, "utf8"))) : []);
+let histTimer: NodeJS.Timeout | null = null;
+function saveHist() {               // escritura atómica y agrupada (1 s)
+  if (histTimer) return;
+  histTimer = setTimeout(() => {
+    histTimer = null;
+    const tmp = new URL("history.json.tmp", import.meta.url);
+    writeFileSync(tmp, JSON.stringify(Object.fromEntries(history)), { mode: 0o600 });
+    renameSync(tmp, histUrl); chmodSync(histUrl, 0o600);
+  }, 1_000);
+}
+const recentTv: { cid: string; text: string; at: number }[] = []; // envíos de la TV, para no duplicarlos cuando wapi avisa "message.sent"
+function pushHist(cid: string, m: ChatMsg) {
+  const list = history.get(cid) ?? [];
+  if (list.some((x) => x.id === m.id)) return;
+  list.push(m);
+  if (list.length > HIST_MAX) list.splice(0, list.length - HIST_MAX);
+  history.set(cid, list);
+  saveHist();
+  emit({ type: "chat", contactId: cid, msg: m });
+}
+
+// ---------- sugerencias con Claude (adelantadas al llegar un mensaje) ----------
+const sugCache = new Map<string, { at: number; list: Sug[] }>();
+const sugBusy = new Map<string, Promise<Sug[]>>();
+const linesOf = (cid: string): Line[] => (history.get(cid) ?? []).map(({ dir, text }) => ({ dir, text }));
+const lastId = (cid: string) => (history.get(cid) ?? []).at(-1)?.id ?? "-";
+function suggestFor(cid: string, ini = "", extra = ""): Promise<Sug[]> {
+  const c = byId.get(cid); if (!c || !sugOn) return Promise.resolve([]);
+  const k = `${cid}|${lastId(cid)}|${ini}|${extra}`;
+  const hit = sugCache.get(k); if (hit && Date.now() - hit.at < 10 * 60_000) return Promise.resolve(hit.list);
+  if (sugBusy.has(k)) return sugBusy.get(k)!;
+  const p = (ini ? expandInitials(c.name, c.relation, linesOf(cid), ini) : suggestReplies(c.name, c.relation, linesOf(cid), extra))
+    .then((list) => { if (list.length) sugCache.set(k, { at: Date.now(), list }); if (sugCache.size > 200) sugCache.delete(sugCache.keys().next().value!); return list; })
+    .catch((e) => { console.log(`[sugerir] sin respuesta de Claude (${e.message})`); return [] as Sug[]; })
+    .finally(() => sugBusy.delete(k));
+  sugBusy.set(k, p); return p;
+}
+function prefetchSuggest(cid: string) {
+  const key = lastId(cid);
+  suggestFor(cid).then((list) => { if (list.length) emit({ type: "suggest", contactId: cid, key, suggestions: list }); });
+}
+const textOf = (m: any): string =>
+  String(m?.conversation ?? m?.extendedTextMessage?.text ?? m?.imageMessage?.caption ?? m?.videoMessage?.caption ?? "");
+const contextOf = (m: any): any => {
+  for (const v of Object.values(m ?? {})) if (v && typeof v === "object" && (v as any).contextInfo) return (v as any).contextInfo;
+  return undefined;
+};
+
+// ---------- menciones en grupos (solo aviso: WOKI no responde en grupos) ----------
+let me: { ids: Set<string> } = { ids: new Set() }; // mi número y mi LID, sin dominio
+async function loadMe() {
+  if (!wapi) return;
+  try {
+    const u = await wapi.user();
+    me = { ids: new Set([user(u.id), u.lid ? user(u.lid) : ""].filter(Boolean)) };
+  } catch (e: any) { console.warn("[me] no pude leer mi identidad:", e?.message); }
+}
+const groupNames = new Map<string, string>();
+async function groupName(jid: string) {
+  if (groupNames.has(jid)) return groupNames.get(jid)!;
+  let name = "un grupo";
+  try { const g = await wapi!.groups.metadata(jid); name = g.subject || g.name || name; } catch { /* sin nombre */ }
+  groupNames.set(jid, name);
+  return name;
+}
+async function personName(participant?: string, pushName?: string) {
+  const id = user(participant);
+  const fav = contacts.find((c) => digits(c.phone) === id || c.lid === id);
+  if (fav) return fav.name;
+  try { const a = (await loadAgenda()).find((c) => digits(c.phone) === id || c.lid === id); if (a) return a.name; } catch { /* sigue */ }
+  return pushName || "Alguien";
+}
+
 // ---------- límites ----------
 const usedIdem = new Set<string>();
 const seenInbound = new Set<string>();
@@ -69,7 +179,11 @@ function trackStatus(msgId: number, contactId: string) {
     try {
       const info = await wapi.messages.info(msgId);
       const s = Number(info.status);
-      if (s !== last) { last = s; emit({ type: "status", msgId, contactId, status: s }); }
+      if (s !== last) {
+        last = s;
+        const h = history.get(contactId)?.find((x) => x.msgId === msgId); if (h) { h.status = s; saveHist(); }
+        emit({ type: "status", msgId, contactId, status: s });
+      }
       if (s === 0 || s === 4) clearInterval(t);
     } catch { /* se reintenta la consulta, no el envío */ }
   }, 3_000);
@@ -99,6 +213,10 @@ const server = http.createServer(async (req, res) => {
   // Las rutas /api/* solo aceptan JSON (fuerza preflight CORS) y el Origin exacto de la app.
   // El webhook de wapi queda fuera: se autentica con su firma (WAPI_WEBHOOK_SECRET).
   if (url.pathname.startsWith("/api/")) {
+    // 0) Anti DNS rebinding: una página maliciosa puede hacer que su dominio resuelva a 127.0.0.1 y leer /api/* por GET.
+    //    El navegador manda su propio Host (evil.com:PORT), así que solo se acepta el Host local exacto.
+    if (![`localhost:${PORT}`, `127.0.0.1:${PORT}`].includes(String(req.headers.host)))
+      return json(res, 421, { ok: false, reason: "host no permitido" });
     // 1) /api/* es solo para la app local. Lo que entra por un túnel trae estos encabezados → fuera,
     //    así una URL de túnel filtrada no permite mandar ni leer mensajes (solo /webhook/wapi es público).
     const h = req.headers;
@@ -131,12 +249,15 @@ const server = http.createServer(async (req, res) => {
 
     if (MODE === "dry") {
       console.log(`[dry] → ${c.name}: ${body}`);
+      pushHist(c.id, { id: "dry-" + idemKey, dir: "out", text: body, at: Date.now(), via: "tv" });
       emit({ type: "status", msgId: -1, contactId, status: 2 });
       return json(res, 200, { ok: true, msgId: -1, dry: true });
     }
     try {
+      recentTv.push({ cid: c.id, text: body, at: Date.now() });
       const sent = await wapi!.messages.send({ to: "+" + digits(c.phone), text: body });
       console.log(`[send] ${c.name} msgId=${sent.msgId}`);
+      pushHist(c.id, { id: "api-" + sent.msgId, dir: "out", text: body, at: Date.now(), via: "tv", msgId: sent.msgId });
       trackStatus(sent.msgId, contactId);
       return json(res, 200, { ok: true, msgId: sent.msgId });
     } catch (e: any) {
@@ -155,6 +276,73 @@ const server = http.createServer(async (req, res) => {
     catch (e: any) { return json(res, 502, { ok: false, reason: e?.message }); }
   }
 
+  // Panel de contactos ← agenda completa de WhatsApp (solo lectura, solo esta app por CORS)
+  if (req.method === "GET" && url.pathname === "/api/wa/contacts") {
+    if (!wapi) return json(res, 503, { ok: false, reason: "La agenda solo está disponible en modo live o sandbox" });
+    try {
+      const favs = new Set(contacts.map((c) => digits(c.phone)));
+      const list = (await loadAgenda()).map((c) => ({ ...c, fav: favs.has(digits(c.phone)) }));
+      return json(res, 200, { ok: true, contacts: list });
+    } catch (e: any) {
+      console.error("[contacts] error", e?.status, e?.message);
+      return json(res, 502, { ok: false, reason: "wapi no devolvió la agenda" });
+    }
+  }
+
+  // Contactos principales (la lista blanca): leer
+  if (req.method === "GET" && url.pathname === "/api/wa/favorites") {
+    return json(res, 200, { ok: true, max: MAX_FAVS, contacts: contacts.map(({ id, name, relation, phone, tone }) => ({ id, name, relation, phone, tone })) });
+  }
+
+  // Contactos principales: reemplazar. Solo números que existen en la agenda de WhatsApp.
+  if (req.method === "POST" && url.pathname === "/api/wa/favorites") {
+    let body: any;
+    try { body = JSON.parse((await readBody(req)) || "{}"); } catch { return json(res, 400, { ok: false, reason: "JSON inválido" }); }
+    const picked: any[] = Array.isArray(body.contacts) ? body.contacts : [];
+    if (picked.length > MAX_FAVS) return json(res, 400, { ok: false, reason: `Máximo ${MAX_FAVS} contactos principales` });
+    let book: WaContact[] = [];
+    if (wapi) { try { book = await loadAgenda(); } catch { return json(res, 502, { ok: false, reason: "wapi no devolvió la agenda" }); } }
+    const byPhone = new Map(book.map((c) => [digits(c.phone), c]));
+    const clean = (s: unknown, n: number) => String(s ?? "").replace(/[<>]/g, "").trim().slice(0, n);
+    const next: Contact[] = [];
+    for (const p of picked) {
+      const d = digits(String(p.phone ?? ""));
+      const known = byPhone.get(d);
+      if (!d || (wapi && !known)) return json(res, 400, { ok: false, reason: `El número ${clean(p.phone, 20)} no está en tu WhatsApp` });
+      if (next.some((c) => digits(c.phone) === d)) continue;
+      const prev = contacts.find((c) => digits(c.phone) === d);
+      next.push({
+        id: prev?.id ?? "c" + d,
+        name: clean(p.name, 40) || known?.name || "+" + d,
+        relation: clean(p.relation, 30) || prev?.relation || "",
+        tone: clean(p.tone, 60) || prev?.tone || "",
+        phone: "+" + d,
+        lid: known?.lid ?? prev?.lid,
+      });
+    }
+    saveProfile(next);
+    console.log(`[favorites] ${next.length} contactos principales guardados`);
+    return json(res, 200, { ok: true, contacts: next.map(({ id, name, relation, phone, tone }) => ({ id, name, relation, phone, tone })) });
+  }
+
+  // Historial de chat con un contacto principal (memoria del puente)
+  if (req.method === "GET" && url.pathname === "/api/wa/history") {
+    const cid = url.searchParams.get("contactId") ?? "";
+    if (!byId.has(cid)) return json(res, 403, { ok: false, reason: "Contacto fuera de la lista" });
+    return json(res, 200, { ok: true, messages: history.get(cid) ?? [] });
+  }
+
+  // Respuestas sugeridas por Claude para un contacto principal: {contactId, initials?, context?}
+  if (req.method === "POST" && url.pathname === "/api/wa/suggest") {
+    let b: any = {}; try { b = JSON.parse(await readBody(req)); } catch { return json(res, 400, { ok: false, reason: "JSON inválido" }); }
+    const cid = String(b.contactId ?? "");
+    if (!byId.has(cid)) return json(res, 403, { ok: false, reason: "Contacto fuera de la lista" });
+    const ini = String(b.initials ?? "").toLowerCase().replace(/[^a-zñ0-9]/g, "").slice(0, 16);
+    const extra = String(b.context ?? "").replace(/[<>]/g, "").slice(0, 300);
+    const list = await suggestFor(cid, ini, extra);
+    return json(res, 200, { ok: true, source: list.length ? "claude" : "none", key: lastId(cid), suggestions: list });
+  }
+
   // TV ← eventos
   if (req.method === "GET" && url.pathname === "/api/wa/events") {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "Access-Control-Allow-Origin": ORIGIN });
@@ -167,7 +355,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/api/wa/health") {
     let session: string = MODE;
     if (wapi) { try { session = await wapi.status(); } catch { session = "down"; } }
-    return json(res, 200, { mode: MODE, session, sentToday, contacts: contacts.map((c) => c.id) });
+    return json(res, 200, { mode: MODE, session, sentToday, contacts: contacts.map((c) => c.id), voz: vozHealth() });
   }
 
   // wapi → mensaje entrante (firmado)
@@ -179,6 +367,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ElevenLabs (/api/voz/*, /api/emergencia/*): ya pasó por las comprobaciones de /api/* de arriba
+  if (await handleVoz(req, res, url, ORIGIN)) return;
+
   res.writeHead(404); res.end();
 });
 
@@ -188,22 +379,50 @@ function handleEvent(raw: string) {
   if (process.env.DEBUG_WEBHOOK) console.log("[webhook]", raw.slice(0, 2000));
 
   if (ev.event === "session.status") return emit({ type: "session", status: ev.data?.status });
-  if (ev.event !== "messages.received") return;
 
   const key = ev.data?.key ?? {};
-  if (key.fromMe || String(key.remoteJid ?? "").endsWith("@g.us")) return;   // ni propios ni grupos
+  const m = ev.data?.message ?? {};
+  const isGroup = String(key.remoteJid ?? "").endsWith("@g.us");
+
+  // Lo que yo envío (desde la TV o escribiendo en el celular) → al historial del contacto.
+  if (ev.event === "message.sent") {
+    if (isGroup) return;
+    const c = findSender(key); if (!c) return;
+    const text = textOf(m).trim(); if (!text) return;
+    const i = recentTv.findIndex((r) => r.cid === c.id && r.text === text && Date.now() - r.at < 120_000);
+    if (i >= 0) { recentTv.splice(i, 1); return; }                             // ya lo anotó /api/wa/send
+    pushHist(c.id, { id: String(key.id ?? "out-" + Date.now()), dir: "out", text, at: Date.now(), via: "phone" });
+    return;
+  }
+  if (ev.event !== "messages.received" || key.fromMe) return;
   if (key.id && seenInbound.has(key.id)) return;                              // reintento de wapi
   if (key.id) seenInbound.add(key.id);
 
+  // Grupo: solo importa si me mencionan. Todo lo demás se descarta aquí mismo (no se guarda ni se muestra).
+  if (isGroup) { void handleGroup(key, m, ev.data?.pushName); return; }
+
   const c = findSender(key);
   if (!c) return;                                                             // fuera de la lista: ni se muestra ni se guarda
-  const m = ev.data?.message ?? {};
-  const text = m.conversation ?? m.extendedTextMessage?.text;
+  const text = textOf(m);
   if (!text) return;                                                          // por ahora solo texto
   console.log(`[in] ${c.name}: ${text}`);
+  pushHist(c.id, { id: String(key.id ?? "in-" + Date.now()), dir: "in", text, at: Date.now() });
   emit({ type: "incoming", contactId: c.id, name: c.name, relation: c.relation, tone: c.tone, text, key });
+  prefetchSuggest(c.id);                                                     // las respuestas de Claude llegan por SSE ("suggest")
+}
+
+async function handleGroup(key: any, m: any, pushName?: string) {
+  if (!me.ids.size) return;
+  const mentioned: string[] = (contextOf(m)?.mentionedJid ?? []).map((j: string) => user(j));
+  if (!mentioned.some((id) => me.ids.has(id))) return;
+  const [group, from] = await Promise.all([groupName(String(key.remoteJid)), personName(key.participant ?? key.participantAlt, pushName)]);
+  let text = textOf(m);
+  for (const id of me.ids) text = text.split("@" + id).join("@Tú");          // "@573…" → "@Tú"
+  console.log(`[mención] en un grupo`);                                       // sin nombres ni texto en el log
+  emit({ type: "mention", group, from, text: text.slice(0, 280), at: Date.now() });
 }
 
 await resolveLids();
+await loadMe();
 // Solo en localhost: el túnel (cloudflared, etc.) se conecta a 127.0.0.1 igual, y nadie de la red local puede llamar a /api/*.
 server.listen(PORT, "127.0.0.1", () => console.log(`woki-bridge · modo ${MODE} · ${contacts.length} contactos · http://localhost:${PORT}`));

@@ -270,6 +270,101 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
   background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.12) 60%,transparent 70%);
   box-shadow:0 0 0 1.5px rgba(255,255,255,.45);mix-blend-mode:screen}
 body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se muestra el cursor: la persona lo perseguiría */
+body.panel #gaze{opacity:0}
+
+/* ---------- Chat de WhatsApp junto a las frases (solo lectura: la mirada no lo selecciona) ---------- */
+.talkbody{flex:1;min-height:0;display:flex;gap:30px}
+.talkbody > .grid2x2{flex:1;min-width:0}
+.chat{display:none;width:600px;flex:none;border-radius:var(--r-lg);padding:26px 26px 28px;flex-direction:column;gap:16px;min-height:0}
+#s-talk.chatmode .chat{display:flex}
+.chat-h{flex:none;display:flex;align-items:center;gap:14px;font-size:26px;font-weight:650;color:var(--txt2)}
+.chat-h .live{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px rgba(48,209,88,.18)}
+.chat-list{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;overflow:hidden}
+.msg{max-width:88%;padding:14px 20px 12px;border-radius:26px;font-size:30px;line-height:1.28;font-weight:550;overflow-wrap:anywhere;flex:none}
+.msg.in{align-self:flex-start;background:rgba(255,255,255,.1);border-bottom-left-radius:8px}
+.msg.out{align-self:flex-end;background:linear-gradient(160deg,#2FD15F,#1C9E45);color:#fff;border-bottom-right-radius:8px}
+.msg .meta{display:block;font-size:19px;font-weight:600;opacity:.7;margin-top:6px}
+.msg.out .meta{text-align:right}
+.chat-empty{margin:auto 0;font-size:26px;line-height:1.4;color:var(--txt3)}
+#s-talk.chatmode .card{padding:30px 136px 30px 38px}
+#s-talk.chatmode .card .ph{font-size:46px}
+#s-talk.chatmode .emo{width:96px;height:96px;font-size:54px;top:20px;right:20px}
+.status .pill{white-space:nowrap;flex:none}
+.pill.mention{color:#FFE27A;border-color:rgba(255,214,10,.45);max-width:360px;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;display:block;line-height:56px}
+.status:has(.pill.mention) .pill.mode{display:none}   /* con una mención visible, el modo de confirmación cede su lugar */
+
+/* ---------- Distribución del chat: chat | 4 respuestas + teclado de iniciales ---------- */
+#s-talk.chatmode #cards{grid-template-rows:1fr 1fr 1.3fr;gap:24px}
+#s-talk.chatmode .card{padding:24px 116px 24px 34px}
+#s-talk.chatmode .card .ph{font-size:37px;line-height:1.14;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+#s-talk.chatmode .card .tone{font-size:24px;margin-top:12px}
+#s-talk.chatmode .emo{width:84px;height:84px;font-size:46px;top:18px;right:18px;border-radius:26px!important}
+#s-talk.chatmode .card.plain{padding-right:34px}
+.card.plain .ph{color:var(--txt)}
+.card.plain .tone{color:var(--txt2)}
+.kbtile{grid-column:1 / span 2;display:flex!important;flex-direction:row!important;align-items:center;gap:34px;padding:30px 44px!important}
+.kbtile .app{width:118px;height:118px;border-radius:32px;flex:none}
+.kbtile .app svg{width:62px;height:62px}
+.kbtile .lb{font-size:46px;font-weight:750;letter-spacing:-.025em}
+.kbtile .sb{font-size:26px;color:var(--txt2);margin-top:8px}
+/* teclado en modo iniciales */
+.ini-letters{font-size:64px;font-weight:750;letter-spacing:.06em}
+.ai{color:#BF5AF2;font-weight:700}
+.ai-wait{color:var(--txt3);font-style:italic}
+.key.likely{box-shadow:inset 0 0 0 3px rgba(191,90,242,.75),0 0 28px rgba(191,90,242,.25)}
+.ini-letters .dotsep{color:var(--txt3);margin:0 .12em}
+.ini-hint{color:var(--txt3)}
+
+/* ---------- WhatsApp: contactos principales en la TV ---------- */
+.person{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:24px}
+.person .face{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;font-size:68px;font-weight:750;color:#fff}
+.person .lb{font-size:48px;font-weight:700;letter-spacing:-.025em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person .sb{font-size:27px;color:var(--txt2);margin-top:-10px}
+.person.tool .face{background:rgba(255,255,255,.08);border:1.5px dashed var(--hair-hi);font-size:60px;color:var(--txt2)}
+.empty-favs{grid-column:1 / span 2;grid-row:1 / span 2;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:40px;font-size:46px;font-weight:700;letter-spacing:-.02em}
+.empty-favs small{font-size:30px;font-weight:550;color:var(--txt2);letter-spacing:0}
+.pill .dot.wa{background:var(--green)} .pill .dot.wa.off{background:var(--orange)}
+
+/* ---------- Panel del acompañante (mouse y teclado, no mirada) ---------- */
+.wap{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(0,0,0,.62);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-family:inherit}
+.wap.on{display:grid}
+.wap-card{width:min(1100px,calc(100vw - 32px));height:min(760px,calc(100vh - 32px));display:flex;flex-direction:column;border-radius:28px;
+  background:#121216;border:1px solid var(--hair);box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;color:var(--txt)}
+.wap-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 16px;border-bottom:1px solid var(--hair)}
+.wap-head h2{margin:0;font-size:24px;letter-spacing:-.01em}
+.wap-head p{margin:6px 0 0;font-size:15px;color:var(--txt2);max-width:62ch;line-height:1.45}
+.wap-x{margin-left:auto;width:40px;height:40px;border-radius:50%;border:1px solid var(--hair);background:transparent;color:var(--txt);font-size:20px;cursor:pointer;flex:none}
+.wap-body{flex:1;min-height:0;display:grid;grid-template-columns:1.25fr 1fr}
+.wap-col{min-height:0;display:flex;flex-direction:column;padding:18px 24px;gap:12px}
+.wap-col + .wap-col{border-left:1px solid var(--hair);background:rgba(255,255,255,.02)}
+.wap-col h3{margin:0;font-size:15px;font-weight:650;color:var(--txt2);display:flex;justify-content:space-between}
+#wapQ{width:100%;height:44px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.06);color:var(--txt);font-weight:500;font-size:16px;font-family:inherit;padding:0 14px;outline:none}
+#wapQ:focus{border-color:var(--blue)}
+.wap-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px;margin:0 -8px;padding:0 8px}
+.wap-row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;cursor:pointer;border:0;background:transparent;color:inherit;text-align:left;font:inherit;width:100%}
+.wap-row:hover{background:rgba(255,255,255,.06)}
+.wap-row:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.wap-row .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:700;color:#fff;flex:none}
+.wap-row .nm{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wap-row .ph{font-size:13px;color:var(--txt3)}
+.wap-row .ck{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--hair-hi);flex:none;display:grid;place-items:center;font-size:13px}
+.wap-row.on .ck{background:var(--green);border-color:var(--green);color:#000}
+.wap-row[disabled]{opacity:.4;cursor:not-allowed}
+.wap-note{font-size:13px;color:var(--txt3)}
+.wap-sel{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.wap-chip{display:grid;grid-template-columns:34px 1fr 40px;gap:10px;align-items:center;padding:10px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--hair)}
+.wap-chip .nm{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wap-chip input{grid-column:2;width:100%;height:32px;border-radius:9px;border:1px solid var(--hair);background:rgba(0,0,0,.25);color:var(--txt);font-weight:500;font-size:14px;font-family:inherit;padding:0 10px;outline:none}
+.wap-chip input:focus{border-color:var(--blue)}
+.wap-chip .rm{grid-column:3;grid-row:1 / span 2;width:34px;height:34px;border-radius:50%;border:1px solid var(--hair);background:transparent;color:var(--txt2);cursor:pointer;font-size:16px}
+.wap-foot{display:flex;align-items:center;gap:12px;padding-top:4px}
+.wap-btn{height:44px;padding:0 22px;border-radius:22px;border:1px solid var(--hair);background:rgba(255,255,255,.08);color:var(--txt);font-weight:650;font-size:16px;font-family:inherit;cursor:pointer}
+.wap-btn.pri{background:var(--green);border-color:var(--green);color:#000}
+.wap-btn[disabled]{opacity:.5;cursor:wait}
+#wapMsg{font-size:14px;color:var(--txt2);margin:0}
+#wapMsg.err{color:var(--red)}
+@media (max-width:760px){.wap-body{grid-template-columns:1fr;grid-template-rows:1.2fr 1fr}.wap-col + .wap-col{border-left:0;border-top:1px solid var(--hair)}}
 
 /* panel de ayuda (fuera de la TV) */
 #legend{position:fixed;left:0;right:0;bottom:0;height:150px;background:#0a0a0c;border-top:1px solid #1c1c1f;display:flex;gap:26px;padding:12px 20px;font-size:13px;color:#a1a1a6;align-items:flex-start;overflow-x:auto}
@@ -331,8 +426,11 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
       <input id="ctxIn" placeholder="El acompañante escribe y aprieta Enter" value="¿Vienes a cenar el domingo?">
       <div class="typing" id="typing"><i></i><i></i><i></i>Marta está escribiendo</div>
     </div>
-    <div class="talkgrid" id="cards"></div>
-    <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar el emoji</b> cambiar emoción</span><span><b>Ceja ×2</b> escribir</span><span><b>Mandíbula</b> pedir la palabra</span><span><b>Mandíbula larga</b> inicio</span></div>
+    <div class="talkbody">
+      <div class="chat glass" id="chat" aria-live="polite"><div class="chat-h" id="chatH"></div><div class="chat-list" id="chatList"></div></div>
+      <div class="talkgrid" id="cards"></div>
+    </div>
+    <div class="hint"><span id="talkHint"><b>Ceja</b> decir</span><span><b>Mirar el emoji</b> cambiar emoción</span><span><b>Ceja ×2</b> escribir</span><span><b>Mandíbula</b> pedir la palabra</span><span><b>Mandíbula larga</b> inicio</span></div>
   </section>
 
   <!-- ESCRIBIR -->
@@ -340,7 +438,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
     <div class="status"></div>
     <div class="msgline glass"><div class="txt" id="kbTxt"></div><div class="pred" id="kbPred"></div></div>
     <div class="grid4x2" id="keys"></div>
-    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Mandíbula</b> aceptar palabra</span><span><b>Ceja ×2</b> frases con Claude</span><span><b>Mandíbula larga</b> volver</span></div>
+    <div class="hint" id="kbHint"><span><b>Ceja</b> elegir</span><span><b>Mandíbula</b> aceptar palabra</span><span><b>Ceja ×2</b> frases con Claude</span><span><b>Mandíbula larga</b> volver</span></div>
   </section>
 
   <!-- REACCIONES -->
@@ -353,10 +451,10 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   <!-- AGENTE -->
   <section class="screen" id="s-agent" data-title="Mensajes">
     <div class="status"></div>
-    <div class="ctx glass"><div class="avatar" style="background:linear-gradient(160deg,#5BE584,#1FA348)">S</div><label>Intención</label><div style="font-size:56px;font-weight:700;letter-spacing:-.02em">Responder a Sofía</div></div>
+    <div class="ctx glass"><div class="avatar" id="agAv" style="background:linear-gradient(160deg,#5BE584,#1FA348)">S</div><label>Intención</label><div id="agTitle" style="font-size:56px;font-weight:700;letter-spacing:-.02em">Responder a Sofía</div></div>
     <div class="plan">
       <div class="steps glass stag" style="--i:0">
-        <div class="step"><div class="n">1</div><div>Abrir WhatsApp → <b>Sofía (hija)</b></div></div>
+        <div class="step"><div class="n">1</div><div>Abrir WhatsApp → <b id="agTo">Sofía (hija)</b></div></div>
         <div class="step"><div class="n">2</div><div>Escribir<br><div class="bubble" id="agentMsg">¡Obvio! Guárdame del postre de la abuela 🥰</div></div></div>
         <div class="step"><div class="n">3</div><div>Enviar <span style="color:var(--orange)">· no se puede deshacer</span></div></div>
       </div>
@@ -366,6 +464,13 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
       </div>
     </div>
     <div class="hint"><span><b>Ceja</b> elegir</span><span>Nunca se envía por no responder</span></div>
+  </section>
+
+  <!-- CONTACTOS (WhatsApp) -->
+  <section class="screen" id="s-contacts" data-title="Mensajes">
+    <div class="status"></div>
+    <div class="grid4x2" id="people"></div>
+    <div class="hint"><span><b>Ceja</b> escribirle</span><span><b>K</b> el acompañante ajusta los contactos</span><span><b>Mandíbula larga</b> volver</span></div>
   </section>
 
   <!-- AJUSTES -->
@@ -431,11 +536,38 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
     </div>
   </div>
   <div class="col"><h3>Clic EMG (simulado)</h3><kbd>Espacio</kbd> ceja · ×2 doble · mantener = larga<br><kbd>J</kbd> mandíbula · ×2 doble · mantener = larga<br>Emergencia: ceja ×2 y luego mandíbula</div>
-  <div class="col"><h3>Cuidadora</h3><kbd>R</kbd> acercar el llavero RFID<br><kbd>M</kbd> silenciar sonidos de alarma<br><kbd>Esc</kbd> salir del campo de texto</div>
+  <div class="col"><h3>Cuidadora</h3><kbd>K</kbd> contactos de WhatsApp<br><kbd>I</kbd> imán de la mirada<br><kbd>R</kbd> acercar el llavero RFID<br><kbd>M</kbd> silenciar sonidos de alarma<br><kbd>Esc</kbd> salir del campo de texto</div>
   <div class="col"><h3>Junto a la cama (Uno)</h3><div class="lcd" id="lcd"></div><div class="leds"><div class="led" id="ledG" style="background:#30D158;color:#30D158"></div><div class="led" id="ledA" style="background:#FF9F0A;color:#FF9F0A"></div><div class="led" id="ledR" style="background:#FF453A;color:#FF453A"></div></div></div>
   <div class="col"><h3>Eventos</h3><div id="evlog"></div></div>
 </div>
 
+<!-- Panel del acompañante: elegir contactos principales de WhatsApp (mouse y teclado) -->
+<div class="wap" id="waPanel" role="dialog" aria-modal="true" aria-labelledby="wapTitle">
+  <div class="wap-card">
+    <div class="wap-head">
+      <div>
+        <h2 id="wapTitle">Contactos principales</h2>
+        <p>Elige hasta 6 personas. Marta solo podrá escribirles a ellas y solo verá en la TV los mensajes que ellas manden. La relación ayuda a que las frases suenen distinto con cada una.</p>
+      </div>
+      <button class="wap-x" id="wapClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="wap-body">
+      <div class="wap-col">
+        <input id="wapQ" type="search" placeholder="Buscar por nombre o número" autocomplete="off">
+        <div class="wap-list" id="wapList" role="listbox" aria-label="Contactos de WhatsApp"></div>
+        <div class="wap-note" id="wapNote"></div>
+      </div>
+      <div class="wap-col">
+        <h3><span>Elegidos</span><span id="wapCount">0/6</span></h3>
+        <div class="wap-sel" id="wapSel"></div>
+        <div class="wap-foot"><button class="wap-btn pri" id="wapSave">Guardar</button><button class="wap-btn" id="wapCancel">Cancelar</button></div>
+        <p id="wapMsg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="woki-voz.js"></script><!-- ElevenLabs: voz, elegir voz, llamada de emergencia (vía woki-bridge) -->
 <script>
 /* ===================== Configuración ===================== */
 const DWELL_OPTIONS = [800,1000,1200,1500];
@@ -450,7 +582,13 @@ const CFG = {
   scanMs: 1300,          // escaneo cuando no hay mirada
   doubleMs: 300, longMs: 400, comboMs: 900,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
-  EMG_WS: 'ws://localhost:8765' // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
+  EMG_WS: 'ws://localhost:8765', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
+  WA_URL: 'http://localhost:8788', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
+  WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)
+  magnet: true,          // imán: si la mirada cae en un hueco, el foco va al objetivo más probable cercano (tecla I)
+  magnetR: .09,          // radio de captura: 9 % del lado menor de la pantalla (~3° de ángulo visual en la TV)
+  magnetPull: .3         // cuánto se acerca el cursor visible al centro del objetivo (débil: la gente lo prefiere así)
 };
 CFG.emoDwellMs=CFG.dwellMs;   // el emoji usa el mismo tiempo de mirada que el resto
 // Sugerencias del teclado: 'fila' = 3 fijas arriba a 1 mirada (más rápido, tarjetas de ~4 cm de alto)
@@ -463,7 +601,7 @@ const TILES = [
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
   ['go:reactions','g-yellow','i-smile','Reacciones','Sin esperar'],
   ['attention','g-orange','i-bell','Llamar a Camila','Atención, no urgencia'],
-  ['go:agent','g-green','i-send','Mensajes','El agente lo envía'],
+  ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
   ['music','g-pink','i-music','Música','Lo de siempre'],
   ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
   ['go:settings','g-gray','i-gear','Ajustes','Tiempo, voz, modo']];
@@ -545,6 +683,311 @@ $('#themeToggle').addEventListener('click',e=>{ e.currentTarget.blur(); setTheme
 $('#legendToggle').addEventListener('click',e=>{ e.currentTarget.blur(); toggleLegend(); });
 syncDevbar();
 
+/* ===================== WhatsApp (woki-bridge → wapi) ===================== */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const digitsOf=s=>String(s||'').replace(/\D/g,'');
+const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
+const FACE=['linear-gradient(160deg,#5BE584,#1FA348)','linear-gradient(160deg,#64D2FF,#0A84FF)','linear-gradient(160deg,#FF9F0A,#FF375F)',
+  'linear-gradient(160deg,#BF5AF2,#5E5CE6)','linear-gradient(160deg,#FFD60A,#FF9F0A)','linear-gradient(160deg,#FF6482,#BF5AF2)'];
+const faceOf=c=>FACE[Math.abs([...digitsOf(c&&c.phone)||String(c&&c.name)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))|0,7))%FACE.length];
+const WA={ online:false, favs:[], to:null, text:'', idem:null, inKey:null, sending:false, lastMsg:null, hist:{}, mention:null, sug:{} };
+const HINT0='<b>Ceja</b> decir';
+const hhmm=t=>new Date(t).toTimeString().slice(0,5);
+const TICKS={1:'🕓',2:'✓',3:'✓✓',4:'leído'};
+// Chat con el contacto actual: últimos mensajes (lo que llega, lo que Marta envía y lo que se escribe desde el celular).
+function renderChat(){
+  const on=!!WA.to; $('#s-talk').classList.toggle('chatmode',on);
+  $('#talkHint').innerHTML= on? '<b>Ceja</b> elegir respuesta' : HINT0;
+  if(!on) return;
+  const c=WA.to, list=(WA.hist[c.id]||[]).slice(-10);
+  $('#chatH').innerHTML=`<span class="live"></span>Chat con ${esc(c.name)}`;
+  $('#chatList').innerHTML= list.length? list.map(m=>{
+      const meta= m.dir==='in'? hhmm(m.at) : `${m.via==='phone'?'desde el celular · ':''}${hhmm(m.at)}${m.status&&TICKS[m.status]?' · '+TICKS[m.status]:''}`;
+      return `<div class="msg ${m.dir}">${esc(m.text)}<span class="meta">${meta}</span></div>`; }).join('')
+    : `<div class="chat-empty">Todavía no hay mensajes con ${esc(c.name)}.</div>`;
+}
+function waAddMsg(cid,m){
+  const a=WA.hist[cid]||(WA.hist[cid]=[]);
+  if(a.some(x=>x.id===m.id)) return;
+  a.push(m); if(a.length>60) a.splice(0,a.length-60);
+  if(WA.to && WA.to.id===cid) renderChat();
+}
+async function waLoadHistory(cid){
+  try{ const j=await waApi('/api/wa/history?contactId='+encodeURIComponent(cid)); WA.hist[cid]=j.messages||[]; }catch(_){}
+  if(WA.to && WA.to.id===cid) renderChat();
+}
+/* ---- Respuestas del chat: 2 contextuales + «Pregúntele a…» + «Otro» + teclado de iniciales ---- */
+const GENERIC=[['Sí, me parece bien.','de acuerdo','seria'],['No estoy segura.','duda','seria']];
+const toCard=([text,tone,emo])=>({text,tone,emo:EMO[emo]?emo:'seria'});
+function waHelper(){   // el acompañante: un contacto principal con relación de cuidado, si no Camila
+  const h=WA.favs.find(c=>/cuidador|acompa|enfermer/i.test(c.relation||''));
+  return h? h.name.split(' ')[0] : 'Camila';
+}
+function waSetPool(cards,generic){
+  const seen=new Set(), pool=[];
+  for(const c of [...(generic? GENERIC.map(toCard):[]), ...cards, ...(generic?[]:GENERIC.map(toCard)), ...DEFAULT.map(toCard)])
+    if(!seen.has(c.text)){ seen.add(c.text); pool.push(c); }
+  S.pool=pool; S.poolPage=0; waPage();
+}
+function waPage(){
+  const n=Math.max(1,Math.ceil(S.pool.length/2)), p=S.poolPage%n;
+  const two=S.pool.slice(p*2,p*2+2);
+  S.cards=[...two, {text:`Pregúntele a ${waHelper()}.`, tone:'lo decide tu acompañante', emo:'seria', plain:true}];
+}
+
+/* ---- Claude (vía el puente): respuestas según la conversación y predicción por iniciales ---- */
+const aiCard=x=>({text:x.text, tone:(x.tone||'sugerida'), emo:EMO[x.emo]?x.emo:'seria', ai:true});
+const lastKey=cid=>{ const h=WA.hist[cid]||[]; return h.length? h[h.length-1].id : '-'; };
+async function waAi(body,ms=15000){
+  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
+  try{ const j=await waApi('/api/wa/suggest',{method:'POST',body:JSON.stringify(body),signal:ctl.signal}); return j; }
+  finally{ clearTimeout(t); }
+}
+// Las 2 tarjetas contextuales: primero lo local (al instante) y cuando Claude responde, se reemplazan.
+async function waAiReplies(){
+  const c=WA.to; if(!c || !CFG.WA_AI || !CFG.WA_URL) return;
+  const key=lastKey(c.id), cached=WA.sug[c.id];
+  if(cached && cached.key===key) return waApplyAi(c.id, cached.list);
+  const ctx=$('#ctxIn').value.trim(), last=(WA.hist[c.id]||[]).slice(-1)[0];
+  const extra = ctx && !(last && last.text===ctx) ? ctx : '';
+  S.aiWait=true; renderCards();
+  try{ const j=await waAi({contactId:c.id, context:extra});
+    if(j.suggestions && j.suggestions.length){ WA.sug[c.id]={key:j.key, list:j.suggestions}; waApplyAi(c.id, j.suggestions); } }
+  catch(e){ log('Claude no respondió: quedan las sugerencias locales'); }
+  finally{ S.aiWait=false; if(S.screen==='talk') renderCards(); }
+}
+function waApplyAi(cid,list){
+  if(!WA.to || WA.to.id!==cid || S.kb.mode==='ini') return;
+  if(S.poolAi && S.poolAi===list) return;
+  S.poolAi=list; waSetPool(list.map(aiCard), false); S.aiWait=false;
+  if(S.screen==='talk') renderCards();
+}
+// Predicción paso a paso: con cada letra se pide a Claude (300 ms de espera para no pedir de más).
+function iniAsk(){
+  const c=WA.to, ini=S.kb.ini||'';
+  clearTimeout(S.iniT);
+  if(!c || !ini || !CFG.WA_AI || !CFG.WA_URL){ S.kb.ai=null; return; }
+  if(S.kb.ai && S.kb.ai.ini===ini) return;
+  S.kb.ai={ini, list:null, p:null};
+  S.iniT=setTimeout(()=>{ const ai=S.kb.ai; if(!ai || ai.ini!==ini) return;
+    ai.p=waAi({contactId:c.id, initials:ini}).then(j=>{ ai.list=(j.suggestions||[]).map(aiCard); })
+      .catch(()=>{ ai.list=[]; }).finally(()=>{ if(S.screen==='keyboard' && S.kb.mode==='ini' && S.kb.ai===ai){ renderKbText(); markLikelyKeys(); } });
+  },300);
+}
+function iniCandidates(){   // Claude primero (si ya llegó para estas letras), luego lo local
+  const ini=S.kb.ini||'', ai=S.kb.ai && S.kb.ai.ini===ini && S.kb.ai.list ? S.kb.ai.list : [];
+  const seen=new Set(), out=[];
+  for(const c of [...ai, ...iniLocal(ini)]) if(!seen.has(c.text)){ seen.add(c.text); out.push(c); }
+  return out;
+}
+// Imán dirigido: los grupos de letras que contienen la próxima inicial más probable quedan marcados y atraen más.
+function markLikelyKeys(){
+  if(S.kb.mode!=='ini' || S.kb.level!==1) return;
+  const ini=fold(S.kb.ini||''), next=new Map();
+  iniCandidates().slice(0,6).forEach((c,i)=>{ const k=initialsOf(c.text); if(k.startsWith(ini) && k.length>ini.length){ const l=k[ini.length]; next.set(l,(next.get(l)||0)+(6-i)); } });
+  const keys=$$('#keys .key[data-act^="grp:"]'), ws=keys.map(el=>{ const g=fold(GROUPS[+el.dataset.act.slice(4)]); let w=0; for(const [l,v] of next) if(g.includes(l)) w+=v; return w; });
+  const top=Math.max(0,...ws);
+  keys.forEach((el,i)=>{ el.dataset.prior = ws[i]? (1+Math.min(.8,ws[i]/12)).toFixed(2) : '1';
+    el.classList.toggle('likely', ws[i]===top && top>=4); });   // solo el grupo más probable se marca
+}
+
+/* ---- Teclado por iniciales: Marta elige la primera letra de cada palabra y WOKI completa la frase ---- */
+const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const initialsOf=t=>(fold(t).match(/[a-zñ0-9]+/g)||[]).map(w=>w[0]).join('');
+function kbIni(){ S.kb={level:1,group:null,text:'',mode:'ini',ini:''}; go('keyboard'); }
+function iniCorpus(){
+  const out=[], add=(t,tone,emo,w)=>{ if(t && !out.some(x=>x.text===t)) out.push({text:t,tone,emo,w}); };
+  for(const m of Object.values(WA.hist).flat()) if(m.dir==='out') add(m.text,'ya lo escribiste','seria',3);   // lo que Marta ya mandó
+  for(const p of MEM.m.phrases) add(p.t,'ya lo dijiste','seria',2);
+  for(const r of RULES) for(const s of r.s) add(s[0],s[1],s[2],1);
+  for(const s of [...GENERIC,...DEFAULT]) add(s[0],s[1],s[2],1);
+  for(const r of REACTS) add(r[1][0].toUpperCase()+r[1].slice(1),'reacción',r[2],0);
+  return out;
+}
+function iniLocal(ini){
+  const q=fold(ini); if(!q) return [];
+  const hits=iniCorpus().map(c=>{ const k=initialsOf(c.text); return {c, exact:k===q, pre:k.startsWith(q)}; })
+    .filter(x=>x.pre).sort((a,b)=>(b.exact-a.exact)||(b.c.w-a.c.w)).map(x=>x.c);
+  if(hits.length<4){   // palabra por palabra con las palabras más usadas que empiezan con cada letra
+    const words=[...q].map(l=>{ const mine=MEM.top(l)[0]; return mine || WORDS.find(w=>fold(w)[0]===l) || l; });
+    const t=words.join(' '); hits.push({text:t[0].toUpperCase()+t.slice(1)+'.', tone:'palabra por palabra', emo:'seria'});
+  }
+  return hits.slice(0,6);
+}
+async function kbExpand(){
+  const ini=S.kb.ini||''; if(!ini){ island('🔤','Elige al menos una letra',true); return; }
+  let out=null;
+  if(CFG.WA_AI && WA.to && CFG.WA_URL){
+    if(!S.kb.ai || S.kb.ai.ini!==ini || (!S.kb.ai.p && !S.kb.ai.list)){ clearTimeout(S.iniT);
+      const ai=S.kb.ai={ini,list:null,p:null}; ai.p=waAi({contactId:WA.to.id, initials:ini}).then(j=>{ ai.list=(j.suggestions||[]).map(aiCard); }).catch(()=>{ ai.list=[]; }); }
+    if(!S.kb.ai.list){ island('✨','Completando la frase…',false,0);
+      await Promise.race([S.kb.ai.p, new Promise(r=>setTimeout(r,9000))]); island('✨','Listo',false,600); }
+    const c=iniCandidates(); if(c.length) out=c.slice(0,6).map(x=>({text:x.text,tone:x.tone,emo:EMO[x.emo]?x.emo:'seria',ai:x.ai}));
+  }
+  if(!out && CFG.EXPAND_URL){ try{ const ctl=new AbortController(); setTimeout(()=>ctl.abort(),2500);
+      const r=await fetch(CFG.EXPAND_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
+        body:JSON.stringify({initials:ini,context:$('#ctxIn').value.trim(),contactId:WA.to&&WA.to.id})});
+      out=(await r.json()).suggestions.slice(0,6).map(x=>({text:x.text,tone:x.tone||'por iniciales',emo:EMO[x.emo]?x.emo:'seria'})); }
+    catch(e){ log('Claude no respondió, completo con frases locales'); } }
+  if(!out||!out.length) out=iniLocal(ini).map(c=>({text:c.text,tone:c.tone,emo:EMO[c.emo]?c.emo:'seria'}));
+  S.kb.mode='text'; S.pool=out; S.poolPage=0; waPage(); log('iniciales '+ini.toUpperCase()+' → '+out.length+' frases');
+  go('talk');
+}
+
+// Mención en un grupo: solo aviso. WOKI no responde en grupos.
+function waMention(ev){
+  WA.mention={...ev, at:Date.now()};
+  beep(988,140,.05); setTimeout(()=>beep(1318,160,.05),170);
+  island('@',`${ev.from} te mencionó en «${ev.group}»: ${ev.text}`,false,10000);
+  log(`mención en «${ev.group}»`); renderStatus();
+}
+const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
+
+async function waApi(path,opts={}){
+  const r=await fetch(CFG.WA_URL+path,{...opts, headers: opts.body? {'Content-Type':'application/json'} : {}});
+  let j={}; try{ j=await r.json(); }catch(_){}
+  if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
+  return j;
+}
+async function waLoadFavs(){
+  if(!CFG.WA_URL) return;
+  try{ WA.favs=(await waApi('/api/wa/favorites')).contacts||[]; }catch(e){ log('WhatsApp: '+e.message); }
+  if(S.screen==='contacts') renderPeople();
+}
+function renderPeople(){
+  const f=WA.favs.slice(0,6); let html='';
+  if(!CFG.WA_URL) html='<div class="empty-favs glass" style="border-radius:var(--r-lg)">WhatsApp no está configurado<small>Falta CFG.WA_URL</small></div>';
+  else if(!f.length) html='<div class="empty-favs glass" style="border-radius:var(--r-lg)">Aún no hay contactos principales<small>El acompañante los elige con la tecla K o con «Ajustar».</small></div>';
+  html+=f.map((c,i)=>`<div class="t person" data-t data-act="waTo:${i}"><div class="face" style="background:${faceOf(c)}">${esc(initial(c.name))}</div><div class="lb">${esc(c.name)}</div><div class="sb">${esc(c.relation||'WhatsApp')}</div></div>`).join('');
+  html+='<div class="t person tool" data-t data-act="waPanel"><div class="face">＋</div><div class="lb">Ajustar</div><div class="sb">lo hace el acompañante</div></div>';
+  html+='<div class="t person tool" data-t data-act="go:home"><div class="face">←</div><div class="lb">Volver</div><div class="sb">Inicio</div></div>';
+  $('#people').innerHTML=html; stagger($('#people')); decorate($('#people'));
+}
+function setCtx(label,av,val,ph,bg){
+  $('#s-talk .ctx label').textContent=label; const a=$('#s-talk .ctx .avatar'); a.textContent=av; a.style.background=bg||'';
+  $('#ctxIn').value=val; $('#ctxIn').placeholder=ph;
+}
+// Empieza un mensaje para un contacto principal (elegido por Marta o porque ese contacto escribió).
+function waStart(c,{text='',key=null}={}){
+  if(!c) return;
+  WA.to=c; WA.inKey=key; WA.idem=null;
+  setCtx(key? `${c.name} dice` : `Para ${c.name}`, initial(c.name), text,
+    key? CTX0.ph : 'Contexto (opcional)', faceOf(c));
+  S.cards=[]; S.poolAi=null; renderChat(); waLoadHistory(c.id).then(()=>{ if(WA.to===c && S.screen==='talk') waAiReplies(); }); go('talk');
+}
+function waReset(){
+  if(!WA.to) return;
+  WA.to=null; WA.inKey=null; WA.idem=null; setCtx(CTX0.label,CTX0.av,CTX0.val,CTX0.ph); S.cards=[]; S.kb.mode='text'; renderChat();
+}
+// Pantalla de confirmación: destinatario y texto en grande; se envía solo con la doble ceja.
+function openAgent(text){
+  const c=WA.to; if(!c) return;
+  WA.text=text; WA.idem=crypto.randomUUID();
+  $('#agAv').textContent=initial(c.name); $('#agAv').style.background=faceOf(c);
+  $('#agTitle').textContent=(WA.inKey?'Responder a ':'Escribir a ')+c.name;
+  $('#agTo').textContent=c.name+(c.relation?` (${c.relation})`:'');
+  $('#agentMsg').textContent=text;
+  go('agent');
+}
+async function waSend(){
+  const c=WA.to;
+  if(!c){ island('⚠️','Primero elige a quién escribir',true); go('contacts'); return; }
+  if(WA.sending) return; WA.sending=true;
+  island('…',`Enviando a ${c.name}…`,false,0);
+  try{
+    const j=await waApi('/api/wa/send',{method:'POST',body:JSON.stringify({contactId:c.id,text:WA.text,idemKey:WA.idem})});
+    WA.lastMsg={id:j.msgId,name:c.name};
+    island('✓', j.dry? `Enviado a ${c.name} (prueba)` : `Enviado a ${c.name}`); MEM.add(WA.text); log('WhatsApp → '+c.name);
+    go('home');
+  }catch(e){ island('⚠️','No se envió: '+e.message,true,5000); log('WhatsApp error: '+e.message); }
+  finally{ WA.sending=false; }
+}
+function waIncoming(ev){
+  const c=WA.favs.find(x=>x.id===ev.contactId) || {id:ev.contactId,name:ev.name,relation:ev.relation,phone:''};
+  log('WhatsApp ← '+c.name); beep(880,120,.04);
+  island('💬',`${c.name}: ${ev.text}`,false,6000);
+  const busy=S.alarm || S.rest || $('#calib').classList.contains('on') || document.body.classList.contains('panel') || (S.screen==='agent' && S.agentPending);
+  if(!busy) waStart(c,{text:ev.text,key:ev.key});   // nunca interrumpe una alarma ni una confirmación en curso
+}
+function waListen(){
+  if(!CFG.WA_URL || !window.EventSource) return;
+  const es=new EventSource(CFG.WA_URL+'/api/wa/events');
+  es.onopen=()=>{ WA.online=true; renderStatus(); waLoadFavs(); log('WhatsApp conectado'); };
+  es.onerror=()=>{ if(WA.online) log('WhatsApp sin conexión'); WA.online=false; renderStatus(); };   // EventSource reintenta solo
+  es.onmessage=m=>{ let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
+    if(ev.type==='chat' && ev.msg) waAddMsg(ev.contactId, ev.msg);
+    if(ev.type==='mention') waMention(ev);
+    if(ev.type==='suggest' && ev.suggestions){ WA.sug[ev.contactId]={key:ev.key, list:ev.suggestions};
+      if(S.screen==='talk' && WA.to && WA.to.id===ev.contactId && lastKey(ev.contactId)===ev.key) waApplyAi(ev.contactId, ev.suggestions); }
+    if(ev.type==='incoming') waIncoming(ev);
+    if(ev.type==='status'){ const h=(WA.hist[ev.contactId]||[]).find(x=>x.msgId===ev.msgId); if(h){ h.status=ev.status; if(WA.to && WA.to.id===ev.contactId) renderChat(); } }
+    if(ev.type==='status' && WA.lastMsg && ev.msgId===WA.lastMsg.id){
+      if(ev.status===4) island('✓✓',`${WA.lastMsg.name} lo leyó`);
+      if(ev.status===0) island('⚠️','WhatsApp no pudo entregar el mensaje',true,4000); }
+    if(ev.type==='session' && ev.status && ev.status!=='connected') island('⚠️','WhatsApp se desconectó',true,5000);
+  };
+}
+
+/* ---- Panel del acompañante: elegir contactos principales ---- */
+const WAP={ all:[], sel:[], q:'' };
+async function openPanel(){
+  if(!CFG.WA_URL){ island('⚠️','WhatsApp no está configurado',true); return; }
+  document.body.classList.add('panel'); $('#waPanel').classList.add('on'); clearFocus();
+  WAP.q=''; $('#wapQ').value=''; WAP.sel=[]; renderSel(); $('#wapList').innerHTML=''; $('#wapNote').textContent='';
+  const msg=$('#wapMsg'); msg.className=''; msg.textContent='Trayendo tus contactos de WhatsApp…';
+  try{
+    const [book,favs]=await Promise.all([waApi('/api/wa/contacts'),waApi('/api/wa/favorites')]);
+    WAP.all=book.contacts||[];
+    const has=new Set(WAP.all.map(c=>digitsOf(c.phone)));
+    WAP.sel=(favs.contacts||[]).filter(c=>has.has(digitsOf(c.phone))).map(c=>({phone:c.phone,name:c.name,relation:c.relation||''}));
+    const dropped=(favs.contacts||[]).length-WAP.sel.length;
+    msg.textContent= dropped? `${dropped} contacto${dropped>1?'s':''} de prueba no está${dropped>1?'n':''} en tu WhatsApp y se quitará${dropped>1?'n':''} al guardar.` : '';
+    renderList(); renderSel(); $('#wapQ').focus();
+  }catch(e){ msg.textContent='No pude traer tus contactos: '+e.message; msg.className='err'; }
+}
+function closePanel(){ $('#waPanel').classList.remove('on'); document.body.classList.remove('panel'); }
+function renderList(){
+  const q=WAP.q.trim().toLowerCase(), qd=digitsOf(q);
+  const m=WAP.all.filter(c=>!q || c.name.toLowerCase().includes(q) || (qd.length>2 && digitsOf(c.phone).includes(qd)));
+  const shown=m.slice(0,80), picked=new Set(WAP.sel.map(s=>digitsOf(s.phone))), full=WAP.sel.length>=6;
+  $('#wapList').innerHTML=shown.map(c=>{ const on=picked.has(digitsOf(c.phone));
+    return `<button class="wap-row${on?' on':''}" data-ph="${esc(c.phone)}" role="option" aria-selected="${on}"${!on&&full?' disabled':''}>
+      <span class="av" style="background:${faceOf(c)}">${esc(initial(c.name))}</span>
+      <span style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="ph">${esc(c.phone)}</div></span>
+      <span class="ck">${on?'✓':''}</span></button>`; }).join('') || '<div class="wap-note">Nada coincide con la búsqueda.</div>';
+  $('#wapNote').textContent= m.length>shown.length? `Mostrando ${shown.length} de ${m.length}. Escribe para afinar.` : `${m.length} contacto${m.length===1?'':'s'}${full?' · ya elegiste 6':''}`;
+}
+function renderSel(){
+  $('#wapCount').textContent=`${WAP.sel.length}/6`;
+  $('#wapSel').innerHTML= WAP.sel.map((s,i)=>`<div class="wap-chip">
+      <span style="grid-row:1 / span 2;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:700;color:#fff;background:${faceOf(s)}">${esc(initial(s.name))}</span>
+      <div class="nm">${esc(s.name)}</div>
+      <input data-i="${i}" value="${esc(s.relation)}" placeholder="Relación: hija, cuidadora…" maxlength="30" aria-label="Relación con ${esc(s.name)}">
+      <button class="rm" data-rm="${i}" aria-label="Quitar a ${esc(s.name)}">✕</button></div>`).join('')
+    || '<div class="wap-note">Elige contactos de la lista de la izquierda.</div>';
+}
+$('#wapQ').addEventListener('input',e=>{ WAP.q=e.target.value; renderList(); });
+$('#wapList').addEventListener('click',e=>{
+  const b=e.target.closest('.wap-row'); if(!b || b.disabled) return;
+  const d=digitsOf(b.dataset.ph), i=WAP.sel.findIndex(s=>digitsOf(s.phone)===d);
+  if(i>=0) WAP.sel.splice(i,1);
+  else if(WAP.sel.length<6){ const c=WAP.all.find(x=>digitsOf(x.phone)===d); if(c) WAP.sel.push({phone:c.phone,name:c.name,relation:''}); }
+  renderList(); renderSel();
+});
+$('#wapSel').addEventListener('input',e=>{ const i=e.target.dataset.i; if(i!=null && WAP.sel[+i]) WAP.sel[+i].relation=e.target.value; });
+$('#wapSel').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(!b) return; WAP.sel.splice(+b.dataset.rm,1); renderList(); renderSel(); });
+$('#wapClose').onclick=$('#wapCancel').onclick=closePanel;
+$('#waPanel').addEventListener('click',e=>{ if(e.target.id==='waPanel') closePanel(); });
+$('#wapSave').onclick=async()=>{
+  const b=$('#wapSave'), msg=$('#wapMsg'); b.disabled=true; msg.className=''; msg.textContent='Guardando…';
+  try{
+    const j=await waApi('/api/wa/favorites',{method:'POST',body:JSON.stringify({contacts:WAP.sel})});
+    WA.favs=j.contacts||[]; closePanel(); island('👥',`${WA.favs.length} contacto${WA.favs.length===1?'':'s'} principal${WA.favs.length===1?'':'es'} guardado${WA.favs.length===1?'':'s'}`);
+    if(S.screen==='contacts') renderPeople();
+  }catch(e){ msg.textContent='No se guardó: '+e.message; msg.className='err'; }
+  finally{ b.disabled=false; }
+};
+
 /* ===================== Escalado de la TV ===================== */
 // Con los atajos visibles se reserva su altura; ocultos, solo una franja para la barra de desarrollo.
 function fit(){ const reserve=document.body.classList.contains('legend-off')? 60 : 170;
@@ -576,8 +1019,11 @@ function renderStatus(){
   const sensors = gazeOnly()
     ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
     : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
+  const mn = WA.mention && Date.now()-WA.mention.at < 15*60e3 ? WA.mention : null;   // la última mención queda visible 15 min
+  const wa = (CFG.WA_URL ? `<div class="pill glass"><span class="dot wa${WA.online?'':' off'}"></span>${WA.online?'WhatsApp':'WhatsApp sin conexión'}</div>` : '')
+    + (mn ? `<div class="pill glass mention" title="${esc(mn.from)} te mencionó en ${esc(mn.group)} a las ${hhmm(mn.at)}">@ ${esc(mn.from)} · ${esc(mn.group)}</div>` : '');
   $$('.status').forEach(el=>el.innerHTML=
-   `<div class="pill glass">${mir}</div>${sensors}<div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
+   `<div class="pill glass">${mir}</div>${sensors}${wa}<div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
   $('#restClock').textContent=t;
 }
 function flashPill(src){ $$(`.pill[data-p="${src}"]`).forEach(p=>{p.classList.add('flash');setTimeout(()=>p.classList.remove('flash'),200)}); }
@@ -588,7 +1034,8 @@ function go(name){
   const prev=$('.screen.on'); if(prev && prev.id!=='s-'+name){ prev.classList.add('leaving'); setTimeout(()=>prev.classList.remove('leaving'),320); }
   S.screen=name; $$('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+name));
   clearFocus();
-  if(name==='home') renderTiles();
+  if(name==='home'){ waReset(); renderTiles(); }
+  if(name==='contacts'){ renderPeople(); waLoadFavs(); }
   if(name==='talk'){ if(!S.cards.length) genSuggestions(); else renderCards(); }
   if(name==='keyboard'){ S.kb.level=1; renderKeys(); }
   if(name==='reactions'){ S.reactPage=0; renderReacts(); }
@@ -605,22 +1052,31 @@ async function genSuggestions(){
   if(CFG.SUGGEST_URL){ try{ const ctl=new AbortController(); setTimeout(()=>ctl.abort(),2500);
       const r=await fetch(CFG.SUGGEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({context:ctx}),signal:ctl.signal});
       const j=await r.json(); out=j.suggestions.slice(0,4).map(x=>[x.text,x.tone,x.emo]); }catch(e){ log('Claude no respondió, uso sugerencias locales'); } }
-  if(!out){ await new Promise(r=>setTimeout(r,220)); const r=RULES.find(r=>r.k.test(ctx)); out=(r?r.s:DEFAULT); }
-  S.cards=out.map(([text,tone,emo])=>({text,tone,emo:EMO[emo]?emo:'seria'}));
+  let generic=false;
+  if(!out){ await new Promise(r=>setTimeout(r,220)); const r=RULES.find(r=>r.k.test(ctx)); out=(r?r.s:DEFAULT); generic=!r; }
+  const cards=out.map(([text,tone,emo])=>({text,tone,emo:EMO[emo]?emo:'seria'}));
+  if(WA.to){ S.poolAi=null; waSetPool(cards,generic); } else S.cards=cards;   // en un chat: 2 contextuales + «Pregúntele a…» + «Otro»
   $('#cards').classList.remove('loading'); renderCards();
+  if(WA.to) waAiReplies();                                                   // Claude lee el chat y reemplaza las 2 de arriba
 }
 function renderCards(){
-  const card=(c,i)=>`
-    <div class="t card" data-t data-act="say:${i}">
-      <div class="ph">${c.text}</div><div class="tone">${c.tone===EMO[c.emo].n ? c.tone : c.tone+' · '+EMO[c.emo].n}</div>
+  const card=(c,i)=> c.plain ? `
+    <div class="t card plain" data-t data-act="say:${i}"><div class="ph">${esc(c.text)}</div><div class="tone">${esc(c.tone)}</div></div>` : `
+    <div class="t card" data-t data-act="say:${i}"${i===0&&WA.to?' data-prior="1.25"':''}>
+      <div class="ph">${esc(c.text)}</div><div class="tone">${c.ai?'<span class="ai">✨</span> ':''}${c.tone===EMO[c.emo].n ? esc(c.tone) : esc(c.tone)+' · '+EMO[c.emo].n}</div>
       <div class="t emo" data-t data-dwell="${CFG.emoDwellMs}" data-act="emo:${i}">${EMO[c.emo].e}</div>
     </div>`;
   // fila 1: frase, frase, Escribir · fila 2: frase, frase, Volver (siempre hay salida sin gestos)
-  const side=[`<div class="t side" data-t data-act="go:keyboard"><svg><use href="#i-keys"/></svg>Escribir<small>con letras</small></div>`,
+  // En un chat de WhatsApp: "Escribir" pasa a iniciales y la 4ª tarjeta es "Otro" (más respuestas de Claude)
+  const side=[WA.to
+      ? `<div class="t side" data-t data-act="waKb"><svg><use href="#i-keys"/></svg>Escribir<small>con iniciales</small></div>`
+      : `<div class="t side" data-t data-act="go:keyboard"><svg><use href="#i-keys"/></svg>Escribir<small>con letras</small></div>`,
               `<div class="t side" data-t data-act="go:home"><svg><use href="#i-back"/></svg>Volver<small>al inicio</small></div>`];
   const c=S.cards.slice(0,4);
-  $('#cards').innerHTML=[c[0]&&card(c[0],0), c[1]&&card(c[1],1), side[0], c[2]&&card(c[2],2), c[3]&&card(c[3],3), side[1]].filter(Boolean).join('');
+  const otro=`<div class="t card plain" data-t data-act="waMore"><div class="ph">Otro</div><div class="tone">${S.aiWait?'<span class="ai-wait">✨ Claude está leyendo el chat…</span>':'más respuestas'}</div></div>`;
+  $('#cards').innerHTML=[c[0]&&card(c[0],0), c[1]&&card(c[1],1), side[0], c[2]&&card(c[2],2), WA.to? otro : c[3]&&card(c[3],3), side[1]].filter(Boolean).join('');
   stagger($('#cards')); decorate($('#cards'));
+  if(window.VOZ && !WA.to) VOZ.prefetch(S.cards.map(c=>[c.text,c.emo]));   // el audio ya está listo cuando elige
 }
 
 /* ===================== Teclado por grupos ===================== */
@@ -670,7 +1126,10 @@ function acceptSuggestion(sg){
 }
 function renderKeys(){
   const kb=S.kb; let html='';
-  if(kb.level===3){   // lista de sugerencias ("Más" en modo fila; todas en modo lista) + Volver
+  if(kb.mode==='ini' && kb.level===1){
+    html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
+      `<div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:expand">Completar</div><div class="t key small act" data-t data-act="kb:exit">Volver</div>`;
+  } else if(kb.level===3){   // lista de sugerencias ("Más" en modo fila; todas en modo lista) + Volver
     const list=sugs(), from=CFG.sugMode==='fila'? SUG_ROW : 0, more=list.slice(from, from+SUG_MORE);
     html=more.map((sg,i)=>`<div class="t key sug" data-t data-act="sug:${i+from}">${showWord(sg.word)}</div>`).join('');
     for(let i=more.length;i<SUG_MORE;i++) html+='<div></div>';
@@ -704,12 +1163,28 @@ function renderKeys(){
     for(let i=L.length;i<7;i++) html+='<div></div>';
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
   }
-  $('#keys').className = kb.level!==1? 'grid4x2' : CFG.sugMode==='fila'? 'kbrows' : 'grid5x2';
+  $('#keys').className = (kb.mode==='ini' || kb.level!==1)? 'grid4x2' : CFG.sugMode==='fila'? 'kbrows' : 'grid5x2';
   $('#s-keyboard').dataset.level=kb.level;
   $('#s-keyboard').dataset.sug=CFG.sugMode;
-  $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys')); renderKbText();
+  $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys'));
+  if(kb.mode==='ini') iniAsk();
+  renderKbText(); markLikelyKeys();
 }
+const KBHINT0=document.getElementById('kbHint').innerHTML;
 function renderKbText(){
+  $('#kbHint').innerHTML = S.kb.mode==='ini'
+    ? '<span><b>Ceja</b> elegir letra</span><span><b>Mandíbula</b> completar frase</span><span><b>Ceja ×2</b> volver al chat</span><span><b>Mandíbula larga</b> volver al chat</span>'
+    : KBHINT0;
+  if(S.kb.mode==='ini'){
+    const L=[...(S.kb.ini||'')].map(c=>esc(c.toUpperCase()));
+    $('#kbTxt').innerHTML= L.length? `<span class="ini-letters">${L.join('<span class="dotsep">·</span>')}</span><span class="caret"></span>`
+      : '<span class="ini-hint">Primera letra de cada palabra</span><span class="caret"></span>';
+    const cand=iniCandidates().slice(0,3), ai=S.kb.ai;
+    const top=cand.map(c=>(c.ai?'<span class="ai">✨</span>':'')+esc(c.text));
+    const wait= ai && ai.ini===(S.kb.ini||'') && !ai.list ? ' <span class="ai-wait">· ✨ Claude pensando…</span>' : '';
+    $('#kbPred').innerHTML= top.length? 'Podría ser: '+top.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+wait+' — <b>mandíbula</b> o «Completar»' : 'Ejemplo: S · M · P · B → «Sí, me parece bien»';
+    return;
+  }
   const p=preds(), w=curWord();
   // texto fantasma: el resto de la primera sugerencia, si continúa lo escrito (sin importar tildes)
   const norm=window.TokiPredict.normalize;
@@ -735,7 +1210,9 @@ function renderSettings(){
   const items=[
     ['Tiempo de mirada', CFG.dwellMs+' ms', 'set:dwell','toca para cambiar'],
     ['Confirmar con', CFG.mode==='click'?'Ceja':'Solo mirada','set:mode',''],
-    ['Voz', v? v.name.slice(0,14):'Del sistema','set:voice','suena al cambiar'],
+    window.VOZ && VOZ.opciones.length
+      ? ['Voz', (VOZ.nombre()||'ElevenLabs').slice(0,14), 'set:voice', `${VOZ.opciones.length} opciones · suena al cambiar`]
+      : ['Voz', v? v.name.slice(0,14):'Del sistema','set:voice','suena al cambiar'],
     ['Puntero', pointerLabel(),'set:pointer','mouse · nariz · mirada · iPhone'],
     ['Sensibilidad', ['Baja','Media','Alta'][N.sensIdx??1],'set:sens',''],
     ['Calibrar','De nuevo','set:calib','C = solo recentrar'],
@@ -750,7 +1227,7 @@ function renderSettings(){
 /* ===================== Anillo de emociones ===================== */
 function openEmoRing(i){
   S.emoRingFor=i; const c=S.cards[i];
-  $('#emoC').innerHTML=`<div class="mid glass">“${c.text}”<br><br>Propuesta: ${EMO[c.emo].e} ${EMO[c.emo].n}</div>`+
+  $('#emoC').innerHTML=`<div class="mid glass">“${esc(c.text)}”<br><br>Propuesta: ${EMO[c.emo].e} ${esc(EMO[c.emo].n)}</div>`+
     EMOS.map((e,k)=>`<div class="t" data-t data-act="setEmo:${e.id}" style="--i:${k}"><span>${e.e}</span>${e.n}</div>`).join('')+
     `<div class="t" data-t data-act="emoBack" style="--i:6;color:var(--txt2)"><span>←</span>Volver</div>`;
   decorate($('#emoC')); $('#emoRing').classList.add('on'); clearFocus(); log('anillo de emociones');
@@ -763,13 +1240,16 @@ function loadVoices(){ const all=speechSynthesis.getVoices(); const es=all.filte
   es.sort((a,b)=>rank(a)-rank(b)); S.voices=es.length?es:all; }
 speechSynthesis.onvoiceschanged=loadVoices; loadVoices();
 function speak(text, emoId='seria'){
-  const e=EMO[emoId]||EMO.seria; speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text.replace(/[\u{1F300}-\u{1FAFF}]/gu,''));
-  const v=S.voices[S.voiceIdx]; if(v){u.voice=v;u.lang=v.lang}else u.lang='es-CL';
-  u.rate=e.rate; u.pitch=e.pitch; u.volume=e.vol;
+  const e=EMO[emoId]||EMO.seria; speechSynthesis.cancel(); if(window.VOZ) VOZ.stop();
   $('#spEmo').textContent=e.e; $('#spTxt').textContent=text; $('#speaking').classList.add('on');
-  const off=()=>$('#speaking').classList.remove('on'); u.onend=u.onerror=off; setTimeout(off, 1200+text.length*90);
-  speechSynthesis.speak(u); MEM.add(text); PRED.learn(text); log(`voz (${e.n}): ${text}`);
+  const off=()=>$('#speaking').classList.remove('on'); setTimeout(off, 1200+text.length*90);
+  const local=()=>{ const u=new SpeechSynthesisUtterance(text.replace(/[\u{1F300}-\u{1FAFF}]/gu,''));
+    const v=S.voices[S.voiceIdx]; if(v){u.voice=v;u.lang=v.lang}else u.lang='es-CL';
+    u.rate=e.rate; u.pitch=e.pitch; u.volume=e.vol; u.onend=u.onerror=off; speechSynthesis.speak(u); };
+  // ElevenLabs (su voz clonada o elegida) y, si falla o no hay red, la voz del sistema: nunca se queda muda
+  if(window.VOZ && VOZ.on) VOZ.speak(text,emoId).then(off,err=>{ log('ElevenLabs falló ('+err.message+'), uso la voz del sistema'); local(); });
+  else local();
+  MEM.add(text); PRED.learn(text); log(`voz (${e.n}): ${text}`);
 }
 
 /* ===================== Acciones ===================== */
@@ -783,14 +1263,27 @@ function activate(el, calibrateGaze=true){
   log('elegido → '+el.dataset.act);
   switch(a){
     case 'go': setTimeout(()=>go(arg),90); break;
-    case 'say': { const c=S.cards[+arg]; speak(c.text,c.emo); $('#agentMsg').textContent=c.text+' '+EMO[c.emo].e; break; }
+    case 'say': { const c=S.cards[+arg];
+      if(WA.to){ openAgent(c.plain || c.emo==='seria' ? c.text : c.text+' '+EMO[c.emo].e); break; }   // WhatsApp: se confirma, no se dice en voz alta; el emoji solo si la emoción no es neutra
+      speak(c.text,c.emo); $('#agentMsg').textContent=c.text+' '+EMO[c.emo].e; break; }
+    case 'waTo': waStart(WA.favs[+arg]); break;
+    case 'waPanel': openPanel(); break;
     case 'emo': openEmoRing(+arg); break;
     case 'emoBack': closeEmoRing(); break;
     case 'setEmo': { S.cards[S.emoRingFor].emo=arg; closeEmoRing(); renderCards(); island(EMO[arg].e,'Emoción: '+EMO[arg].n); break; }
     case 'grp': S.kb.level=2; S.kb.group=+arg; renderKeys(); break;
     case 'sug': { const sg=(S.kb.sugList||[])[+arg]; acceptSuggestion(sg); S.kb.level=1; renderKeys(); break; }
-    case 'chr': S.kb.text+= (S.kb.text===''||/[.!?]\s$/.test(S.kb.text))? arg : arg.toLowerCase(); S.kb.level=1; renderKeys(); break;
+    case 'chr': if(S.kb.mode==='ini'){ S.kb.ini=(S.kb.ini||'')+arg.toLowerCase(); S.kb.level=1; renderKeys(); break; }
+      S.kb.text+= (S.kb.text===''||/[.!?]\s$/.test(S.kb.text))? arg : arg.toLowerCase(); S.kb.level=1; renderKeys(); break;
+    case 'waMore': S.poolPage=(S.poolPage||0)+1; waPage(); renderCards(); break;
+    case 'waKb': kbIni(); break;
     case 'kb':
+      if(S.kb.mode==='ini'){
+        if(arg==='del') S.kb.ini=(S.kb.ini||'').slice(0,-1);
+        if(arg==='back') S.kb.level=1;
+        if(arg==='expand'){ kbExpand(); break; }
+        if(arg==='exit'){ S.kb.mode='text'; go('talk'); break; }
+        renderKeys(); break; }
       if(arg==='space') S.kb.text+=' ';
       if(arg==='del'){
         S.kb.delStreak = delStreakActive()? (S.kb.delStreak||0)+1 : 1;
@@ -802,7 +1295,7 @@ function activate(el, calibrateGaze=true){
       if(arg==='back') S.kb.level=1;
       if(arg==='pred') acceptSuggestion(sugs()[0]);
       if(arg==='sug') S.kb.level=3;
-      if(arg==='say' && S.kb.text.trim()){ speak(S.kb.text.trim()); S.kb.text=''; }
+      if(arg==='say' && S.kb.text.trim()){ const t=S.kb.text.trim(); S.kb.text=''; if(WA.to) openAgent(t); else speak(t); }
       renderKeys(); break;
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
     case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
@@ -810,7 +1303,9 @@ function activate(el, calibrateGaze=true){
     case 'music': island('🎵','Reproduciendo “Lo de siempre” (simulado)'); break;
     case 'rest': setRest(true); break;
     case 'agentSend':
-      if(S.agentPending && performance.now()-S.agentPending<3000){ island('✓','Enviado a Sofía (simulado)'); go('home'); }
+      if(S.agentPending && performance.now()-S.agentPending<3000){
+        S.agentPending=0; sendBtn(false);
+        if(CFG.WA_URL) waSend(); else { island('✓','Enviado (simulado)'); go('home'); } }
       else { S.agentPending=performance.now(); sendBtn(true);
         if(gazeOnly()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; S.fStart=performance.now(); } },300);
         setTimeout(()=>{ if(S.agentPending && performance.now()-S.agentPending>=3000 && S.screen==='agent'){ S.agentPending=0; sendBtn(false); island('⏱','No se envió: faltó la segunda ceja'); } },3100); }
@@ -827,7 +1322,9 @@ function activate(el, calibrateGaze=true){
       if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
         try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
       if(arg==='mode') CFG.mode=CFG.mode==='click'?'dwell':'click';
-      if(arg==='voice'){ S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); }
+      if(arg==='voice'){
+        if(window.VOZ && VOZ.opciones.length) VOZ.siguiente().then(()=>{ speak('Hola, esta es mi voz.','alegre'); if(S.screen==='settings') renderSettings(); });
+        else { S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); } }
       if(arg==='pointer' && window.NOSE){ const nx={Mouse:'nose',Nariz:'gaze',Mirada:'iphone',iPhone:'mouse'}[pointerLabel()];
         if(nx==='iphone' && window.IPHONE) IPHONE.select(); else { if(window.IPHONE) IPHONE.deactivate(); NOSE.setMode(nx==='iphone'?'mouse':nx); } }
       if(arg==='sens' && window.NOSE){ NOSE.sensIdx=(NOSE.sensIdx+1)%3; island('🎯','Sensibilidad '+['baja','media','alta'][NOSE.sensIdx]); }
@@ -860,16 +1357,19 @@ function action(g){
   switch(g){
     case 'ceja': confirmFocus(); break;
     case 'ceja_doble':
-      if(S.screen==='talk') go('keyboard');
+      if(S.screen==='talk'){ if(WA.to) kbIni(); else go('keyboard'); }   // en un chat: teclado de iniciales
+      else if(S.screen==='keyboard' && S.kb.mode==='ini'){ S.kb.mode='text'; go('talk'); }
       else if(S.screen==='keyboard'){ if(S.kb.text.trim()){ $('#ctxIn').value='(Marta escribió) '+S.kb.text.trim(); S.cards=[]; } go('talk'); }
       break;
     case 'mandibula':
+      if(S.screen==='keyboard' && S.kb.mode==='ini'){ kbExpand(); break; }
       if(S.screen==='keyboard'){ const sg=sugs()[0]; if(sg){ acceptSuggestion(sg); renderKeys(); } }
-      else speak('A ver…','seria');
+      else if(!WA.to) speak('A ver…','seria');   // en un chat no se habla en voz alta
       break;
     case 'mandibula_doble': go('reactions'); break;
     case 'mandibula_larga':
       if(S.screen==='keyboard' && S.kb.level===2){ S.kb.level=1; renderKeys(); }
+      else if(S.screen==='keyboard' && S.kb.mode==='ini'){ S.kb.mode='text'; go('talk'); }
       else if(S.screen!=='home') go('home');
       break;
   }
@@ -897,18 +1397,21 @@ document.addEventListener('click',handleDirectClick);
 
 /* teclado del computador = sensores simulados */
 addEventListener('keydown',e=>{
+  if(document.body.classList.contains('panel')){ if(e.key==='Escape') closePanel(); return; }   // el panel usa teclado normal
   if(document.activeElement && document.activeElement.tagName==='INPUT'){
-    if(e.key==='Enter'){ genSuggestions(); document.activeElement.blur(); }
+    if(e.key==='Enter' && document.activeElement.id==='ctxIn'){ S.cards=[]; genSuggestions(); document.activeElement.blur(); }
     if(e.key==='Escape') document.activeElement.blur(); return; }
   if(e.repeat) return;
   if(e.code==='Space'){ e.preventDefault(); pressSrc('ceja'); }
   if(e.key==='j'||e.key==='J') pressSrc('mandibula');
   if(e.key==='r'||e.key==='R') rfid();
+  if(e.key==='k'||e.key==='K') openPanel();
   if(e.key==='g'||e.key==='G') setGazeLost(!S.gazeLost);
   if(e.key==='n'||e.key==='N') window.NOSE && NOSE.toggle();
   if(e.key==='c'||e.key==='C') window.NOSE && NOSE.center();
   if(e.key==='w'||e.key==='W'){ CFG.jitter=!CFG.jitter; island('〰️',CFG.jitter?'Simulando error de webcam':'Sin error simulado'); }
   if(e.key==='t'||e.key==='T') setTheme(document.documentElement.dataset.theme!=='light');
+  if((e.key==='i'||e.key==='I') && !$('#calib').classList.contains('on')){ CFG.magnet=!CFG.magnet; island('🧲', CFG.magnet?'Imán activado: el foco va al objetivo más cercano':'Imán desactivado'); }
   if(e.key==='m'||e.key==='M'){ S.muted=!S.muted; island(S.muted?'🔕':'🔔', S.muted?'Alarma en silencio':'Sonido de alarma activo'); }
 });
 addEventListener('keyup',e=>{
@@ -942,19 +1445,31 @@ function setFocus(el){
   S.focus=el; S.fStart=performance.now(); S.armed=false;
   if(el){ el.classList.add('focus'); el.style.setProperty('--p',0); }
 }
+// Imán (área de captura tipo "bubble cursor"): distancia al borde de cada objetivo, dividida por su probabilidad.
+function magnetTarget(x,y){
+  const R=CFG.magnetR*Math.min(innerWidth,innerHeight); let best=null, bs=Infinity;
+  for(const el of visibleTargets()){
+    const r=el.getBoundingClientRect(); if(!r.width) continue;
+    const dx=Math.max(r.left-x,0,x-r.right), dy=Math.max(r.top-y,0,y-r.bottom), d=Math.hypot(dx,dy);
+    if(d>R) continue;
+    const sc=d/(+el.dataset.prior||1); if(sc<bs){ bs=sc; best=el; }
+  }
+  return best;
+}
 function tick(now){
   // punto de mirada: temblor de webcam opcional + suavizado
   const sig = CFG.jitter? 110*S.scale : 0;
   noise.x=noise.x*.88+gauss()*sig*.35; noise.y=noise.y*.88+gauss()*sig*.35;
   const tx=mouse.x+noise.x, ty=mouse.y+noise.y;
   gz.x+= (tx-gz.x)*.45; gz.y+= (ty-gz.y)*.45;   // filtro ~2 cuadros (guía: suavizado con poco retraso)
-  const cur=$('#gaze'); cur.style.left='0';cur.style.top='0';
-  let cx=gz.x, cy=gz.y;   // cursor mostrado: en solo mirada se imanta al centro de la tarjeta enfocada
-  if(gazeOnly() && S.focus && S.focus.isConnected && !S.gazeLost){ const r=S.focus.getBoundingClientRect(); cx+=(r.left+r.width/2-cx)*MAGNET; cy+=(r.top+r.height/2-cy)*MAGNET; }
-  cur.style.transform=`translate(${cx}px,${cy}px)`;
+  // cursor visible: se acerca al centro del objetivo enfocado (fuerte en solo mirada, suave con el imán; nunca se pega del todo)
+  let cx=gz.x, cy=gz.y;
+  if((gazeOnly()||CFG.magnet) && S.focus && S.focus.isConnected && !S.gazeLost){ const r=S.focus.getBoundingClientRect(); const k=gazeOnly()? MAGNET : CFG.magnetPull;
+    cx+= (r.left+r.width/2-gz.x)*k; cy+= (r.top+r.height/2-gz.y)*k; }
+  const cur=$('#gaze'); cur.style.left='0';cur.style.top='0'; cur.style.transform=`translate(${cx}px,${cy}px)`;
 
   if(S.rest && !S.gazeLost && !$('#alarm').classList.contains('on')) restWakeTick(now);
-  const busy = $('#alarm').classList.contains('on') || S.rest || $('#calib').classList.contains('on');
+  const busy = $('#alarm').classList.contains('on') || S.rest || $('#calib').classList.contains('on') || document.body.classList.contains('panel');
   if(!busy){
     if(S.gazeLost){ // escaneo: la ceja elige
       if(now-S.scanT>CFG.scanMs){ const v=visibleTargets(); if(v.length){ S.scanIdx=(S.scanIdx+1)%v.length; setFocus(v[S.scanIdx]); S.armed=true; S.focus.classList.add('armed'); S.focus.style.setProperty('--p',1);} S.scanT=now; }
@@ -968,6 +1483,7 @@ function tick(now){
         const r=S.focus.getBoundingClientRect(), m=.12*Math.min(r.width,r.height);
         if(gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m && !(el && el.classList.contains('emo') && S.focus.contains(el))) el=S.focus;
       }
+      if(!el && CFG.magnet) el=magnetTarget(gz.x,gz.y);   // la mirada cayó en un hueco: el objetivo probable más cercano
       setFocus(el);
       // pausa breve tras elegir: el foco se mantiene (y su bloqueo anti-repetición), la carga empieza después
       if(S.focus && gazeOnly() && S.fStart<(S.lockUntil||0)) S.fStart=S.lockUntil;
@@ -1033,6 +1549,7 @@ function alarmTick(now){
   const A=S.alarm; if(!A) return; const s=(now-A.t0)/1000;
   if(A.level==='emergencia' && !A.ack){
     $('#alCancel').textContent = s<3 ? `Cualquier gesto cancela · ${(3-s).toFixed(1)} s` : `Falta confirmar · ${Math.floor(s)} s · llavero RFID (R)`;
+    if(s>=3 && !A.called){ A.called=true; if(window.VOZ) VOZ.emergencia(A); }   // pasó la ventana de cancelar → llamada telefónica (ElevenLabs)
     $$('#alTl div').forEach(d=>{ const nx=d.nextElementSibling; d.classList.toggle('now', s>=+d.dataset.s && (!nx || s<+nx.dataset.s)); });
     const every = s>=30? 600 : 1000; if(now-A.lastBeep>every){ beep(s>=30?990:880, 260, s>=30?.14:.09); A.lastBeep=now; }
   }
@@ -1069,7 +1586,7 @@ let islT; function island(ic,txt,warn=false,ms=2200){ const el=$('#island'); $('
 const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+'  '+m); LOG.length=Math.min(LOG.length,8); $('#evlog').textContent=LOG.join('\n'); }
 
 /* inicio */
-renderTiles(); renderStatus(); updateLCD();
+renderTiles(); renderStatus(); updateLCD(); waListen();
 if(location.hash.length>1) go(location.hash.slice(1));
 window.WOKI={S,CFG,mouse,gz};
 log('Toki OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');

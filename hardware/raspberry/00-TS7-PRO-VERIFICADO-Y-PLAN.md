@@ -81,9 +81,11 @@ Orden: primero #0. Después pueden ir en paralelo #3 y #6, que no dependen del h
 - Tiene una microSD de 64 GB puesta.
 - **RAM: NO CONSTA** en las fotos (la Pi 4 existe con 1, 2, 4 y 8 GB). Se ve en el chip de RAM de la cara superior o con `free -h`.
 
-**Pantalla:** se ve un panel de 7" pelado, con orejas de montaje en las esquinas. En el canto tiene una placa con un HDMI de tamaño completo y dos micro-USB, que deberían ser Touch y Power.
-- En las fotos **no se ven** la carcasa acrílica, los botones ni los parlantes de la TS7 Pro.
-- **Que sea la TS7 Pro NO está confirmado.** Falta una foto de la placa trasera (con el zócalo de 40 pines y una etiqueta de modelo) y otra de los puentes HDMI/USB que vienen en la caja.
+**Pantalla: confirmada como SunFounder** (foto `fotos/2026-11-21-pantalla-placa-trasera.jpg`).
+- Serigrafía: "SunFounder USB Capacitive Touch Screen 7-inch Touch Display Module 1024*600 HDMI LCD Panel". Placa "HCD-7inch-touch-V2.2", fechada 2022-2-15.
+- Coincide con la ficha de la TS7 Pro: HDMI de tamaño completo, micro-USB "Touch" y "Power", 2 parlantes, 5 botones y un zócalo hembra de 40 pines para la Pi. Además trae un **conector macho de 40 pines que repite el GPIO** (rotulado pin a pin), que es donde se conectan los sensores.
+- La palabra "TS7 Pro" no aparece impresa. Como las especificaciones coinciden, seguimos con las de la sección 1.
+- Hay un tercer micro-USB al costado, cuya función NO CONSTA. No lo uses hasta verificarlo.
 
 **Qué cambia:**
 - El entregable #0 se resuelve casi solo: la Pi 4 es la placa para la que están hechos los puentes rígidos. El riesgo de compatibilidad con la Pi 5 deja de bloquear.

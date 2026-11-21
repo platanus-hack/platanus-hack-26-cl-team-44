@@ -213,7 +213,7 @@ Funciona porque el webhook-worker corre en el mismo Mac que el puente. Revisé e
 Sin dashboard, el QR se muestra en la terminal. En `woki-bridge`:
 
 ```bash
-npm i -D qrcode-terminal@0.12.0 @types/qrcode-terminal@0.12.2
+npm i -D qrcode-terminal@0.12.0 @types/qrcode-terminal@0.12.2 qrcode@1.5.4 @types/qrcode@1.5.5
 ```
 
 Crea `vincular.ts`. Este script reemplaza los Pasos 12 y 13 de la otra guía: crea la sesión, muestra el QR, espera a que escanees y guarda las claves en `.env`:
@@ -224,6 +224,8 @@ Crea `vincular.ts`. Este script reemplaza los Pasos 12 y 13 de la otra guía: cr
 // guarda su key, id y secreto en .env sin mostrarlos.
 import { readFileSync, writeFileSync } from "node:fs";
 import qrcode from "qrcode-terminal";
+import QR from "qrcode";
+import { execFile } from "node:child_process";
 import { WapiClient } from "./wapi-sdk/index.ts";
 
 const phone = process.argv[2];
@@ -240,10 +242,20 @@ const session = existing ?? (await account.sessions.create({
 }));
 console.log(`Sesión ${session.id} (${existing ? "ya existía" : "creada"})`);
 
+// El QR también se dibuja en qr.html (se recarga sola cada 3 s), porque la terminal de
+// Claude Code colapsa la salida larga y el QR queda ilegible.
+const page = (body: string) => writeFileSync("qr.html",
+  `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular WOKI</title>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font:18px system-ui;color:#111;text-align:center">
+<div>${body}</div></body>`);
+page("<p>Pidiendo el QR a wapi…</p>");
+execFile("open", ["qr.html"]);
 let lastQr = "";
-const show = (qr?: string | null) => {
+const show = async (qr?: string | null) => {
   if (!qr || qr === lastQr) return;
   lastQr = qr;
+  const svg = await QR.toString(qr, { type: "svg", margin: 2, width: 420 });
+  page(`<p><b>WhatsApp → Ajustes → Dispositivos vinculados → Vincular un dispositivo</b></p>${svg}<p style="color:#666">Se actualiza sola. El QR cambia cada ~20 s.</p>`);
   console.clear();
   console.log("En el celular: WhatsApp → Ajustes → Dispositivos vinculados → Vincular un dispositivo\n");
   qrcode.generate(qr, { small: true });
@@ -251,15 +263,15 @@ const show = (qr?: string | null) => {
 };
 
 const conn = await account.sessions.connection.connect(session.id);
-show(conn.qrCode);
+await show(conn.qrCode);
 let status = conn.status.toLowerCase();
 const deadline = Date.now() + 180_000;
 while (status !== "connected" && Date.now() < deadline) {
   await new Promise((r) => setTimeout(r, 2_000));
   status = (await account.sessions.get(session.id)).status.toLowerCase();
-  if (status !== "connected") show((await account.sessions.connection.qrCode(session.id).catch(() => null))?.qrCode);
+  if (status !== "connected") await show((await account.sessions.connection.qrCode(session.id).catch(() => null))?.qrCode);
 }
-if (status !== "connected") throw new Error(`La sesión sigue en "${status}" después de 3 min. Corre el script otra vez.`);
+if (status !== "connected") { page("<p>No se vinculó a tiempo. Corre el script otra vez.</p>"); throw new Error(`La sesión sigue en "${status}" después de 3 min. Corre el script otra vez.`); }
 
 const s = await account.sessions.get(session.id);
 if (!s.api_key) throw new Error("La sesión no devolvió su key.");
@@ -273,6 +285,7 @@ env = set(env, "WAPI_API_KEY", s.api_key);
 env = set(env, "WAPI_WEBHOOK_SECRET", s.webhook_secret ?? "");
 writeFileSync(".env", env);
 console.clear();
+page("<h1>✓ Celular vinculado</h1><p>Ya puedes cerrar esta pestaña.</p>");
 console.log(`✓ Celular vinculado · sesión ${s.id} · claves guardadas en .env`);
 ```
 
@@ -280,7 +293,7 @@ console.log(`✓ Celular vinculado · sesión ${s.id} · claves guardadas en .en
 npx tsx --env-file=.env vincular.ts +569XXXXXXXX
 ```
 
-**Qué deberías ver:** un QR dibujado en la terminal. Lo escaneas desde el celular y, en unos segundos, aparece `✓ Celular vinculado · sesión N · claves guardadas en .env`.
+**Qué deberías ver:** se abre en el navegador una pestaña "Vincular WOKI" con el QR en grande (se recarga sola cada 3 s). Dentro de Claude Code la terminal colapsa el QR y no se puede escanear: usa la pestaña. Lo escaneas desde el celular y, en unos segundos, aparece `✓ Celular vinculado · sesión N · claves guardadas en .env`.
 
 **Si falla:**
 - El QR se ve deformado: agranda la ventana de la terminal o achica la letra (Cmd + −).
@@ -341,7 +354,7 @@ Comprobación final: `curl -s localhost:8787/api/wa/health` responde `"mode":"li
 - `apps/gateway/src/pair.ts`: la nota sobre las passkeys
 - `apps/webhook-worker/src/index.ts`: la entrega de webhooks (sin bloqueo de direcciones locales)
 
-## 7. Prueba hecha en este Mac (21-nov-2026, sandbox)
+## 7. Prueba hecha en este Mac (21-nov-2026)
 
 | Prueba | Resultado |
 |---|---|
@@ -355,5 +368,11 @@ Comprobación final: `curl -s localhost:8787/api/wa/health` responde `"mode":"li
 | Formato del entrante | ✅ `data.message.conversation` y `data.key.remoteJid` (en el sandbox, sin `@…`) |
 | Evento a la TV por SSE | ✅ `incoming` con nombre, tono y `key` |
 | Reacción ❤️ al mensaje recibido | ✅ |
+| Vincular celular real con `vincular.ts` (QR en el navegador) | ✅ sesión 5, `connected` |
+| Envío real desde el puente (`WA_MODE=live`) al chat propio | ✅ `msgId 100001`, aceptado por WhatsApp (estado 1, pendiente de confirmación) |
 
 **Puerto:** en este Mac el 8787 lo usa `referentes-app`, así que el puente corre en el **8788** (`PORT=8788` en `software/whatsapp-bridge/.env`). En la TV, `CFG.WA_URL` tiene que ser `http://localhost:8788`.
+
+**Ojo al vincular:** wapi guarda el número que le pasas como etiqueta, pero el que manda es el **celular que escanea**. En la primera prueba se escaneó desde otro WhatsApp y quedó vinculado un número distinto; se detectó en `wapi/logs/gateway.log` (`myPN`) y se re-vinculó. Antes de enviar, revisa ese valor.
+
+**Seguridad del puente:** `server.ts` exige que los POST traigan `Origin: http://localhost:8000` y `Content-Type: application/json`, rechaza tráfico que llegue por túnel y acepta un token opcional `WOKI_API_TOKEN`. Para probar con curl agrega `-H 'Origin: http://localhost:8000'`.
