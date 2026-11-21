@@ -11,9 +11,13 @@ async page=>{
  await page.waitForFunction(()=>window.TokiApps?.active?.online);
  await page.locator('[data-value="youtube"]').click();if(await page.locator('[data-app-action="prepare"]').count())await page.locator('[data-app-action="prepare"]').click();
  await page.waitForFunction(()=>TokiApps.active.job?.status==='needs_test');await page.locator('[data-app-action="open-adapter"]').click();
- await page.locator('[data-app-action="choose-video"]').first().waitFor();check(await page.locator('[data-app-action="choose-video"]').count()===2,'Choice list');
+ await page.locator('[data-app-action="choose-video"]').first().waitFor();check(await page.locator('[data-app-action="choose-video"]').count()===6,'Choice list');
  for(const size of [{width:1280,height:800},{width:1024,height:768},{width:390,height:844}]){
-  await page.setViewportSize(size);await page.locator('[data-app-action="choose-video"]').first().click();
+  await page.setViewportSize(size);
+  check(await page.locator('.video-card img').count()===6,'Missing thumbnails');
+  const last=await page.locator('.video-card').last().boundingBox();
+  check(last.y+last.height<=size.height && last.width>=44 && last.height>=44,'Catalog fit '+size.width);
+  await page.locator('[data-app-action="choose-video"]').first().click();
   const toggle=page.locator('[data-app-action="video-toggle"]');await toggle.waitFor();await page.waitForFunction(()=>!document.querySelector('[data-app-action="video-toggle"]').disabled);
   const before=await page.evaluate(()=>Object.keys(TokiApps.active.job.evidence));
 

@@ -20,8 +20,8 @@ const phases = ['Integración encontrada', 'Interfaz preparada', 'Cuenta conecta
 const fault = (message, code = 400) => Object.assign(new Error(message), {status: code});
 export {safeMessage, runSpogo, normalizeTracks} from './adapters/spotify.mjs';
 
-export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, launchGameWindow, readerFetch = publicFetch} = {}) {
-  const gameSessions = createGameSessions(launchGameWindow);
+export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, renderGame, readerFetch = publicFetch} = {}) {
+  const gameSessions = createGameSessions(stateDir, renderGame);
   const registry = createAdapterRegistry(adapters || [createSpotifyAdapter({run,installed,hasSpotify}),createBioBioAdapter({fetcher}),createYouTubeAdapter({fetcher})]);
   mkdirSync(stateDir, {recursive: true, mode: 0o700});
   const packageStore=createPackageStore(stateDir),loaded=packageStore.load();
@@ -129,8 +129,8 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
         let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 16384) throw fault('Solicitud demasiado grande.', 413); }
         let payload; try { payload = JSON.parse(body || '{}'); } catch { throw fault('Solicitud no válida.'); }
         if (!payload || Array.isArray(payload) || typeof payload !== 'object') throw fault('Solicitud no válida.');
-        if (url.pathname === '/api/games/open') return send(await gameSessions.open(payload,port));
-        if (url.pathname === '/api/games/resume') return send(gameSessions.take(payload.id));
+        if (url.pathname === '/api/games/play') return await gameSessions.play(payload, `http://${req.headers.host}`, res);
+        if (url.pathname === '/api/games/input') return send(await gameSessions.input(payload));
         if (url.pathname === '/api/jobs') {
           const name = String(payload.name || '').trim();
           const tasks = String(payload.tasks || '').trim();
@@ -181,7 +181,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       res.writeHead(200, {'Content-Type': mime, 'Cache-Control': 'no-cache'}); res.end(req.method === 'HEAD' ? undefined : data);
     } catch (e) { send({error: e.status ? e.message : 'No se pudo completar la solicitud.'}, e.status || (e.code === 'ENOENT' ? 404 : 500)); }
   });
-  server.on('close', () => { for (const c of running.values()) c.abort(); for(const list of operations.values())for(const c of list)c.abort(); });
+  server.on('close', () => { gameSessions.close(); for (const c of running.values()) c.abort(); for(const list of operations.values())for(const c of list)c.abort(); });
   return server;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

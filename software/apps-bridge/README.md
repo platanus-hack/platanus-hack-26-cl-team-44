@@ -13,7 +13,7 @@ Requiere Node 22+, `spogo` en PATH y Spotify.app para el control local en macOS.
 
 ## Juegos
 
-Desde [Juegos](http://127.0.0.1:8790/?start=games&acceso=elegir), elige Nariz, Mirada o Mouse. La selección con cámara abre la partida en una ventana de Chrome controlada por Toki. Permite la cámara si Chrome la solicita. La calibración se conserva al pasar del catálogo a la partida. Consulta los [detalles de la sesión de juegos](../browser-bridge/README.md).
+Desde [Juegos](http://127.0.0.1:8790/?start=games), elige una tarjeta para jugar dentro de esa pestaña. Con mirada o nariz la cámara sigue en el lobby. El servidor usa el Chrome instalado en segundo plano para mostrar el juego y transmitir las selecciones. Con mouse se usa el reproductor original incrustado. La primera vez SpecialEffect puede pedir idioma y perfil. [Detalles del control](../browser-bridge/README.md).
 
 ## Spotify
 
@@ -83,7 +83,7 @@ Para verificar el catálogo dinámico: `playwright-cli -s=toki-apps-test run-cod
 
 ### YouTube: elegir, reproducir y pausar
 
-En [Servicios](http://127.0.0.1:8790/?start=apps), elige **Ver videos → Preparar YouTube → Probar app**. Hay dos opciones iniciales de Chile Travel; se verifican título y canal con YouTube. Elige una y pulsa **Reproducir**; el mismo botón cambia a **Pausar** cuando el reproductor confirma reproducción. **Videos** vuelve a la selección y **Ver servicios** sale. Ambas acciones destruyen el reproductor y detienen el audio.
+En [Servicios](http://127.0.0.1:8790/?start=apps), elige **Ver videos → Preparar YouTube → Probar app**. El catálogo muestra seis videos de Chile Travel con sus miniaturas. Toki comprueba el título y el canal con YouTube. Elige una y pulsa **Reproducir**; el mismo botón cambia a **Pausar** cuando el reproductor confirma reproducción. **Videos** vuelve a la selección y **Ver servicios** sale. Ambas acciones destruyen el reproductor y detienen el audio.
 
 No requiere instalar un CLI ni introducir una clave de API para estos videos públicos. Usa el [reproductor oficial](https://developers.google.com/youtube/iframe_api_reference); bloqueos de reproducción integrada, red o navegador se muestran con recuperación. El catálogo inicial no equivale a búsqueda general de YouTube. El generador de paquetes continúa limitado a RSS.
 

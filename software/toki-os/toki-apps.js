@@ -70,7 +70,12 @@
       catch(e){if(this.epoch===epoch)this.error=e.message;}
       finally{this.busy=false;if(this.epoch===epoch)this.render();}
     }
-    videos(){return this.header('Videos','YouTube · Selección de Chile Travel')+`<div class="ta-control-grid video-choices">${this.videoItems.map(v=>this.btn('choose-video',`<strong>${esc(v.label)}</strong><small>${esc(v.author)}</small>`,{value:v.id})).join('')}${!this.videoItems.length?this.btn('reload-videos','Cargar videos'):''}</div>`;}
+    videos(){
+      const cards=this.videoItems.map(video=>this.btn('choose-video',
+        `<img src="${esc(video.thumbnail)}" alt="" draggable="false"><strong>${esc(video.label)}</strong>`,
+        {value:video.id,className:'video-card'})).join('');
+      return this.header('Videos','YouTube · Chile Travel')+`<div class="video-choices">${cards || this.btn('reload-videos','Cargar videos')}</div>`;
+    }
     videoPlayer(){return `<section class="ta-video-player"><h2>${esc(this.videoSelection?.video.label||'YouTube')}</h2><div class="ta-video-frame"><div id="toki-video-frame"></div></div><p class="ta-video-status" role="status">Conectando con YouTube…</p><div class="ta-video-controls">${this.btn('video-toggle','Reproducir',{disabled:true})}${this.btn('retry-video','Reintentar video')}</div></section>`;}
     mountVideo(){
       if(this.view!=='video-player'||this.videoController||!this.videoSelection||!this.videoModule)return;

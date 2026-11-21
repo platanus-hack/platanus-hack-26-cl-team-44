@@ -11,6 +11,7 @@
     "test": "node --test ../../tests/apps/*.test.mjs"
   },
   "dependencies": {
-    "fast-xml-parser": "5.12.1"
+    "fast-xml-parser": "5.12.1",
+    "playwright-core": "1.65.1"
   }
 }

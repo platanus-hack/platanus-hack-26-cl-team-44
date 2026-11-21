@@ -2,7 +2,11 @@ import {randomBytes} from 'node:crypto';
 const fault=(message,status=400)=>Object.assign(new Error(message),{status});
 export const youtubeVideos=[
   {id:'7sxH2C-N9mY',label:'Paisajes de Chile'},
-  {id:'UC031RMDdKc',label:'Tradición y cultura'}
+  {id:'UC031RMDdKc',label:'Tradición y cultura'},
+  {id:'4VHxRo4YwkI',label:'Isla Mocha'},
+  {id:'zOoUVyh91J0',label:'Salar de Gorbea'},
+  {id:'RmkDIKRDVD8',label:'Caleta Tortel'},
+  {id:'3uRxhIuMQOU',label:'Valle del río Puelo'}
 ];
 export const youtubeManifest={schemaVersion:1,id:'youtube',name:'YouTube',aliases:[],version:'1.0.0',interface:{kind:'video',entry:'videos'},auth:{type:'none'},dependencies:['Internet','YouTube IFrame Player API'],source:'https://developers.google.com/youtube/iframe_api_reference',requiredEvidence:['list','play','pause'],actions:[{id:'list',mutates:false,requiresAccount:false},{id:'select',mutates:false,requiresAccount:false},{id:'observe',mutates:false,requiresAccount:false}]};
 export function createYouTubeAdapter({fetcher=fetch,now=Date.now}={}){
@@ -14,7 +18,7 @@ export function createYouTubeAdapter({fetcher=fetch,now=Date.now}={}){
     const response=await fetcher('https://www.youtube.com/oembed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+video.id)+'&format=json',{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),redirect:'error'});
     if(!response.ok)return null;const data=await response.json();
     if(typeof data.title!=='string'||typeof data.author_name!=='string')return null;
-    return {...video,title:data.title.slice(0,200),author:data.author_name.slice(0,120)};
+    return {...video,thumbnail:'https://i.ytimg.com/vi/'+video.id+'/mqdefault.jpg',title:data.title.slice(0,200),author:data.author_name.slice(0,120)};
    }catch{signal.throwIfAborted();return null;}
   }));
   signal.throwIfAborted();const available=items.filter(Boolean);if(!available.length)throw fault('No se pudieron cargar los videos. Comprueba Internet y reintenta.',502);

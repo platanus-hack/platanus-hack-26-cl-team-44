@@ -5,7 +5,7 @@ const fixture=()=>createYouTubeAdapter({fetcher:async()=>new Response(JSON.strin
 test('YouTube preparation and selection never claim playback; state observations are scoped to selection and generation',async()=>{
  const adapter=fixture(),evidence=[],ctx={signal:new AbortController().signal,generation:1,evidence:key=>evidence.push(key)};
  const prepared=await adapter.prepare({...ctx,report:()=>{}});assert.equal(prepared.status,'needs_test');assert.deepEqual(evidence,[]);
- const list=await adapter.execute('list',{},ctx);assert.equal(list.items.length,2);assert.deepEqual(evidence,['list']);
+ const list=await adapter.execute('list',{},ctx);assert.equal(list.items.length,6);assert.equal(new Set(list.items.map(v=>v.thumbnail)).size,6);assert.deepEqual(evidence,['list']);
  const selection=await adapter.execute('select',{jobId:'one',videoId:youtubeVideos[0].id},ctx);assert.deepEqual(evidence,['list']);
  const payload={jobId:'one',videoId:youtubeVideos[0].id,ticket:selection.ticket,state:2};
  await assert.rejects(adapter.execute('observe',payload,ctx),/Primero/);
