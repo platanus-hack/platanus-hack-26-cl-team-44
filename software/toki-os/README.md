@@ -102,6 +102,17 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
+## Juegos y Servicios en Woki OS
+
+Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo y los recuadros grandes de Woki. Para probarlo con Servicios funcionando, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
+
+- **Inicio con 10 tarjetas (5×2):** se agregan **Servicios** (con los logos reales) y **Juegos** sin quitar nada. Las columnas de los bordes son 1,2× más anchas. Con el error medido del iPhone (mediana de 2,2° en el centro y ~2,7° en los bordes), cada tarjeta mide más de 2× el error de su zona: unos 4,9 × 6,5 cm en el centro y 5,9 cm de ancho en los bordes, en un portátil de 13".
+- **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse.
+- **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
+- **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
+- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
+
 ## Tema y atajos
 
 - **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.

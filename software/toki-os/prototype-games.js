@@ -14,7 +14,7 @@ window.addEventListener('load', () => {
   const KEY = 'toki.games.records.v1';
   const records = () => { try { const r = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(r) ? r.filter(x => ['stars','memory'].includes(x.kind) && Number.isFinite(x.score)).slice(0,20) : []; } catch { return []; } };
   function mode() { return NOSE.on ? (NOSE.mode === 'gaze' ? 'Mirada' : 'Nariz') : 'Mouse'; }
-  function inputControls() { return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
+  function inputControls() { if (window.TOKI_OS_SHELL) return `<p class="game-note">Mantén la mirada sobre una opción para elegirla. El puntero se cambia en Ajustes.</p>`; return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
   function paint(html) {
     const blockedAction=S.blocked?.dataset.act;
     clearFocus(); content.innerHTML=html; decorate(content);
@@ -24,7 +24,7 @@ window.addEventListener('load', () => {
   }
   function lobby() {
     state = null; paused = false;
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin cronómetro</span></div>${inputControls()}<div class="game-catalog">${button('stars','<span class="game-art">✦</span><strong>Constelaciones</strong><small>Encuentra 10 estrellas con tu puntero.</small>')}${button('memory','<span class="game-art">▦</span><strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external','<span class="game-art">↗</span><strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin cronómetro</span></div>${inputControls()}<div class="game-catalog">${button('stars','<span class="game-art">✦</span><strong>Constelaciones</strong><small>Encuentra 10 estrellas con tu puntero.</small>')}${button('memory','<span class="game-art">▦</span><strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external','<span class="game-art">↗</span><strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${window.TOKI_OS_SHELL?button('home','← Inicio'):''}${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
   }
   function start(kind) {
     paused = false;
@@ -59,6 +59,7 @@ window.addEventListener('load', () => {
   function external() {
     paint(`<div class="game-heading"><div><p class="game-eyebrow">SPECIALEFFECT</p><h1>Eye Gaze Games</h1></div>${button('lobby','← Juegos')}</div><div class="game-external"><p>Una colección externa de juegos accesibles, con sus propios ajustes de control.</p><p>El puntero de mirada o nariz de Toki funciona dentro de esta página. No controla automáticamente la web de SpecialEffect.</p><p>Para probar tu cámara con Toki, vuelve a Constelaciones o Parejas. Para los juegos externos necesitarás configurar allí un método compatible.</p>${button('visit','Abrir Eye Gaze Games ↗')}<p class="game-note">Abre en esta pestaña. Puedes regresar con el botón Atrás del navegador.</p></div>`);
   }
+  window.TOKI_GAMES={lobby};
   const baseActivate=activate;
   activate=function(el, calibrate=true) {
     if(!el?.dataset.act?.startsWith('game:')) return baseActivate(el,calibrate);
@@ -67,9 +68,10 @@ window.addEventListener('load', () => {
     latch={action:el.dataset.act, rect:el.getBoundingClientRect()};
     const [,act,arg]=el.dataset.act.split(':');
     if(act==='lobby') return lobby();
+    if(act==='home') return go('home');
     if(act==='stars'||act==='memory') return start(act);
     if(act==='records') return showRecords();
-    if(act==='external') return external();
+    if(act==='external') return window.TOKI_EXTERNAL?.catalog ? window.TOKI_EXTERNAL.catalog() : external();
     if(act==='visit') { location.href='https://www.eyegazegames.com/'; return; }
     if(['nose','gaze','mouse'].includes(act)) {
       inputPending=true;

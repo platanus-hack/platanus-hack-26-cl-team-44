@@ -293,8 +293,12 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 <link rel="stylesheet" href="iphone-gaze.css">
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="layout.css">
+<link rel="stylesheet" href="toki-apps.css">
+<link rel="stylesheet" href="os-juegos-servicios.css">
+<link rel="stylesheet" href="os-colores.css">
 <!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
-<script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light'; }catch(_){}</script>
+<script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light';
+  const p=localStorage.getItem('woki.palette'); if(['bosque','oceano','atardecer','lavanda'].includes(p)) document.documentElement.dataset.palette=p; }catch(_){}</script>
 <link rel="stylesheet" href="magnetic-pointer.css?v=24">
 <script src="magnetic-pointer.js?v=24"></script>
 <script>
@@ -647,7 +651,7 @@ function go(name, writeHistory=true){
   if(name==='talk'){ if(!S.cards.length) genSuggestions(); else renderCards(); }
   if(name==='keyboard'){ S.kb.level=1; renderKeys(); }
   if(name==='reactions'){ S.reactPage=0; renderReacts(); }
-  if(name==='settings') renderSettings();
+  if(name==='settings'){ S.setPage='main'; renderSettings(); }
   if(name==='agent'){ S.agentPending=0; S.agentIdle=performance.now(); sendBtn(false); }
   renderStatus(); log('pantalla → '+name);
 }
@@ -817,7 +821,20 @@ function renderReacts(){
 
 /* ===================== Ajustes ===================== */
 function pointerLabel(){ if(window.IPHONE && IPHONE.active) return 'iPhone'; const N=window.NOSE||{}; return N.label? N.label():'Mouse'; }
+const PALETTES=[['noche','Noche'],['bosque','Bosque'],['oceano','Océano'],['atardecer','Atardecer'],['lavanda','Lavanda']];
+function paletteName(){ const p=document.documentElement.dataset.palette||'noche'; return (PALETTES.find(x=>x[0]===p)||PALETTES[0])[1]; }
+function setPalette(id){ if(id==='noche'||!PALETTES.some(x=>x[0]===id)){ delete document.documentElement.dataset.palette; store.set('woki.palette','noche'); }
+  else { document.documentElement.dataset.palette=id; store.set('woki.palette',id); } }
+function renderLook(){
+  const light=document.documentElement.dataset.theme==='light', pal=document.documentElement.dataset.palette||'noche';
+  const card=(act,sw,lb,on,extra='')=>`<div class="t set${on?' chosen':''}${extra}" data-t data-act="${act}"><span class="swatch swatch-${sw}"></span><div class="val">${lb}</div></div>`;
+  $('#sets').innerHTML=[card('look:oscuro','oscuro','Oscuro',!light), card('look:claro','claro','Claro',light),
+    `<div class="t set span3" data-t data-act="look:volver"><div class="val">← Volver</div><div class="lb">a Ajustes</div></div>`,
+    ...PALETTES.map(([id,lb])=>card('look:'+id,id,lb,pal===id))].join('');
+  stagger($('#sets')); decorate($('#sets'));
+}
 function renderSettings(){
+  if(S.setPage==='look') return renderLook();
   const v=S.voices[S.voiceIdx], N=window.NOSE||{};
   const items=[
     ['Tiempo de mirada', CFG.dwellMs+' ms', 'set:dwell','toca para cambiar'],
@@ -828,7 +845,7 @@ function renderSettings(){
     ['Calibrar','De nuevo','set:calib','C = solo recentrar'],
     ['Clic con cara', N.faceClick?'Cejas + boca':'No','set:faceclick','respaldo sin EMG'],
     ['Teclado', CFG.sugMode==='fila'?'Sugerencias fijas':'Sugerencias en lista','set:sugmode', CFG.sugMode==='fila'?'3 arriba · 1 mirada':'1 botón · más grande'],
-    ['Tema', document.documentElement.dataset.theme==='light'?'Claro':'Oscuro','set:theme','claro u oscuro'],
+    ['Tema y color', (document.documentElement.dataset.theme==='light'?'Claro':'Oscuro')+' · '+paletteName(),'set:theme','claro u oscuro y fondo'],
     ['Volver','Inicio','go:home','']];
   $('#sets').innerHTML=items.map(([lb,val,act,sub])=>`<div class="t set" data-t data-act="${act}"><div class="lb">${lb}</div><div class="val">${val}</div>${sub?`<div class="lb">${sub}</div>`:''}</div>`).join('');
   stagger($('#sets')); decorate($('#sets'));
@@ -916,6 +933,11 @@ function activate(el, calibrateGaze=true){
         if(gazeOnly()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; S.fStart=performance.now(); } },300);
         setTimeout(()=>{ if(S.agentPending && performance.now()-S.agentPending>=3000 && S.screen==='agent'){ S.agentPending=0; sendBtn(false); island('⏱','No se envió: faltó la segunda ceja'); } },3100); }
       S.agentIdle=performance.now(); break;
+    case 'look':
+      if(arg==='volver') S.setPage='main';
+      else if(arg==='oscuro'||arg==='claro') setTheme(arg==='claro');
+      else setPalette(arg);
+      setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break;
     case 'set':
       // Solo mirada: nada en Ajustes puede dejar a la persona sin forma de elegir.
       if(gazeOnly() && (arg==='mode' || arg==='pointer' || arg==='faceclick')){
@@ -924,7 +946,7 @@ function activate(el, calibrateGaze=true){
       if(gazeOnly() && arg==='calib'){ IPHONE.recalibrate(); break; }
       if(arg==='sugmode'){ CFG.sugMode=CFG.sugMode==='fila'?'lista':'fila'; try{ localStorage.setItem('woki.sugmode',CFG.sugMode); }catch(_){}
         island('⌨️', CFG.sugMode==='fila'?'Sugerencias fijas arriba del teclado':'Sugerencias en un botón que abre la lista'); }
-      if(arg==='theme') setTheme(document.documentElement.dataset.theme!=='light');
+      if(arg==='theme'){ S.setPage='look'; renderSettings(); break; }
       if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
         try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
       if(arg==='mode') CFG.mode=CFG.mode==='click'?'dwell':'click';
@@ -1795,6 +1817,11 @@ if (guidedSetup) {
 }
 </script>
 <script src="tablet-keyboard.js?v=21"></script>
+<!-- Juegos y Servicios (módulos del equipo) conectados al SO por os-juegos-servicios.js -->
+<script src="toki-apps.js"></script>
+<script src="prototype-games.js"></script>
+<script src="prototype-external-games.js"></script>
+<script src="os-juegos-servicios.js"></script>
 <!-- Mirada con iPhone (Face ID): motor compartido con software/eye-tracking (ver iphone-gaze.js) -->
 <script type="module" src="iphone-gaze.js"></script>
 </body>
