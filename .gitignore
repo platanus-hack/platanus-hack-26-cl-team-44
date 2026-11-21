@@ -16,6 +16,8 @@ build/
 data/local/
 !.env.example
 
+# Agente: memoria real del demo y base local
+software/agent/data/
 # Eye-tracking: logs de sesiones de mirada (datos biométricos y fotos: nunca a git)
 software/eye-tracking/logs/
 software/eye-tracking/ios/build/

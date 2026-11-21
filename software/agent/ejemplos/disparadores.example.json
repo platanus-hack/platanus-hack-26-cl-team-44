@@ -1,0 +1,15 @@
+{
+  "disparadores": [
+    {
+      "id": "familia",
+      "tipo": "mencion_grupo",
+      "grupo_jid": "120363000000000000@g.us",
+      "grupo_nombre": "Familia",
+      "audiencia": "familia",
+      "miembros": ["tomas"],
+      "estado": "pendiente",
+      "creado_por": "cuidador",
+      "descripcion": "Avísame y prepárame respuestas si me etiquetan en Familia"
+    }
+  ]
+}
