@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo de eye-tracking con iPhone</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- 1 · Conectar -->
+<section id="connect" class="screen" aria-labelledby="connect-title">
+  <div class="card">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="36" fill="none" stroke="#3256f5" stroke-opacity=".16" stroke-width="12"/><circle cx="50" cy="50" r="36" fill="none" stroke="#3256f5" stroke-width="12" stroke-linecap="round" stroke-dasharray="169.65 226.2" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="11" fill="#15171c"/></svg>
+      Demo de eye-tracking con iPhone
+    </div>
+    <h1 id="connect-title">Conecta tu iPhone</h1>
+    <p class="lede">Abre <b>Eye Tracking</b> en el iPhone y escribe aquí la dirección que muestra en pantalla. Tienen que estar en la misma red Wi-Fi.</p>
+    <form id="connect-form" class="field" autocomplete="off">
+      <label for="host" class="sr-only" hidden>Dirección del iPhone</label>
+      <input id="host" name="host" placeholder="192.168.1.23:8788" inputmode="url" spellcheck="false">
+      <button class="btn btn--primary" type="submit">Conectar <kbd>↵</kbd></button>
+    </form>
+    <p id="connect-status" class="hint" role="status">Por cable: instala <code>iproxy</code> y usa <b>localhost:8788</b>.</p>
+    <div class="row">
+      <button id="simulate" class="btn btn--ghost" type="button">Probar sin iPhone (simula con el mouse)</button>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · Ubicarse -->
+<section id="setup" class="screen" aria-labelledby="setup-title" hidden>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <p class="eyebrow">Paso 1 de 3 · Ubícate</p>
+        <h1 id="setup-title">Que el iPhone te vea bien</h1>
+      </div>
+      <span id="setup-link" class="hint"></span>
+    </div>
+    <div class="setup">
+      <div class="checks" id="checks"></div>
+      <div class="col" style="display:grid;gap:16px">
+        <figure class="viz-wrap">
+          <div class="viz" aria-hidden="true"><svg id="viz" viewBox="0 0 400 250"></svg></div>
+          <figcaption id="viz-msg" class="viz-msg" role="status" aria-live="polite">Buscando tu cara…</figcaption>
+        </figure>
+        <div class="placement">
+          <p class="eyebrow">¿Dónde pusiste el iPhone?</p>
+          <div class="row" id="placement" role="group" aria-label="Ubicación del iPhone">
+            <button class="chip" data-place="abajo">Abajo, centrado</button>
+            <button class="chip" data-place="arriba">Arriba</button>
+            <button class="chip" data-place="izquierda">Izquierda</button>
+            <button class="chip" data-place="derecha">Derecha</button>
+            <button class="chip" data-place="al frente">Al frente</button>
+          </div>
+          <div class="row">
+            <button id="stability" class="btn" type="button">Medir estabilidad (3 s) <kbd>E</kbd></button>
+            <button id="photo" class="btn btn--ghost" type="button">Foto de diagnóstico</button>
+          </div>
+          <ol id="stability-list" class="stab-list"></ol>
+          <p id="screen-size" class="hint" hidden>
+            <label for="screen-in">No reconozco esta pantalla. Su diagonal en pulgadas (p. ej. 14, 24, 27):</label>
+            <input id="screen-in" type="number" min="5" max="100" step="0.1" style="width:90px;min-height:40px;border-radius:10px;border:1px solid var(--fog);padding:0 10px;font:inherit">
+          </p>
+          <p id="photo-status" class="hint" role="status"></p>
+        </div>
+        <div class="tips">
+          <span><b>Dónde:</b> abajo y centrado bajo la pantalla, en un soporte o delante del teclado, nunca apoyado sobre las teclas (las aprieta solo).</span>
+          <span><b>Párpados caídos:</b> sube el iPhone un poco para no obligar a mirar hacia abajo.</span>
+          <span><b>Reflejos:</b> que no haya una lámpara o ventana reflejada en tus lentes; inclínalos un poco hacia abajo.</span>
+          <span><b>Luz:</b> de frente o de lado, nunca detrás de ti. El sol directo ciega el infrarrojo.</span>
+          <span><b>Lágrimas:</b> al parpadear el cursor se congela; parpadea con calma.</span>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <button id="start-calib" class="btn btn--primary" type="button">Calibrar (pantalla completa) <kbd>↵</kbd></button>
+      <label class="opt"><input id="motion-opt" type="checkbox" checked> Incluir el paso moviendo la cabeza <small>(recomendado: mejora la precisión; sáltalo si mover el cuello cuesta)</small></label>
+      <span id="calib-time" class="hint">Toma ~70 s.</span>
+    </div>
+  </div>
+</section>
+
+<!-- Prueba de estabilidad -->
+<section id="stab" class="stage" aria-label="Prueba de estabilidad" hidden>
+  <div class="stab-dot" aria-hidden="true"></div>
+  <div class="stage__msg" style="top:62%"><b>Mira el punto</b><span id="stab-count">3</span></div>
+</section>
+
+<!-- 3 · Calibración -->
+<section id="calib" class="stage" aria-label="Calibración" hidden>
+  <div id="target" class="target" aria-hidden="true">
+    <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="#3256f5" stroke-opacity=".16" stroke-width="6"/><circle class="ring" cx="32" cy="32" r="28"/><circle class="core" cx="32" cy="32" r="7"/></svg>
+  </div>
+  <div id="calib-msg" class="stage__msg"><b>Sigue el punto con la mirada</b><span>Sin mover la cabeza. Puedes parpadear normal.</span></div>
+  <div id="calib-warn" class="stage__warn" hidden></div>
+  <div id="calib-progress" class="stage__progress"></div>
+</section>
+
+<!-- 4 · Resultado -->
+<section id="result" class="screen" aria-labelledby="result-title" hidden>
+  <div class="card">
+    <p class="eyebrow">Paso 3 de 3 · Precisión medida</p>
+    <div class="result">
+      <div id="score" class="score"><div><b id="score-deg">—</b><span id="score-px">—</span></div></div>
+      <div style="display:grid;gap:10px">
+        <h1 id="result-title">—</h1>
+        <p id="result-text" class="lede"></p>
+      </div>
+    </div>
+    <canvas id="result-canvas" class="mini" width="960" height="600" aria-label="Puntos de validación: objetivo vs. estimado"></canvas>
+    <p id="result-details" class="details"></p>
+    <div class="row">
+      <button id="go-demo" class="btn btn--primary" type="button">Probar la demo <kbd>↵</kbd></button>
+      <button id="refine" class="btn" type="button">Afinar (+8 puntos) <kbd>A</kbd></button>
+      <button id="redo" class="btn" type="button">Recalibrar <kbd>R R</kbd></button>
+      <span id="log-status" class="hint"></span>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Demo -->
+<section id="demo" class="demo" aria-label="Demo de mirada" hidden>
+  <div class="hud" role="toolbar" aria-label="Controles de la demo">
+    <button class="btn btn--pause" id="pause" aria-pressed="false" title="Pausar o continuar el reconocimiento">Ⅱ Pausa <kbd>Espacio</kbd></button>
+    <button class="btn" data-mode="grid" aria-pressed="true">Rejilla <kbd>Z</kbd></button>
+    <button class="btn" data-mode="free" aria-pressed="false">Libre <kbd>X</kbd></button>
+    <button class="btn" data-mode="probe" aria-pressed="false">Precisión <kbd>C</kbd></button>
+    <button class="btn" data-mode="train" aria-pressed="false" title="Haz clic donde estás mirando">Entrenar <kbd>V</kbd></button>
+    <button class="btn" data-mode="task" aria-pressed="false" title="Mira las palabras que se piden">Tarea <kbd>B</kbd></button>
+    <button class="btn" id="grid-size" title="Tamaño de la rejilla">4×3 <kbd>N</kbd></button>
+    <span class="stat" id="hud-stat">—</span>
+    <button class="btn" id="toggle-raw" aria-pressed="false">Crudo <kbd>,</kbd></button>
+    <button class="btn" id="smooth" title="Suavizado">Suave <kbd>.</kbd></button>
+    <button class="btn" id="toggle-diag" aria-pressed="false">Diagnóstico <kbd>M</kbd></button>
+    <button class="btn" id="recal">Recalibrar <kbd>R R</kbd></button>
+  </div>
+  <div id="grid" class="grid"></div>
+  <canvas id="trail" class="trail" hidden></canvas>
+  <div id="probe" class="probe" hidden></div>
+  <div id="raw" class="raw" hidden></div>
+  <div id="cursor" class="cursor"></div>
+  <div id="paused-note" class="paused-note" role="status" hidden><b>En pausa</b><span>La mirada no selecciona nada y no se registra. <kbd>Espacio</kbd> para continuar.</span></div>
+  <div id="banner" class="banner" role="status" hidden></div>
+  <aside id="diag" class="diag" aria-label="Diagnóstico en vivo" hidden></aside>
+  <div id="task" class="task" role="status" hidden></div>
+</section>
+
+<!-- Aviso global: una tecla está siendo apretada sin querer (p. ej. el iPhone sobre el teclado) -->
+<div id="keywarn" class="keywarn" role="alert" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
