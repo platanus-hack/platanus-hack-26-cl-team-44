@@ -1,5 +1,12 @@
 # URL pública de Toki: la TV (estática) y el agente.
 # El dominio sale de TOKI_DOMINIO (por ejemplo 179-66-157-161.sslip.io). Caddy saca el certificado HTTPS solo.
+# Solo HTTP/1.1 y HTTP/2: con HTTP/3 (QUIC por UDP) el navegador se colgaba si el UDP 443 no pasaba.
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 {$TOKI_DOMINIO} {
 	encode gzip
 
