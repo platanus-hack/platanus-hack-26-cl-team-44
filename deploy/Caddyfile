@@ -11,7 +11,7 @@
 	}
 
 	# La raíz abre la TV
-	redir / /woki-os.html{?query} 302
+	redir / /woki-os.html?{query} 302
 
 	handle {
 		root * /opt/toki/repo/software/toki-os
