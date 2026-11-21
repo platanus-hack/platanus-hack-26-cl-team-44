@@ -39,7 +39,8 @@ assert.match(games, /if \(window\.TOKI_OS_SHELL\) return `<p class="game-note">/
 assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 
 // 5. Con el iPhone nada se elige en cadena en Juegos y Servicios (mismo bloqueo que el resto del SO).
-assert.match(glue, /if \(gazeOnly\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /if \(iphoneDwell\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /return innerActivate\(el, calibrate, immediate\)/);
 
 // 5b. Juegos de Toki con íconos de app del SO; partida externa grande con aviso de una línea; al salir se cierra.
 assert.match(games, /window\.TOKI_GAME_ART\?\.\[kind\]/);

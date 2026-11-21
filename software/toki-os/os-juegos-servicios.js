@@ -94,21 +94,21 @@ window.addEventListener('load', () => {
     if (name !== 'apps') { app?.destroy(); app = null; }
   };
   const innerActivate = activate;
-  activate = function (el, calibrate = true) {
+  activate = function (el, calibrate = true, immediate = false) {
     const act = el?.dataset.act || '';
     // Música: acceso directo al reproductor de Spotify de Servicios (antes era un aviso simulado).
     if (act === 'music') {
       press(el);
-      if (gazeOnly()) S.lockUntil = performance.now() + LOCKOUT_MS;
+      if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
       go('apps');
       void app?.openSpotify();
       return;
     }
-    if (!OWN.test(act)) return innerActivate(el, calibrate);
+    if (!OWN.test(act)) return innerActivate(el, calibrate, immediate);
     // Igual que el resto del SO: se ve la pulsación y, con el iPhone, nada se elige en cadena.
     press(el);
-    if (gazeOnly()) S.lockUntil = performance.now() + LOCKOUT_MS;
-    if (!act.startsWith('apps:')) return innerActivate(el, calibrate);
+    if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
+    if (!act.startsWith('apps:')) return innerActivate(el, calibrate, immediate);
     if (!app || S.screen !== 'apps' || el.disabled || unavailable() || (app.paused && el.dataset.appAction !== 'input-pause')) return;
     if (calibrate && latch) return;   // al repintar, la mirada quieta no elige otra cosa
     latch = el.getBoundingClientRect();

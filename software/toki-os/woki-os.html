@@ -59,7 +59,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 /* ---------- barra de estado ---------- */
 .status{display:flex;align-items:center;gap:16px;height:68px;flex:none;font-size:27px;font-weight:600;color:var(--txt2)}
 .status-info{display:contents}
-.home-nav{color:var(--txt);font:inherit;cursor:pointer;white-space:nowrap}
+.back-nav{min-width:168px;justify-content:center;color:var(--txt);font:inherit;cursor:pointer;white-space:nowrap}
 .pill{display:flex;align-items:center;gap:12px;height:56px;padding:0 24px;border-radius:30px;
   transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms var(--ease-out)}
 .pill.flash{background:rgba(10,132,255,.28);border-color:rgba(10,132,255,.7);color:var(--txt);transform:scale(1.04)}
@@ -432,7 +432,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <section class="screen on" id="s-home" data-title="Inicio">
     <div class="status"></div>
     <div class="grid4x2" id="tiles"></div>
-    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span><span><b>Ceja 3 s</b> SOS de prueba</span></div>
+    <div class="hint"><span><b>Ceja</b> elegir</span></div>
   </section>
 
   <!-- HABLAR -->
@@ -447,7 +447,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
       <div class="chat glass" id="chat" aria-live="polite"><div class="chat-h" id="chatH"></div><div class="chat-list" id="chatList"></div></div>
       <div class="talkgrid" id="cards"></div>
     </div>
-    <div class="hint"><span id="talkHint"><b>Ceja</b> decir</span><span><b>Mirar el emoji</b> cambiar emoción</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span></div>
+    <div class="hint"><span id="talkHint"><b>Ceja</b> decir</span><span><b>Emoji</b> cambiar emoción</span></div>
   </section>
 
   <!-- ESCRIBIR -->
@@ -455,14 +455,14 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="status"></div>
     <div class="msgline glass"><div class="txt" id="kbTxt"></div><div class="pred" id="kbPred"></div></div>
     <div class="grid4x2" id="keys"></div>
-    <div class="hint" id="kbHint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span></div>
+    <div class="hint" id="kbHint"><span><b>Ceja</b> elegir</span></div>
   </section>
 
   <!-- REACCIONES -->
   <section class="screen" id="s-reactions" data-title="Reacciones">
     <div class="status"></div>
     <div class="grid3x2" id="reacts"></div>
-    <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar "más"</b> otra página</span><span><b>Ceja ×2</b> atrás</span></div>
+    <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar "más"</b> otra página</span></div>
   </section>
 
   <!-- AGENTE -->
@@ -487,14 +487,14 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <section class="screen" id="s-contacts" data-title="Mensajes">
     <div class="status"></div>
     <div class="grid4x2" id="people"></div>
-    <div class="hint"><span><b>Ceja</b> escribirle</span><span><b>K</b> el acompañante ajusta los contactos</span><span><b>Mandíbula larga</b> volver</span></div>
+    <div class="hint"><span><b>Ceja</b> escribirle</span><span><b>K</b> el acompañante ajusta los contactos</span><span><b>Volver</b> regresar</span></div>
   </section>
 
   <!-- AJUSTES -->
   <section class="screen" id="s-settings" data-title="Ajustes">
     <div class="status"></div>
     <div class="grid5x2" id="sets"></div>
-    <div class="hint"><span><b>Ceja</b> cambiar</span><span><b>Ceja ×2</b> atrás</span></div>
+    <div class="hint"><span><b>Ceja</b> cambiar</span></div>
   </section>
 
   <!-- CAPAS -->
@@ -506,8 +506,8 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="cancel" id="alCancel"></div>
     <button type="button" class="cbtn" id="alDismiss">Cerrar simulación</button>
   </div>
-  <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando · dos cejas rápidas para volver</div>
-    <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small>Mirada 2 s · ceja · clic</small></button></div>
+  <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando</div>
+    <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small><span class="rest-dwell-label">Mirada 2 s · </span>ceja · clic</small></button></div>
   <!-- CALIBRACIÓN (al inicio) -->
   <div class="overlay on" id="calib">
     <div class="cal-card glass" id="calCard">
@@ -532,27 +532,9 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
 
   <div id="island"><span class="ic" id="isIc"></span><span id="isTx"></span></div>
   <div id="speaking"><span class="emo2" id="spEmo">🗣️</span><span class="txt" id="spTxt"></span><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></div>
-  <div class="gesture-hold" id="gestureHold" hidden aria-hidden="true"><span></span><progress max="3000" value="0"></progress></div>
 </div></div>
 
 <div id="gaze"></div>
-<dialog id="quickDialog" aria-labelledby="quickTitle" aria-describedby="quickHint">
-  <div class="quick-surface">
-    <div class="quick-heading">
-      <div class="quick-kicker">TOKI / MENÚ RÁPIDO</div>
-      <h2 id="quickTitle" tabindex="-1">Atajos</h2>
-      <p id="quickHint">Suelta la mandíbula para elegir.</p>
-    </div>
-    <div class="quick-wheel">
-      <button type="button" class="t quick-option" data-t data-act="quick:answer"><span aria-hidden="true">○ / ✓</span><b>Sí / No</b></button>
-      <button type="button" class="t quick-option" data-t data-act="quick:position"><span aria-hidden="true">↔</span><b>Acomódame</b></button>
-      <button type="button" class="t quick-option" data-t data-act="quick:attention"><span aria-hidden="true">◷</span><b>Ven cuando puedas</b></button>
-      <button type="button" class="t quick-option" data-t data-act="quick:pain"><span aria-hidden="true">+</span><b>Me duele</b></button>
-      <button type="button" class="t quick-close" data-t data-act="quick:back">Cerrar</button>
-    </div>
-    <div class="gesture-hold" hidden aria-hidden="true"><span></span><progress max="3000" value="0"></progress></div>
-  </div>
-</dialog>
 
 <!-- predicción de palabras (n-gramas + aprendizaje en el dispositivo) -->
 <script src="predict.js"></script>
@@ -572,7 +554,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
       <canvas id="camDot" width="128" height="96" style="position:absolute;inset:0"></canvas>
     </div>
   </div>
-  <div class="col"><h3>Gestos EMG (simulados)</h3><kbd>Espacio</kbd> elegir · ×2 atrás · 3 s SOS de prueba<br><kbd>J</kbd> 3 s para abrir atajos · <kbd>Esc</kbd> cerrar</div>
+  <div class="col"><h3>Clic con la ceja (simulado)</h3><kbd>Espacio</kbd> elegir</div>
   <div class="col" id="myoware-controls" hidden>
     <h3>MyoWare · A3 ceja / A0 mandíbula</h3>
     <button type="button" class="nbtn" id="myoware-calibrate">Calibrar gestos</button>
@@ -624,7 +606,7 @@ const DWELL_OPTIONS = [800,1000,1200,1500];
 // Desde la URL pública: WhatsApp y EMG simulados; el agente se sirve en /agente del mismo sitio.
 const LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
 const CFG = {
-  // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
+  // Default dwell time for modes that support dwell selection.
   // la elección en Ajustes se recuerda en el navegador
   dwellMs: (()=>{ try{ const v=+localStorage.getItem('woki.dwell'); return DWELL_OPTIONS.includes(v)? v : 1200; }catch(_){ return 1200; } })(),
   settleMs: 350,         // la mirada se asienta antes de aceptar el clic
@@ -632,7 +614,7 @@ const CFG = {
   mode: 'click',         // 'click' = mirada + ceja · 'dwell' = solo mirada
   jitter: false,         // simular error de webcam
   scanMs: 1300,          // escaneo cuando no hay mirada
-  doubleMs: 500, tapMs: 900, holdMs: 3000,
+  faceBrowMaxMs: 900,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
   WA_URL: LOCAL ? 'http://localhost:8788' : '', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
@@ -705,22 +687,18 @@ const WORDS = ('que de no a la el es y en lo un por me una te los se con para mi
 
 /* ===================== Estado ===================== */
 const S = { screen:'home', focus:null, fStart:0, blocked:null, armed:false,
-  gazeLost:false, scanIdx:-1, scanT:0, rest:false, emoRingFor:null, quick:null,
+  gazeLost:false, scanIdx:-1, scanT:0, rest:false, emoRingFor:null,
   cards:[], kb:{level:1,group:null,text:''}, reactPage:0,
   alarm:null, agentPending:0, agentIdle:0, muted:false, voiceIdx:0, voices:[], scale:1 };
 const $ = s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-/* Modo mirada con iPhone: se elige manteniendo la mirada O con la ceja (al instante); mandíbula y demás
-   gestos funcionan como siempre. Agrega imán, huecos, bloqueo tras elegir y salidas en cada pantalla. */
-function gazeOnly(){ return document.body.classList.contains('gaze-only'); }
+function iphonePointing(){ return document.body.classList.contains('iphone-pointer'); }
+function iphoneDwell(){ return iphonePointing() && CFG.mode==='dwell'; }
 const SNAP_PX = 70;   // la mirada en el hueco entre tarjetas toma la más cercana (px del lienzo)
 const MAGNET = .35;   // el cursor se acerca al centro de la tarjeta enfocada (como en la demo)
 // Tras elegir algo, nada empieza a cargarse durante este tiempo: si aparece otra pantalla o capa,
 // la tarjeta que queda bajo la mirada no se elige "en cadena" (la demo usaba 500 ms).
 const LOCKOUT_MS = 700;
-// iPhone + "Confirmar con: Ceja": la ceja elige al instante; mirar fijo CEJA_FALLBACK_MS también elige
-// (respaldo: si la ceja o el sensor fallan, la persona nunca queda sin forma de elegir).
-const CEJA_FALLBACK_MS = 3000;
-window.iphoneConfirm = () => { try{ return localStorage.getItem('woki.iphone.confirm')==='click' ? 'click' : 'dwell'; }catch(_){ return 'dwell'; } };
+window.iphoneConfirm = () => { try{ return localStorage.getItem('woki.iphone.confirm')==='dwell' ? 'dwell' : 'click'; }catch(_){ return 'click'; } };
 
 /* ===================== Tema y panel de atajos (desarrollo) ===================== */
 const store={ get:k=>{ try{ return localStorage.getItem(k); }catch(_){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} } };
@@ -1072,8 +1050,7 @@ function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb])=>
   `<div class="t tile" data-t data-act="${act}"><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
-  const go=gazeOnly();
-  $('#btnSend').innerHTML = pending ? `<svg><use href="#i-check"/></svg>${go?'Sigue mirando u otra ceja':'Otra ceja'}<small>para enviar · 3 s</small>` : `<svg><use href="#i-check"/></svg>Enviar<small>${go?'Mirada o ceja, y otra vez para confirmar':'Ceja, y otra ceja en 3 s'}</small>`;
+  $('#btnSend').innerHTML = pending ? '<svg><use href="#i-check"/></svg>Otra ceja<small>para enviar · 3 s</small>' : '<svg><use href="#i-check"/></svg>Enviar<small>Ceja, y otra ceja en 3 s</small>';
   decorate($('#btnSend').parentElement); }
 
 /* ===================== Barra de estado ===================== */
@@ -1082,12 +1059,10 @@ function renderStatus(){
   const sc=$('.screen.on');
   const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
   const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>SOS de prueba activo'
-    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>SOS de prueba';
+    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>Avisos disponibles';
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
-  const howPick = gazeOnly() ? (CFG.mode==='click' ? 'Ceja (o mirada 3 s)' : `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja`) : mode;
-  const sensors = gazeOnly()
-    ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
-    : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
+  const howPick = iphoneDwell() ? `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja` : iphonePointing() ? 'iPhone + ceja' : mode;
+  const sensors = `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${howPick}</div>`;
   const mn = WA.mention && Date.now()-WA.mention.at < 15*60e3 ? WA.mention : null;   // la última mención queda visible 15 min
   const wa = (CFG.WA_URL ? `<div class="pill glass"><span class="dot wa${WA.online?'':' off'}"></span>${WA.online?'WhatsApp':'WhatsApp sin conexión'}</div>` : '')
     + (mn ? `<div class="pill glass mention" title="${esc(mn.from)} te mencionó en ${esc(mn.group)} a las ${hhmm(mn.at)}">@ ${esc(mn.from)} · ${esc(mn.group)}</div>` : '');
@@ -1107,8 +1082,6 @@ function go(name, writeHistory=true){
   if(!document.getElementById('s-'+name)?.classList.contains('screen')) return;
   if(writeHistory && S.screen!==name) history.pushState({wokiStep:(history.state?.wokiStep||0)+1},'',name==='home' ? location.pathname+location.search : '#'+name);
   if(S.screen!==name){
-    cancelGestures();
-    if(S.quick) closeQuick();
     if(S.emoRingFor!==null) closeEmoRing();
     if(S.rest) setRest(false);
   }
@@ -1259,7 +1232,7 @@ function renderKeys(){
 const KBHINT0=document.getElementById('kbHint').innerHTML;
 function renderKbText(){
   $('#kbHint').innerHTML = S.kb.mode==='ini'
-    ? '<span><b>Ceja</b> elegir letra</span><span><b>Completar</b> frases con Claude</span><span><b>Ceja ×2</b> volver al chat</span><span><b>Mandíbula 3 s</b> atajos</span>'
+    ? '<span><b>Ceja</b> elegir letra</span><span><b>Completar</b> frases con Claude</span><span><b>Volver</b> regresar al chat</span>'
     : KBHINT0;
   if(S.kb.mode==='ini'){
     const L=[...(S.kb.ini||'')].map(c=>esc(c.toUpperCase()));
@@ -1268,7 +1241,7 @@ function renderKbText(){
     const cand=iniCandidates().slice(0,3), ai=S.kb.ai;
     const top=cand.map(c=>(c.ai?'<span class="ai">✨</span>':'')+esc(c.text));
     const wait= ai && ai.ini===(S.kb.ini||'') && !ai.list ? ' <span class="ai-wait">· ✨ Claude pensando…</span>' : '';
-    $('#kbPred').innerHTML= top.length? 'Podría ser: '+top.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+wait+' — <b>mandíbula</b> o «Completar»' : 'Ejemplo: S · M · P · B → «Sí, me parece bien»';
+    $('#kbPred').innerHTML= top.length? 'Podría ser: '+top.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+wait+' — usa «Completar»' : 'Ejemplo: S · M · P · B → «Sí, me parece bien»';
     return;
   }
   const p=preds(), w=curWord();
@@ -1302,7 +1275,7 @@ function renderKbText(){
       review.toggleAttribute('data-t', !review.hidden);
     }
   } else {
-    const how = gazeOnly() ? 'mira una sugerencia o usa la ceja · mandíbula acepta la primera' : 'mandíbula acepta la primera';
+    const how = iphoneDwell() ? 'mantén la mirada o confirma con la ceja' : iphonePointing() ? 'enfoca una sugerencia y confirma con la ceja' : 'confirma con la ceja o haz clic';
     suggestions.textContent = S.kb.level === 3 ? 'Elige una palabra' : p.length ? 'Sugerencias: ' + p.slice(0,4).map(showWord).join(' · ') + ' — ' + how : 'Elige un grupo de letras';
   }
 }
@@ -1332,10 +1305,10 @@ function renderLook(){
 }
 function renderSettings(){
   if(S.setPage==='look') return renderLook();
-  const v=S.voices[S.voiceIdx], N=window.NOSE||{};
+  const v=S.voices[S.voiceIdx], N=window.NOSE||{}, iphone=iphonePointing(), browOnly=iphone && !iphoneDwell();
   const items=[
-    ['Tiempo de mirada', CFG.dwellMs+' ms', 'set:dwell','toca para cambiar'],
-    ['Confirmar con', CFG.mode==='click'?'Ceja':(gazeOnly()?'Mirada':'Solo mirada'),'set:mode', gazeOnly()? (CFG.mode==='click'?'o mirada 3 s':'o ceja') : ''],
+    ['Tiempo de mirada', browOnly?'Desactivado':CFG.dwellMs+' ms', 'set:dwell',browOnly?'modo ceja':'toca para cambiar'],
+    ['Confirmar con', CFG.mode==='click'?'Ceja':iphone?'Mirada':'Solo mirada','set:mode',iphoneDwell()?'o ceja':''],
     window.VOZ && VOZ.opciones.length
       ? ['Voz', (VOZ.nombre()||'ElevenLabs').slice(0,14), 'set:voice', `${VOZ.opciones.length} opciones · suena al cambiar`]
       : ['Voz', v? v.name.slice(0,14):'Del sistema','set:voice','suena al cambiar'],
@@ -1380,17 +1353,21 @@ function speak(text, emoId='seria'){
 
 /* ===================== Acciones ===================== */
 function press(el){ el.classList.add('pressed'); setTimeout(()=>el.classList.remove('pressed'),140); }
-function activate(el, calibrateGaze=true){
+function activate(el, calibrateGaze=true, immediate=false){
   if (calibrateGaze) menuPointer.confirm(gz, el);
+  if(iphoneDwell()) S.lockUntil=performance.now()+LOCKOUT_MS;
   if(tabletComposer && el.closest('#s-keyboard')) composerLock = el.getBoundingClientRect();
   press(el);
-  if(gazeOnly()) S.lockUntil=performance.now()+LOCKOUT_MS;
   if(calibrateGaze && window.GAZE) GAZE.onConfirm(el);   // la selección confirmada corrige la deriva de la mirada
   const [a,arg]=el.dataset.act.split(':');
   if(el.dataset.act!=='kb:del') S.kb.delAt=0;
   log('elegido → '+el.dataset.act);
   switch(a){
-    case 'go': setTimeout(()=>go(arg),90); break;
+    case 'go':
+      if(immediate) go(arg);
+      else setTimeout(()=>go(arg),90);
+      break;
+    case 'back': goBack(); break;
     case 'say': { const c=S.cards[+arg];
       if(WA.to){ openAgent(c.plain || c.emo==='seria' ? c.text : c.text+' '+EMO[c.emo].e); break; }   // WhatsApp: se confirma, no se dice en voz alta; el emoji solo si la emoción no es neutra
       speak(c.text,c.emo); $('#agentMsg').textContent=c.text+' '+EMO[c.emo].e; break; }
@@ -1439,7 +1416,6 @@ function activate(el, calibrateGaze=true){
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
     case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
     case 'attention': startAlarm('atencion'); break;
-    case 'quick': chooseQuick(arg); break;
     case 'music': island('🎵','Reproduciendo “Lo de siempre” (simulado)'); break;
     case 'rest': setRest(true); break;
     case 'wake': setRest(false); break;
@@ -1448,7 +1424,7 @@ function activate(el, calibrateGaze=true){
         S.agentPending=0; sendBtn(false);
         if(CFG.WA_URL) waSend(); else { island('✓','Enviado (simulado)'); go('home'); } }
       else { S.agentPending=performance.now(); sendBtn(true);
-        if(gazeOnly()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; S.fStart=performance.now(); } },300);
+        if(iphonePointing()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; } },300);
         setTimeout(()=>{ if(S.agentPending && performance.now()-S.agentPending>=3000 && S.screen==='agent'){ S.agentPending=0; sendBtn(false); island('⏱','No se envió: faltó la segunda ceja'); } },3100); }
       S.agentIdle=performance.now(); break;
     case 'look':
@@ -1457,19 +1433,19 @@ function activate(el, calibrateGaze=true){
       else setPalette(arg);
       setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break;
     case 'set':
-      // Solo mirada: nada en Ajustes puede dejar a la persona sin forma de elegir.
-      if(gazeOnly() && (arg==='pointer' || arg==='faceclick')){
-        island('🔒', 'El puntero lo cambia el acompañante (barra inferior o teclado)');
+      if(iphonePointing() && (arg==='pointer' || arg==='faceclick' || (arg==='dwell' && !iphoneDwell()))){
+        island('🔒', arg==='dwell' ? 'El tiempo de mirada no se usa en modo Ceja' : 'El puntero lo cambia el acompañante (barra inferior o teclado)');
         setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break; }
-      if(gazeOnly() && arg==='calib'){ IPHONE.recalibrate(); break; }
+      if(iphonePointing() && arg==='calib'){ IPHONE.recalibrate(); break; }
       if(arg==='sugmode'){ CFG.sugMode=CFG.sugMode==='fila'?'lista':'fila'; try{ localStorage.setItem('woki.sugmode',CFG.sugMode); }catch(_){}
         island('⌨️', CFG.sugMode==='fila'?'Sugerencias fijas arriba del teclado':'Sugerencias en un botón que abre la lista'); }
       if(arg==='theme'){ S.setPage='look'; renderSettings(); break; }
       if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
         try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
       if(arg==='mode'){ CFG.mode=CFG.mode==='click'?'dwell':'click';
-        if(gazeOnly()){ try{ localStorage.setItem('woki.iphone.confirm',CFG.mode); }catch(_){}
-          island(CFG.mode==='click'?'🤨':'👁', CFG.mode==='click'?'Ceja: elige al instante · mirar 3 s también elige':'Mantener la mirada para elegir (o ceja)'); } }
+        if(iphonePointing()){ try{ localStorage.setItem('woki.iphone.confirm',CFG.mode); }catch(_){}
+          document.body.classList.toggle('iphone-hold',iphoneDwell());
+          island(CFG.mode==='click'?'🤨':'👁', CFG.mode==='click'?'La mirada apunta, la ceja elige':'Mantener la mirada para elegir (o ceja)'); } }
       if(arg==='voice'){
         if(window.VOZ && VOZ.opciones.length) VOZ.siguiente().then(()=>{ speak('Hola, esta es mi voz.','alegre'); if(S.screen==='settings') renderSettings(); });
         else { S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); } }
@@ -1478,71 +1454,13 @@ function activate(el, calibrateGaze=true){
       if(arg==='sens' && window.NOSE){ NOSE.sensIdx=(NOSE.sensIdx+1)%3; island('🎯','Sensibilidad '+['baja','media','alta'][NOSE.sensIdx]); }
       if(arg==='calib' && window.IPHONE && IPHONE.active){ $('#calib').classList.add('on'); IPHONE.openPanel(); }
       else if(arg==='calib' && window.CAL) CAL.open(window.NOSE && NOSE.on && NOSE.mode==='gaze' ? 'gaze' : undefined);
-      if(arg==='faceclick' && window.NOSE){ NOSE.faceClick=!NOSE.faceClick; island('🙂',NOSE.faceClick?'Clic con cara: cejas = ceja · boca = mandíbula':'Clic con cara apagado'); }
+       if(arg==='faceclick' && window.NOSE){ NOSE.faceClick=!NOSE.faceClick; island('🙂',NOSE.faceClick?'Clic con cara: levanta la ceja para elegir':'Clic con cara apagado'); }
       setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); renderStatus(); break;
   }
 }
 
-/* ===================== Quick menu ===================== */
-const quickDialog = $('#quickDialog');
-const quickPages = {
-  root: ['Atajos', [['○ / ✓','Sí / No','answer'], ['↔','Acomódame','position'], ['◷','Ven cuando puedas','attention'], ['+','Me duele','pain']]],
-  answer: ['Responder', [['✓','Sí'], ['×','No'], ['?','No entendí'], ['…','Dame un momento']]],
-  position: ['Acomódame', [['↑','Cabeza','Necesito que me acomodes la cabeza.'], ['↔','Espalda','Necesito que me acomodes la espalda.'], ['↓','Piernas','Necesito que me acomodes las piernas.'], ['○','Otra posición','Necesito cambiar de posición.']]],
-  pain: ['Me duele', [['↑','Cabeza','Me duele la cabeza.'], ['↔','Espalda','Me duele la espalda.'], ['↓','Piernas','Me duelen las piernas.'], ['○','Otra zona','Me duele en otra parte.']]]
-};
-function renderQuick(page){
-  S.quick.page=page;
-  const [title, options]=quickPages[page];
-  $('#quickTitle').textContent=title;
-  $$('#quickDialog .quick-option').forEach((button,i)=>{
-    const [icon,label,id]=options[i];
-    button.firstElementChild.textContent=icon;
-    button.querySelector('b').textContent=label;
-    button.dataset.act=page==='root'?`quick:${id}`:`quick:${i}`;
-  });
-  $('#quickDialog .quick-close').textContent=page==='root'?'Cerrar':'Atrás';
-  clearFocus(); S.scanIdx=-1; S.scanT=0;
-  $('#quickTitle').focus();
-}
-function openQuick(origin){
-  if(S.quick || gestureBlocked()) return;
-  cancelBrowTap();
-  S.quick={page:'root', opener:origin};
-  $('#quickHint').textContent='Suelta la mandíbula para elegir.';
-  quickDialog.append($('#gaze'));
-  quickDialog.showModal();
-  renderQuick('root');
-}
-function unlockQuick(origin){
-  if(!S.quick || S.quick.opener!==origin) return;
-  S.quick.opener=null;
-  $('#quickHint').textContent='Enfoca una opción y confirma con la ceja. Dos cejas cierran.';
-  clearFocus(); S.scanIdx=-1; S.scanT=0;
-}
-function closeQuick(){
-  if(!S.quick) return;
-  S.quick=null;
-  cancelBrowTap();
-  quickDialog.close();
-  document.body.append($('#gaze'));
-  clearFocus(); S.scanIdx=-1; S.scanT=0;
-  S.lockUntil=performance.now()+LOCKOUT_MS;
-  if(S.screen==='agent') S.agentIdle=performance.now();
-}
-quickDialog.addEventListener('cancel',e=>{ e.preventDefault(); closeQuick(); });
-function chooseQuick(id){
-  if(!S.quick) return;
-  if(id==='back'){ if(S.quick.page==='root') closeQuick(); else renderQuick('root'); return; }
-  if(S.quick.opener) return;
-  if(id==='attention'){ closeQuick(); startAlarm('atencion'); return; }
-  if(S.quick.page==='root'){ if(Object.hasOwn(quickPages,id)) renderQuick(id); return; }
-  const option=quickPages[S.quick.page][1][Number(id)];
-  if(option){ closeQuick(); speak(option[2]||option[1]); }
-}
 function goBack(){
-  if(S.quick) closeQuick();
-  else if(S.emoRingFor!==null) closeEmoRing();
+  if(S.emoRingFor!==null) closeEmoRing();
   else if(S.rest) setRest(false);
   else if(S.screen==='keyboard' && S.kb.mode==='ini' && S.kb.level===1){ S.kb.mode='text'; go('talk'); }   // teclado por iniciales: vuelve al chat
   else if(S.screen==='keyboard' && S.kb.level!==1){ S.kb.level=1; renderKeys(); }
@@ -1550,89 +1468,48 @@ function goBack(){
   else if(S.screen!=='home') go('home');
 }
 
-/* ===================== EMG gestures ===================== */
-const G={down:{}, tap:null, watchdog:null};
+/* ===================== Eyebrow selection ===================== */
+const G={brow:null, watchdog:null};
 function gestureBlocked(){
-  return document.visibilityState!=='visible' || S.alarm?.level==='emergencia' || $('#calib').classList.contains('on');
+  return trackerOnly || document.visibilityState!=='visible' ||
+    document.body.classList.contains('panel') || $('#alarm').classList.contains('on') || $('#calib').classList.contains('on');
 }
-function cancelBrowTap(){
-  clearTimeout(G.tap?.timer);
-  G.tap=null;
-}
-function cancelGestures(origin, src){
-  if((!src || src==='ceja') && (!origin || G.tap?.origin===origin)) cancelBrowTap();
-  for(const [key,hold] of Object.entries(G.down)){
-    if((!origin || hold.origin===origin) && (!src || key===src)) delete G.down[key];
-  }
-  if(S.quick?.opener && (!origin || S.quick.opener===origin) && (!src || src==='mandibula')) closeQuick();
-  if(!src && (!origin || origin==='myoware')){ clearTimeout(G.watchdog); G.watchdog=null; }
-  showHoldProgress();
-}
-function showHoldProgress(){
-  const src=['ceja','mandibula'].find(key=>G.down[key]?.progress>=450 && !G.down[key].done);
-  const active=src && (S.quick? $('#quickDialog .gesture-hold') : $('#gestureHold'));
-  $$('.gesture-hold').forEach(el=>{ el.hidden=el!==active; });
-  if(active){
-    const label=src==='ceja'?'SOS de prueba · suelta para cancelar':'Abriendo atajos · suelta para cancelar';
-    if(active.firstElementChild.textContent!==label) active.firstElementChild.textContent=label;
-    active.lastElementChild.value=G.down[src].progress;
+function cancelGestures(origin){
+  if(!origin || G.brow?.origin===origin) G.brow=null;
+  if(!origin || origin==='myoware'){
+    clearTimeout(G.watchdog);
+    G.watchdog=null;
   }
 }
 function pressSrc(src,origin,time){
-  if(!['ceja','mandibula'].includes(src) || G.down[src] || gestureBlocked()) return;
-  const second=src==='ceja' && G.tap?.origin===origin && time-G.tap.time>=0 && time-G.tap.time<=CFG.doubleMs;
-  if(src==='ceja') cancelBrowTap();
-  G.down[src]={origin,time,since:time,second,progress:0,focus:S.focus};
+  if(src!=='ceja' || G.brow || gestureBlocked()) return;
+  G.brow={origin,time,focus:S.focus};
   flashPill(src);
-}
-function updateHold(src,origin,time){
-  const h=G.down[src];
-  if(!h || h.origin!==origin || h.done || gestureBlocked()) return;
-  if(src==='mandibula' && (S.quick || G.down.ceja)) return;
-  h.since ??= time;
-  h.progress=time-h.since;
-  if(h.progress>=CFG.holdMs){
-    h.done=true;
-    cancelBrowTap();
-    if(src==='ceja') startAlarm('emergencia');
-    else openQuick(origin);
-  }
-  showHoldProgress();
+  if(origin!=='face') confirmFocus();
 }
 function releaseSrc(src,origin,time){
-  const h=G.down[src];
-  if(!h || h.origin!==origin) return;
-  delete G.down[src];
-  showHoldProgress();
-  if(h.done){ if(src==='mandibula') unlockQuick(origin); return; }
-  if(src!=='ceja' || time-h.time<0 || time-h.time>=CFG.tapMs || gestureBlocked()) return;
-  if(h.second){ goBack(); return; }
-  const timer=setTimeout(()=>{
-    G.tap=null;
-    if(!gestureBlocked() && h.focus===S.focus) confirmFocus();
-  },CFG.doubleMs);
-  G.tap={timer,origin,time};
+  const brow=G.brow;
+  if(src!=='ceja' || brow?.origin!==origin) return;
+  G.brow=null;
+  const elapsed=time-brow.time;
+  if(origin==='face' && elapsed>=0 && elapsed<CFG.faceBrowMaxMs && brow.focus===S.focus && !gestureBlocked()) confirmFocus();
 }
 function receiveMyoWare(src,edge,time){
   if(edge==='alive'){
     clearTimeout(G.watchdog);
     G.watchdog=setTimeout(()=>cancelGestures('myoware'),250);
-  } else if(edge==='cancel') cancelGestures('myoware',src);
+  } else if(edge==='cancel' && (!src || src==='ceja')) cancelGestures('myoware');
   else if(edge==='down') pressSrc(src,'myoware',time);
-  else if(edge==='hold') updateHold(src,'myoware',time);
-  else if(edge==='break' && G.down[src]?.origin==='myoware' && G.down[src].since!==null){
-    G.down[src].since=null; G.down[src].progress=0; showHoldProgress();
-  } else if(edge==='up') releaseSrc(src,'myoware',time);
+  else if(edge==='up') releaseSrc(src,'myoware',time);
 }
 function targetLayer(){
-  return S.quick ? $('#quickDialog') : S.rest ? $('#rest') : S.emoRingFor!==null ? $('#emoRing') : $('.screen.on');
+  return S.rest ? $('#rest') : S.emoRingFor!==null ? $('#emoRing') : $('.screen.on');
 }
 function confirmFocus(){
   const f=S.focus;
-  if(!f || !targetLayer()?.contains(f) || S.blocked===f || S.quick?.opener) return;
-  const cejaYa = gazeOnly() && S.blocked!==f;
-  if(S.gazeLost || cejaYa || ((S.quick || CFG.mode==='click') && S.armed)){
-    S.blocked=f; f.classList.add('blocked'); activate(f,!S.quick); return true;
+  if(!f || !targetLayer()?.contains(f) || S.blocked===f) return;
+  if(S.gazeLost || iphonePointing() || (CFG.mode==='click' && S.armed)){
+    S.blocked=f; f.classList.add('blocked'); activate(f,true,true); return true;
   }
 }
 
@@ -1659,10 +1536,9 @@ addEventListener('keydown',e=>{
     if(e.key==='Enter' && document.activeElement.id==='ctxIn'){ S.cards=[]; genSuggestions(); document.activeElement.blur(); }
     if(e.key==='Escape') document.activeElement.blur(); return; }
   if(e.repeat) return;
-  if(e.code==='Space' && !(S.quick && document.activeElement?.tagName==='BUTTON')){
+  if(e.code==='Space' && document.activeElement?.tagName!=='BUTTON'){
     e.preventDefault(); pressSrc('ceja','keyboard',performance.now());
   }
-  if(e.code==='KeyJ') pressSrc('mandibula','keyboard',performance.now());
   if(e.key==='r'||e.key==='R') rfid();
   if(e.key==='k'||e.key==='K') openPanel();
   if(e.key==='g'||e.key==='G') setGazeLost(!S.gazeLost);
@@ -1675,7 +1551,6 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{
   if(e.code==='Space') releaseSrc('ceja','keyboard',performance.now());
-  if(e.code==='KeyJ') releaseSrc('mandibula','keyboard',performance.now());
 });
 addEventListener('blur',()=>cancelGestures());
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) cancelGestures(); });
@@ -1729,16 +1604,14 @@ const menuPointer = window.createMenuPointer();
 const menuDwell = window.createPointerDwell();
 const menuOutline = window.createDwellOutline();
 function tick(now){
-  if(G.down.ceja?.origin==='keyboard') updateHold('ceja','keyboard',now);
-  if(G.down.mandibula?.origin==='keyboard') updateHold('mandibula','keyboard',now);
   // punto de mirada: temblor de webcam opcional + suavizado
   const sig = CFG.jitter? 110*S.scale : 0;
   noise.x=noise.x*.88+gauss()*sig*.35; noise.y=noise.y*.88+gauss()*sig*.35;
   const tx=mouse.x+noise.x, ty=mouse.y+noise.y;
   gz.x+= (tx-gz.x)*.45; gz.y+= (ty-gz.y)*.45;   // filtro ~2 cuadros (guía: suavizado con poco retraso)
-  // cursor visible: se acerca al centro del objetivo enfocado (fuerte en solo mirada, suave con el imán; nunca se pega del todo)
+  const iphone=iphonePointing();
   let cx=gz.x, cy=gz.y;
-  if((gazeOnly()||CFG.magnet) && S.focus && S.focus.isConnected && !S.gazeLost){ const r=S.focus.getBoundingClientRect(); const k=gazeOnly()? MAGNET : CFG.magnetPull;
+  if((iphone||CFG.magnet) && S.focus && S.focus.isConnected && !S.gazeLost){ const r=S.focus.getBoundingClientRect(); const k=iphone? MAGNET : CFG.magnetPull;
     cx+= (r.left+r.width/2-gz.x)*k; cy+= (r.top+r.height/2-gz.y)*k; }
   const cur=$('#gaze'); cur.style.left='0';cur.style.top='0'; cur.style.transform=`translate(${cx}px,${cy}px)`;
 
@@ -1752,23 +1625,22 @@ function tick(now){
     if (indicator.textContent !== state) indicator.textContent = state;
   }
   const busy = trackerOnly || document.hidden || $('#alarm').classList.contains('on') ||
-    $('#calib').classList.contains('on') || S.quick?.opener || document.body.classList.contains('panel');
-  const resting = !S.quick && S.rest && !S.gazeLost;
-  const menuAim = !gazeOnly() && !busy && !S.quick && !S.rest && !S.gazeLost &&
+    $('#calib').classList.contains('on') || document.body.classList.contains('panel');
+  const resting = S.rest && !S.gazeLost;
+  const menuAim = !iphone && !busy && !S.rest && !S.gazeLost &&
     !document.body.classList.contains('external-playing') && (!window.frameElement || window.parent.TokiAccess?.magnetEnabled !== false);
   if (!menuAim) menuPointer.reset();
-  if (busy || resting || S.quick || S.gazeLost) { menuDwell.reset(); menuOutline.clear(); }
+  if (busy || iphone || resting || S.gazeLost) { menuDwell.reset(); menuOutline.clear(); }
   if(!busy && resting) restWakeTick(now);
   else if(!busy){
     if(S.gazeLost){ // escaneo: la ceja elige
-      const brow=G.down.ceja;
-      if(S.focus && (G.tap || brow && !brow.done && (!brow.progress || brow.progress<CFG.tapMs))) S.scanT=now;
-      if(now-S.scanT>CFG.scanMs){ const v=visibleTargets(); if(v.length){ S.scanIdx=(S.scanIdx+1)%v.length; setFocus(v[S.scanIdx]); S.armed=true; S.focus.classList.add('armed'); S.focus.style.setProperty('--p',1);} S.scanT=now; }
+      if(S.focus && G.brow?.origin==='face') S.scanT=now;
+      if(now-S.scanT>CFG.scanMs){ const v=visibleTargets(); if(v.length){ S.scanIdx=(S.scanIdx+1)%v.length; setFocus(v[S.scanIdx]); if(!iphone){ S.armed=true; S.focus.classList.add('armed'); S.focus.style.setProperty('--p',1); }} S.scanT=now; }
     } else {
       const hit=document.elementFromPoint(gz.x,gz.y);
       let el=hit? hit.closest('[data-t]') : null;
       if(el && !targetLayer()?.contains(el)) el=null;
-      if(!el && gazeOnly() && !S.quick) el=nearestTarget(gz.x,gz.y,SNAP_PX*S.scale);
+      if(!el && iphone) el=nearestTarget(gz.x,gz.y,SNAP_PX*S.scale);
       if (menuAim) {
         const aim = menuPointer.resolve(gz, now, targetLayer(), cur, window.NOSE, window.GAZE);
         el = aim.target;
@@ -1792,28 +1664,25 @@ function tick(now){
         const r=S.focus.getBoundingClientRect(), m=.12*Math.min(r.width,r.height);
         if(gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m && !(el && el.classList.contains('emo') && S.focus.contains(el))) el=S.focus;
       }
-      if(!el && CFG.magnet && !menuAim && !S.quick) el=magnetTarget(gz.x,gz.y);   // la mirada cayó en un hueco: el objetivo probable más cercano
-      if (!S.quick && tabletComposer && composerLock) {
+      if(!el && CFG.magnet && !menuAim) el=magnetTarget(gz.x,gz.y);
+      if (tabletComposer && composerLock) {
         const r = composerLock;
         if (gz.x >= r.left && gz.x <= r.right && gz.y >= r.top && gz.y <= r.bottom) el = null;
         else composerLock = null;
       }
       if (!onSuggestion || el !== S.focus) suggestionExitAt = null;
       const inside = !!el && hit?.closest('[data-t]') === el;
-      const dwellElapsed = S.quick ? 0 : menuDwell.sample(el, now, inside);
+      const dwellElapsed = iphone ? -1 : menuDwell.sample(el, now, inside);
       if (!el || el !== S.focus || dwellElapsed < 0) menuOutline.clear();
       setFocus(el);
-      // pausa breve tras elegir: el foco se mantiene (y su bloqueo anti-repetición), la carga empieza después
-      if(S.focus && gazeOnly() && S.fStart<(S.lockUntil||0)) S.fStart=S.lockUntil;
-      if(S.focus && suggestionExitAt === null){
+      if(S.focus && (!iphone || iphoneDwell()) && suggestionExitAt === null){
         const f=S.focus, r=f.getBoundingClientRect();
         f.style.setProperty('--mx',((gz.x-r.left)/r.width*100)+'%'); f.style.setProperty('--my',((gz.y-r.top)/r.height*100)+'%');
         const forced=f.dataset.dwell? +f.dataset.dwell : null;
-        const cejaFirst = gazeOnly() && CFG.mode === 'click' && !forced;
-        const automatic = !S.quick && (!!forced || CFG.mode === 'dwell' || cejaFirst);
-        const insideDwell = automatic && !gazeOnly();
-        const elapsed = insideDwell ? Math.max(0, dwellElapsed) : Math.max(0, now-S.fStart);
-        const target = automatic ? (forced || (cejaFirst ? Math.max(CEJA_FALLBACK_MS, CFG.dwellMs*2.5) : CFG.dwellMs)) : CFG.settleMs;
+        const automatic = !!forced || CFG.mode === 'dwell';
+        const insideDwell = automatic && !iphone;
+        const elapsed = insideDwell ? Math.max(0, dwellElapsed) : Math.max(0, now-Math.max(S.fStart, iphone ? S.lockUntil||0 : 0));
+        const target = automatic ? (forced || CFG.dwellMs) : CFG.settleMs;
         const tabletProgress = window.frameElement && window.parent.TokiAccess?.dwellProgress;
         const p = insideDwell && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);
@@ -1825,8 +1694,8 @@ function tick(now){
       }
     }
   }
-  $('#typing').classList.toggle('on', !S.quick && S.screen==='talk' && !!S.focus && !$('#speaking').classList.contains('on'));
-  if(!S.quick && S.alarm?.level!=='emergencia' && S.screen==='agent' && !S.agentPending && now-S.agentIdle>10000){ island('⏱','Cancelado: 10 s sin respuesta'); go('home'); }
+  $('#typing').classList.toggle('on', S.screen==='talk' && !!S.focus && !$('#speaking').classList.contains('on'));
+  if(S.alarm?.level!=='emergencia' && S.screen==='agent' && !S.agentPending && now-S.agentIdle>10000){ island('⏱','Cancelado: 10 s sin respuesta'); go('home'); }
   alarmTick(now);
   requestAnimationFrame(tick);
 }
@@ -1842,7 +1711,7 @@ function nearestTarget(x,y,maxDist){
 }
 
 /* ===================== Descanso ===================== */
-function setRest(on){ cancelBrowTap(); S.rest=on; $('#rest').classList.toggle('on',on); clearFocus(); restWake.since=0; $('#restWake').style.setProperty('--p',0); log(on?'descanso':'despierta'); }
+function setRest(on){ S.rest=on; $('#rest').classList.toggle('on',on); clearFocus(); restWake.since=0; $('#restWake').style.setProperty('--p',0); log(on?'descanso':'despierta'); }
 /* salir del descanso sin gestos: mantener la mirada 2 s en "Volver" (o clic) */
 const restWake={since:0};
 function restWakeTick(now){
@@ -1850,6 +1719,7 @@ function restWakeTick(now){
   const inside=gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m;
   if(!inside){ restWake.since=0; if(S.focus===w) clearFocus(); w.style.setProperty('--p',0); return; }
   setFocus(w);
+  if(iphonePointing() && !iphoneDwell()) return;
   if(!restWake.since) restWake.since=now;
   if(now-restWake.since>=CFG.settleMs){ S.armed=true; w.classList.add('armed'); }
   const p=Math.min(1,(now-restWake.since)/(+w.dataset.dwell||2000)); w.style.setProperty('--p',p);
@@ -1865,7 +1735,7 @@ function startAlarm(level){
   if(S.alarm && S.alarm.level==='emergencia') return;
   S.alarm={level,t0:performance.now(),ack:0,lastBeep:0}; log('SIMULACIÓN: '+level);
   if(level==='emergencia'){
-    cancelGestures(); closeQuick(); clearFocus();
+    cancelGestures(); clearFocus();
     const a=$('#alarm'); a.classList.remove('ack'); a.classList.add('on');
     $$('#stage > .screen, #emoRing, #rest, #calib').forEach(el=>{ el.inert=true; });
     $('#alSym').innerHTML='<svg><use href="#i-alert"/></svg>';
@@ -1922,23 +1792,24 @@ const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+
 
 /* inicio */
 $$('.status').forEach(el=>{
-  el.innerHTML=(el.closest('.screen').id==='s-home' ? '' : '<button type="button" class="t pill glass home-nav" data-t data-act="go:home">‹ Inicio</button>')+'<div class="status-info"></div>';
+  el.innerHTML=(el.closest('.screen').id==='s-home' ? '' : '<button type="button" class="t pill glass back-nav" data-t data-act="back">‹ Volver</button>')+'<div class="status-info"></div>';
 });
 renderTiles(); renderStatus(); updateLCD(); waListen();
 if(screenFromUrl()!=='home') go(screenFromUrl(),false);
 window.WOKI={S,CFG,mouse,gz};
-log('Toki OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');
+log('Toki OS listo · mouse = mirada · Espacio = ceja');
 </script>
 
 <script type="module">
   import { setupMyoWareGestures } from './myoware-click.js';
-  setupMyoWareGestures(receiveMyoWare, () => {
+  const myoware = setupMyoWareGestures(receiveMyoWare, () => {
     window.IPHONE?.deactivate();
     if(window.NOSE?.on) NOSE.stop();
     CFG.mode='click';
     $('#calib').classList.remove('on');
     renderStatus();
   });
+  window.WOKI.enableMyoWare = myoware.enable;
 </script>
 
 <!-- ===================== Puntero con la nariz (MediaPipe) ===================== -->
@@ -2127,7 +1998,9 @@ const NOSE = window.NOSE = {
           const b=Object.fromEntries(r.faceBlendshapes[0].categories.map(c=>[c.categoryName,c.score]));
           const brow=Math.max(b.browInnerUp||0,((b.browOuterUpLeft||0)+(b.browOuterUpRight||0))/2), jaw=b.jawOpen||0;
           const cb=this.fc.ceja, cj=this.fc.mandibula;
-          this.faceEdge('ceja',brow,now); this.faceEdge('mandibula',jaw,now);
+          if(cj.base!==null && jaw>cj.base+cj.delta){ cancelGestures('face'); cb.up=false; }
+          else this.faceEdge('ceja',brow,now);
+          this.faceEdge('mandibula',jaw,now);
           // mientras el gesto está en curso, el puntero se queda quieto (la cara entera se mueve al levantar las cejas)
           freeze = brow>cb.base+cb.delta*.4 || jaw>cj.base+cj.delta*.4 || now-this.fcLast<250;
           $('#noseInfo').textContent=`cejas ${brow.toFixed(2)} (reposo ${cb.base.toFixed(2)}) · boca ${jaw.toFixed(2)}`;
@@ -2149,7 +2022,7 @@ const NOSE = window.NOSE = {
   fc:{ ceja:{base:null,delta:.18,up:false}, mandibula:{base:null,delta:.22,up:false} },
   fcLast:0,
   resetFaceEdges(){
-    if(!this.fc.ceja.up && !this.fc.mandibula.up && G.tap?.origin!=='face') return;
+    if(!this.fc.ceja.up && !this.fc.mandibula.up && G.brow?.origin!=='face') return;
     cancelGestures('face');
     this.fc.ceja.up=this.fc.mandibula.up=false;
   },
@@ -2160,7 +2033,6 @@ const NOSE = window.NOSE = {
     const hi=s.base+s.delta, lo=s.base+s.delta*.45;
     if(!s.up && v>hi){ s.up=true; this.fcLast=now; pressSrc(src,'face',now); }
     else if(s.up && v<lo){ s.up=false; this.fcLast=now; releaseSrc(src,'face',now); }
-    else if(s.up && src==='mandibula') updateHold(src,'face',now);
   },
   draw(f){ const c=$('#camDot').getContext('2d'); c.clearRect(0,0,128,96); c.fillStyle='#30D158';
     for(const i of [1,234,454,10,152]){ const p=f[i]; c.beginPath(); c.arc((1-p.x)*128,p.y*96,i===1?4:2,0,7); c.fill(); } }

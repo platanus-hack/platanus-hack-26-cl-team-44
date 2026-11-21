@@ -5,6 +5,7 @@ const TRIALS = 5;
 const MIN_DETECTIONS = 3;
 const MAX_AGE_MS = 250;
 const MAX_GAP_MS = 150;
+const ACTIVE_POLL_MS = 30;
 const JAW_PRIORITY_MS = 150;
 const ACTIVATE_MS = 90;
 const RELEASE_MS = 120;
@@ -157,11 +158,6 @@ export function createGestureDetector({ brow, jaw }, onEdge) {
         onEdge?.(active, 'cancel', time);
         active = null;
       }
-      if (active === 'brow' ? crossed(browValue, brow) : active === 'jaw' && crossed(jawValue, jaw)) {
-        onEdge?.(active, 'hold', time);
-      } else if (active && (active === 'brow' ? rested(browValue, brow) : rested(jawValue, jaw))) {
-        onEdge?.(active, 'break', time);
-      }
       if (!rested(jawValue, jaw) || !rested(browValue, brow)) { restSince = null; return; }
       restSince ??= time;
       if (time - restSince >= RELEASE_MS) {
@@ -255,6 +251,11 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
   saved = loadSaved();
   const setStatus = text => { if (status.textContent !== text) status.textContent = text; };
 
+  function enable() {
+    if (mode === 'off' && saved) start('active');
+    return mode === 'active';
+  }
+
   function save(value) {
     saved = value;
     let persisted = false;
@@ -342,7 +343,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
             result.textContent = `Último gesto: ${label} · Ceja: ${counts.brow} · Mandíbula: ${counts.jaw}`;
           }
           if (frames.length) onInput?.(null, 'alive');
-          setStatus(onInput ? 'Gestos activos: ceja para confirmar; mandíbula 3 s para abrir atajos.'
+          setStatus(onInput ? 'Gestos activos: levanta la ceja para elegir. Suéltala antes del siguiente clic.'
             : 'Prueba activa. Relaja la cara entre gestos.');
         }
       } catch {
@@ -350,7 +351,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
           ? 'No hay señal reciente de ambos canales. Revisa la conexión y vuelve a iniciar la calibración.'
           : 'Señal interrumpida. Revisa la conexión y activa de nuevo; la calibración sigue guardada.');
       }
-      if (id === runId) setTimeout(poll, 60);
+      if (id === runId) setTimeout(poll, calibration || !onInput ? 60 : ACTIVE_POLL_MS);
     }
     poll();
   }
@@ -404,4 +405,5 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
   if (saved) setStatus('Calibración guardada. Activa los gestos o la prueba para usarla.');
   updateButtons();
   panel.hidden = false;
+  return { enable };
 }

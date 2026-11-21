@@ -117,7 +117,7 @@ test('confirmation only accepts available focus on the current layer', () => {
   const flags = { inside: true, iphone: false };
   let clicks = 0;
   const context = vm.createContext({
-    S, CFG, activate: () => clicks++, gazeOnly: () => flags.iphone,
+    S, CFG, activate: () => clicks++, iphonePointing: () => flags.iphone,
     $: id => ({ contains: () => flags.inside && (id !== '#rest' || element.dataset.act === 'wake') })
   });
   vm.runInContext(functions, context);
@@ -208,7 +208,7 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
   assert.match(elements['myoware-result'].textContent, /Último gesto: Mandíbula.*Mandíbula: 1/);
   toggle.click();
   await timers.shift()();
-  context.setupMyoWareGestures((...event) => events.push(event), () => entries++);
+  const myoware = context.setupMyoWareGestures((...event) => events.push(event), () => entries++);
   assert.equal(toggle.hidden, false);
   assert.equal(toggle.textContent, 'Activar gestos');
   assert.equal(elements['myoware-use-woki'].hidden, false);
@@ -266,4 +266,5 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
   storage.set(savedKey, 'invalid');
   listeners.storage({ key: savedKey });
   assert.equal(elements['myoware-use-woki'].hidden, true, 'invalid stored data cannot enable a click');
+  assert.equal(myoware.enable(), false, 'iPhone cannot enable an invalid profile');
 });
