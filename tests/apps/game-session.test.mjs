@@ -1,26 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGameSessions} from '../../software/apps-bridge/game-session.mjs';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createAppsServer} from '../../software/apps-bridge/server.mjs';
 
-const config={mode:'Nariz',game:'gazey_golf',dwellMs:3000,calibration:{n:{dx:0,dy:0},L:.1,R:.1,U:.1,D:.1}};
-
-test('only the requested game window can claim a handoff once', async () => {
-  let key;
-  const sessions=createGameSessions(async (id,port)=>{key=id;assert.equal(port,8790);});
-  await assert.rejects(sessions.open({...config,game:'https://example.com'},8790),{status:400});
-  assert.equal(key,undefined);
-  await sessions.open(config,8790);
-  assert.throws(()=>sessions.take('missing'),{status:404});
-  assert.deepEqual(sessions.take(key),config);
-  assert.throws(()=>sessions.take(key),{status:404});
-});
-
-test('a failed launch discards the calibration and allows retry', async () => {
-  let key, fail=true;
-  const sessions=createGameSessions(async id=>{key=id;if(fail)throw Error('Chrome unavailable');});
-  await assert.rejects(sessions.open(config,8790),{status:503});
-  assert.throws(()=>sessions.take(key),{status:404});
-  fail=false;
-  await sessions.open(config,8790);
-  assert.deepEqual(sessions.take(key),config);
+test('a game stream owns its input, viewport and lifetime',async t=>{
+  const stateDir=mkdtempSync(join(tmpdir(),'toki-game-session-'));
+  const sent=[];
+  let stopped=0;
+  const server=createAppsServer({stateDir,renderGame:async({url,viewport,onFrame})=>{
+    assert.equal(url,'https://www.eyegazegames.com/gamesource?id=gazey_golf');
+    assert.deepEqual(viewport,{width:1280,height:640});
+    onFrame('jpeg');
+    return {input:async p=>sent.push(p),close:async()=>{stopped++;}};
+  }});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(()=>{server.closeAllConnections();server.close();rmSync(stateDir,{recursive:true,force:true});});
+  const base='http://127.0.0.1:'+server.address().port;
+  const {token}=await(await fetch(base+'/api/session')).json();
+  const post=(action,payload,signal)=>fetch(base+'/api/games/'+action,{method:'POST',headers:{'content-type':'application/json','x-toki-token':token},body:JSON.stringify(payload),signal});
+  const config={owner:crypto.randomUUID(),game:'gazey_golf',width:2000,height:1000};
+  assert.equal((await post('play',{...config,game:'https://example.com'})).status,400);
+  assert.equal((await post('play',{...config,height:0})).status,400);
+  const lifetime=new AbortController();
+  const response=await post('play',config,lifetime.signal);
+  const reader=response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let lines='';while(!lines.includes('"frame":"jpeg"'))lines+=(await reader.read()).value;
+  const {id}=JSON.parse(lines.split('\n')[0]);
+  const point={id,type:'click',x:0.6,y:0.8};
+  assert.equal((await post('play',{...config,owner:crypto.randomUUID()})).status,409);
+  assert.equal((await post('input',{...point,id:'other'})).status,404);
+  assert.equal((await post('input',{...point,x:1.1})).status,400);
+  assert.equal((await post('input',point)).status,200);
+  assert.equal((await post('input',{id,type:'leave'})).status,200);
+  assert.deepEqual(sent.map(p=>p.type),['click','leave']);
+  lifetime.abort();
+  for(let i=0;i<50&&!stopped;i++)await new Promise(r=>setTimeout(r,20));
+  assert.equal(stopped,1);
+  assert.equal((await post('input',point)).status,404);
 });

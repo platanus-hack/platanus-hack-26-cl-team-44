@@ -7,6 +7,7 @@
 | Revisar la entrega del concurso | [Requisitos](competition/README.md) |
 | Continuar el diseño de la interfaz | [Guía de diseño](product/GUIA-DISENO.md) y [plan](product/PLAN.md) |
 | Configurar WhatsApp | [Guía](product/GUIA-WAPI-PASO-A-PASO.md) |
+| Probar Rappi Chile y revisar lo pendiente | [Conector, evidencia y conexión local](research/rappi-chile/README.md) |
 | Revisar el alcance del agente y la memoria | [Alcance del agente](product/ALCANCE-AGENTE.md) |
 | Leer antecedentes | [Informe](product/INFORME.md), [hallazgos](product/hallazgos/) y [eye tracking](research/) |
 

@@ -1,55 +1,69 @@
 import {randomBytes} from 'node:crypto';
-import {spawn} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
+import {join} from 'node:path';
+import {renderGame} from './game-renderer.mjs';
 
-const launcher = fileURLToPath(new URL('../browser-bridge/start.mjs', import.meta.url));
-const games = new Set(['eye_drive','gazey_golf','mole_miners','open_drive','solitaire','sudoku','setup','all']);
+const routes = new Map([
+  ['eye_drive','gamesource'], ['gazey_golf','gamesource'], ['open_drive','gamesource'],
+  ['mole_miners','game'], ['solitaire','game'], ['sudoku','game'], ['all','carousel'], ['setup','carousel']
+]);
+const fault = (message,status) => Object.assign(new Error(message),{status});
 
-function openWindow(id, port) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [launcher], {
-      env:{...process.env, TOKI_GAME_HANDOFF:id, TOKI_GAME_PORT:String(port)},
-      stdio:['ignore','ignore','ignore','ipc']
-    });
-    let settled = false;
-    const timeout = setTimeout(() => { child.kill(); finish(false); }, 15000);
-    const finish = ok => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      if (child.connected) child.disconnect();
-      child.unref();
-      if (ok) resolve(); else reject(Error('No se pudo abrir Chrome'));
+export function createGameSessions(profile, launch = renderGame) {
+  let active;
+  async function play({game,width,height,owner}, origin, res) {
+    if (!/^[a-f0-9-]{36}$/.test(owner) || !routes.has(game) || ![width,height].every(n => Number.isInteger(n) && n > 0 && n <= 16000))
+      throw fault('Elige un juego del catálogo.',400);
+    if (active?.owner === owner) active.controller.abort();
+    if (active?.controller.signal.aborted) await active.finished;
+    if (active) throw fault('Ya hay una partida abierta. Vuelve a su pestaña.',409);
+    if (res.destroyed) return;
+    const route = routes.get(game);
+    const scale = Math.min(1,1280/width,900/height);
+    const viewport = {width:Math.max(64,Math.round(width*scale)),height:Math.max(64,Math.round(height*scale))};
+    const url = 'https://www.eyegazegames.com/'+route+(route === 'carousel' ? '' : '?id='+game);
+    const controller = new AbortController();
+    const session = {id:randomBytes(24).toString('hex'),owner,controller};
+    active = session;
+    const stop = () => controller.abort();
+    res.once('close', stop);
+    res.writeHead(200, {'Content-Type':'application/x-ndjson','Cache-Control':'no-store'});
+    res.flushHeaders();
+    const write = object => res.write(JSON.stringify(object)+'\n');
+    let latestFrame, ending;
+    const sendFrame = frame => {
+      if (!session.renderer || res.writableNeedDrain) { latestFrame=frame; return; }
+      if (!controller.signal.aborted) write({frame});
     };
-    child.once('message', msg => finish(msg === 'ready'));
-    child.once('error', () => finish(false));
-    child.once('exit', () => finish(false));
-  });
-}
-
-export function createGameSessions(launch = openWindow) {
-  const pending = new Map();
-  const fault = (message,status) => Object.assign(new Error(message),{status});
-  return {
-    async open(config, port) {
-      if (!games.has(config.game) || !['Nariz','Mirada'].includes(config.mode) ||
-          ![2000,3000,4000,6000].includes(config.dwellMs)) throw fault('Juego o control desconocido.',400);
-      const id = randomBytes(24).toString('hex');
-      for (const [key, entry] of pending) if (Date.now() >= entry.expires) pending.delete(key);
-      if (pending.size >= 8) throw fault('Hay una sesión de juego pendiente.',409);
-      const timer = setTimeout(() => pending.delete(id),60000);
-      timer.unref();
-      pending.set(id,{config:{game:config.game,mode:config.mode,dwellMs:config.dwellMs,calibration:config.calibration},expires:Date.now()+60000,timer});
-      try { await launch(id,port); }
-      catch { clearTimeout(timer); pending.delete(id); throw fault('No se pudo abrir Chrome para jugar. Puedes reintentarlo.',503); }
-      return {opened:true};
-    },
-    take(id) {
-      const entry = pending.get(id);
-      if (!entry || Date.now() >= entry.expires) throw fault('Vuelve a elegir el juego desde Toki.',404);
-      clearTimeout(entry.timer);
-      pending.delete(id);
-      return entry.config;
-    }
-  };
+    res.on('drain', () => { if (latestFrame) { const frame=latestFrame;latestFrame=null;sendFrame(frame); } });
+    const ended = new Promise(resolve => { ending=resolve; });
+    controller.signal.addEventListener('abort', ending, {once:true});
+    session.finished = (async () => {
+      try {
+        session.renderer = await launch({url,profile:join(profile,'juegos'),viewport,origin,signal:controller.signal,
+          onFrame:sendFrame,onEnded:ending});
+        if (!controller.signal.aborted) {
+          write({id:session.id});
+          if (latestFrame) { const frame=latestFrame;latestFrame=null;sendFrame(frame); }
+        }
+        await ended;
+      } catch {
+        if (!res.destroyed) write({error:'No se pudo cargar la partida. Comprueba que Chrome esté instalado y vuelve a intentarlo.'});
+      } finally {
+        stop();
+        await session.renderer?.close();
+        if (!res.destroyed) res.end();
+        if (active===session) active=null;
+      }
+    })();
+    await session.finished;
+  }
+  async function input({id,type,x,y}) {
+    const session=active;
+    if (!session?.renderer || session.id!==id || session.controller.signal.aborted) throw fault('La partida se cerró.',404);
+    if (!['move','click','leave'].includes(type) || (type!=='leave' && ![x,y].every(n=>Number.isFinite(n)&&n>=0&&n<=1)))
+      throw fault('Posición fuera del juego.',400);
+    await session.renderer.input({type,x,y});
+    return {ok:true};
+  }
+  return {play,input,close(){active?.controller.abort();}};
 }

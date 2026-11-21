@@ -1,0 +1,28 @@
+diff --git a/src/constants.ts b/src/constants.ts
+index 26d79dd..923f1e6 100644
+--- a/src/constants.ts
++++ b/src/constants.ts
+@@ -1,17 +1,17 @@
+-export const BASE_URL = "https://services.grability.rappi.com";
+-export const IMAGES_BASE_URL = "https://images.rappi.com";
++export const BASE_URL = "https://services.rappi.cl";
++export const IMAGES_BASE_URL = "https://images.rappi.cl";
+ export const DEFAULT_STORE_TYPE = "restaurant";
+-export const DEFAULT_COORDS = { lat: 4.624335, lng: -74.063644 } as const;
++export const DEFAULT_COORDS = { lat: -33.4147039, lng: -70.6023703 } as const;
+ export const CONFIG_FILENAME = ".rappi-config.json";
+ export const API_PORT = 3100;
+
+ export const DEFAULT_HEADERS: Record<string, string> = {
+   accept: "application/json",
+-  "accept-language": "es-CO",
++  "accept-language": "es-CL",
+   "app-version": "e1de6be43aa29091011474615d7ac0810051c36a",
+   needappsflyerid: "false",
+-  origin: "https://www.rappi.com.co",
+-  referer: "https://www.rappi.com.co/",
++  origin: "https://www.rappi.cl",
++  referer: "https://www.rappi.cl/",
+   "user-agent":
+     "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36",
+   vendor: "rappi",
