@@ -6,4 +6,13 @@ La prueba crea una pseudoterminal local con datos sintéticos. Comprueba pares A
 
 Firmware: `arduino-cli compile --fqbn arduino:avr:uno firmware/myoware_a0`.
 
-Toki OS: `node --test tests/test_*.cjs`. Comprueba el clic directo, la calibración de ambos canales, la prioridad de mandíbula, un evento por contracción y el bloqueo de clics en estados no válidos.
+Toki OS:
+
+- `node tests/test_os_click.cjs` — clic directo.
+- `node --test tests/test_myoware_click.cjs` — calibración MyoWare, prioridad de mandíbula, un evento por contracción y confirmación segura.
+- `node tests/test_os_iphone.mjs` — mirada con iPhone: opción al inicio, motor compartido, sin movimiento de cabeza, salidas en cada pantalla.
+- `node tests/test_predict.mjs` — predicción de palabras.
+- `node tests/test_iphone_presets.mjs` — presets de calibración.
+- `node tests/test_os_delete.cjs` — borrar que acelera.
+
+Eye-tracking (motor y demo): `cd software/eye-tracking/web && npm test`.

@@ -14,6 +14,13 @@ gesture_frames=deque(maxlen=128)
 lock=threading.Lock()
 source=None
 toki_dir=Path(__file__).resolve().parent.parent/'toki-os'
+toki_assets={
+    '/woki-os.html':'text/html',
+    **{f'/{name}.js':'text/javascript' for name in (
+        'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
+    )},
+    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout')},
+}
 dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
 legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
 
@@ -74,7 +81,16 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_toki_asset(self, path, content_type):
+        directory=(toki_dir/path.parent).resolve()
+        asset=(directory/path.name).resolve()
+        if asset.parent!=directory or not asset.is_file():
+            self.send_error(404)
+            return
+        self.send_body(asset.read_bytes(),f'{content_type}; charset=utf-8')
+
     def do_GET(self):
+        path=self.path.partition('?')[0]
         if self.path in ('/data','/data?seconds=60'):
             with lock:
                 now=time.time()
@@ -93,10 +109,12 @@ class Handler(SimpleHTTPRequestHandler):
                          'age':now-frames[-1][0] if frames and state['connected'] else None,
                          'frames':frames}
             self.send_body(json.dumps(payload).encode(),'application/json')
-        elif self.path=='/woki-os.html':
-            self.send_body((toki_dir/'woki-os.html').read_bytes(),'text/html; charset=utf-8')
-        elif self.path=='/myoware-click.js':
-            self.send_body((toki_dir/'myoware-click.js').read_bytes(),'text/javascript; charset=utf-8')
+        elif path in toki_assets:
+            self.send_toki_asset(Path(path[1:]),toki_assets[path])
+        elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'text/javascript')
+        elif re.fullmatch(r'/presets/[\w-]+\.json',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'application/json')
         elif self.path in ('/', '/index.html'):super().do_GET()
         else:self.send_error(404)
     def log_message(self,*args):pass

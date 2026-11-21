@@ -63,12 +63,17 @@ class MonitorTest(unittest.TestCase):
                 self.assertIn('TOKI / BANCO DE PRUEBA',r.read().decode())
             for route, content_type, marker in [
                 ('/woki-os.html','text/html','Calibrar gestos'),
+                ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
+                ('/iphone-gaze.js','text/javascript','window.IPHONE'),
+                ('/layout.css','text/css','.rest-wake'),
+                ('/eye-engine/connection.js','text/javascript','createConnection'),
+                ('/presets/index.json','application/json','calibracion-iphone'),
             ]:
                 with urllib.request.urlopen(base+route,timeout=1) as r:
                     self.assertEqual(r.headers.get_content_type(),content_type)
                     self.assertIn(marker,r.read().decode())
-            for route in ['/server.py','/../README.md','/README.md']:
+            for route in ['/server.py','/../README.md','/README.md','/eye-engine/../server.py','/presets/%2e%2e/Info.json']:
                 with self.assertRaises(urllib.error.HTTPError) as caught:
                     urllib.request.urlopen(base+route)
                 self.assertEqual(caught.exception.code,404)

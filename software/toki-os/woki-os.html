@@ -59,8 +59,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 /* ---------- barra de estado ---------- */
 .status{display:flex;align-items:center;gap:16px;height:68px;flex:none;font-size:27px;font-weight:600;color:var(--txt2)}
 .status-info{display:contents}
-.home-nav,.wake-nav{color:var(--txt);font:inherit;cursor:pointer;white-space:nowrap}
-.wake-nav{padding:16px 28px;font-size:32px}
+.home-nav{color:var(--txt);font:inherit;cursor:pointer;white-space:nowrap}
 .pill{display:flex;align-items:center;gap:12px;height:56px;padding:0 24px;border-radius:30px;
   transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms var(--ease-out)}
 .pill.flash{background:rgba(10,132,255,.28);border-color:rgba(10,132,255,.7);color:var(--txt);transform:scale(1.04)}
@@ -293,6 +292,11 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   #alarm::before,.typing i,.wave i{animation:none!important}
 }
 </style>
+<link rel="stylesheet" href="iphone-gaze.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="layout.css">
+<!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
+<script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light'; }catch(_){}</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute">
@@ -307,6 +311,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M10 6l-6 6 6 6M4.5 12H20"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9.5"/></symbol>
   </defs>
 </svg>
@@ -328,7 +333,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
       <input id="ctxIn" placeholder="El acompañante escribe y aprieta Enter" value="¿Vienes a cenar el domingo?">
       <div class="typing" id="typing"><i></i><i></i><i></i>Marta está escribiendo</div>
     </div>
-    <div class="grid2x2" id="cards"></div>
+    <div class="talkgrid" id="cards"></div>
     <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar el emoji</b> cambiar emoción</span><span><b>Ceja ×2</b> escribir</span><span><b>Mandíbula</b> pedir la palabra</span><span><b>Mandíbula larga</b> inicio</span></div>
   </section>
 
@@ -343,7 +348,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   <!-- REACCIONES -->
   <section class="screen" id="s-reactions" data-title="Reacciones">
     <div class="status"></div>
-    <div class="grid2x2" id="reacts"></div>
+    <div class="grid3x2" id="reacts"></div>
     <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar "más"</b> otra página</span><span><b>Mandíbula larga</b> volver</span></div>
   </section>
 
@@ -368,7 +373,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   <!-- AJUSTES -->
   <section class="screen" id="s-settings" data-title="Ajustes">
     <div class="status"></div>
-    <div class="grid4x2" id="sets"></div>
+    <div class="grid5x2" id="sets"></div>
     <div class="hint"><span><b>Ceja</b> cambiar</span><span><b>Mandíbula larga</b> volver</span></div>
   </section>
 
@@ -381,7 +386,8 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
     <div class="tl" id="alTl"><div data-s="0">0 s · alarma + teléfono</div><div data-s="30">30 s · volumen + familia</div><div data-s="90">90 s · contacto 2</div></div>
     <div class="cancel" id="alCancel"></div>
   </div>
-  <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando · la emergencia sigue activa</div><button type="button" class="t wake-nav" data-t data-act="wake">Salir del descanso</button></div>
+  <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando · ceja larga para volver · la emergencia sigue activa</div>
+    <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small>Mirada 2 s · ceja · clic</small></button></div>
   <!-- CALIBRACIÓN (al inicio) -->
   <div class="overlay on" id="calib">
     <div class="cal-card glass" id="calCard">
@@ -392,11 +398,12 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
       <div class="cal-btns" id="calBtns">
         <button class="cbtn pri" data-c="start">Calibrar con la nariz</button>
         <button class="cbtn pri" data-c="gaze" style="background:var(--indigo)">Calibrar con la mirada</button>
+        <button class="cbtn pri" data-c="iphone" style="background:var(--purple)">Mirada con iPhone (Face ID)</button>
         <button class="cbtn" data-c="saved" id="calSaved" hidden>Usar la calibración guardada</button>
         <button type="button" class="cbtn pri" id="myoware-use-woki" hidden>Usar mouse + clic con la ceja</button>
         <button class="cbtn" data-c="mouse">Usar mouse (demo)</button>
       </div>
-      <div class="cal-foot">Lo inicia el acompañante · <kbd>Enter</kbd> nariz · <kbd>E</kbd> mirada</div>
+      <div class="cal-foot">Lo inicia el acompañante · <kbd>Enter</kbd> nariz · <kbd>E</kbd> mirada · <kbd>I</kbd> iPhone</div>
     </div>
     <div class="cal-dot" id="calDot"><svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="28"/><circle class="fg" cx="32" cy="32" r="28"/></svg><i></i></div>
     <div class="cal-target" id="calTarget"></div>
@@ -408,9 +415,19 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 
 <div id="gaze"></div>
 
+<!-- predicción de palabras (n-gramas + aprendizaje en el dispositivo) -->
+<script src="predict.js"></script>
+<script src="lexicon-es.js"></script>
+
+<!-- controles de desarrollo: tema claro/oscuro y mostrar/ocultar atajos -->
+<div id="devbar">
+  <button id="themeToggle" class="dbtn" role="switch" aria-checked="false" title="Tema claro / oscuro (T)"><span class="track"><span>☾</span><span>☀︎</span><span class="knob"></span></span></button>
+  <button id="legendToggle" class="dbtn" aria-expanded="false" aria-controls="legend" title="Mostrar u ocultar atajos (desarrollo)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+</div>
+
 <div id="legend">
   <div class="col" style="min-width:330px;display:flex;gap:12px">
-    <div><h3>Puntero</h3><button id="noseBtn" class="nbtn">Activar cámara</button><br><kbd>N</kbd> nariz/mouse · <kbd>E</kbd> mirada · <kbd>C</kbd>/<kbd>V</kbd> recentrar<br><kbd>G</kbd> cara perdida · <kbd>W</kbd> temblor<div id="gazeInfo" style="color:#BF5AF2"></div><div id="noseInfo" style="color:#64D2FF"></div></div>
+    <div><h3>Puntero</h3><button id="noseBtn" class="nbtn">Activar cámara</button><br><kbd>N</kbd> nariz/mouse · <kbd>E</kbd> mirada · <kbd>C</kbd>/<kbd>V</kbd> recentrar<br><kbd>G</kbd> cara perdida · <kbd>W</kbd> temblor · <kbd>T</kbd> tema<div id="gazeInfo" style="color:#BF5AF2"></div><div id="noseInfo" style="color:#64D2FF"></div></div>
     <div style="position:relative;width:128px;height:96px;border-radius:10px;overflow:hidden;background:#111;flex:none">
       <video id="cam" playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
       <canvas id="camDot" width="128" height="96" style="position:absolute;inset:0"></canvas>
@@ -432,10 +449,13 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 
 <script>
 /* ===================== Configuración ===================== */
+const DWELL_OPTIONS = [800,1000,1200,1500];
 const CFG = {
-  dwellMs: 800,          // dwell de respaldo (guía: 800 ms, 400–1000)
+  // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
+  // la elección en Ajustes se recuerda en el navegador
+  dwellMs: (()=>{ try{ const v=+localStorage.getItem('woki.dwell'); return DWELL_OPTIONS.includes(v)? v : 1200; }catch(_){ return 1200; } })(),
   settleMs: 350,         // la mirada se asienta antes de aceptar el clic
-  emoDwellMs: 900,       // sostener la mirada en el emoji abre el anillo
+  emoDwellMs: 1200,      // sostener la mirada en el emoji abre el anillo (sigue al tiempo de mirada)
   mode: 'click',         // 'click' = mirada + ceja · 'dwell' = solo mirada
   jitter: false,         // simular error de webcam
   scanMs: 1300,          // escaneo cuando no hay mirada
@@ -443,6 +463,10 @@ const CFG = {
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: 'ws://localhost:8765' // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
 };
+CFG.emoDwellMs=CFG.dwellMs;   // el emoji usa el mismo tiempo de mirada que el resto
+// Sugerencias del teclado: 'fila' = 3 fijas arriba a 1 mirada (más rápido, tarjetas de ~4 cm de alto)
+// · 'lista' = una tecla que abre la lista (2 miradas, tarjetas más grandes). Ajustes › Teclado.
+CFG.sugMode=(()=>{ try{ return localStorage.getItem('woki.sugmode')==='lista'? 'lista' : 'fila'; }catch(_){ return 'fila'; } })();
 
 /* ===================== Datos ===================== */
 const TILES = [
@@ -497,6 +521,7 @@ const REACTS = [
   ['😂','jajaja','alegre'],['😱','¡no!','entusiasta'],['🤔','mmm…','seria'],['❤️','te quiero','carinosa'],
   ['🙄','¿en serio?','ironica'],['✋','espera','seria'],['😋','¡qué rico!','alegre'],['👍','dale','alegre']];
 const GROUPS = ['ABCDE','FGHIJ','KLMNÑ','OPQRS','TUVWXYZ'];
+const REACT_PAGE = 4; // reacciones por página (3×2 con Más y Volver)
 const WORDS = ('que de no a la el es y en lo un por me una te los se con para mi está si pero las bien sí más ya muy hola gracias quiero puedo hoy mañana domingo cena casa ahora después tengo frío calor agua dolor espalda cabeza posición ayuda cansada contenta mamá hija hijo nieto sofía camila amor también nunca siempre llámame ven espera favor porfa listo bueno vale dale claro obvio todo nada algo mucho poco feliz triste rico tele música película dormir comer baño luz ventana').split(' ');
 
 /* ===================== Estado ===================== */
@@ -505,9 +530,36 @@ const S = { screen:'home', focus:null, fStart:0, blocked:null, armed:false,
   cards:[], kb:{level:1,group:null,text:''}, reactPage:0,
   alarm:null, agentPending:0, agentIdle:0, muted:false, voiceIdx:0, voices:[], scale:1 };
 const $ = s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+/* Modo mirada con iPhone: se elige manteniendo la mirada O con la ceja (al instante); mandíbula y demás
+   gestos funcionan como siempre. Agrega imán, huecos, bloqueo tras elegir y salidas en cada pantalla. */
+function gazeOnly(){ return document.body.classList.contains('gaze-only'); }
+const SNAP_PX = 70;   // la mirada en el hueco entre tarjetas toma la más cercana (px del lienzo)
+const MAGNET = .35;   // el cursor se acerca al centro de la tarjeta enfocada (como en la demo)
+// Tras elegir algo, nada empieza a cargarse durante este tiempo: si aparece otra pantalla o capa,
+// la tarjeta que queda bajo la mirada no se elige "en cadena" (la demo usaba 500 ms).
+const LOCKOUT_MS = 700;
+
+/* ===================== Tema y panel de atajos (desarrollo) ===================== */
+const store={ get:k=>{ try{ return localStorage.getItem(k); }catch(_){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} } };
+// Atajos ocultos por defecto (son de desarrollo); se recuerda si se abrieron.
+document.body.classList.toggle('legend-off', store.get('woki.legend')!=='on');
+function syncDevbar(){
+  const light=document.documentElement.dataset.theme==='light', open=!document.body.classList.contains('legend-off');
+  $('#themeToggle').setAttribute('aria-checked',String(light));
+  $('#legendToggle').setAttribute('aria-expanded',String(open));
+  $('#legendToggle').title=open?'Ocultar atajos':'Mostrar atajos (desarrollo)';
+}
+function setTheme(light){ if(light) document.documentElement.dataset.theme='light'; else delete document.documentElement.dataset.theme;
+  store.set('woki.theme',light?'light':'dark'); syncDevbar(); }
+function toggleLegend(){ const open=document.body.classList.toggle('legend-off'); store.set('woki.legend',open?'off':'on'); syncDevbar(); fit(); }
+$('#themeToggle').addEventListener('click',e=>{ e.currentTarget.blur(); setTheme(document.documentElement.dataset.theme!=='light'); });  // blur: Espacio = ceja
+$('#legendToggle').addEventListener('click',e=>{ e.currentTarget.blur(); toggleLegend(); });
+syncDevbar();
 
 /* ===================== Escalado de la TV ===================== */
-function fit(){ const s=Math.min((innerWidth-16)/1920,(innerHeight-170)/1080); S.scale=s;
+// Con los atajos visibles se reserva su altura; ocultos, solo una franja para la barra de desarrollo.
+function fit(){ const reserve=document.body.classList.contains('legend-off')? 60 : 170;
+  const s=Math.min((innerWidth-16)/1920,(innerHeight-reserve)/1080); S.scale=s;
   const w=$('#wrap'); w.style.transform=`scale(${s})`; w.style.left=((innerWidth-1920*s)/2)+'px'; }
 addEventListener('resize',fit); fit();
 
@@ -520,7 +572,8 @@ function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb])=>
   `<div class="t tile" data-t data-act="${act}"><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
-  $('#btnSend').innerHTML = pending ? '<svg><use href="#i-check"/></svg>Otra ceja<small>para enviar · 3 s</small>' : '<svg><use href="#i-check"/></svg>Enviar<small>Ceja, y otra ceja en 3 s</small>';
+  const go=gazeOnly();
+  $('#btnSend').innerHTML = pending ? `<svg><use href="#i-check"/></svg>${go?'Sigue mirando u otra ceja':'Otra ceja'}<small>para enviar · 3 s</small>` : `<svg><use href="#i-check"/></svg>Enviar<small>${go?'Mirada o ceja, y otra vez para confirmar':'Ceja, y otra ceja en 3 s'}</small>`;
   decorate($('#btnSend').parentElement); }
 
 /* ===================== Barra de estado ===================== */
@@ -530,8 +583,12 @@ function renderStatus(){
   const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
   const al = S.alarm ? '<span class="dot al"></span>Alarma en curso' : '<span class="dot"></span>Alarma armada';
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
+  const howPick = gazeOnly() ? `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja` : mode;
+  const sensors = gazeOnly()
+    ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
+    : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
   $$('.status-info').forEach(el=>el.innerHTML=
-   `<div class="pill glass">${mir}</div><div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div><div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
+   `<div class="pill glass">${mir}</div>${sensors}<div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
   $('#restClock').textContent=t;
 }
 function flashPill(src){ $$(`.pill[data-p="${src}"]`).forEach(p=>{p.classList.add('flash');setTimeout(()=>p.classList.remove('flash'),200)}); }
@@ -575,11 +632,16 @@ async function genSuggestions(){
   $('#cards').classList.remove('loading'); renderCards();
 }
 function renderCards(){
-  $('#cards').innerHTML=S.cards.map((c,i)=>`
+  const card=(c,i)=>`
     <div class="t card" data-t data-act="say:${i}">
       <div class="ph">${c.text}</div><div class="tone">${c.tone===EMO[c.emo].n ? c.tone : c.tone+' · '+EMO[c.emo].n}</div>
       <div class="t emo" data-t data-dwell="${CFG.emoDwellMs}" data-act="emo:${i}">${EMO[c.emo].e}</div>
-    </div>`).join('');
+    </div>`;
+  // fila 1: frase, frase, Escribir · fila 2: frase, frase, Volver (siempre hay salida sin gestos)
+  const side=[`<div class="t side" data-t data-act="go:keyboard"><svg><use href="#i-keys"/></svg>Escribir<small>con letras</small></div>`,
+              `<div class="t side" data-t data-act="go:home"><svg><use href="#i-back"/></svg>Volver<small>al inicio</small></div>`];
+  const c=S.cards.slice(0,4);
+  $('#cards').innerHTML=[c[0]&&card(c[0],0), c[1]&&card(c[1],1), side[0], c[2]&&card(c[2],2), c[3]&&card(c[3],3), side[1]].filter(Boolean).join('');
   stagger($('#cards')); decorate($('#cards'));
 }
 
@@ -591,48 +653,117 @@ const MEM=(()=>{ let m={words:{},phrases:[]}; try{ m=JSON.parse(localStorage.get
       m.phrases.unshift({t:text,at:Date.now()}); m.phrases=m.phrases.slice(0,300);
       try{ localStorage.setItem('woki.mem.v1',JSON.stringify(m)); }catch(_){} },
     top(prefix){ return Object.entries(m.words).filter(([w])=>w.startsWith(prefix)&&w!==prefix).sort((a,b)=>b[1]-a[1]).map(([w])=>w); } }; })();
-function curWord(){ const m=S.kb.text.match(/([^\s]*)$/); return m?m[1].toLowerCase():''; }
-function preds(){ const w=curWord(); if(!w) return []; const mine=MEM.top(w);
-  return [...new Set([...mine, ...WORDS.filter(x=>x.startsWith(w)&&x!==w)])].slice(0,3); }
+/* Predicción: TokiPredict (predict.js) con el diccionario base (lexicon-es.js), las frases del
+   sistema como contexto inicial y lo que la persona dice (aprende en el dispositivo). */
+// Fila fija (opción A): 3 sugerencias siempre en el mismo lugar, a 1 mirada (como Gboard). Una fila
+// fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008).
+const SUG_ROW = 3;
+// "Más": las 7 siguientes (4.ª a 10.ª) + Volver (4×2), sin repetir la fila. Es una segunda oportunidad,
+// no la vía principal: el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022).
+const SUG_MORE = 7;
+const PRED = window.TokiPredict.createPredictor({
+  base: (window.TOKI_LEXICON || WORDS.map((w,i)=>[w, 1000/(i+1)])),
+  corpus: [...RULES.flatMap(r=>r.s.map(x=>x[0])), ...DEFAULT.map(x=>x[0]), ...REACTS.map(r=>r[1])],
+  storage: (()=>{ try{ return localStorage; }catch(_){ return null; } })(),
+});
+// lo que ya se había dicho antes de este motor también enseña (una sola vez)
+try{ if(!localStorage.getItem('woki.pred.migrated')){ [...MEM.m.phrases].reverse().forEach(p=>PRED.learn(p.t)); localStorage.setItem('woki.pred.migrated','1'); } }catch(_){}
+function curWord(){ const m=S.kb.text.match(/([^\s]*)$/); return m?m[1]:''; }
+function prevWord(){ const m=S.kb.text.replace(/[^\s]*$/,'').match(/([^\s.!?]+)[\s]*$/); return m?m[1]:''; }
+function atSentenceStart(){ const before=S.kb.text.replace(/[^\s]*$/,''); return /^\s*$/.test(before) || /[.!?]\s*$/.test(before); }
+/** sugerencias como objetos {word,name}; la palabra en curso puede estar vacía (= predecir la siguiente) */
+function sugs(){ return PRED.suggest(prevWord(), curWord(), SUG_ROW+SUG_MORE); }
+function preds(){ return sugs().map(s=>s.word); }
+const showWord=w=>w.charAt(0).toLocaleUpperCase('es')+w.slice(1);   // en pantalla: con mayúscula
+/* "Borrar" que acelera, como la tecla de borrar del iPhone: la 1.ª vez borra una letra; si se sigue
+   (mirándola o pulsándola dentro de DEL_STREAK_MS), borra el resto de la palabra y luego palabra a
+   palabra. Mirar otra tecla vuelve a letra por letra. */
+const DEL_STREAK_MS = 2600;   // > bloqueo (0,7 s) + tiempo de mirada (1,2–1,5 s): seguir mirando cuenta como seguir
+function deleteStep(text, streak){
+  if(streak<=1) return text.slice(0,-1);
+  return text.replace(/\s+$/,'').replace(/[^\s]+$/,'');
+}
+function delStreakActive(){ return performance.now()-(S.kb.delAt||0) < DEL_STREAK_MS; }
+function delLabel(){ return delStreakActive()? 'Borrar palabra<small>sigue mirando: otra</small>' : 'Borrar<small>sigue mirando: palabra</small>'; }
+function acceptSuggestion(sg){
+  if(!sg) return;
+  const before=S.kb.text.replace(/[^\s]*$/,'');
+  S.kb.text=before+PRED.format(sg.word,{sentenceStart:atSentenceStart(),name:sg.name})+' ';
+}
 function renderKeys(){
   const kb=S.kb; let html='';
-  if(kb.level===1){
+  if(kb.level===3){   // lista de sugerencias ("Más" en modo fila; todas en modo lista) + Volver
+    const list=sugs(), from=CFG.sugMode==='fila'? SUG_ROW : 0, more=list.slice(from, from+SUG_MORE);
+    html=more.map((sg,i)=>`<div class="t key sug" data-t data-act="sug:${i+from}">${showWord(sg.word)}</div>`).join('');
+    for(let i=more.length;i<SUG_MORE;i++) html+='<div></div>';
+    html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
+    kb.sugList=list;
+  } else if(kb.level===1 && CFG.sugMode==='lista'){
+    // Modo lista: un solo botón "Sugerencias" (con las 2 primeras de muestra) que abre la lista
+    const list=sugs();
+    kb.sugList=list;
     html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
-      `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`;
+      (list.length? `<div class="t key pred" data-t data-act="kb:sug">Sugerencias<small>${list.slice(0,2).map(x=>showWord(x.word)).join(' · ')}${list.length>2?' · …':''}</small></div>` : `<div class="key pred ghost">Sin sugerencias</div>`)+
+      `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">${delLabel()}</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`+
+      `<div class="t key small act" data-t data-act="go:home">Volver</div>`;
+  } else if(kb.level===1){
+    // Fila fija de sugerencias (opción A): las 3 mejores a 1 mirada, siempre en el mismo lugar
+    // (los huecos vacíos se conservan para que las posiciones no salten), y "Más" con el resto.
+    const list=sugs(), top=list.slice(0,SUG_ROW);
+    kb.sugList=list;
+    let r1=top.map((sg,i)=>`<div class="t key sug row-sug${i===0?' best':''}" data-t data-act="sug:${i}">${showWord(sg.word)}</div>`).join('');
+    for(let i=top.length;i<SUG_ROW;i++) r1+=`<div class="key sug row-sug ghost">${i===0 && !list.length? 'Sin sugerencias' : ''}</div>`;
+    r1+= list.length>SUG_ROW
+      ? `<div class="t key small act row-sug" data-t data-act="kb:sug">Más ▸<small>${list.length-SUG_ROW} más</small></div>`
+      : `<div class="key small row-sug ghost">Más ▸</div>`;
+    const r2=GROUPS.map((g,i)=>`<div class="t key row-grp" data-t data-act="grp:${i}">${g}</div>`).join('');
+    const r3=`<div class="t key small act row-act" data-t data-act="kb:space">Espacio</div><div class="t key small act row-act" data-t data-act="kb:del">${delLabel()}</div><div class="t key small act row-act" data-t data-act="kb:say">Decir</div>`+
+      `<div class="t key small act row-act" data-t data-act="go:home">Volver</div>`;
+    html=`<div class="kbrow c4">${r1}</div><div class="kbrow c5">${r2}</div><div class="kbrow c4">${r3}</div>`;
   } else {
     const L=GROUPS[kb.group].split('');
     html=L.map(c=>`<div class="t key" data-t data-act="chr:${c}">${c}</div>`).join('');
     for(let i=L.length;i<7;i++) html+='<div></div>';
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
   }
+  $('#keys').className = kb.level!==1? 'grid4x2' : CFG.sugMode==='fila'? 'kbrows' : 'grid5x2';
+  $('#s-keyboard').dataset.level=kb.level;
+  $('#s-keyboard').dataset.sug=CFG.sugMode;
   $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys')); renderKbText();
 }
 function renderKbText(){
   const p=preds(), w=curWord();
-  const ghost = p[0]? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
+  // texto fantasma: el resto de la primera sugerencia, si continúa lo escrito (sin importar tildes)
+  const norm=window.TokiPredict.normalize;
+  const ghost = p[0] && w && norm(p[0]).startsWith(norm(w)) ? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
   $('#kbTxt').innerHTML=(S.kb.text||'')+'<span class="caret"></span>'+ghost;
-  $('#kbPred').innerHTML = p.length? 'Sugeridas: '+p.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+' — <b>mandíbula</b> acepta la primera' : 'Elige un grupo de letras';
+  const how = gazeOnly()? 'mira una sugerencia (o ceja) · <b>mandíbula</b> acepta la primera' : '<b>mandíbula</b> acepta la primera';
+  $('#kbPred').innerHTML = S.kb.level===3? 'Elige una palabra' : p.length? 'Sugerencias: '+p.slice(0,4).map((x,i)=>i?showWord(x):`<b>${showWord(x)}</b>`).join(' · ')+' — '+how : 'Elige un grupo de letras';
 }
 
 /* ===================== Reacciones ===================== */
 function renderReacts(){
-  const page=REACTS.slice(S.reactPage*3, S.reactPage*3+3);
-  $('#reacts').innerHTML=page.map((r,i)=>`<div class="t react" data-t data-act="react:${S.reactPage*3+i}"><span>${r[0]}</span>${r[1]}</div>`).join('')+
-   `<div class="t react" data-t data-act="reactMore" style="font-size:56px;color:var(--txt2)">Más →</div>`;
+  const page=REACTS.slice(S.reactPage*REACT_PAGE, S.reactPage*REACT_PAGE+REACT_PAGE);
+  $('#reacts').innerHTML=page.map((r,i)=>`<div class="t react" data-t data-act="react:${S.reactPage*REACT_PAGE+i}"><span>${r[0]}</span>${r[1]}</div>`).join('')+
+   `<div class="t react" data-t data-act="reactMore" style="color:var(--txt2)"><span>→</span>Más</div>`+
+   `<div class="t react" data-t data-act="go:home" style="color:var(--txt2)"><span>←</span>Volver</div>`;
   stagger($('#reacts')); decorate($('#reacts'));
 }
 
 /* ===================== Ajustes ===================== */
+function pointerLabel(){ if(window.IPHONE && IPHONE.active) return 'iPhone'; const N=window.NOSE||{}; return N.label? N.label():'Mouse'; }
 function renderSettings(){
   const v=S.voices[S.voiceIdx], N=window.NOSE||{};
   const items=[
     ['Tiempo de mirada', CFG.dwellMs+' ms', 'set:dwell','toca para cambiar'],
     ['Confirmar con', CFG.mode==='click'?'Ceja':'Solo mirada','set:mode',''],
     ['Voz', v? v.name.slice(0,14):'Del sistema','set:voice','suena al cambiar'],
-    ['Puntero', N.label? N.label():'Mouse','set:pointer','mouse · nariz · mirada'],
+    ['Puntero', pointerLabel(),'set:pointer','mouse · nariz · mirada · iPhone'],
     ['Sensibilidad', ['Baja','Media','Alta'][N.sensIdx??1],'set:sens',''],
     ['Calibrar','De nuevo','set:calib','C = solo recentrar'],
     ['Clic con cara', N.faceClick?'Cejas + boca':'No','set:faceclick','respaldo sin EMG'],
+    ['Teclado', CFG.sugMode==='fila'?'Sugerencias fijas':'Sugerencias en lista','set:sugmode', CFG.sugMode==='fila'?'3 arriba · 1 mirada':'1 botón · más grande'],
+    ['Tema', document.documentElement.dataset.theme==='light'?'Claro':'Oscuro','set:theme','claro u oscuro'],
     ['Volver','Inicio','go:home','']];
   $('#sets').innerHTML=items.map(([lb,val,act,sub])=>`<div class="t set" data-t data-act="${act}"><div class="lb">${lb}</div><div class="val">${val}</div>${sub?`<div class="lb">${sub}</div>`:''}</div>`).join('');
   stagger($('#sets')); decorate($('#sets'));
@@ -641,9 +772,9 @@ function renderSettings(){
 /* ===================== Anillo de emociones ===================== */
 function openEmoRing(i){
   S.emoRingFor=i; const c=S.cards[i];
-  const pos=[[50,6],[90,28],[90,72],[50,94],[10,72],[10,28]];
   $('#emoC').innerHTML=`<div class="mid glass">“${c.text}”<br><br>Propuesta: ${EMO[c.emo].e} ${EMO[c.emo].n}</div>`+
-    EMOS.map((e,k)=>`<div class="t" data-t data-act="setEmo:${e.id}" style="left:${pos[k][0]}%;top:${pos[k][1]}%;--i:${k}"><span>${e.e}</span>${e.n}</div>`).join('');
+    EMOS.map((e,k)=>`<div class="t" data-t data-act="setEmo:${e.id}" style="--i:${k}"><span>${e.e}</span>${e.n}</div>`).join('')+
+    `<div class="t" data-t data-act="emoBack" style="--i:6;color:var(--txt2)"><span>←</span>Volver</div>`;
   decorate($('#emoC')); $('#emoRing').classList.add('on'); clearFocus(); log('anillo de emociones');
 }
 function closeEmoRing(){ $('#emoRing').classList.remove('on'); S.emoRingFor=null; clearFocus(); }
@@ -660,31 +791,43 @@ function speak(text, emoId='seria'){
   u.rate=e.rate; u.pitch=e.pitch; u.volume=e.vol;
   $('#spEmo').textContent=e.e; $('#spTxt').textContent=text; $('#speaking').classList.add('on');
   const off=()=>$('#speaking').classList.remove('on'); u.onend=u.onerror=off; setTimeout(off, 1200+text.length*90);
-  speechSynthesis.speak(u); MEM.add(text); log(`voz (${e.n}): ${text}`);
+  speechSynthesis.speak(u); MEM.add(text); PRED.learn(text); log(`voz (${e.n}): ${text}`);
 }
 
 /* ===================== Acciones ===================== */
 function press(el){ el.classList.add('pressed'); setTimeout(()=>el.classList.remove('pressed'),140); }
 function activate(el, calibrateGaze=true){
   press(el);
+  if(gazeOnly()) S.lockUntil=performance.now()+LOCKOUT_MS;
   if(calibrateGaze && window.GAZE) GAZE.onConfirm(el);   // la selección confirmada corrige la deriva de la mirada
   const [a,arg]=el.dataset.act.split(':');
+  if(el.dataset.act!=='kb:del') S.kb.delAt=0;
   log('elegido → '+el.dataset.act);
   switch(a){
     case 'go': setTimeout(()=>go(arg),90); break;
     case 'say': { const c=S.cards[+arg]; speak(c.text,c.emo); $('#agentMsg').textContent=c.text+' '+EMO[c.emo].e; break; }
     case 'emo': openEmoRing(+arg); break;
+    case 'emoBack': closeEmoRing(); break;
     case 'setEmo': { S.cards[S.emoRingFor].emo=arg; closeEmoRing(); renderCards(); island(EMO[arg].e,'Emoción: '+EMO[arg].n); break; }
     case 'grp': S.kb.level=2; S.kb.group=+arg; renderKeys(); break;
+    case 'sug': { const sg=(S.kb.sugList||[])[+arg]; acceptSuggestion(sg); S.kb.level=1; renderKeys(); break; }
     case 'chr': S.kb.text+= (S.kb.text===''||/[.!?]\s$/.test(S.kb.text))? arg : arg.toLowerCase(); S.kb.level=1; renderKeys(); break;
     case 'kb':
       if(arg==='space') S.kb.text+=' ';
-      if(arg==='del') S.kb.text=S.kb.text.slice(0,-1);
+      if(arg==='del'){
+        S.kb.delStreak = delStreakActive()? (S.kb.delStreak||0)+1 : 1;
+        S.kb.delAt=performance.now();
+        S.kb.text=deleteStep(S.kb.text, S.kb.delStreak);
+        // al terminar la racha, la tecla vuelve a decir "Borrar"
+        clearTimeout(S.kb.delTimer); S.kb.delTimer=setTimeout(()=>{ if(S.screen==='keyboard' && S.kb.level===1) renderKeys(); }, DEL_STREAK_MS+50);
+      }
       if(arg==='back') S.kb.level=1;
+      if(arg==='pred') acceptSuggestion(sugs()[0]);
+      if(arg==='sug') S.kb.level=3;
       if(arg==='say' && S.kb.text.trim()){ speak(S.kb.text.trim()); S.kb.text=''; }
       renderKeys(); break;
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
-    case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/3); renderReacts(); break;
+    case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
     case 'attention': startAlarm('atencion'); break;
     case 'music': island('🎵','Reproduciendo “Lo de siempre” (simulado)'); break;
     case 'rest': setRest(true); break;
@@ -692,15 +835,27 @@ function activate(el, calibrateGaze=true){
     case 'agentSend':
       if(S.agentPending && performance.now()-S.agentPending<3000){ island('✓','Enviado a Sofía (simulado)'); go('home'); }
       else { S.agentPending=performance.now(); sendBtn(true);
+        if(gazeOnly()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; S.fStart=performance.now(); } },300);
         setTimeout(()=>{ if(S.agentPending && performance.now()-S.agentPending>=3000 && S.screen==='agent'){ S.agentPending=0; sendBtn(false); island('⏱','No se envió: faltó la segunda ceja'); } },3100); }
       S.agentIdle=performance.now(); break;
     case 'set':
-      if(arg==='dwell'){ const opts=[600,800,1000,1200]; CFG.dwellMs=opts[(opts.indexOf(CFG.dwellMs)+1)%opts.length]; }
+      // Solo mirada: nada en Ajustes puede dejar a la persona sin forma de elegir.
+      if(gazeOnly() && (arg==='mode' || arg==='pointer' || arg==='faceclick')){
+        island('🔒', arg==='mode'? 'Con el iPhone se elige manteniendo la mirada' : 'El puntero lo cambia el acompañante (barra inferior o teclado)');
+        setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break; }
+      if(gazeOnly() && arg==='calib'){ IPHONE.recalibrate(); break; }
+      if(arg==='sugmode'){ CFG.sugMode=CFG.sugMode==='fila'?'lista':'fila'; try{ localStorage.setItem('woki.sugmode',CFG.sugMode); }catch(_){}
+        island('⌨️', CFG.sugMode==='fila'?'Sugerencias fijas arriba del teclado':'Sugerencias en un botón que abre la lista'); }
+      if(arg==='theme') setTheme(document.documentElement.dataset.theme!=='light');
+      if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
+        try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
       if(arg==='mode') CFG.mode=CFG.mode==='click'?'dwell':'click';
       if(arg==='voice'){ S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); }
-      if(arg==='pointer' && window.NOSE){ const nx={Mouse:'nose',Nariz:'gaze',Mirada:'mouse'}[NOSE.label()]; NOSE.setMode(nx); }
+      if(arg==='pointer' && window.NOSE){ const nx={Mouse:'nose',Nariz:'gaze',Mirada:'iphone',iPhone:'mouse'}[pointerLabel()];
+        if(nx==='iphone' && window.IPHONE) IPHONE.select(); else { if(window.IPHONE) IPHONE.deactivate(); NOSE.setMode(nx==='iphone'?'mouse':nx); } }
       if(arg==='sens' && window.NOSE){ NOSE.sensIdx=(NOSE.sensIdx+1)%3; island('🎯','Sensibilidad '+['baja','media','alta'][NOSE.sensIdx]); }
-      if(arg==='calib' && window.CAL) CAL.open(window.NOSE && NOSE.on && NOSE.mode==='gaze' ? 'gaze' : undefined);
+      if(arg==='calib' && window.IPHONE && IPHONE.active){ $('#calib').classList.add('on'); IPHONE.openPanel(); }
+      else if(arg==='calib' && window.CAL) CAL.open(window.NOSE && NOSE.on && NOSE.mode==='gaze' ? 'gaze' : undefined);
       if(arg==='faceclick' && window.NOSE){ NOSE.faceClick=!NOSE.faceClick; island('🙂',NOSE.faceClick?'Clic con cara: cejas = ceja · boca = mandíbula':'Clic con cara apagado'); }
       setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); renderStatus(); break;
   }
@@ -732,7 +887,7 @@ function action(g){
       else if(S.screen==='keyboard'){ if(S.kb.text.trim()){ $('#ctxIn').value='(Marta escribió) '+S.kb.text.trim(); S.cards=[]; } go('talk'); }
       break;
     case 'mandibula':
-      if(S.screen==='keyboard'){ const p=preds(); if(p[0]){ S.kb.text=S.kb.text.replace(/[^\s]*$/,'')+p[0]+' '; renderKeys(); } }
+      if(S.screen==='keyboard'){ const sg=sugs()[0]; if(sg){ acceptSuggestion(sg); renderKeys(); } }
       else speak('A ver…','seria');
       break;
     case 'mandibula_doble': go('reactions'); break;
@@ -747,10 +902,11 @@ function targetLayer(){
 }
 function confirmFocus(){
   const f=S.focus; if(!f) return;
-  if(S.gazeLost || (CFG.mode==='click' && S.armed && S.blocked!==f)){ S.blocked=f; f.classList.add('blocked'); activate(f); return true; }
+  const cejaYa = gazeOnly() && S.blocked!==f;
+  if(S.gazeLost || cejaYa || (CFG.mode==='click' && S.armed && S.blocked!==f)){ S.blocked=f; f.classList.add('blocked'); activate(f); return true; }
 }
 function confirmMyoWareFocus(){
-  if(document.visibilityState!=='visible' || CFG.mode!=='click' ||
+  if(document.visibilityState!=='visible' || (CFG.mode!=='click' && !gazeOnly()) ||
       $('#calib').classList.contains('on') || $('#alarm').classList.contains('on')) return;
   if(!S.focus || S.focus===S.blocked || !targetLayer()?.contains(S.focus)) return;
   if(confirmFocus()){ flashPill('ceja'); log('MyoWare A3 → clic'); }
@@ -784,6 +940,7 @@ addEventListener('keydown',e=>{
   if(e.key==='n'||e.key==='N') window.NOSE && NOSE.toggle();
   if(e.key==='c'||e.key==='C') window.NOSE && NOSE.center();
   if(e.key==='w'||e.key==='W'){ CFG.jitter=!CFG.jitter; island('〰️',CFG.jitter?'Simulando error de webcam':'Sin error simulado'); }
+  if(e.key==='t'||e.key==='T') setTheme(document.documentElement.dataset.theme!=='light');
   if(e.key==='m'||e.key==='M'){ S.muted=!S.muted; island(S.muted?'🔕':'🔔', S.muted?'Alarma en silencio':'Sonido de alarma activo'); }
 });
 addEventListener('keyup',e=>{
@@ -799,7 +956,7 @@ addEventListener('keyup',e=>{
 
 /* ===================== Mirada ===================== */
 let mouse={x:innerWidth/2,y:innerHeight/2}, noise={x:0,y:0}, gz={x:innerWidth/2,y:innerHeight/2};
-addEventListener('mousemove',e=>{ if(window.NOSE && NOSE.on) return; mouse.x=e.clientX;mouse.y=e.clientY});
+addEventListener('mousemove',e=>{ if((window.NOSE && NOSE.on) || (window.IPHONE && IPHONE.active)) return; mouse.x=e.clientX;mouse.y=e.clientY});
 function setGazeLost(v){
   if(S.gazeLost===v) return; S.gazeLost=v; document.body.classList.toggle('scan',v); clearFocus(); S.scanIdx=-1;
   island(v?'👀':'👁', v?'No te veo · sigue con la ceja':'Te veo de nuevo', v); log(v?'cara perdida → EMG con escaneo':'cara recuperada'); renderStatus(); updateLCD();
@@ -822,28 +979,35 @@ function tick(now){
   noise.x=noise.x*.88+gauss()*sig*.35; noise.y=noise.y*.88+gauss()*sig*.35;
   const tx=mouse.x+noise.x, ty=mouse.y+noise.y;
   gz.x+= (tx-gz.x)*.45; gz.y+= (ty-gz.y)*.45;   // filtro ~2 cuadros (guía: suavizado con poco retraso)
-  const cur=$('#gaze'); cur.style.transform=`translate(${gz.x}px,${gz.y}px)`; cur.style.left='0';cur.style.top='0';
+  const cur=$('#gaze'); cur.style.left='0';cur.style.top='0';
+  let cx=gz.x, cy=gz.y;   // cursor mostrado: en solo mirada se imanta al centro de la tarjeta enfocada
+  if(gazeOnly() && S.focus && S.focus.isConnected && !S.gazeLost){ const r=S.focus.getBoundingClientRect(); cx+=(r.left+r.width/2-cx)*MAGNET; cy+=(r.top+r.height/2-cy)*MAGNET; }
+  cur.style.transform=`translate(${cx}px,${cy}px)`;
 
   const busy = $('#alarm').classList.contains('on') || $('#calib').classList.contains('on');
-  if(!busy){
+  if(!busy && S.rest && !S.gazeLost) restWakeTick(now);
+  else if(!busy){
     if(S.gazeLost){ // escaneo: la ceja elige
       if(now-S.scanT>CFG.scanMs){ const v=visibleTargets(); if(v.length){ S.scanIdx=(S.scanIdx+1)%v.length; setFocus(v[S.scanIdx]); S.armed=true; S.focus.classList.add('armed'); S.focus.style.setProperty('--p',1);} S.scanT=now; }
     } else {
       const hit=document.elementFromPoint(gz.x,gz.y);
       let el=hit? hit.closest('[data-t]') : null;
       if(el && !targetLayer()?.contains(el)) el=null;
+      if(!el && gazeOnly()) el=nearestTarget(gz.x,gz.y,SNAP_PX*S.scale);
       // histéresis: el foco no salta mientras la mirada siga cerca del objetivo actual (12 % del lado menor)
       if(S.focus && el!==S.focus && S.focus.isConnected && !S.focus.classList.contains('emo')){
         const r=S.focus.getBoundingClientRect(), m=.12*Math.min(r.width,r.height);
         if(gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m && !(el && el.classList.contains('emo') && S.focus.contains(el))) el=S.focus;
       }
       setFocus(el);
+      // pausa breve tras elegir: el foco se mantiene (y su bloqueo anti-repetición), la carga empieza después
+      if(S.focus && gazeOnly() && S.fStart<(S.lockUntil||0)) S.fStart=S.lockUntil;
       if(S.focus){
         const f=S.focus, r=f.getBoundingClientRect();
         f.style.setProperty('--mx',((gz.x-r.left)/r.width*100)+'%'); f.style.setProperty('--my',((gz.y-r.top)/r.height*100)+'%');
         const forced=f.dataset.dwell? +f.dataset.dwell : null;
         const target = forced || (CFG.mode==='dwell'? CFG.dwellMs : CFG.settleMs);
-        const p=Math.min(1,(now-S.fStart)/target); f.style.setProperty('--p',p);
+        const p=Math.max(0,Math.min(1,(now-S.fStart)/target)); f.style.setProperty('--p',p);
         if(p>=1 && S.blocked!==f){
           if(forced || CFG.mode==='dwell'){ S.blocked=f; f.classList.add('blocked'); activate(f); }
           else if(!S.armed){ S.armed=true; f.classList.add('armed'); }
@@ -858,8 +1022,29 @@ function tick(now){
 }
 requestAnimationFrame(tick);
 
+/* objetivo visible más cercano a (x,y) dentro de maxDist (px de pantalla), o null */
+function nearestTarget(x,y,maxDist){
+  let best=null, bd=maxDist;
+  for(const el of visibleTargets()){ const r=el.getBoundingClientRect();
+    const dx=Math.max(r.left-x,0,x-r.right), dy=Math.max(r.top-y,0,y-r.bottom), d=Math.hypot(dx,dy);
+    if(d<bd){ bd=d; best=el; } }
+  return best;
+}
+
 /* ===================== Descanso ===================== */
-function setRest(on){ S.rest=on; $('#rest').classList.toggle('on',on); clearFocus(); log(on?'descanso':'despierta'); }
+function setRest(on){ S.rest=on; $('#rest').classList.toggle('on',on); clearFocus(); restWake.since=0; $('#restWake').style.setProperty('--p',0); log(on?'descanso':'despierta'); }
+/* salir del descanso sin gestos: mantener la mirada 2 s en "Volver" (o clic) */
+const restWake={since:0};
+function restWakeTick(now){
+  const w=$('#restWake'), r=w.getBoundingClientRect(), m=SNAP_PX*S.scale;
+  const inside=gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m;
+  if(!inside){ restWake.since=0; if(S.focus===w) clearFocus(); w.style.setProperty('--p',0); return; }
+  setFocus(w);
+  if(!restWake.since) restWake.since=now;
+  if(now-restWake.since>=CFG.settleMs){ S.armed=true; w.classList.add('armed'); }
+  const p=Math.min(1,(now-restWake.since)/(+w.dataset.dwell||2000)); w.style.setProperty('--p',p);
+  if(p>=1){ setRest(false); island('👁','Volviste'); }
+}
 
 /* ===================== Alarma ===================== */
 let actx=null;
@@ -918,7 +1103,6 @@ const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+
 $$('.status').forEach(el=>{
   el.innerHTML=(el.closest('.screen').id==='s-home' ? '' : '<button type="button" class="t pill glass home-nav" data-t data-act="go:home">‹ Inicio</button>')+'<div class="status-info"></div>';
 });
-decorate($('#rest'));
 renderTiles(); renderStatus(); updateLCD();
 if(screenFromUrl()!=='home') go(screenFromUrl(),false);
 window.WOKI={S,CFG,mouse,gz};
@@ -928,6 +1112,8 @@ log('Toki OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');
 <script type="module">
   import { setupMyoWareGestures } from './myoware-click.js';
   setupMyoWareGestures(confirmMyoWareFocus, () => {
+    window.IPHONE?.deactivate();
+    if(window.NOSE?.on) NOSE.stop();
     CFG.mode='click';
     $('#calib').classList.remove('on');
     renderStatus();
@@ -1057,6 +1243,7 @@ const NOSE = window.NOSE = {
     if(W.S.screen==='settings') renderSettings(); },
   toggle(){ this.on? this.stop() : this.setMode('nose'); },
   async setMode(m){
+    if(window.IPHONE && IPHONE.active) IPHONE.deactivate();
     if(m==='mouse'){ if(this.on) this.stop(); return; }
     this.mode=m; try{ localStorage.setItem('woki.ptr',m); }catch(_){}
     if(!this.on) await this.start();
@@ -1267,10 +1454,11 @@ const CAL = {
     if(ps.length>5){ const mx=ps.reduce((s,p)=>s+p.x,0)/ps.length, my=ps.reduce((s,p)=>s+p.y,0)/ps.length; GAZE.offset={x:.5-mx,y:.5-my}; log(`mirada recentrada · offset ${((.5-mx)*100).toFixed(1)}%, ${((.5-my)*100).toFixed(1)}%`); }
     this.close(); document.body.classList.remove('calibrating'); this.running=false; island('🎯','Mirada recentrada');
   },
-  showBtns(){ $('#calSaved').hidden=!(this.saved()||localStorage.getItem(GAZE_KEY)); },
+  showBtns(){ $('#calSaved').hidden=!(this.saved()||localStorage.getItem(GAZE_KEY)||(window.IPHONE && IPHONE.hasSaved())); },
   saved(){ try{ return JSON.parse(localStorage.getItem(CAL_KEY)); }catch(_){ return null; } },
   async useSaved(){
     let last='nose'; try{ last=localStorage.getItem('woki.ptr')||'nose'; }catch(_){}
+    if(last==='iphone' && window.IPHONE && IPHONE.hasSaved()){ IPHONE.openPanel(); await IPHONE.useSaved(); return; }
     const c=this.saved(), gOK=GAZE.loadSaved();
     if(last==='gaze' && gOK){ NOSE.mode='gaze'; await NOSE.start(); if(!NOSE.on) return; this.close(); island('👁','Calibración de mirada guardada · V para recentrar'); return; }
     if(!c) return; NOSE.mode='nose'; await NOSE.start(); if(!NOSE.on) return; NOSE.cal=c; NOSE.neutral={...c.n}; this.close(); island('🎯','Calibración de nariz guardada · C para recentrar'); },
@@ -1282,9 +1470,10 @@ const CAL = {
 };
 window.CAL=CAL;
 $('#calBtns').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; b.blur();
-  if(b.dataset.c==='start') CAL.run(); if(b.dataset.c==='gaze') CAL.runGaze(); if(b.dataset.c==='saved') CAL.useSaved(); if(b.dataset.c==='mouse'){ CAL.close(); island('🖱️','Modo demo: el mouse es la mirada'); } });
+  if(b.dataset.c==='start') CAL.run(); if(b.dataset.c==='gaze') CAL.runGaze(); if(b.dataset.c==='saved') CAL.useSaved(); if(b.dataset.c==='iphone' && window.IPHONE) IPHONE.openPanel(); if(b.dataset.c==='mouse'){ CAL.close(); island('🖱️','Modo demo: el mouse es la mirada'); } });
 addEventListener('keydown',e=>{ if(!$('#calib').classList.contains('on') || CAL.running) return;
-  if(e.key==='Enter'){ e.preventDefault(); CAL.run(); } if(e.key==='e'||e.key==='E'){ e.preventDefault(); CAL.runGaze(); } if(e.key==='Escape'){ CAL.close(); } });
+  if(window.IPHONE && IPHONE.calibrating) return;
+  if(e.key==='Enter'){ e.preventDefault(); CAL.run(); } if(e.key==='e'||e.key==='E'){ e.preventDefault(); CAL.runGaze(); } if((e.key==='i'||e.key==='I') && window.IPHONE){ e.preventDefault(); IPHONE.openPanel(); } if(e.key==='Escape'){ CAL.close(); } });
 addEventListener('keydown',e=>{ if(document.activeElement && document.activeElement.tagName==='INPUT') return; if($('#calib').classList.contains('on')) return;
   if(e.key==='v'||e.key==='V'){ if(NOSE.mode==='gaze' && NOSE.on) CAL.recenterGaze(); }
   if(e.key==='e'||e.key==='E'){ NOSE.setMode('gaze'); } });
@@ -1292,5 +1481,7 @@ CAL.showBtns();
 
 $('#noseBtn').addEventListener('click',e=>{ e.currentTarget.blur(); NOSE.toggle(); });  // blur: que Espacio (= ceja) no vuelva a apretar el botón
 </script>
+<!-- Mirada con iPhone (Face ID): motor compartido con software/eye-tracking (ver iphone-gaze.js) -->
+<script type="module" src="iphone-gaze.js"></script>
 </body>
 </html>

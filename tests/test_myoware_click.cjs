@@ -115,10 +115,10 @@ test('physical click confirms only unfrozen focus in the visible click layer, ne
   const S = { focus: element, armed: true, blocked: null };
   const CFG = { mode: 'click' };
   const document = { visibilityState: 'visible' };
-  const flags = { calib: false, alarm: false, inside: true };
+  const flags = { calib: false, alarm: false, inside: true, iphone: false };
   let clicks = 0;
   const context = vm.createContext({
-    S, CFG, document, activate: () => clicks++, flashPill() {}, log() {},
+    S, CFG, document, activate: () => clicks++, flashPill() {}, log() {}, gazeOnly: () => flags.iphone,
     $: id => ({ contains: () => flags.inside && (id !== '#rest' || element.dataset.act === 'wake'), classList: { contains: () => flags[id.slice(1)] } })
   });
   vm.runInContext(functions, context);
@@ -142,6 +142,13 @@ test('physical click confirms only unfrozen focus in the visible click layer, ne
   element.dataset.act = 'wake';
   context.confirmMyoWareFocus();
   assert.equal(clicks, 3);
+  S.rest = false;
+  S.blocked = null;
+  S.armed = false;
+  CFG.mode = 'dwell';
+  flags.iphone = true;
+  context.confirmMyoWareFocus();
+  assert.equal(clicks, 4, 'physical brow may confirm without dwell in iPhone mode');
 });
 
 test('monitor shares persistent calibration with Woki, which only clicks on brow', async () => {
