@@ -63,3 +63,12 @@
   .ip-cal .target.appear svg { animation: none; }
   .ip-cal .target { transition: none; }
 }
+
+/* ---------- presets de calibración (no se borran al recalibrar) ---------- */
+.ip-presets { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; padding: 22px 28px; border-radius: 32px; background: rgba(255, 255, 255, .05); border: 1.5px solid var(--hair); }
+.ip-sub { font-size: 24px; font-weight: 700; letter-spacing: .02em; color: var(--txt2); }
+.ip-row.wrap { flex-wrap: wrap; }
+.cbtn.sm { min-width: 0; height: 72px; padding: 0 32px; border-radius: 36px; font-size: 27px; }
+.cbtn[disabled] { opacity: .45; cursor: not-allowed; }
+.ip-empty { font-size: 26px; color: var(--txt3); }
+:root[data-theme="light"] .ip-presets { background: rgba(0, 0, 0, .03); }

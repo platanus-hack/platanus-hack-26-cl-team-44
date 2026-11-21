@@ -20,7 +20,7 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 2. En la pantalla de inicio elige **Mirada con iPhone (Face ID)** (o tecla `I`), escribe la dirección que muestra el iPhone (por ejemplo `192.168.1.23:8788`) y **Conectar y calibrar**.
 3. Sigue 13 puntos con los ojos y luego 5 de comprobación (~45 s). `Esc` cancela.
 
-- **Cómo se elige:** manteniendo la mirada sobre el objetivo hasta que se llena el anillo (0,8 s; Ajustes › Tiempo de mirada). No hace falta ceja ni EMG. Al cambiar de puntero vuelve el modo anterior.
+- **Cómo se elige:** manteniendo la mirada sobre el objetivo hasta que se llena (1,2 s por defecto; Ajustes › Tiempo de mirada: 0,8 · 1 · 1,2 · 1,5 s, se recuerda). No hace falta ceja ni EMG. Al cambiar de puntero vuelve el modo anterior.
 - **Dónde va el iPhone:** abajo, centrado bajo la pantalla, acostado (horizontal), a 40–60 cm de la cara, en un soporte (no sobre las teclas).
 - **Cambiar de puntero:** Ajustes › Puntero recorre Mouse → Nariz → Mirada → iPhone. La calibración queda guardada y se reusa con **Usar la calibración guardada**.
 - **Si se pierde la cara o la señal 1,5 s,** el SO pasa a escaneo con EMG, igual que con la nariz.
@@ -39,6 +39,21 @@ Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactiva
 - **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
 - **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.
 - **Tamaños** (portátil de 13–14" a ~50 cm): tarjetas de 6–7 cm por lado (≥ 2× el error medio del iPhone); en Escribir, 5,4 × 6 cm por sus 10 funciones.
+
+### Presets de calibración
+
+- **"Usar la última calibración"** cambia cada vez que se calibra. Los **presets** no: solo cambian con "Guardar la actual como preset" o "Cargar archivo".
+- La primera vez que se carga esta versión, la calibración guardada se protege sola como preset ("Mi calibración · fecha").
+- **"Descargar archivo"** guarda la calibración en un JSON; **"Cargar archivo"** la recupera (se valida: solo modelos planos, sin movimiento de cabeza).
+- Al usar un preset manda la dirección escrita en el panel (la IP del iPhone puede cambiar).
+
+## Escribir con sugerencias
+
+- La tecla **Sugerencias** muestra las dos primeras y abre una pantalla con hasta 6 palabras grandes y **Volver**. Al elegir una se inserta (con mayúscula si empieza la frase) y se vuelve al teclado.
+- **Motor** (`predict.js`): n-gramas con *Stupid Backoff* (α = 0,4, Brants et al. 2007), sin conexión. Predice la palabra siguiente por contexto y completa la actual sin importar tildes ("como" → "cómo"; la ñ sí cuenta). Tolera un error de tipeo desde 4 letras.
+- **Aprende en el dispositivo** (como Gboard o QuickType): todo lo que se dice suma a un caché personal de palabras y pares de palabras, con olvido lento (vida media 60 días). Los nombres se aprenden con mayúscula si la persona los escribe así.
+- **Por qué 6 y no más:** el ahorro de pulsaciones crece hasta ~6 sugerencias y después se aplana (Adhikary et al. 2022, teclado por mirada simulado). Ver también Trnka et al. 2008: una buena predicción ahorra ~50 % de pulsaciones.
+- **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
 ## Tema y atajos
 

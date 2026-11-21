@@ -20,7 +20,8 @@ const fn = (name) => { const i = html.indexOf(`function ${name}(`); assert.ok(i 
 assert.ok(/data-act="go:home"/.test(fn("renderCards")), "Hablar tiene 'Volver'");
 assert.ok(/data-act="go:keyboard"/.test(fn("renderCards")), "Hablar tiene 'Escribir' (antes solo con ceja ×2)");
 assert.ok(/data-act="go:home"/.test(fn("renderKeys")) && /kb:back/.test(fn("renderKeys")), "Escribir tiene 'Volver' en ambos niveles");
-assert.ok(/kb:pred/.test(fn("renderKeys")), "la palabra sugerida se acepta con la mirada (antes: mandíbula)");
+assert.ok(/kb:sug/.test(fn("renderKeys")) && /data-act="sug:\$\{i\}"/.test(fn("renderKeys")), "las sugerencias se abren y eligen con la mirada (antes: mandíbula)");
+assert.ok(/kb\.level===3[\s\S]*kb:back/.test(fn("renderKeys")), "la pantalla de sugerencias tiene 'Volver'");
 assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
 assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
 assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");

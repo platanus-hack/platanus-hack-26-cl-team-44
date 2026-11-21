@@ -6,6 +6,6 @@ La prueba crea una pseudoterminal local con datos sintéticos. Comprueba parseo,
 
 Firmware: `arduino-cli compile --fqbn arduino:avr:uno firmware/myoware_a0`.
 
-Toki OS: `node tests/test_os_click.cjs` y `node tests/test_os_iphone.mjs` (contrato de la mirada con iPhone: opción al inicio, motor compartido y sin movimiento de cabeza).
+Toki OS: `node tests/test_os_click.cjs`, `node tests/test_os_iphone.mjs`, `node tests/test_predict.mjs` (predicción) y `node tests/test_iphone_presets.mjs` (presets de calibración) (contrato de la mirada con iPhone: opción al inicio, motor compartido y sin movimiento de cabeza).
 
 Eye-tracking (motor y demo): `cd software/eye-tracking/web && npm test`.

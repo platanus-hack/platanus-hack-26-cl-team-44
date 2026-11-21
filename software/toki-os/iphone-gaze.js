@@ -18,6 +18,7 @@ import { collectSequence, evaluateValidation, TRAIN_POINTS, VALIDATION_POINTS } 
 import { fitBestAsync } from "./eye-engine/fitter.js";
 import { predict } from "./eye-engine/model.js";
 import { createOneEuro2D } from "./eye-engine/one-euro.js";
+import { addPreset, fromFile, listPresets, migrateSaved, toFile } from "./iphone-presets.js";
 
 const STORE_KEY = "woki.iphone.v1";
 // Contrato del OS: sin movimiento de cabeza (headCorrection:false) y solo el modelo plano LINEAL.
@@ -215,6 +216,7 @@ const IPHONE = {
     $("#calBtns").style.display = "none";
     panel.hidden = false;
     $("#ipSaved").hidden = !this.hasSaved();
+    renderPresets();
     const fromUrl = new URLSearchParams(location.search).get("iphone");
     const input = $("#ipHost");
     input.value = fromUrl || this.host || readStore()?.host || "";
@@ -262,9 +264,26 @@ const IPHONE = {
   async useSaved() {
     const saved = readStore();
     if (!saved?.model || !saved.host) return false;
+    return this.useModel(saved, saved.host);
+  },
+
+  /** Usa un preset protegido. La dirección escrita en el panel manda (la IP del iPhone puede cambiar). */
+  async usePreset(id) {
+    const preset = listPresets(localStorage).find((p) => p.id === id);
+    if (!preset) return false;
+    const host = ($("#ipHost")?.value || "").trim() || preset.host;
+    const ok = await this.useModel(preset, host);
+    if (ok) {
+      writeStore({ host, model: preset.model, viewport: preset.viewport, at: new Date().toISOString() });
+      log(`calibración iPhone: preset «${preset.name}»`);
+    }
+    return ok;
+  },
+
+  async useModel(saved, host) {
     try {
       setStatus("Conectando…");
-      await this.connect(saved.host);
+      await this.connect(host);
       this.model = saved.model;
       this.viewport = saved.viewport ?? null;
       $("#calIphone") && ($("#calIphone").hidden = true);
@@ -338,8 +357,18 @@ function ensurePanel() {
       <button class="cbtn pri" type="submit">Conectar y calibrar</button>
     </form>
     <div class="ip-status" id="ipStatus" role="status"></div>
+    <div class="ip-presets">
+      <div class="ip-sub">Presets · no se borran al recalibrar</div>
+      <div class="ip-row wrap" id="ipPresetList"></div>
+      <div class="ip-row wrap">
+        <button class="cbtn sm" type="button" id="ipSavePreset">Guardar la actual como preset</button>
+        <button class="cbtn sm" type="button" id="ipExport">Descargar archivo</button>
+        <button class="cbtn sm" type="button" id="ipImportBtn">Cargar archivo</button>
+        <input type="file" id="ipImport" accept="application/json,.json" hidden>
+      </div>
+    </div>
     <div class="ip-row">
-      <button class="cbtn" type="button" id="ipSaved" hidden>Usar calibración guardada</button>
+      <button class="cbtn" type="button" id="ipSaved" hidden>Usar la última calibración</button>
       <button class="cbtn" type="button" id="ipBack">Volver</button>
     </div>`;
   $("#calBtns").after(panel);
@@ -356,7 +385,91 @@ function ensurePanel() {
   });
   panel.querySelector("#ipSaved").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.useSaved(); });
   panel.querySelector("#ipBack").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.closePanel(); });
+  panel.querySelector("#ipPresetList").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-preset]");
+    if (!b) return;
+    b.blur();
+    IPHONE.usePreset(b.dataset.preset);
+  });
+  panel.querySelector("#ipSavePreset").addEventListener("click", (e) => { e.currentTarget.blur(); savePresetFromCurrent(); });
+  panel.querySelector("#ipExport").addEventListener("click", (e) => { e.currentTarget.blur(); exportPreset(); });
+  panel.querySelector("#ipImportBtn").addEventListener("click", (e) => { e.currentTarget.blur(); panel.querySelector("#ipImport").click(); });
+  panel.querySelector("#ipImport").addEventListener("change", (e) => importPreset(e.currentTarget));
   return panel;
+}
+
+/* ---------- presets (ver iphone-presets.js) ---------- */
+const stamp = () => new Date().toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+function renderPresets() {
+  const list = $("#ipPresetList");
+  if (!list) return;
+  const presets = listPresets(localStorage);
+  list.replaceChildren(...presets.map((p) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cbtn sm pri";
+    b.dataset.preset = p.id;
+    b.textContent = `Usar «${p.name}»`; // textContent: el nombre viene de un archivo y nunca se interpreta como HTML
+    return b;
+  }));
+  if (!presets.length) {
+    const empty = document.createElement("span");
+    empty.className = "ip-empty";
+    empty.textContent = "Aún no hay presets.";
+    list.append(empty);
+  }
+  $("#ipSavePreset").disabled = !(IPHONE.model || readStore()?.model);
+  $("#ipExport").disabled = !(IPHONE.model || readStore()?.model || presets.length);
+}
+
+function currentCalibration() {
+  if (IPHONE.model) return { host: IPHONE.host, model: IPHONE.model, viewport: IPHONE.viewport };
+  return readStore();
+}
+
+function savePresetFromCurrent() {
+  const cur = currentCalibration();
+  if (!cur?.model) return setStatus("No hay una calibración para guardar.", "err");
+  try {
+    const p = addPreset(localStorage, { name: `Calibración · ${stamp()}`, host: cur.host, model: cur.model, viewport: cur.viewport });
+    renderPresets();
+    setStatus(`Guardado como preset «${p.name}».`, "ok");
+  } catch (err) {
+    setStatus(`No se pudo guardar: ${err.message}`, "err");
+  }
+}
+
+function exportPreset() {
+  const cur = currentCalibration();
+  const presets = listPresets(localStorage);
+  const preset = cur?.model ? { name: `Calibración · ${stamp()}`, host: cur.host, model: cur.model, viewport: cur.viewport } : presets.at(-1);
+  if (!preset) return setStatus("No hay una calibración para descargar.", "err");
+  try {
+    const url = URL.createObjectURL(new Blob([toFile(preset)], { type: "application/json" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `toki-calibracion-iphone-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.json` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus("Archivo descargado. Guárdalo en un lugar seguro.", "ok");
+  } catch (err) {
+    setStatus(`No se pudo descargar: ${err.message}`, "err");
+  }
+}
+
+async function importPreset(input) {
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  try {
+    if (file.size > 200_000) throw new Error("El archivo es demasiado grande para ser una calibración");
+    const p = addPreset(localStorage, fromFile(await file.text()));
+    renderPresets();
+    setStatus(`Preset «${p.name}» cargado.`, "ok");
+  } catch (err) {
+    setStatus(err.message, "err");
+  }
 }
 
 function setStatus(text, kind = "") {
@@ -375,6 +488,12 @@ addEventListener("keydown", (e) => {
 setInterval(() => {
   if (IPHONE.active && performance.now() - IPHONE.lastFrameAt > LOST_MS && !W.S.gazeLost) setGazeLost(true);
 }, 500);
+
+// La calibración que ya se usa queda protegida como preset la primera vez que corre esta versión.
+try {
+  const protectedPreset = migrateSaved(localStorage);
+  if (protectedPreset) log(`calibración iPhone protegida como preset «${protectedPreset.name}»`);
+} catch { /* sin almacenamiento: no hay nada que proteger */ }
 
 window.IPHONE = IPHONE;
 // Para probar sin iPhone: woki-os.html?iphone=sim (la "mirada" es el mouse, a través del motor completo).

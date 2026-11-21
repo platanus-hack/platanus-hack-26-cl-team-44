@@ -48,8 +48,9 @@
 :root[data-theme="light"] .cal-steps span { background: rgba(0, 0, 0, .05); }
 :root[data-theme="light"] .cal-steps span.on { background: rgba(0, 122, 255, .15); color: #0058C2; }
 :root[data-theme="light"] .cal-steps span.done { background: rgba(52, 199, 89, .15); color: #1B7F3B; }
-:root[data-theme="light"] .cbtn { background: rgba(0, 0, 0, .05); }
-:root[data-theme="light"] .cbtn.pri { color: #fff; }
+/* solo los secundarios: los principales (.pri) conservan su color sólido (antes quedaban grises por especificidad) */
+:root[data-theme="light"] .cbtn:not(.pri) { background: #fff; border-color: rgba(0, 0, 0, .14); box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .35); }
+:root[data-theme="light"] .cbtn.pri { color: #fff; box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .45); }
 :root[data-theme="light"] .cal-foot kbd { background: rgba(0, 0, 0, .06); }
 :root[data-theme="light"] .cal-dot .bg { stroke: rgba(0, 0, 0, .12); }
 :root[data-theme="light"] .cal-dot i { background: #1C1C1E; box-shadow: 0 0 24px rgba(0, 122, 255, .6); }

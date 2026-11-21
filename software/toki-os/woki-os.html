@@ -412,6 +412,10 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 
 <div id="gaze"></div>
 
+<!-- predicción de palabras (n-gramas + aprendizaje en el dispositivo) -->
+<script src="predict.js"></script>
+<script src="lexicon-es.js"></script>
+
 <!-- controles de desarrollo: tema claro/oscuro y mostrar/ocultar atajos -->
 <div id="devbar">
   <button id="themeToggle" class="dbtn" role="switch" aria-checked="false" title="Tema claro / oscuro (T)"><span class="track"><span>☾</span><span>☀︎</span><span class="knob"></span></span></button>
@@ -434,10 +438,13 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 
 <script>
 /* ===================== Configuración ===================== */
+const DWELL_OPTIONS = [800,1000,1200,1500];
 const CFG = {
-  dwellMs: 800,          // dwell de respaldo (guía: 800 ms, 400–1000)
+  // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
+  // la elección en Ajustes se recuerda en el navegador
+  dwellMs: (()=>{ try{ const v=+localStorage.getItem('woki.dwell'); return DWELL_OPTIONS.includes(v)? v : 1200; }catch(_){ return 1200; } })(),
   settleMs: 350,         // la mirada se asienta antes de aceptar el clic
-  emoDwellMs: 900,       // sostener la mirada en el emoji abre el anillo
+  emoDwellMs: 1200,      // sostener la mirada en el emoji abre el anillo (sigue al tiempo de mirada)
   mode: 'click',         // 'click' = mirada + ceja · 'dwell' = solo mirada
   jitter: false,         // simular error de webcam
   scanMs: 1300,          // escaneo cuando no hay mirada
@@ -445,6 +452,7 @@ const CFG = {
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: 'ws://localhost:8765' // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
 };
+CFG.emoDwellMs=CFG.dwellMs;   // el emoji usa el mismo tiempo de mirada que el resto
 
 /* ===================== Datos ===================== */
 const TILES = [
@@ -618,15 +626,42 @@ const MEM=(()=>{ let m={words:{},phrases:[]}; try{ m=JSON.parse(localStorage.get
       m.phrases.unshift({t:text,at:Date.now()}); m.phrases=m.phrases.slice(0,300);
       try{ localStorage.setItem('woki.mem.v1',JSON.stringify(m)); }catch(_){} },
     top(prefix){ return Object.entries(m.words).filter(([w])=>w.startsWith(prefix)&&w!==prefix).sort((a,b)=>b[1]-a[1]).map(([w])=>w); } }; })();
-function curWord(){ const m=S.kb.text.match(/([^\s]*)$/); return m?m[1].toLowerCase():''; }
-function preds(){ const w=curWord(); if(!w) return []; const mine=MEM.top(w);
-  return [...new Set([...mine, ...WORDS.filter(x=>x.startsWith(w)&&x!==w)])].slice(0,3); }
+/* Predicción: TokiPredict (predict.js) con el diccionario base (lexicon-es.js), las frases del
+   sistema como contexto inicial y lo que la persona dice (aprende en el dispositivo). */
+// 6 sugerencias: el ahorro de pulsaciones sube hasta ~6 y luego se aplana (Adhikary et al. 2022,
+// teclado por mirada simulado, dwell 1000 ms); más palabras solo agregan tiempo de búsqueda.
+const SUG_MAX = 6;   // pantalla de sugerencias: 6 palabras + Volver (4×2)
+const PRED = window.TokiPredict.createPredictor({
+  base: (window.TOKI_LEXICON || WORDS.map((w,i)=>[w, 1000/(i+1)])),
+  corpus: [...RULES.flatMap(r=>r.s.map(x=>x[0])), ...DEFAULT.map(x=>x[0]), ...REACTS.map(r=>r[1])],
+  storage: (()=>{ try{ return localStorage; }catch(_){ return null; } })(),
+});
+// lo que ya se había dicho antes de este motor también enseña (una sola vez)
+try{ if(!localStorage.getItem('woki.pred.migrated')){ [...MEM.m.phrases].reverse().forEach(p=>PRED.learn(p.t)); localStorage.setItem('woki.pred.migrated','1'); } }catch(_){}
+function curWord(){ const m=S.kb.text.match(/([^\s]*)$/); return m?m[1]:''; }
+function prevWord(){ const m=S.kb.text.replace(/[^\s]*$/,'').match(/([^\s.!?]+)[\s]*$/); return m?m[1]:''; }
+function atSentenceStart(){ const before=S.kb.text.replace(/[^\s]*$/,''); return /^\s*$/.test(before) || /[.!?]\s*$/.test(before); }
+/** sugerencias como objetos {word,name}; la palabra en curso puede estar vacía (= predecir la siguiente) */
+function sugs(){ return PRED.suggest(prevWord(), curWord(), SUG_MAX); }
+function preds(){ return sugs().map(s=>s.word); }
+const showWord=w=>w.charAt(0).toLocaleUpperCase('es')+w.slice(1);   // en pantalla: con mayúscula
+function acceptSuggestion(sg){
+  if(!sg) return;
+  const before=S.kb.text.replace(/[^\s]*$/,'');
+  S.kb.text=before+PRED.format(sg.word,{sentenceStart:atSentenceStart(),name:sg.name})+' ';
+}
 function renderKeys(){
   const kb=S.kb; let html='';
-  if(kb.level===1){
-    const p=preds()[0];
+  if(kb.level===3){   // pantalla de sugerencias: palabras grandes + Volver
+    const list=sugs();
+    html=list.map((sg,i)=>`<div class="t key sug" data-t data-act="sug:${i}">${showWord(sg.word)}</div>`).join('');
+    for(let i=list.length;i<SUG_MAX;i++) html+='<div></div>';
+    html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
+    kb.sugList=list;
+  } else if(kb.level===1){
+    const list=sugs();
     html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
-      (p? `<div class="t key pred" data-t data-act="kb:pred">✓ ${p}<small>palabra sugerida</small></div>` : `<div class="key pred ghost">Sin sugerencia</div>`)+
+      (list.length? `<div class="t key pred" data-t data-act="kb:sug">Sugerencias<small>${list.slice(0,2).map(x=>showWord(x.word)).join(' · ')}${list.length>2?' · …':''}</small></div>` : `<div class="key pred ghost">Sin sugerencias</div>`)+
       `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`+
       `<div class="t key small act" data-t data-act="go:home">Volver</div>`;
   } else {
@@ -636,13 +671,17 @@ function renderKeys(){
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
   }
   $('#keys').className = kb.level===1? 'grid5x2' : 'grid4x2';
+  $('#s-keyboard').dataset.level=kb.level;
   $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys')); renderKbText();
 }
 function renderKbText(){
   const p=preds(), w=curWord();
-  const ghost = p[0]? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
+  // texto fantasma: el resto de la primera sugerencia, si continúa lo escrito (sin importar tildes)
+  const norm=window.TokiPredict.normalize;
+  const ghost = p[0] && w && norm(p[0]).startsWith(norm(w)) ? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
   $('#kbTxt').innerHTML=(S.kb.text||'')+'<span class="caret"></span>'+ghost;
-  $('#kbPred').innerHTML = p.length? 'Sugeridas: '+p.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+' — <b>mandíbula</b> acepta la primera' : 'Elige un grupo de letras';
+  const how = gazeOnly()? 'mira <b>Sugerencias</b> para elegir' : '<b>mandíbula</b> acepta la primera';
+  $('#kbPred').innerHTML = S.kb.level===3? 'Elige una palabra' : p.length? 'Sugerencias: '+p.slice(0,4).map((x,i)=>i?showWord(x):`<b>${showWord(x)}</b>`).join(' · ')+' — '+how : 'Elige un grupo de letras';
 }
 
 /* ===================== Reacciones ===================== */
@@ -693,7 +732,7 @@ function speak(text, emoId='seria'){
   u.rate=e.rate; u.pitch=e.pitch; u.volume=e.vol;
   $('#spEmo').textContent=e.e; $('#spTxt').textContent=text; $('#speaking').classList.add('on');
   const off=()=>$('#speaking').classList.remove('on'); u.onend=u.onerror=off; setTimeout(off, 1200+text.length*90);
-  speechSynthesis.speak(u); MEM.add(text); log(`voz (${e.n}): ${text}`);
+  speechSynthesis.speak(u); MEM.add(text); PRED.learn(text); log(`voz (${e.n}): ${text}`);
 }
 
 /* ===================== Acciones ===================== */
@@ -711,12 +750,14 @@ function activate(el, calibrateGaze=true){
     case 'emoBack': closeEmoRing(); break;
     case 'setEmo': { S.cards[S.emoRingFor].emo=arg; closeEmoRing(); renderCards(); island(EMO[arg].e,'Emoción: '+EMO[arg].n); break; }
     case 'grp': S.kb.level=2; S.kb.group=+arg; renderKeys(); break;
+    case 'sug': { const sg=(S.kb.sugList||[])[+arg]; acceptSuggestion(sg); S.kb.level=1; renderKeys(); break; }
     case 'chr': S.kb.text+= (S.kb.text===''||/[.!?]\s$/.test(S.kb.text))? arg : arg.toLowerCase(); S.kb.level=1; renderKeys(); break;
     case 'kb':
       if(arg==='space') S.kb.text+=' ';
       if(arg==='del') S.kb.text=S.kb.text.slice(0,-1);
       if(arg==='back') S.kb.level=1;
-      if(arg==='pred'){ const p=preds()[0]; if(p) S.kb.text=S.kb.text.replace(/[^\s]*$/,'')+p+' '; }
+      if(arg==='pred') acceptSuggestion(sugs()[0]);
+      if(arg==='sug') S.kb.level=3;
       if(arg==='say' && S.kb.text.trim()){ speak(S.kb.text.trim()); S.kb.text=''; }
       renderKeys(); break;
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
@@ -736,7 +777,8 @@ function activate(el, calibrateGaze=true){
         island('🔒', arg==='mode'? 'Con el iPhone se elige manteniendo la mirada' : 'El puntero lo cambia el acompañante (barra inferior o teclado)');
         setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break; }
       if(gazeOnly() && arg==='calib'){ IPHONE.recalibrate(); break; }
-      if(arg==='dwell'){ const opts=[600,800,1000,1200]; CFG.dwellMs=opts[(opts.indexOf(CFG.dwellMs)+1)%opts.length]; }
+      if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
+        try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
       if(arg==='mode') CFG.mode=CFG.mode==='click'?'dwell':'click';
       if(arg==='voice'){ S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); }
       if(arg==='pointer' && window.NOSE){ const nx={Mouse:'nose',Nariz:'gaze',Mirada:'iphone',iPhone:'mouse'}[pointerLabel()];
@@ -776,7 +818,7 @@ function action(g){
       else if(S.screen==='keyboard'){ if(S.kb.text.trim()){ $('#ctxIn').value='(Marta escribió) '+S.kb.text.trim(); S.cards=[]; } go('talk'); }
       break;
     case 'mandibula':
-      if(S.screen==='keyboard'){ const p=preds(); if(p[0]){ S.kb.text=S.kb.text.replace(/[^\s]*$/,'')+p[0]+' '; renderKeys(); } }
+      if(S.screen==='keyboard'){ const sg=sugs()[0]; if(sg){ acceptSuggestion(sg); renderKeys(); } }
       else speak('A ver…','seria');
       break;
     case 'mandibula_doble': go('reactions'); break;
