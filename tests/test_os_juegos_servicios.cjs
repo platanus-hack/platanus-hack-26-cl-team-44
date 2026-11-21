@@ -41,6 +41,15 @@ assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 // 5. Con el iPhone nada se elige en cadena en Juegos y Servicios (mismo bloqueo que el resto del SO).
 assert.match(glue, /if \(gazeOnly\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
 
+// 5b. Juegos de Toki con íconos de app del SO; partida externa grande con aviso de una línea; al salir se cierra.
+assert.match(games, /window\.TOKI_GAME_ART\?\.\[kind\]/);
+assert.match(glue, /window\.TOKI_GAME_ART = \{ stars: .*memory: .*external: /);
+assert.match(external, /Primera vez: toca la bandera de España y luego «Crear usuario»\./);
+assert.ok(!/if\(window\.TOKI_OS_SHELL\)\{[^]*?Si aparece la bienvenida[^]*?return;\n  \}/.test(external), "dentro del SO no aparece el aviso largo");
+assert.match(glue, /if \(name !== 'games'\) \$\('#externalGame'\)\?\.remove\(\);/);
+const css = fs.readFileSync(dir + "os-juegos-servicios.css", "utf8");
+assert.match(css, /#s-apps \.toki-apps, #s-apps \.ta-screen, #s-apps \.ta-catalog, #s-apps \.ta-nav \{ overflow: visible; \}/, "el zoom del foco no se recorta en Servicios");
+
 // 6. Ajustes › Tema y color: tema y 5 colores, todos definidos en claro y oscuro, y se recuerda.
 for (const p of ["bosque", "oceano", "atardecer", "lavanda"]) {
   assert.match(colors, new RegExp(`:root\\[data-palette="${p}"\\] #stage`), `falta ${p} oscuro`);

@@ -22,9 +22,10 @@ window.addEventListener('load', () => {
     const replacement=[...content.querySelectorAll('[data-t]')].find(el=>el.dataset.act===blockedAction);
     if(replacement) { setFocus(replacement); S.blocked=replacement; replacement.classList.add('blocked'); }
   }
+  const art = (kind, fallback) => window.TOKI_GAME_ART?.[kind] || `<span class="game-art">${fallback}</span>`;
   function lobby() {
     state = null; paused = false;
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin cronómetro</span></div>${inputControls()}<div class="game-catalog">${button('stars','<span class="game-art">✦</span><strong>Constelaciones</strong><small>Encuentra 10 estrellas con tu puntero.</small>')}${button('memory','<span class="game-art">▦</span><strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external','<span class="game-art">↗</span><strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${window.TOKI_OS_SHELL?button('home','← Inicio'):''}${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin cronómetro</span></div>${inputControls()}<div class="game-catalog">${button('stars',art('stars','✦')+'<strong>Constelaciones</strong><small>Encuentra 10 estrellas con tu puntero.</small>')}${button('memory',art('memory','▦')+'<strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external',art('external','↗')+'<strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${window.TOKI_OS_SHELL?button('home','← Inicio'):''}${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
   }
   function start(kind) {
     paused = false;

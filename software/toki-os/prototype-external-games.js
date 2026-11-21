@@ -64,6 +64,11 @@ window.addEventListener('load',()=>{
  }
  function play(url,title){
   document.body.classList.add('external-playing');paused=false;anchor=null;didClick=false;lastPoint=null;lastTracking=null;pointerInGame=false;
+  if(window.TOKI_OS_SHELL){
+   // Prioridad: el juego. Barra de una fila; pausar y clic extra solo existen con el puente de control.
+   render(`<div class="external-toolbar">${b('catalog','← Juegos')}<div class="external-title"><strong>${title}</strong><small>Primera vez: toca la bandera de España y luego «Crear usuario».</small></div>${b('reload','Reintentar')}${managed?b('pause','Pausar control')+b('clicks',`Clic extra: ${autoClick?'sí':'no'}`):''}</div><div class="external-frame-wrap"><iframe id="externalGame" title="${title} · SpecialEffect" src="${url}" allow="autoplay; fullscreen; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div>`);
+   frame=document.querySelector('#externalGame');check();return;
+  }
   render(`<div class="external-toolbar">${b('catalog','← Juegos')}<strong>${title}</strong>${b('pause','Pausar control')}${b('clicks',`Clic extra: ${autoClick?'sí':'no'}`)}${b('help','Ayuda')}</div>${controls()}<div class="external-frame-wrap"><iframe id="externalGame" title="${title} · SpecialEffect" src="${url}" allow="autoplay; fullscreen; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div><p class="game-note">Si aparece la bienvenida, configura tu perfil y luego elige el juego. Si no carga, ${b('reload','Reintentar')} ${b('all','Abrir catálogo')}</p>`);
   frame=document.querySelector('#externalGame');
   check();
