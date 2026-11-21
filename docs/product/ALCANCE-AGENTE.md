@@ -84,6 +84,67 @@ Rappi va como herramienta y no como subagente. Un subagente agrega un segundo lo
 
 **Pendiente:** qué aprende la memoria durante el demo. Hasta decidirlo, la memoria del demo es la precargada por el onboarding.
 
+### 5.1 Capa determinista de reglas y pesos
+
+El modelo nunca decide qué memoria ve ni qué tema puede tocar. Una capa de código corre antes y después de cada llamada al modelo. Tiene 4 etapas, en este orden.
+
+**Etapa 1 · Filtros duros (sin pesos).** Una memoria que no pasa un filtro no llega al modelo.
+
+| Filtro | Regla | Ya existe en `memoria.py` |
+|---|---|---|
+| Estado | Solo memorias `aprobada` | Sí |
+| Vigencia | `valido_hasta` vacío o futuro | Sí |
+| Privacidad por interlocutor | Matriz `VISIBLE`: familia ve `publico`, `familia` y `salud`; médico ve `publico` y `salud`; desconocido ve `publico` | Sí |
+| Límites por persona | Regla `deny` de persona × tema, como `FHIR Consent`. Saca del contexto toda memoria con ese tema | No. Hoy las memorias `evitar` van al prompt como instrucción. La regla 5 de `PLAN-ONBOARDING-MEMORIA.md` pide filtrarlas en código |
+| Modo íntimo y "no aprendas esto" | Sin sugerencias visibles y sin guardar nada | No |
+
+Precedencia: un `deny` gana sobre cualquier puntaje, igual que en `FHIR Consent`.
+
+**Etapa 2 · Puntaje.** Ordena las memorias que pasaron los filtros. Los pesos viven en un archivo, `pesos.yaml`, y cada frase guarda el detalle de su puntaje para la traza.
+
+| Señal | Fórmula | Base | Ya existe |
+|---|---|---|---|
+| Relevancia | `bm25` de FTS5 sobre los últimos 3 turnos | SQLite FTS5 | Sí |
+| Persona mencionada | × 2 si la memoria nombra a alguien del mensaje | Propia | Sí |
+| Recencia de episodios | `exp(-días / 90)` | "Generative Agents" (Park y otros, 2023) usa decaimiento exponencial por recencia | Sí, con `DECAY_DIAS = 90` |
+| Aceptaciones | `1 + log(1 + aceptaciones)` | Frecuencia de uso, como la predicción de palabras en CAA | Sí |
+| Mostrada y no aceptada | Penaliza según `usos - aceptaciones` | Cambio 4 de "Buenas prácticas CAA para ELA" | No. Hoy `usos` no penaliza |
+| Rutina por hora | Impulso si la rutina cae a ± 1 h de la hora actual | Bucket "daily routines" de SPICA | No |
+| Frecuencia y recencia juntas (opcional) | Activación de ACT-R: `ln(Σ t^-0,5)` sobre cada uso | Modelo de memoria ACT-R (Anderson) | No |
+
+Topes por tipo: `K_HECHOS`, `K_EPISODIOS` y un mínimo de 3 episodios. Ya existen.
+
+**Etapa 3 · Política proactiva.** Decide si el agente corre y si interrumpe a Emmy.
+
+- Cada disparador es una regla `cuándo → condición → acción`. La crea el cuidador y queda inactiva hasta que Emmy la aprueba.
+- Tope de propuestas por hora, horas de silencio y una espera mínima por chat.
+- Prioridad fija: alarma > salud > mensajes > iniciativa social.
+- El orden de las ideas proactivas usa el puntaje de `diseno.md`: (Valor − Riesgo) × Factibilidad.
+
+**Etapa 4 · Filtro de salida.** Revisa las 4 opciones del modelo antes de mostrarlas.
+
+- Descarta una opción que toque un tema con `deny` para ese interlocutor.
+- Máximo 15 palabras por opción.
+- Siempre hay una opción neutral, por ejemplo "Después te respondo".
+- Si queda menos de 4 opciones válidas, completa con las reglas locales de la TV.
+
+### 5.2 Estándares de referencia
+
+No existe un estándar de memoria personal para CAA. El comunicador toma los nombres de campo de 2 plantillas de cuidado y exporta la privacidad como `FHIR Consent`. Detalle y fuentes: `~/reports/Estandares memoria personal CAA.md` en la máquina de Juan.
+
+| Memoria | Campo sugerido | Pasaporte de comunicación (CALL Scotland) | "This is me" (Alzheimer's Society) | FHIR / PACIO | SPICA / SocializeChat |
+|---|---|---|---|---|---|
+| Perfil · identidad | `name`, `preferred_name`, `place`, `languages` | "My name is", "I like to be called" | "Name I like to be called", "Where I live" | `Patient.name`, `Patient.communication.language` | "personal background" |
+| Perfil · personas | `person{name, relationship, closeness}` | "Special People", "My Family" | "The people who know me best" | `RelatedPerson.relationship` | "closeness level" |
+| Perfil · personalidad | `traits`, `values`, `interests` | `I like / I don't like` | "My hobbies and interests" | PACIO "Personal Priorities Organizer" | "personal background" |
+| Perfil · límites | `limit{topic, person_id, reason}` | `I mustn't`, `Please DON'T` | "Things that may worry or upset me" | `Consent.provision` con `deny`, `actor` = `RelatedPerson`, `code` = tema | "topics to avoid" |
+| Léxico | `entry{term, meaning, usage}` | "How I communicate" | "How we can communicate" | Extensión propia | "communication mode" |
+| Estilo | `phrase{text, chosen, edited_from}`, `length`, `tone` | "How you can help me with communication" | Sin equivalente | Sin equivalente | "preferred response length and tone" |
+| Episodios | `episode{date, summary, people, sensitivity}` | "My Past", "Special moments and events in my life" | "Other notes about me" | `Observation` con fecha | "autobiographical narratives" |
+| Rutinas | `routine{time, activity, help_needed}` | "I need help with" | "The following routines are important to me" | PACIO "Care Experience Preference" | "daily routines" |
+
+Para la sensibilidad de cada memoria sirven las etiquetas de confidencialidad de HL7 (`N`, `R`, `V`). Para registrar cada aprobación de Emmy sirve ISO/IEC TS 27560:2023.
+
 ## 6. WhatsApp
 
 - Canal: wapi, con `software/whatsapp-bridge`.
