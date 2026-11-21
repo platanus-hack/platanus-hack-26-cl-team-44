@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-11-21T22:37:14.181Z",
+  "country": "CL",
+  "coordinates": "Rappi Chile public default; not a delivery address",
+  "authenticated": false,
+  "upstream": "5c4e5b03e7df8f275a6e4b0dbef74a589e842515",
+  "schemaCompatible": true,
+  "validationIssues": [],
+  "storeCount": 39,
+  "examples": [
+    {
+      "id": 900103860,
+      "name": "Little Caesars Nueva Providencia",
+      "products": [
+        {
+          "id": 765399,
+          "name": "Classic Pepperoni Familiar",
+          "price": 8500,
+          "inStock": true
+        },
+        {
+          "id": 765388,
+          "name": "Classic Cheese Familiar",
+          "price": 8500,
+          "inStock": true
+        }
+      ]
+    },
+    {
+      "id": 900090811,
+      "name": "Under Pizza Panorámico",
+      "products": [
+        {
+          "id": 1166303,
+          "name": "Pepperoni",
+          "price": 7990,
+          "inStock": true
+        },
+        {
+          "id": 1166281,
+          "name": "Napolitana",
+          "price": 8990,
+          "inStock": true
+        }
+      ]
+    },
+    {
+      "id": 900018448,
+      "name": "Melt Callao",
+      "products": [
+        {
+          "id": 2013063,
+          "name": "Todas Las Carnes Familiar",
+          "price": 21790,
+          "inStock": true
+        },
+        {
+          "id": 2013108,
+          "name": "2 Familiares + Palitos + Bebida 1,5l",
+          "price": 29989.98,
+          "inStock": true
+        }
+      ]
+    }
+  ],
+  "catalog": {
+    "ok": true,
+    "keys": [
+      "style",
+      "tags_style",
+      "video_ads_carousels"
+    ]
+  },
+  "store": {
+    "ok": false,
+    "error": "Error: GET /api/web-gateway/web/stores-router/id/900103860/ → 401 Unauthorized"
+  },
+  "toppings": {
+    "ok": false,
+    "error": "Error: GET /api/web-gateway/web/restaurants-bus/products/toppings/900103860/765399/ → 401 Unauthorized"
+  }
+}
