@@ -5,7 +5,26 @@ Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 2 piezas:
 - **Memoria mínima.** SQLite con los 5 tipos del plan de Emmy, filtro de privacidad por interlocutor, límites duros por persona y revisión de las opciones del modelo.
 - **Agente de 1 turno.** Recibe un mensaje y devuelve un resumen y 4 opciones con emoción y fuente. Usa `claude-agent-sdk` con la sesión de Claude Code de la máquina.
 
-Todavía no trae servidor, SSE, puente de WhatsApp, voz ni escucha.
+- **Servidor con SSE y modo dev en la TV.** Simula un mensaje del grupo o de la sala y muestra las opciones en la pantalla Hablar.
+
+Todavía no trae puente de WhatsApp, voz ni escucha.
+
+## Probar en la TV (modo dev)
+
+En 2 terminales, desde la raíz del repo:
+
+```bash
+# 1. Agente (necesita Claude Code con sesión)
+software/agent/.venv/bin/python software/agent/server.py
+# 2. TV
+python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
+```
+
+Abre http://localhost:8000/woki-os.html?dev=1 y aprieta "Usar mouse (demo)". También puedes abrir el panel con Shift+D.
+
+En el panel eliges quién habla, el canal (grupo de WhatsApp o voz en la sala) y el mensaje, o tocas un ejemplo. Al apretar Simular, la TV pasa a Hablar con el resumen, el último encuentro y las 4 opciones. La traza del panel muestra el tiempo, las fuentes y las opciones descartadas.
+
+El panel no tiene `data-t`, así que la mirada y la ceja no lo seleccionan. Su teclado no llega a la TV.
 
 ## Probar en 3 comandos
 
