@@ -24,8 +24,8 @@ class MonitorTest(unittest.TestCase):
                                     '--serial-port', device, '--http-port', str(port)],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         base = f'http://127.0.0.1:{port}'
-        def get():
-            with urllib.request.urlopen(base+'/data', timeout=1) as response:
+        def get(path='/data'):
+            with urllib.request.urlopen(base+path, timeout=1) as response:
                 return json.load(response)
         try:
             deadline=time.monotonic()+5
@@ -35,19 +35,40 @@ class MonitorTest(unittest.TestCase):
                 except (OSError, urllib.error.URLError): pass
                 if time.monotonic()>deadline: self.fail('Server did not start')
                 time.sleep(.05)
-            os.write(master,b'ENV:100\nENV:600\n1023\nENV:1024\n-1\nnoise\n')
+            os.write(master,b'ENV:100\n1023\nA0:0,A3:1023\r\nA0:1023,A3:')
             deadline=time.monotonic()+2
             while True:
                 data=get()
                 if data['received']==3: break
                 if time.monotonic()>deadline: self.fail('Serial samples not parsed')
                 time.sleep(.02)
-            self.assertEqual([v for _,v in data['samples']],[100,600,1023])
-            self.assertEqual(data['unrecognized'],3)
+            self.assertEqual([row[1:] for row in data['samples']],[[100,None],[1023,None],[0,1023]])
+            os.write(master,b'0\nA0:1024,A3:2\nA0:2,A3:1024\nA0:2,A3:-1\nA0:2\nENV:1024\nnoise\n')
+            deadline=time.monotonic()+2
+            while True:
+                data=get()
+                if data['received']==4 and data['unrecognized']==6: break
+                if time.monotonic()>deadline: self.fail(f'Unexpected serial counts: {data}')
+                time.sleep(.02)
+            self.assertEqual([row[1:] for row in data['samples']],[[100,None],[1023,None],[0,1023],[1023,0]])
+            self.assertEqual(get('/data?seconds=60')['samples'],data['samples'])
             self.assertLess(data['now']-data['last'],1.5)
+            stream=get('/emg/gestures')
+            self.assertTrue(stream['source'])
+            self.assertEqual(stream['sequence'],4)
+            self.assertEqual([row[1:] for row in stream['frames']],[[100,None],[1023,None],[0,1023],[1023,0]])
+            self.assertEqual(sorted(stream['frames'],key=lambda row: row[0]),stream['frames'])
+            self.assertIsInstance(stream['age'],int)
             with urllib.request.urlopen(base) as r:
                 self.assertIn('TOKI / BANCO DE PRUEBA',r.read().decode())
-            for route in ['/server.py','/../README.md']:
+            for route, content_type, marker in [
+                ('/woki-os.html','text/html','Calibrar gestos'),
+                ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
+            ]:
+                with urllib.request.urlopen(base+route,timeout=1) as r:
+                    self.assertEqual(r.headers.get_content_type(),content_type)
+                    self.assertIn(marker,r.read().decode())
+            for route in ['/server.py','/../README.md','/README.md']:
                 with self.assertRaises(urllib.error.HTTPError) as caught:
                     urllib.request.urlopen(base+route)
                 self.assertEqual(caught.exception.code,404)
@@ -60,6 +81,7 @@ class MonitorTest(unittest.TestCase):
             while get()['connected']:
                 if time.monotonic()>deadline:self.fail('Disconnect not detected')
                 time.sleep(.05)
+            self.assertIsNone(get('/emg/gestures')['age'])
         finally:
             process.terminate();process.wait(timeout=3)
             if master is not None:os.close(master)

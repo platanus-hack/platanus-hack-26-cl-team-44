@@ -1,13 +1,160 @@
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MyoWare · Prueba en vivo</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#101719;color:#e8efea;font:17px system-ui;padding:40px;max-width:1200px;margin:auto}small{color:#9cadad}h1{font-size:40px;margin:12px 0}header{margin-bottom:30px}.pill{border-radius:30px;padding:8px 15px;background:#293438;display:inline-block}.grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}.card{background:#1a2528;border:1px solid #334144;border-radius:18px;padding:24px}canvas{width:100%;height:300px}#value{font-size:64px;font-weight:700}label{display:block;margin:20px 0}input{width:100%}.good{color:#9fe3b2}.warning{color:#ffcc88}button{padding:10px;border-radius:8px;border:0;background:#b9e7cb;color:#163224;cursor:pointer}p{line-height:1.6}#activity{font-size:22px}footer{margin-top:20px;color:#aabbb6}@media(max-width:700px){body{padding:20px}.grid{grid-template-columns:1fr}}</style>
-<header><small>TOKI / BANCO DE PRUEBA</small><h1>Tu músculo, en vivo.</h1><span class="pill" id="status">Comprobando conexión…</span></header>
-<div class="grid"><section class="card"><small>ENV · últimos 10 segundos · escala ADC 0–1023</small><canvas id="plot"></canvas><p id="hint">Esperando datos reales del Arduino. No se muestran señales simuladas.</p></section><section class="card"><small>Lectura actual</small><div id="value">—</div><div id="activity">Sin señal reciente</div><label>Umbral de prueba: <b id="thresholdLabel">300</b><input id="threshold" type="range" min="1" max="1022" value="300"></label><small>Manual: ajústalo por encima del reposo y por debajo de tus contracciones. No es una medida clínica.</small><p><button id="download">Guardar muestras CSV</button></p></section></div>
-<section class="card" style="margin-top:20px"><b>Prueba sencilla</b><p>1. Relaja el brazo durante 5 segundos.<br>2. Contrae suavemente durante 2 segundos.<br>3. Relaja y repite 5 veces.</p><small>Buscamos una subida repetible al contraer y una bajada al relajar. El movimiento del cable también puede generar ruido.</small></section>
-<footer>Mac solo a batería, sin cargador, dock ni monitor conectado. No cambies conexiones mientras esté alimentado. Datos locales; el panel conserva solo las últimas 1500 muestras.</footer>
+<style>*{box-sizing:border-box}body{margin:0;background:#101719;color:#e8efea;font:17px system-ui;padding:40px;max-width:1200px;margin:auto}small{color:#9cadad}h1{font-size:40px;margin:12px 0}header{margin-bottom:30px}.pill{border-radius:30px;padding:8px 15px;background:#293438;display:inline-block}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px}.card{background:#1a2528;border:1px solid #334144;border-radius:18px;padding:24px}canvas{width:100%;height:300px;display:block}.channel-a0,.good{color:#9fe3b2}.channel-a3{color:#a8d4ff}.channel + .channel{border-top:1px solid #334144;padding-top:16px}.reading{font-size:42px;font-weight:700;font-variant-numeric:tabular-nums}.legend{display:flex;flex-wrap:wrap;gap:16px;margin:8px 0}.legend span::before{content:'';display:inline-block;width:20px;margin-right:6px;vertical-align:middle;border-top:2px solid currentColor}.legend .channel-a3::before{border-top-style:dashed}label{display:block;margin:12px 0 16px}input{width:100%}.warning{color:#ffcc88}button{padding:10px;border-radius:8px;border:0;background:#b9e7cb;color:#163224;cursor:pointer}p{line-height:1.6}footer{margin-top:20px;color:#aabbb6}@media(max-width:700px){body{padding:20px}.grid{grid-template-columns:minmax(0,1fr)}}</style>
+<header><small>TOKI / BANCO DE PRUEBA</small><h1>Señal muscular en vivo</h1><span class="pill" id="status">Comprobando conexión…</span></header>
+<div class="grid">
+  <section class="card">
+    <small>ENV · últimos 10 segundos · escala ADC 0–1023</small>
+    <div class="legend"><span class="channel-a0">A0</span><span class="channel-a3">A3</span></div>
+    <canvas id="plot" role="img" aria-label="Gráfico de las señales de A0 y A3 durante los últimos 10 segundos"></canvas>
+    <p id="hint">Esperando datos reales del Arduino.</p>
+  </section>
+  <section class="card" aria-label="Lecturas y umbrales de prueba">
+    <div class="channel">
+      <div class="channel-a0">A0 · <strong class="reading" id="value-a0">—</strong></div>
+      <div id="activity-a0">Sin señal reciente</div>
+      <label>Umbral A0: <b id="threshold-label-a0" aria-hidden="true">300</b><input id="threshold-a0" type="range" min="1" max="1022" value="300"></label>
+    </div>
+    <div class="channel">
+      <div class="channel-a3">A3 · <strong class="reading" id="value-a3">—</strong></div>
+      <div id="activity-a3">Sin señal reciente</div>
+      <label>Umbral A3: <b id="threshold-label-a3" aria-hidden="true">300</b><input id="threshold-a3" type="range" min="1" max="1022" value="300"></label>
+    </div>
+    <small>Ajusta cada umbral por encima del reposo y por debajo de la contracción. No es una medida clínica.</small>
+    <p><button id="download">Guardar muestras CSV</button></p>
+  </section>
+</div>
+<section class="card" id="myoware-controls" style="margin-top:20px" hidden>
+  <h2>Prueba de gestos</h2>
+  <p><strong>A0: mandíbula. A3: ceja.</strong> Si se activan ambos, cuenta solo mandíbula.</p>
+  <button type="button" id="myoware-calibrate">Calibrar gestos</button>
+  <button type="button" id="myoware-toggle" hidden>Probar gestos</button>
+  <p id="myoware-status" role="status">Confirma que los dos sensores estén en modo ENV.</p>
+  <p id="myoware-result" role="status">Último gesto: —</p>
+  <p><a id="myoware-open-woki" href="/woki-os.html" style="color:#9fe3b2">Abrir Woki OS sin activar el sensor</a></p>
+  <small>Los umbrales manuales del gráfico no cambian la detección calibrada.</small>
+</section>
+<footer>Mac solo a batería, sin cargador, dock ni monitor conectado. No cambies conexiones mientras esté alimentado. Datos locales; el panel conserva hasta 60 segundos para diagnóstico.</footer>
 <script>
-let data=[],lastNow=0;const $=id=>document.getElementById(id);const canvas=$('plot'),ctx=canvas.getContext('2d');
-$('threshold').oninput=()=>{$('thresholdLabel').textContent=$('threshold').value;draw()};
-function draw(){let w=canvas.clientWidth,h=300,d=devicePixelRatio||1;canvas.width=w*d;canvas.height=h*d;ctx.scale(d,d);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#344449';ctx.fillStyle='#9cadad';ctx.font='12px system-ui';for(let v of [0,256,512,768,1023]){let y=15+(1023-v)/1023*260;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w,y);ctx.stroke();ctx.fillText(v,0,y+4)}let threshold=+$('threshold').value;ctx.strokeStyle='#e5b66d';ctx.setLineDash([5,5]);let y=15+(1023-threshold)/1023*260;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w,y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#9fe3b2';ctx.lineWidth=2;ctx.beginPath();let started=false;for(let [t,v] of data){if(t<lastNow-10)continue;let x=40+(t-(lastNow-10))/10*(w-40),y=15+(1023-v)/1023*260;if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)}ctx.stroke()}
-async function poll(){try{let r=await fetch('/data');if(!r.ok)throw Error();let d=await r.json();data=d.samples;lastNow=d.now;let fresh=d.last>0&&d.now-d.last<1.5; $('status').textContent=fresh?'● Recibiendo señal':d.connected?'USB abierto · esperando datos compatibles':'Arduino no disponible';$('status').className='pill '+(fresh?'good':'warning');$('value').textContent=fresh?data.at(-1)[1]:'—';$('activity').textContent=fresh?(data.at(-1)[1]>+$('threshold').value?'Por encima del umbral':'Por debajo del umbral'):'Sin señal reciente';$('hint').textContent=fresh?'Datos reales recibidos. Compara reposo y contracción; el panel no certifica por sí solo el sensor.':d.unrecognized?'Llegan datos con otro formato. Hay que revisar el programa o la velocidad serial.':'Esperando el programa de lectura A0 a 115200 baudios.';draw()}catch(e){$('status').textContent='Panel desconectado del servidor';$('value').textContent='—';$('activity').textContent='Sin señal reciente'}setTimeout(poll,150)}
-$('download').onclick=()=>{if(!data.length)return;let a=document.createElement('a');let url=URL.createObjectURL(new Blob(['unix_seconds,env_adc\n'+data.map(x=>x.join(',')).join('\n')],{type:'text/csv'}));a.href=url;a.download='myoware.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};poll();
+let data = [], lastNow = 0, latest = [];
+const $ = id => document.getElementById(id);
+const canvas = $('plot'), ctx = canvas.getContext('2d');
+const channels = ['a0', 'a3'].map((id, index) => ({
+  column: index + 1,
+  color: getComputedStyle($(`value-${id}`)).color,
+  dash: index ? [5, 3] : [],
+  value: $(`value-${id}`),
+  activity: $(`activity-${id}`),
+  threshold: $(`threshold-${id}`),
+  label: $(`threshold-label-${id}`)
+}));
+
+function renderReadings() {
+  for (const { column, value, activity, threshold, label } of channels) {
+    const sample = latest[column];
+    value.textContent = sample ?? '—';
+    label.textContent = threshold.value;
+    activity.textContent = sample == null
+      ? latest.length ? 'Sin datos de este canal' : 'Sin señal reciente'
+      : sample > Number(threshold.value) ? 'Por encima del umbral' : 'En el umbral o por debajo';
+  }
+}
+
+function draw() {
+  const w = canvas.clientWidth, h = canvas.clientHeight, d = devicePixelRatio || 1;
+  const left = 40, since = lastNow - 10;
+  const y = value => 15 + (1 - value / 1023) * (h - 30);
+  canvas.width = w * d;
+  canvas.height = h * d;
+  ctx.scale(d, d);
+  ctx.strokeStyle = '#344449';
+  ctx.fillStyle = '#9cadad';
+  ctx.font = '12px system-ui';
+  for (const tick of [0, 256, 512, 768, 1023]) {
+    ctx.beginPath();
+    ctx.moveTo(left, y(tick));
+    ctx.lineTo(w, y(tick));
+    ctx.stroke();
+    ctx.fillText(tick, 0, y(tick) + 4);
+  }
+  for (const { column, color, threshold } of channels) {
+    if (latest[column] == null) continue;
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.45;
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(left, y(Number(threshold.value)));
+    ctx.lineTo(w, y(Number(threshold.value)));
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  for (const { column, color, dash } of channels) {
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    let started = false;
+    for (const row of data) {
+      if (row[0] < since) continue;
+      const value = row[column];
+      if (value == null) {
+        started = false;
+        continue;
+      }
+      const x = left + (row[0] - since) / 10 * (w - left);
+      if (started) ctx.lineTo(x, y(value));
+      else ctx.moveTo(x, y(value));
+      started = true;
+    }
+    ctx.stroke();
+  }
+}
+
+for (const { threshold } of channels) {
+  threshold.oninput = () => { renderReadings(); draw(); };
+}
+
+async function poll() {
+  const status = $('status'), hint = $('hint');
+  try {
+    const response = await fetch('/data');
+    if (!response.ok) throw Error();
+    const { samples, now, last, connected, unrecognized } = await response.json();
+    data = samples;
+    lastNow = now;
+    const fresh = connected && last > 0 && now - last < 1.5;
+    latest = fresh ? data.at(-1) : [];
+    status.textContent = fresh ? '● Recibiendo señal' : connected
+      ? 'USB abierto · esperando datos compatibles' : 'Arduino no disponible';
+    status.className = 'pill ' + (fresh ? 'good' : 'warning');
+    hint.textContent = fresh
+      ? latest[2] == null ? 'Solo llegan datos de A0. Carga el sketch de dos canales para leer A3.'
+        : 'Llegan datos de ambos canales. Comprueba que respondan por separado.'
+      : unrecognized ? 'Se recibieron datos con otro formato. Revisa el sketch y la velocidad serial.'
+        : 'Esperando datos del Arduino a 115200 baudios.';
+  } catch {
+    latest = [];
+    status.textContent = 'Panel desconectado del servidor';
+    status.className = 'pill warning';
+    hint.textContent = 'Comprueba que el servidor del monitor siga abierto.';
+  }
+  renderReadings();
+  draw();
+  setTimeout(poll, 150);
+}
+
+$('download').onclick = () => {
+  if (!data.length) return;
+  const link = document.createElement('a');
+  const csv = 'unix_seconds,a0_env_adc,a3_env_adc\n' + data.map(row => row.join(',')).join('\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  link.href = url;
+  link.download = 'myoware.csv';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+poll();
+</script>
+<script type="module">
+  import { setupMyoWareGestures } from './myoware-click.js';
+  setupMyoWareGestures();
 </script></html>
