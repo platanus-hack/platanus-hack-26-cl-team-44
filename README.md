@@ -17,6 +17,7 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP per
 
 | Experiencia | Dirección | Requisitos |
 |---|---|---|
+| Lobby accesible de Toki | [Elegir mirada, nariz o mouse](http://127.0.0.1:8790/prototype-lobby.html?acceso=elegir) | Node 22+ y el [servidor local de Toki](software/apps-bridge/README.md) |
 | MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
 | Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+, UNO con firmware, sensor y Link Shield |
 | Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Eye Tracking; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
