@@ -52,13 +52,18 @@
     return la > lb ? a.slice(i + 1) === b.slice(i) : a.slice(i) === b.slice(i + 1);
   }
 
-  function emptyState() { return { v: 1, uni: {}, bi: {}, total: 0 }; }
+  // Mapas SIN prototipo: palabras como "constructor" o "valueof" no deben chocar con propiedades
+  // internas de los objetos de JavaScript (con {} normal, "constructor" rompía el motor).
+  const dict = (entries = []) => Object.assign(Object.create(null), Object.fromEntries(entries));
+  function emptyState() { return { v: 1, uni: dict(), bi: dict(), total: 0 }; }
 
   function loadState(storage) {
     if (!storage) return emptyState();
     try {
       const s = JSON.parse(storage.getItem(STORE_KEY));
-      if (s && s.v === 1 && s.uni && typeof s.uni === "object" && s.bi && typeof s.bi === "object") return s;
+      if (s && s.v === 1 && s.uni && typeof s.uni === "object" && s.bi && typeof s.bi === "object") {
+        return { v: 1, uni: dict(Object.entries(s.uni)), bi: dict(Object.entries(s.bi)), total: Number(s.total) || 0 };
+      }
     } catch { /* datos corruptos: se empieza de cero */ }
     return emptyState();
   }
@@ -102,7 +107,7 @@
       const prune = (obj, max) => {
         const keys = Object.keys(obj);
         if (keys.length <= max) return obj;
-        return Object.fromEntries(keys.sort((a, b) => decay(obj[b]) - decay(obj[a])).slice(0, max).map((k) => [k, obj[k]]));
+        return dict(keys.sort((a, b) => decay(obj[b]) - decay(obj[a])).slice(0, max).map((k) => [k, obj[k]]));
       };
       state = { ...state, uni: prune(state.uni, MAX_UNI), bi: prune(state.bi, MAX_BI) };
       try { storage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* almacenamiento lleno o bloqueado */ }

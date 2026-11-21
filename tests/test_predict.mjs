@@ -58,6 +58,14 @@ assert.equal(normalize("Año pingüino"), "año pinguino");
   assert.equal(p.suggest("", "cam")[0].word, "camila", "si se escribe más en minúscula, vuelve a minúscula");
 }
 
+// palabras que coinciden con propiedades internas de JavaScript no rompen el motor (encontrado con el diccionario real)
+{
+  const p = createPredictor({ base: [...BASE, ["constructor", 30], ["valueof", 1], ["tostring", 1]], storage: memStorage() });
+  assert.ok(p.suggest("", "cons").some((x) => x.word === "constructor"));
+  p.learn("el constructor llegó"); p.learn("__proto__ constructor");
+  assert.doesNotThrow(() => p.suggest("el", ""));
+}
+
 // persiste entre sesiones (localStorage) y tolera datos corruptos
 {
   const storage = memStorage();
