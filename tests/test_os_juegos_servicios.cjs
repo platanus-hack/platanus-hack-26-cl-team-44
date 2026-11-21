@@ -49,6 +49,10 @@ assert.ok(!/if\(window\.TOKI_OS_SHELL\)\{[^]*?Si aparece la bienvenida[^]*?retur
 assert.match(glue, /if \(name !== 'games'\) \$\('#externalGame'\)\?\.remove\(\);/);
 const css = fs.readFileSync(dir + "os-juegos-servicios.css", "utf8");
 assert.match(css, /#s-apps \.toki-apps, #s-apps \.ta-screen, #s-apps \.ta-catalog, #s-apps \.ta-nav \{ overflow: visible; \}/, "el zoom del foco no se recorta en Servicios");
+assert.match(css, /#s-apps \.food-card strong \{ font-size: 38px;/, "comida (Rappi): nombres grandes en el lienzo de 1920");
+assert.match(css, /#s-apps \.food-note \{ font-size: 28px; line-height: 1\.3; color: var\(--txt2\); \}/, "comida: la nota usa el tema, no 16 px fijos");
+assert.match(css, /#s-apps \.video-choices \.video-card \{ display: grid;/, "YouTube: la tarjeta de video recupera su rejilla");
+assert.match(glue, /new MutationObserver\(targets\)\.observe\(root, \{ subtree: true, attributes: true, attributeFilter: \['disabled'\] \}\)/, "un botón habilitado sin repintar («Reproducir») se puede elegir con la mirada");
 
 // 6. Ajustes › Tema y color: tema y 5 colores, todos definidos en claro y oscuro, y se recuerda.
 for (const p of ["bosque", "oceano", "atardecer", "lavanda"]) {

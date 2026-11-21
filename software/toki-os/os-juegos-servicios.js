@@ -62,6 +62,8 @@ window.addEventListener('load', () => {
       else el.setAttribute('data-t', '');
     }
   }
+  // Algunos botones se habilitan sin repintar (p. ej. "Reproducir" cuando el video de YouTube está listo).
+  new MutationObserver(targets).observe(root, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
   function mount() {
     app = TokiApps.mount(root, {
       motion: true, dwell: () => CFG.dwellMs, home: () => go('home'),
