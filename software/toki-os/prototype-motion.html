@@ -766,8 +766,17 @@ addEventListener('keyup',e=>{
 
 /* Laboratorio local: sin conexión automática al puente EMG. */
 /* ===================== Mirada ===================== */
+const tabletAccess = new URLSearchParams(location.search).get('tablet') === '1' && window.frameElement ? parent.TokiAccess : null;
+function tabletGameInput() { return tabletAccess?.gameInput(window); }
+if (tabletAccess) {
+  for (const type of ['keydown','keyup']) addEventListener(type, e => {
+    if(e.code !== 'Space' || !tabletGameInput()?.muscle) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (!e.repeat) tabletAccess.gameSwitch(type === 'keydown');
+  }, true);
+}
 let mouse={x:innerWidth/2,y:innerHeight/2}, noise={x:0,y:0}, gz={x:innerWidth/2,y:innerHeight/2};
-addEventListener('mousemove',e=>{ if(window.NOSE && NOSE.on) return; mouse.x=e.clientX;mouse.y=e.clientY});
+addEventListener('mousemove',e=>{ if((window.NOSE && NOSE.on) || tabletGameInput()?.camera) return; mouse.x=e.clientX;mouse.y=e.clientY});
 function setGazeLost(v){
   if(S.gazeLost===v) return; S.gazeLost=v; document.body.classList.toggle('scan',v); clearFocus(); S.scanIdx=-1;
   island(v?'👀':'👁', v?'No te veo · sigue con la ceja':'Te veo de nuevo', v); log(v?'cara perdida → EMG con escaneo':'cara recuperada'); renderStatus(); updateLCD();
@@ -794,6 +803,19 @@ function tick(now){
   noise.x=noise.x*.88+gauss()*sig*.35; noise.y=noise.y*.88+gauss()*sig*.35;
   const tx=mouse.x+noise.x, ty=mouse.y+noise.y;
   gz.x+= (tx-gz.x)*.45; gz.y+= (ty-gz.y)*.45;   // filtro ~2 cuadros (guía: suavizado con poco retraso)
+  const shared = tabletGameInput();
+  const unavailable = shared && (shared.blocked || (shared.camera && !shared.point));
+  if (shared?.point) {
+    gz.x = mouse.x = shared.point.x;
+    gz.y = mouse.y = shared.point.y;
+  }
+  const cursor = $('#gaze');
+  cursor.hidden = Boolean(unavailable);
+  if (unavailable) {
+    clearFocus(); menuPointer.reset(); menuDwell.reset(); menuOutline.clear();
+    requestAnimationFrame(tick);
+    return;
+  }
   const cur=$('#gaze'); cur.style.transform=`translate(${gz.x}px,${gz.y}px)`; cur.style.left='0';cur.style.top='0';
 
   const busy = $('#alarm').classList.contains('on') || S.rest || $('#calib').classList.contains('on');
@@ -832,7 +854,7 @@ function tick(now){
         const p = automatic && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);
         menuOutline.paint(automatic && dwellElapsed >= 0 ? f : null, p);
-        if(p>=1 && S.blocked!==f && (!automatic || inside)){
+        if(p>=1 && !shared?.muscle && S.blocked!==f && (!automatic || inside)){
           if(forced || CFG.mode==='dwell'){ S.blocked=f; f.classList.add('blocked'); activate(f); }
           else if(!S.armed){ S.armed=true; f.classList.add('armed'); }
         }
@@ -1317,7 +1339,7 @@ $('#noseBtn').addEventListener('click',e=>{ e.currentTarget.blur(); NOSE.toggle(
 <script src="prototype-motion.js?v=nav-fix-1"></script>
 <link rel="stylesheet" href="prototype-games.css">
 <script src="prototype-games.js"></script>
-<script src="prototype-external-games.js"></script>
+<script src="prototype-external-games.js?v=27"></script>
 <link rel="stylesheet" href="toki-apps.css">
 <script src="toki-apps.js"></script>
 <script src="toki-apps-motion.js"></script>
@@ -1342,6 +1364,7 @@ window.addEventListener('load',()=>{
       });
       const restPanel = window.frameElement?.ownerDocument.getElementById('visual-rest');
       if (restPanel) syncHostRest(!restPanel.hidden);
+      tabletAccess?.openPendingGame();
       const navigate = go;
       go = name => {
         if (name === 'home') parent.postMessage('toki-games-home', location.origin);

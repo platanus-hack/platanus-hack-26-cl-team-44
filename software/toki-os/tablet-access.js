@@ -20,6 +20,75 @@
     const saved = localStorage.getItem(dwellKey);
     if (dwellChoices.some(button => button.dataset.dwellMs === saved)) dwellMs = Number(saved);
   } catch {}
+  const gameHash = new URLSearchParams(location.hash.slice(1));
+  const handoff = gameHash.get('partida');
+  if (handoff && gameHash.has('tokiBridge') && gameHash.has('bridgePort')) {
+    sessionStorage.setItem('toki.bridge.token', gameHash.get('tokiBridge'));
+    sessionStorage.setItem('toki.bridge.port', gameHash.get('bridgePort'));
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  let pendingGame = null, resumeOnReturn = false;
+  async function gameRequest(action, body) {
+    const base = location.port === '8000' ? 'http://127.0.0.1:8790' : location.origin;
+    const session = await fetch(base + '/api/session', {signal:AbortSignal.timeout(4000)});
+    const {token} = await session.json();
+    const response = await fetch(base + '/api/games/' + action, {
+      method:'POST', headers:{'content-type':'application/json','x-toki-token':token},
+      body:JSON.stringify(body), signal:AbortSignal.timeout(20000)
+    });
+    if (!response.ok) throw Error('No se pudo abrir la sesión de juego.');
+    return response.json();
+  }
+  function gameInput(child) {
+    const game = $('.catalog-frame');
+    if (!game || game.contentWindow !== child) return null;
+    const blocked = document.hidden || !document.hasFocus() || !rest.hidden || !panel.hidden ||
+      (!layer.inert && !layer.hidden) || paused;
+    const camera = pointing !== 'Mouse';
+    const p = camera && !blocked ? currentPoint() : null;
+    let point = null;
+    if (p && document.elementFromPoint(p.x,p.y) === game) {
+      const r = game.getBoundingClientRect();
+      point = {x:(p.x-r.left)*child.innerWidth/r.width, y:(p.y-r.top)*child.innerHeight/r.height, topX:p.x, topY:p.y};
+    }
+    return {mode:pointing, camera, point, blocked, muscle, dwellMs};
+  }
+  async function openGameWindow(game) {
+    const sensor = frame?.contentWindow;
+    if (!sensor || pointing === 'Mouse') throw Error('Elige un control de cámara.');
+    const nose = sensor.NOSE;
+    const noseCalibration = nose.cal && {...nose.cal,n:nose.neutral || nose.cal.n};
+    const calibration = pointing === 'Nariz' ? noseCalibration : sensor.GAZE.model;
+    await gameRequest('open', {game, mode:pointing, calibration, dwellMs});
+    if (!document.hasFocus() && frame?.contentWindow === sensor) {
+      sensor.NOSE.stop();
+      resumeOnReturn = true;
+    }
+  }
+  window.addEventListener('focus', () => {
+    if (resumeOnReturn && pointing !== 'Mouse') {
+      resumeOnReturn = false;
+      calibrate(pointing, true);
+    }
+  });
+  function openPendingGame() {
+    const games = $('.catalog-frame')?.contentWindow?.TOKI_EXTERNAL;
+    if (!pendingGame || !active || configuring || !games) return;
+    const game = pendingGame;
+    pendingGame = null;
+    games.open(game);
+  }
+  async function resumeGame() {
+    try {
+      const config = await gameRequest('resume',{id:handoff});
+      pendingGame = config.game;
+      dwellMs = config.dwellMs;
+      localStorage.setItem(dwellKey, String(dwellMs));
+      const key = config.mode === 'Nariz' ? 'woki.cal.v1' : 'woki.gaze.v1';
+      if (config.calibration) localStorage.setItem(key, JSON.stringify(config.calibration));
+      calibrate(config.mode, Boolean(config.calibration));
+    } catch { showChoices('Vuelve a elegir tu control para entrar en Juegos.'); }
+  }
   function dwellProgress(elapsed, minimumMs = 0) {
     const previewMs = 1000;
     const totalMs = Math.max(dwellMs, minimumMs);
@@ -139,6 +208,8 @@
     leaveSetup();
     sync();
     $('#location').focus({preventScroll:true});
+    $('.catalog-frame')?.contentWindow?.dispatchEvent(new Event('toki-tablet-control'));
+    openPendingGame();
   }
   function showChoices(message = '') {
     configuring = false;
@@ -185,6 +256,7 @@
     showChoices(message);
   }
   function start({choose, direct}) {
+    if (handoff) { void resumeGame(); return; }
     if (choose) { setup(true); return; }
     const params = new URLSearchParams(location.search);
     if (params.get('acceso') === 'iman' || (direct && params.get('appsAdmin') === '1')) return;
@@ -232,7 +304,10 @@
     const w=frame?.contentWindow, n=w?.NOSE;
     if(!n?.on || !n.raw || w.WOKI.S.gazeLost || w.performance.now()-n.lastFace>240) return null;
     if(n.mode==='gaze' && (!w.GAZE.cur || w.GAZE.cur.blink)) return null;
-    const r=w.document.querySelector('#stage').getBoundingClientRect(), p=w.WOKI.gz;
+    const stage=w.document.querySelector('#stage');
+    if (!stage) return null;
+    const r=stage.getBoundingClientRect(), p=w.WOKI.gz;
+    if (!r.width || !r.height) return null;
     return {x:Math.max(1,Math.min(innerWidth-2,(p.x-r.left)/r.width*innerWidth)),y:Math.max(1,Math.min(innerHeight-2,(p.y-r.top)/r.height*innerHeight))};
   }
   function activate(button) {
@@ -275,7 +350,8 @@
       } else { locked = null; lockedButton = null; }
     }
     const el = aim.target;
-    cursor.hidden = !rest.hidden && el !== resume;
+    const overGame = pointing !== 'Mouse' && document.elementFromPoint(p.x,p.y)?.matches('.catalog-frame');
+    cursor.hidden = overGame || (!rest.hidden && el !== resume);
     document.body.classList.toggle('draws-mouse', pointing === 'Mouse' && !cursor.hidden);
     if (!cursor.hidden) {
       const tau = pointing === 'Mouse' ? 38 : 58;
@@ -295,7 +371,8 @@
 
   function edge(down) {
     if(!muscle || configuring || document.hidden)return;
-    if(down) {if(!downAt){downAt=performance.now();pressedTarget=focused;}return;}
+    const game=$('.catalog-frame')?.contentWindow?.TOKI_EXTERNAL;
+    if(down) {if(!downAt){downAt=performance.now();pressedTarget=focused || game?.switchTarget();}return;}
     if(!downAt)return;
     downAt=0;
     if(pending) {resetGesture();if(!rest.hidden)return;if(!chooser.hidden && !layer.inert){if(!$('#dismiss-chooser').hidden)$('#dismiss-chooser').click();return;}if(panel.hidden)window.dispatchEvent(new Event('toki-back'));else settings(false);return;}
@@ -303,6 +380,7 @@
     pending=setTimeout(()=>{
       pending=0;
       if(chosen && chosen===focused && currentPoint())activate(chosen);
+      else if (chosen) game?.confirmSwitch(chosen);
     },300);
   }
   for(const type of ['keydown','keyup']) window.addEventListener(type,e=>{
@@ -375,5 +453,5 @@
     active = true;
     state('Mantén el mouse sobre una opción hasta que se complete el borde.');
   }
-  sync();window.TokiAccess={setup,start,dwellProgress,get magnetEnabled(){return magnetic;}};
+  sync();window.TokiAccess={setup,start,dwellProgress,gameInput,gameSwitch:edge,openGameWindow,openPendingGame,get magnetEnabled(){return magnetic;}};
 })();

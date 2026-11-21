@@ -11,6 +11,10 @@ Abre [la tienda](http://127.0.0.1:8790/prototype-lobby.html?start=apps). El lobb
 
 Requiere Node 22+, `spogo` en PATH y Spotify.app para el control local en macOS. La preparación comprueba esos requisitos. No instala programas desde solicitudes del navegador. BioBioChile solo requiere Internet; usa el RSS del medio y no necesita cuenta.
 
+## Juegos
+
+Desde [Juegos](http://127.0.0.1:8790/prototype-lobby.html?start=games&acceso=elegir), elige Nariz, Mirada o Mouse. La selección con cámara abre la partida en una ventana de Chrome controlada por Toki. Permite la cámara si Chrome la solicita. La calibración se conserva al pasar del catálogo a la partida. Consulta los [detalles de la sesión de juegos](../browser-bridge/README.md).
+
 ## Spotify
 
 Pulsa Adaptar Spotify. La interfaz y el conector se comprueban realmente y la solicitud pasa a Conectar Spotify. Para buscar, inicia sesión en Spotify Web en tu navegador y pulsa Usar mi sesión de Spotify. Esta acción importa solamente la sesión Spotify a un perfil `toki` de spogo; macOS puede pedir acceso al llavero. No se muestran cookies ni tokens en la interfaz ni se envían al generador. Desconectar elimina la copia de sesión de ese perfil.

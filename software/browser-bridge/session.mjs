@@ -3,15 +3,22 @@ import {mkdirSync, chmodSync, unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 
 // The socket is also the lock: two launchers cannot own it at the same time.
-export async function claimSession(directory, activate) {
+export async function claimSession(directory, activate, handoff = '') {
  mkdirSync(directory,{recursive:true,mode:0o700});
  const path=join(directory,'session.sock');
  const server=net.createServer(socket=>{
   socket.on('error',()=>{});
   socket.setTimeout(15000,()=>socket.destroy());
-  socket.once('data',async data=>{
-   if(data.toString()!=='activate\n'){socket.destroy();return;}
-   try{await activate();socket.end('ok\n');}
+  let line = '';
+  socket.setEncoding('utf8');
+  socket.on('data',async part=>{
+   line += part;
+   if(line.length>58){socket.destroy();return;}
+   if(!line.endsWith('\n')) return;
+   socket.removeAllListeners('data');
+   const match = /^activate(?: ([0-9a-f]{48}))?\n$/.exec(line);
+   if(!match){socket.destroy();return;}
+   try{await activate(match[1]);socket.end('ok\n');}
    catch{socket.end('error\n');}
   });
  });
@@ -31,7 +38,7 @@ export async function claimSession(directory, activate) {
      const client=net.createConnection(path);
      let reply='';
      client.setTimeout(15000,()=>client.destroy(Error('La sesión Toki no responde')));
-     client.once('connect',()=>client.write('activate\n'));
+     client.once('connect',()=>client.write(handoff ? 'activate '+handoff+'\n' : 'activate\n'));
      client.on('data',data=>reply+=data);
      client.once('error',reject);
      client.once('end',()=>reply==='ok\n'?resolve():reject(Error('No se pudo activar la sesión Toki existente')));
