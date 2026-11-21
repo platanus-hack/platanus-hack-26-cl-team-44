@@ -11,7 +11,7 @@
     {"id": "camila", "nombre": "Camila", "relacion": "cuidadora", "apodos": ["Cami"], "tipo_interlocutor": "familia", "telefono": "+56900000003"}
   ],
   "temas": {
-    "diagnostico": ["ela", "esclerosis", "diagnostico", "enfermedad", "pronostico"],
+    "diagnostico": ["ela", "esclerosis", "diagnostico", "enferm", "pronostico"],
     "dinero": ["plata", "dinero", "sueldo", "deuda", "pension", "arriendo"],
     "salud": ["dolor", "remedio", "medicamento", "respirar", "succion", "kine"]
   },
