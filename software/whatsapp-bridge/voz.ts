@@ -11,6 +11,7 @@ const AGENT_ID = process.env.ELEVENLABS_AGENT_ID ?? "";
 const PHONE_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID ?? "";
 const EMERGENCY_NUMBER = process.env.EMERGENCY_NUMBER ?? "";       // E.164, p. ej. +569XXXXXXXX (cuidadora/familiar)
 const PERSONA = process.env.WOKI_NOMBRE ?? "Marta";
+const CONTACTO = process.env.EMERGENCY_NAME ?? "Tu contacto";            // nombre de quien recibe la llamada, para la TV ("Camila viene")
 const DIRECCION = process.env.WOKI_DIRECCION ?? "";
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
@@ -211,7 +212,14 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     if (req.method === "GET" && p === "/api/emergencia/estado") {
       if (!lastCall.conversationId) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
       const j = await xiJson(`/v1/convai/conversations/${encodeURIComponent(lastCall.conversationId)}`);
-      json(200, { ok: true, estado: j.status, duracion: j.metadata?.call_duration_secs ?? null });
+      // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
+      const estado = j.status === "initiated" && Date.now() - lastCall.at > 75_000 ? "failed" : j.status;
+      // Al terminar, ElevenLabs extrae de la conversación si viene y qué respondió (data_collection del agente; ver setup-emergencia.ts).
+      // Llega unos segundos después de "done": mientras tanto viene = null.
+      const dc = j.analysis?.data_collection_results ?? {};
+      const viene = typeof dc.viene?.value === "boolean" ? dc.viene.value : null;
+      const respuesta = typeof dc.respuesta?.value === "string" ? clean(dc.respuesta.value, 140) : "";
+      json(200, { ok: true, estado, duracion: j.metadata?.call_duration_secs ?? null, contacto: CONTACTO, viene, respuesta });
       return true;
     }
   } catch (e: any) {

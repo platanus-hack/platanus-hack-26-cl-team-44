@@ -4,7 +4,8 @@
    - VOZ.emergencia(alarma): llamada telefónica del agente de emergencia + estado en la pantalla de alarma.
    - VOZ.siguiente(): Marta recorre las voces candidatas desde Ajustes y escucha cada una. */
 (function(){
-  const base = () => (window.CFG && (CFG.VOZ_URL ?? CFG.WA_URL)) || 'http://localhost:8788';
+  // CFG es un const de woki-os.html: no cuelga de window, se lee por nombre.
+  const base = () => (typeof CFG!=='undefined' && (CFG.VOZ_URL ?? CFG.WA_URL)) || 'http://localhost:8788';
   const V = { on:false, llamadaLista:false, actual:null, opciones:[], audio:null, cache:new Map(), PREFETCH:true };
 
   async function api(path, body){
@@ -79,13 +80,21 @@
     try{
       const j = await api('/api/emergencia/llamar', { alarmId:String(A.t0), motivo:'activó la alarma de emergencia' });
       if(typeof log==='function') log('llamada de emergencia: '+(j.conversationId||'ok'));
+      let esperas = 0;
       const poll = setInterval(async () => {
         if(S.alarm!==A || A.ack){ clearInterval(poll); return; }
         try{
-          const e = await api('/api/emergencia/estado');
-          const txt = { initiated:'📞 Sonando…', 'in-progress':'📞 Contestaron · el asistente está explicando', processing:'📞 Llamada terminada · esperando confirmación', done:'📞 Llamada terminada · falta confirmar con el llavero', failed:'⚠️ La llamada falló' }[e.estado];
-          if(txt) set(txt);
-          if(e.estado==='done' || e.estado==='failed') clearInterval(poll);
+          const e = await api('/api/emergencia/estado'), quien = e.contacto || 'Tu contacto';
+          if(e.estado==='failed'){ set(`⚠️ ${quien} no contestó · la llamada falló`); clearInterval(poll); return; }
+          if(e.estado==='done' && e.viene===true){ clearInterval(poll); confirmada(A, quien, e.respuesta); return; }
+          if(e.estado==='done' && e.viene===false){ clearInterval(poll);
+            set(`⚠️ ${quien} no puede ir${e.respuesta ? ': '+e.respuesta : ''}`);
+            if(window.island) island('⚠️', `${quien} no puede ir. La alarma sigue activa.`); return; }
+          set({ initiated:`📤 Llamada enviada a ${quien} · sonando…`,
+                'in-progress':`📞 ${quien} contestó · está escuchando el aviso`,
+                processing:'📞 Llamada terminada · confirmando la respuesta…',
+                done:'📞 Llamada terminada · confirmando la respuesta…' }[e.estado] || '');
+          if(e.estado==='done' && ++esperas>8){ set(`📞 ${quien} recibió el aviso · falta confirmar con el llavero`); clearInterval(poll); }
         }catch(_){}
       }, 4000);
     }catch(e){
@@ -93,6 +102,24 @@
       if(window.island) island('⚠️','Llamada de emergencia falló: '+e.message);
     }
   };
+
+  // El contacto confirmó por teléfono que viene: misma confirmación que el llavero (pantalla verde).
+  // Un segundo toque del llavero marca la emergencia como resuelta, igual que hoy.
+  function confirmada(A, quien, respuesta){
+    if(S.alarm!==A || A.ack) return;
+    A.ack = performance.now(); const secs = Math.round((A.ack-A.t0)/1000);
+    const $ = s => document.querySelector(s);
+    $('#alarm').classList.add('ack'); $('#alSym').innerHTML = '<svg><use href="#i-check"/></svg>';
+    $('#alBig').textContent = `${quien} viene en camino`;
+    $('#alSub').textContent = respuesta ? `“${respuesta}” · respondió por teléfono en ${secs} s` : `Confirmó por teléfono en ${secs} s`;
+    $('#alTl').style.display = 'none'; $('#alCancel').textContent = 'Toque del llavero = resuelto';
+    if(typeof log==='function') log(`emergencia: ${quien} confirmó por teléfono (${secs} s)`);
+    if(typeof beep==='function'){ beep(660,160,.08); setTimeout(()=>beep(880,220,.08),180); }
+    // Aviso hablado con la voz del sistema (no con la de Marta: es WOKI quien le avisa).
+    try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${quien} viene en camino`); u.lang = 'es-CL'; speechSynthesis.speak(u); }catch(_){}
+    if(typeof renderStatus==='function') renderStatus();
+    if(typeof updateLCD==='function') updateLCD();
+  }
 
   window.VOZ = V;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', V.init); else setTimeout(V.init, 0);
