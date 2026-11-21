@@ -4,6 +4,42 @@ Fecha: 21-nov-2026. Estado: propuesta para revisar con Emmy y jhomar.
 
 Este documento fija qué hace el agente en el demo, cómo corre su loop y cómo guarda la memoria. Lo que no está aquí queda fuera del demo.
 
+## 0. Prioridad para el demo
+
+Criterio: hacer primero lo que se ve en escena. Con 20 a 50 recuerdos en la memoria del demo, no hace falta ranking ni pesos. El código filtra (privacidad y límites por persona) y manda todo lo visible al modelo. Para la mención en el grupo, el agente responde en 1 turno con salida estructurada y sin herramientas. Las herramientas quedan para Rappi.
+
+**P0 · Sin esto no hay demo**
+
+| # | Pieza | Responsable | Horas |
+|---|---|---|---|
+| 1 | EMG → clic en la TV | jhomar | Las estima jhomar |
+| 2 | Mención en el grupo: el puente acepta 1 grupo de la lista blanca, detecta la mención y guarda los últimos 30 mensajes | Juan | 2 |
+| 3 | Agente para la mención: 1 turno, resumen y 4 opciones con emoción y fuente | Juan | 2 |
+| 4 | Memoria mínima: SQLite con los 5 tipos, semilla del demo, filtro de privacidad, `deny` por persona y etiqueta de fuente | Juan | 2 |
+| 5 | TV: recibe el evento, muestra resumen y opciones, envía con doble confirmación | Emmy | 2 a 3 |
+| 6 | Voz: ElevenLabs `eleven_v3` con etiqueta de emoción y respaldo en `speechSynthesis` | Emmy o Juan | 1 a 2 |
+
+**P1 · Después del P0**
+
+| # | Pieza | Horas | Nota |
+|---|---|---|---|
+| 7 | Rappi flores: `rappi_agent.py` como herramienta, real con respaldo en modo ensayo | 2 a 3 | El Chrome de Rappi corre en un Mac con IP residencial y sesión iniciada |
+| 8 | Alarma de noche: el puente manda el WhatsApp a Juan | 1 | La alarma ya existe en la TV |
+
+**P2 · Solo como imagen o en el pitch**
+
+- Disparadores: una sola tarjeta en la TV, "¿Activar: avisarme si me etiquetan en Familia?", que Emmy aprueba con la ceja. Sin pantalla para el cuidador.
+- Onboarding: la memoria del demo sale de un archivo de semilla. Las pantallas de Emmy entran si ya están listas.
+- Estándares (CALL Scotland y FHIR Consent): una frase en el pitch.
+
+**Fuera hasta después del hackathon:** pesos y puntaje (etapa 2 de la sección 5.1), contadores y aprendizaje, exportación a FHIR, motor de política proactiva (etapa 3), `ClaudeSDKClient` abierto y hooks extra, audios y fotos de WhatsApp, el juego y el Raspberry Pi.
+
+**Riesgos que se prueban antes de escribir código:**
+
+1. La sesión de wapi conectada y una mención real capturada con `DEBUG_WEBHOOK=1`.
+2. Claude Code con sesión en la VPS (`claude setup-token`) y una llamada de prueba del Agent SDK.
+3. `test_rappi_agent.py --live` lee rappi.cl desde la máquina del demo.
+
 ## 1. Personas del demo
 
 | Persona | Papel |
@@ -100,7 +136,7 @@ El modelo nunca decide qué memoria ve ni qué tema puede tocar. Una capa de có
 
 Precedencia: un `deny` gana sobre cualquier puntaje, igual que en `FHIR Consent`.
 
-**Etapa 2 · Puntaje.** Ordena las memorias que pasaron los filtros. Los pesos viven en un archivo, `pesos.yaml`, y cada frase guarda el detalle de su puntaje para la traza.
+**Etapa 2 · Puntaje (después del hackathon).** Ordena las memorias que pasaron los filtros. Los pesos viven en un archivo, `pesos.yaml`, y cada frase guarda el detalle de su puntaje para la traza.
 
 | Señal | Fórmula | Base | Ya existe |
 |---|---|---|---|
@@ -114,7 +150,7 @@ Precedencia: un `deny` gana sobre cualquier puntaje, igual que en `FHIR Consent`
 
 Topes por tipo: `K_HECHOS`, `K_EPISODIOS` y un mínimo de 3 episodios. Ya existen.
 
-**Etapa 3 · Política proactiva.** Decide si el agente corre y si interrumpe a Emmy.
+**Etapa 3 · Política proactiva (después del hackathon).** Decide si el agente corre y si interrumpe a Emmy.
 
 - Cada disparador es una regla `cuándo → condición → acción`. La crea el cuidador y queda inactiva hasta que Emmy la aprueba.
 - Tope de propuestas por hora, horas de silencio y una espera mínima por chat.
