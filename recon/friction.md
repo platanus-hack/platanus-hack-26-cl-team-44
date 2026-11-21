@@ -1,0 +1,7 @@
+- El catálogo inicialmente devolvió un árbol sin botones mientras cargaba; captura posterior mostró selección de idioma.
+- El nombre accesible Spanish proviene de title, no de aria-label; el primer test esperaba el atributo equivocado. La captura confirmó que el contenido sí estaba embebido.
+- Mole Miners abrió su iframe pero la primera captura quedó vacía; se conserva como capacidad no verificada, sin atribuir el fallo al puente.
+- El perfil inicial del servicio se crea remotamente; no asumir que Crear usuario es un perfil solo local.
+- Los botones del servicio ya usan permanencia. Activar además un clic extra puede seleccionar la siguiente pantalla bajo el mismo punto; Toki ahora deja el clic extra apagado por defecto.
+- La prueba necesita traer su ventana al frente: Toki suspende el envío al ocultar la página. Abrir otro navegador durante el test cambia la condición que se está verificando.
+- Antes de crear perfil, volver a la raíz vuelve a pedir idioma; el test de onboarding debe repetir ese paso y no asumir idioma persistido.
