@@ -187,7 +187,7 @@ Sigue `GUIA-WAPI-PASO-A-PASO.md` desde la **Parte 3**, con estos cambios:
 cp -R ../../wapi/sdk/typescript/src ./wapi-sdk
 ```
 
-**En `woki-bridge/.env`:**
+**En `software/whatsapp-bridge/.env`:**
 
 ```bash
 WAPI_BASE_URL=http://localhost:3101
@@ -219,7 +219,7 @@ npm i -D qrcode-terminal@0.12.0 @types/qrcode-terminal@0.12.2
 Crea `vincular.ts`. Este script reemplaza los Pasos 12 y 13 de la otra guía: crea la sesión, muestra el QR, espera a que escanees y guarda las claves en `.env`:
 
 ```ts
-// woki-bridge/vincular.ts   uso: npx tsx --env-file=.env vincular.ts +569XXXXXXXX
+// software/whatsapp-bridge/vincular.ts   uso: npx tsx --env-file=.env vincular.ts +569XXXXXXXX
 // Crea (o reutiliza) la sesión del celular, muestra el QR en la terminal y, al vincular,
 // guarda su key, id y secreto en .env sin mostrarlos.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -356,4 +356,4 @@ Comprobación final: `curl -s localhost:8787/api/wa/health` responde `"mode":"li
 | Evento a la TV por SSE | ✅ `incoming` con nombre, tono y `key` |
 | Reacción ❤️ al mensaje recibido | ✅ |
 
-**Puerto:** en este Mac el 8787 lo usa `referentes-app`, así que el puente corre en el **8788** (`PORT=8788` en `woki-bridge/.env`). En la TV, `CFG.WA_URL` tiene que ser `http://localhost:8788`.
+**Puerto:** en este Mac el 8787 lo usa `referentes-app`, así que el puente corre en el **8788** (`PORT=8788` en `software/whatsapp-bridge/.env`). En la TV, `CFG.WA_URL` tiene que ser `http://localhost:8788`.

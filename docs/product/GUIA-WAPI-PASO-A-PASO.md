@@ -152,7 +152,7 @@ npm pkg set scripts.sandbox="tsx --env-file=.env --env-file=.env.sandbox server.
 
 `tsx` ejecuta TypeScript directamente, sin compilar. `--env-file=.env` carga las claves.
 
-Crea el archivo `.env` (en `woki-bridge/`), pegando tu PAT:
+Crea el archivo `.env` (en `software/whatsapp-bridge/`), pegando tu PAT:
 
 ```bash
 WAPI_BASE_URL=https://api.wapi.crafter.run
@@ -195,7 +195,7 @@ Crea `profile.json`, la **lista blanca**. Solo a estas personas se les puede esc
 Crea `credenciales.ts`. Con el id de una sesión, este script copia al `.env` su session key, su id y su secreto. Así no hay que buscarlos en el dashboard:
 
 ```ts
-// woki-bridge/credenciales.ts
+// software/whatsapp-bridge/credenciales.ts
 // Sin argumentos: lista tus sesiones. Con un id: guarda sus claves en .env (sin mostrarlas).
 import { readFileSync, writeFileSync } from "node:fs";
 import { WapiClient } from "./wapi-sdk/index.ts";
@@ -254,7 +254,7 @@ npx tsx --env-file=.env credenciales.ts
 **Qué hacer:** crea `server.ts` con este contenido. No hace falta entender cada línea; los comentarios marcan las partes.
 
 ```ts
-// woki-bridge/server.ts
+// software/whatsapp-bridge/server.ts
 import http from "node:http";
 import { readFileSync } from "node:fs";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -480,7 +480,7 @@ Si mandas dos envíos válidos seguidos, el segundo dice "Espera unos segundos e
 **Qué hacer:** crea `setup-sandbox.ts`. Usa tu PAT para crear el sandbox, guarda sus claves en `.env.sandbox` sin mostrarlas en pantalla y arma `profile.sandbox.json` con dos contactos de prueba:
 
 ```ts
-// woki-bridge/setup-sandbox.ts
+// software/whatsapp-bridge/setup-sandbox.ts
 import { writeFileSync } from "node:fs";
 import { WapiClient } from "./wapi-sdk/index.ts";
 
@@ -548,7 +548,7 @@ En el sandbox no hay pausa de 5 s entre envíos. En un número real sí la habr�
 
 # Parte 5 · Conectar la TV (1 h 30)
 
-Todo en `prototipo/woki-os.html`. Los números de línea son aproximados: busca el texto citado.
+Todo en `software/toki-os/woki-os.html`. Los números de línea son aproximados: busca el texto citado.
 
 ## Paso 6 · Que la TV pueda enviar
 
@@ -633,7 +633,7 @@ Comprueba que funciona: abre `https://…trycloudflare.com/api/wa/health` en el 
 **7.2 · Decirle a wapi esa dirección.** Crea `setup-webhook.ts`. Además del webhook, activa account protection y le pide a wapi que ignore los grupos:
 
 ```ts
-// woki-bridge/setup-webhook.ts   uso: npx tsx --env-file=.env setup-webhook.ts <url-del-túnel> [sessionId]
+// software/whatsapp-bridge/setup-webhook.ts   uso: npx tsx --env-file=.env setup-webhook.ts <url-del-túnel> [sessionId]
 import { WapiClient } from "./wapi-sdk/index.ts";
 
 const [tunnel, sid] = process.argv.slice(2);
@@ -678,7 +678,7 @@ Se suscribe solo a `messages.received`: los mensajes que **otros** te envían. H
 **Forma 2, desde la terminal:** crea `fake-inbound.ts`:
 
 ```ts
-// woki-bridge/fake-inbound.ts   uso: npx tsx --env-file=.env --env-file=.env.sandbox fake-inbound.ts "¿vienes el domingo?"
+// software/whatsapp-bridge/fake-inbound.ts   uso: npx tsx --env-file=.env --env-file=.env.sandbox fake-inbound.ts "¿vienes el domingo?"
 import { readFileSync } from "node:fs";
 import { WapiClient } from "./wapi-sdk/index.ts";
 

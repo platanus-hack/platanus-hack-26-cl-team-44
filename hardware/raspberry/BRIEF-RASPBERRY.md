@@ -6,7 +6,7 @@ Esta sesión se dedica **solo al sistema operativo y al montaje sobre Raspberry 
 Es un comunicador manos libres para personas con ELA (usuaria de diseño: "Marta", ELA media, mueve ojos y cabeza). Equipo finalista de Platanus Hack 26 (Santiago, 20–22 de noviembre de 2026). La demo de la hackathon se hace con un Mac. **Esta sesión diseña el aparato dedicado para después de la hackathon.**
 
 ## Lo que ya existe (no lo rehagas)
-- **Prototipo web:** `/Users/emmypardo/Documents/Repositorios/woki-ux-research/prototipo/woki-os.html`. Es un solo archivo HTML.
+- **Prototipo web:** `/Users/emmypardo/Documents/Repositorios/woki-ux-research/software/toki-os/woki-os.html`. Es un solo archivo HTML.
   - Interfaz tipo sistema operativo para TV (lienzo de 1920×1080 que se escala).
   - Puntero con la nariz usando MediaPipe tasks-vision 0.10.14 (por ahora desde CDN), con calibración inicial.
   - Clic con la cara o por EMG, voz con Web Speech, alarma, y LCD y LEDs simulados.
@@ -14,10 +14,10 @@ Es un comunicador manos libres para personas con ELA (usuaria de diseño: "Marta
   - Clic EMG: `{"src":"ceja"|"mandibula","edge":"down"|"up"}`
   - Mirada externa (opcional): `{"gaze":{"x":<px>,"y":<px>}}`
 - **Investigación y diseño:**
-  - `../GUIA-DISENO.md`
-  - `../PLAN.md`
-  - `../PLAN-ONBOARDING-MEMORIA.md`
-  - `../reports/Calibración eye tracking por webcam.md` (clave: a 2–2,5 m el iris casi no se ve en una webcam; a 50–70 cm sí)
+  - `../../docs/product/GUIA-DISENO.md`
+  - `../../docs/product/PLAN.md`
+  - `../../docs/product/PLAN-ONBOARDING-MEMORIA.md`
+  - `../../docs/research/reports/Calibración eye tracking por webcam.md` (clave: a 2–2,5 m el iris casi no se ve en una webcam; a 50–70 cm sí)
 
 ## Hardware
 - **Pantalla: SunFounder TS7 Pro, 7" táctil.** Verifica en la fuente oficial resolución, conexión (HDMI, DSI o USB táctil), alimentación, compatibilidad con Pi 5 y soporte de montaje. No asumas especificaciones.

@@ -38,7 +38,7 @@ En la terminal nueva:
   - 50 cm: 17,5° × 9,8°
   - 60 cm: 14,6° × 8,2°
   - 70 cm: 12,6° × 7,0°
-- Si se apunta con la mirada, las zonas tienen que ser **pocas y grandes**. El número exacto sale de cruzar estos ángulos con el error medido en `../reports/Calibración eye tracking por webcam.md`, que todavía no he leído.
+- Si se apunta con la mirada, las zonas tienen que ser **pocas y grandes**. El número exacto sale de cruzar estos ángulos con el error medido en `../../docs/research/reports/Calibración eye tracking por webcam.md`, que todavía no he leído.
 
 ## Pendiente de la usuaria (bloquea el entregable #0)
 1. ¿Ya tiene la TS7 Pro físicamente? Si la tiene, puede probar si el puente USB "Pi 4" calza en una Pi 5.

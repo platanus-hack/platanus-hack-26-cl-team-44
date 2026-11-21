@@ -16,4 +16,4 @@ Inventario reportado: 3 sensores, 3 Wireless Shields, 2 Link Shields, 2 Cable Sh
 
 **Cable Shield ≠ Link Shield.** El primero conecta electrodos remotos mediante un cable de tres electrodos; no se conecta al A0 del Arduino Shield. En el montaje directo no se usa ni hace falta CAB-12970. El Wireless Shield tampoco se apila en la prueba alimentada por UNO.
 
-[Prueba paso a paso](../docs/validation/MYOWARE.md) · [Esquemas](schematics/README.md) · [Fotos reales](photos/README.md)
+[Prueba paso a paso](../docs/validation/MYOWARE.md) · [Esquemas](schematics/README.md) · [Raspberry](raspberry/) · [Impresión 3D](3d/)

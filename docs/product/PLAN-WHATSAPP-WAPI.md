@@ -1,6 +1,6 @@
 # WOKI · Plan de mensajes por WhatsApp con wapi
 
-**Objetivo:** que la pantalla **Mensajes** de `prototipo/woki-os.html` deje de simular y envíe de verdad desde el WhatsApp del celular a una lista cerrada de contactos (Sofía, Camila). Y que los mensajes que llegan aparezcan en la TV como "Sofía dice…" para que Marta responda con las 4 frases.
+**Objetivo:** que la pantalla **Mensajes** de `software/toki-os/woki-os.html` deje de simular y envíe de verdad desde el WhatsApp del celular a una lista cerrada de contactos (Sofía, Camila). Y que los mensajes que llegan aparezcan en la TV como "Sofía dice…" para que Marta responda con las 4 frases.
 
 **Base:** el mismo gateway que usa `Repositorios/wspbot` (kekito-crafter / Crafter Station): **wapi**, `https://api.wapi.crafter.run`. Es un WhatsApp por HTTP, open source ([crafter-station/wapi](https://github.com/crafter-station/wapi)), que vincula un número personal por QR. Reutilizamos su SDK oficial en TypeScript (`wspbot/lib/wapi-sdk/`) y su receptor de webhook (`wspbot/.agents/skills/wapi-nextjs/references/webhook-route.ts`).
 

@@ -24,7 +24,7 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP per
 **MVP sin hardware**, desde la raíz:
 
 ```bash
-python3 -m http.server 8000 --bind 127.0.0.1 --directory prototipo
+python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
 ```
 
 Abrir la URL del MVP y elegir **Usar mouse (demo)**. El archivo conserva su nombre histórico para no romper los enlaces del equipo.
@@ -56,23 +56,15 @@ Electrodos → MyoWare + Link Shield
 
 El Cable Shield es una pieza diferente y no participa en este montaje directo. Con electrodos sobre el cuerpo, el portátil debe estar solo a batería, sin cargador, dock ni monitor conectado a la red. Desconectar USB antes de cambiar conexiones. [Manual del fabricante](https://myoware.com/wp-content/uploads/2022/03/MyoWare_v2_QuickStartGuide.pdf).
 
-## Estructura del proyecto
+## Dónde está cada cosa
 
-| Ruta | Responsabilidad |
+| Carpeta | Contenido |
 |---|---|
-| [`firmware/`](firmware/) | Código que se carga a los microcontroladores |
-| [`software/`](software/) | Monitor local e índice del SO |
-| [`hardware/`](hardware/) | Inventario, conexiones, esquemas y fotos reales |
-| [`mechanical/`](mechanical/) | CAD editable, STL/3MF y registro de impresiones |
-| [`docs/`](docs/) | Arquitectura, concurso y pruebas |
-| [`tests/`](tests/) | Comprobaciones reproducibles del monitor |
-| [`scripts/`](scripts/) | Lugar para futuras herramientas de instalación y mantenimiento |
-| [`data/`](data/) | Política de datos; las capturas personales no se versionan |
-| [`prototipo/`](prototipo/) | MVP heredado del SO, conservado en su ruta original |
-| [`woki-bridge/`](woki-bridge/) | Puente WhatsApp heredado; conserva rutas y variables de entorno |
-| [`raspberry/`](raspberry/) | Investigación y montaje del equipo dedicado |
-
-La documentación de investigación de Emmy sigue en sus rutas originales. [Mapa y criterio de organización](docs/architecture/README.md).
+| [software/](software/) | SO de Emmy, monitor muscular y puente WhatsApp |
+| [firmware/](firmware/) | Programa del Arduino UNO |
+| [hardware/](hardware/) | Conexiones, esquemas, Raspberry e impresión 3D |
+| [docs/](docs/) | Guías, planes, investigación y requisitos del concurso |
+| [tests/](tests/) | Pruebas del monitor local |
 
 ## Estado demostrado
 

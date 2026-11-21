@@ -1,7 +1,9 @@
 # Software
 
-- [Monitor MyoWare](myoware-monitor/README.md): adquisición local y gráfica real.
-- [SO de Toki](toki-os/README.md): acceso al MVP heredado.
-- [Puente WhatsApp](../woki-bridge/): servicio heredado, preservado con sus restricciones de acceso local.
+| Carpeta | Qué contiene | Cómo iniciar desde la raíz |
+|---|---|---|
+| [toki-os](toki-os/) | Interfaz de Emmy | `python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os` |
+| [myoware-monitor](myoware-monitor/) | Monitor muscular en vivo | Ver su README: requiere puerto serial |
+| [whatsapp-bridge](whatsapp-bridge/) | Servicio de mensajería | Entrar a la carpeta y seguir su README |
 
-No hay integración todavía entre el monitor EMG y el SO. Los nombres técnicos heredados se conservan para no romper rutas, variables de entorno ni protocolos.
+La integración EMG → SO sigue pendiente. Se mantienen nombres internos, variables de entorno, puertos y protocolos del MVP.

@@ -44,7 +44,7 @@ Una respuesta del FAQ dice "elige 1280x800", pero la ficha técnica dice que la 
   - a 50 cm: 17,5° × 9,8°
   - a 60 cm: 14,6° × 8,2°
   - a 70 cm: 12,6° × 7,0°
-- **Conclusión preliminar:** la pantalla entera ocupa muy pocos grados. Las zonas para mirar tendrán que ser pocas y grandes. El número exacto sale de cruzar estos ángulos con el error medido en `../reports/Calibración eye tracking por webcam.md`, y lo decidimos con la sesión de diseño.
+- **Conclusión preliminar:** la pantalla entera ocupa muy pocos grados. Las zonas para mirar tendrán que ser pocas y grandes. El número exacto sale de cruzar estos ángulos con el error medido en `../../docs/research/reports/Calibración eye tracking por webcam.md`, y lo decidimos con la sesión de diseño.
 - **Brillo de 300 cd/m²:** alcanza para un dormitorio. En una pieza muy luminosa puede quedarse corto. Por las noches hay que bajarlo con el botón Back.
 
 ## 3. Plan de trabajo propuesto (corresponde a los 6 entregables del brief)

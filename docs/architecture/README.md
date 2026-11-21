@@ -1,27 +1,19 @@
-# Arquitectura y organización
+# Organización
 
-Separar código ejecutable, electrónica, fabricación y evidencia. Cada carpeta contiene un README aunque aún no tenga implementación; así Git conserva la estructura sin archivos vacíos ambiguos.
+Cinco áreas en la raíz: `software`, `firmware`, `hardware`, `docs` y `tests`. Los archivos del concurso permanecen en raíz.
 
-- Firmware: adquisición A0 en UNO.
-- Software: monitor local Python/HTML y catálogo del SO.
-- Hardware: lista de materiales y cableado.
-- Mechanical: CAD fuente → exportación STL/3MF → registro de impresión.
-- Docs: decisiones, requisitos y evidencia.
-- Tests: pruebas automatizadas, sin hacerlas pasar por validación humana.
-- Data: capturas locales excluidas de Git.
+| Antes | Ahora |
+|---|---|
+| `prototipo/` | `software/toki-os/` |
+| `woki-bridge/` | `software/whatsapp-bridge/` |
+| `raspberry/` | `hardware/raspberry/` |
+| `mechanical/` | `hardware/3d/` |
+| Planes, guías, informe y mockups en raíz | `docs/product/` |
+| `hallazgos/` | `docs/product/hallazgos/` |
+| `reports/`, `research_notes/` | `docs/research/reports/`, `docs/research/notes/` |
 
-El SO y el puente WhatsApp de Emmy permanecen en `prototipo/` y `woki-bridge/`. No se duplican ni se trasladan, para evitar romper documentación, rutas y trabajo concurrente. `software/toki-os/README.md` apunta al código existente. Los planes históricos que dicen WOKI se mantienen como antecedentes; el nombre de presentación actual es Toki.
+Se preservan los archivos ejecutables del SO, puente, firmware y monitor. Cambian las carpetas de lanzamiento; la URL `http://localhost:8000/woki-os.html`, los puertos y protocolos se mantienen.
 
-## Integración pendiente
+No hay integración aún entre el monitor HTTP y el WebSocket de sensores esperado por el SO. La calibración de EMG y emisión de eventos siguen pendientes.
 
-```
-MyoWare → UNO → serial → monitor local
-                              │
-                      [pendiente: calibración]
-                              │
-                      [pendiente: eventos]
-                              ▼
-                         MVP del SO
-```
-
-El panel HTTP actual no implementa el WebSocket de sensores que espera el MVP. No afirmar que contraer el bíceps ya controla el SO.
+Los marcadores sin implementación y las copias de README anteriores se retiraron. Los originales están disponibles en el historial de Git; no se eliminó investigación ni funcionalidad.
