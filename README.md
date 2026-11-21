@@ -49,6 +49,7 @@ Webcam ── MediaPipe (nariz / iris) ──▶ WOKI OS (navegador) ──▶ C
 
 - **Protocolo de sensores** (WebSocket `:8765`): `{"src":"ceja"|"mandibula","edge":"down"|"up"}` y, opcional, `{"gaze":{"x":px,"y":px}}`.
 - **woki-bridge:** `cp profile.example.json profile.json`, crear `.env` (ver `GUIA-WAPI-PASO-A-PASO.md`) y luego `npm install && npm run dev`.
+  - **Seguridad:** escucha solo en `127.0.0.1`. Por el túnel solo se expone `/webhook/wapi`, que se autentica con su firma. Rechaza todo `/api/*` que llegue por un túnel, y los POST deben ser JSON desde `ALLOWED_ORIGIN`. Se recomienda definir `WOKI_API_TOKEN` en `.env`; la app lo envía en el encabezado `X-Woki-Token`.
 
 ## Por qué así (lo que dice la investigación)
 

@@ -10,6 +10,7 @@ const MODE = (process.env.WA_MODE ?? "dry") as Mode;
 const PORT = Number(process.env.PORT ?? 8787);
 const ORIGIN = process.env.ALLOWED_ORIGIN ?? "http://localhost:8000";
 const SECRET = process.env.WAPI_WEBHOOK_SECRET ?? "";
+const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Woki-Token
 const MAX_PER_DAY = 30;
 const MIN_GAP_MS = 5_000;
 const MAX_LEN = 500;
@@ -90,17 +91,30 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://x");
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type" });
+    res.writeHead(204, { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
     return res.end();
   }
 
   // Anti-CSRF: cualquier página abierta en el navegador podría hacer POST a localhost.
   // Las rutas /api/* solo aceptan JSON (fuerza preflight CORS) y el Origin exacto de la app.
   // El webhook de wapi queda fuera: se autentica con su firma (WAPI_WEBHOOK_SECRET).
-  if (req.method === "POST" && url.pathname.startsWith("/api/")) {
-    const ctype = String(req.headers["content-type"] ?? "").split(";")[0].trim();
-    if (req.headers.origin !== ORIGIN || ctype !== "application/json")
-      return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
+  if (url.pathname.startsWith("/api/")) {
+    // 1) /api/* es solo para la app local. Lo que entra por un túnel trae estos encabezados → fuera,
+    //    así una URL de túnel filtrada no permite mandar ni leer mensajes (solo /webhook/wapi es público).
+    const h = req.headers;
+    if (h["cf-connecting-ip"] || h["cf-ray"] || h["x-forwarded-for"] || h["x-forwarded-host"] || h["ngrok-trace-id"])
+      return json(res, 403, { ok: false, reason: "api solo local" });
+    // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Woki-Token.
+    if (API_TOKEN) {
+      const tok = String(h["x-woki-token"] ?? "");
+      if (!tok || !safeEqual(tok, API_TOKEN)) return json(res, 401, { ok: false, reason: "token inválido" });
+    }
+    // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
+    if (req.method === "POST") {
+      const ctype = String(h["content-type"] ?? "").split(";")[0].trim();
+      if (h.origin !== ORIGIN || ctype !== "application/json")
+        return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
+    }
   }
 
   // TV → enviar
