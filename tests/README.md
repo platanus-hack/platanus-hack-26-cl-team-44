@@ -5,3 +5,7 @@
 La prueba crea una pseudoterminal local con datos sintéticos. Comprueba parseo, rechazo de líneas inválidas, HTTP local, ausencia de publicación del código del servidor, antigüedad de muestras y desconexión. No utiliza el Arduino real ni demuestra respuesta muscular.
 
 Firmware: `arduino-cli compile --fqbn arduino:avr:uno firmware/myoware_a0`.
+
+Toki OS: `node tests/test_os_click.cjs` y `node tests/test_os_iphone.mjs` (contrato de la mirada con iPhone: opción al inicio, motor compartido y sin movimiento de cabeza).
+
+Eye-tracking (motor y demo): `cd software/eye-tracking/web && npm test`.

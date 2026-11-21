@@ -1,0 +1,64 @@
+/* Toki OS · puntero con la mirada usando el iPhone (Face ID). Ver iphone-gaze.js. */
+
+/* El OS no tiene una regla global para [hidden]: sin esto, display:flex/grid le gana al atributo. */
+.ip-cal[hidden], .ip-cal [hidden], .cal-iphone[hidden], .cal-iphone [hidden] { display: none !important; }
+
+/* ---------- panel de conexión dentro de la tarjeta de inicio (unidades del lienzo 1920×1080) ---------- */
+.cal-iphone { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.ip-form { display: flex; gap: 16px; justify-content: center; align-items: center; }
+.ip-form input {
+  width: 600px; height: 96px; padding: 0 36px; border-radius: 48px; outline: none;
+  border: 1.5px solid var(--hair); background: rgba(255, 255, 255, .06); color: var(--txt);
+  font: 650 34px ui-monospace, "SF Mono", Menlo, monospace; caret-color: var(--blue);
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+}
+.ip-form input:focus { border-color: var(--blue); background: rgba(10, 132, 255, .1); }
+.ip-form .cbtn { min-width: 0; padding: 0 44px; }
+.ip-status { min-height: 40px; font-size: 28px; color: var(--txt2); max-width: 900px; line-height: 1.35; }
+.ip-status.ok { color: #8EF0AE; }
+.ip-status.err { color: #FF8A84; }
+.ip-row { display: flex; gap: 16px; justify-content: center; }
+.ip-row .cbtn { min-width: 0; padding: 0 44px; }
+
+/* ---------- calibración a pantalla completa (fuera del lienzo escalado: coordenadas de ventana) ---------- */
+.ip-cal {
+  position: fixed; inset: 0; z-index: 1000; cursor: none; color: var(--txt);
+  background: radial-gradient(1200px 800px at 50% 40%, rgba(10, 132, 255, .12), transparent 70%), #000; /* opaco: nada del OS detrás */
+}
+.ip-cal .target {
+  position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px;
+  transition: transform .45s var(--ease-out), opacity .2s; will-change: transform;
+}
+.ip-cal .target.is-hidden { opacity: 0; }
+.ip-cal .target.no-move { transition: none; }
+.ip-cal .target svg { width: 100%; height: 100%; overflow: visible; }
+.ip-cal .target .track { fill: none; stroke: rgba(255, 255, 255, .18); stroke-width: 6; }
+.ip-cal .target .ring {
+  fill: none; stroke: var(--blue); stroke-width: 6; stroke-linecap: round;
+  stroke-dasharray: 176; stroke-dashoffset: 176; transform: rotate(-90deg); transform-origin: 32px 32px;
+}
+.ip-cal .target .core { fill: #fff; }
+.ip-cal .target.collect .ring { animation: ip-fill var(--collect-ms, 1000ms) linear forwards; }
+/* aparece grande y se encoge: atrae la mirada al lugar exacto antes de medir */
+.ip-cal .target.appear svg { animation: ip-appear 700ms var(--ease-out) both; }
+@keyframes ip-fill { to { stroke-dashoffset: 0; } }
+@keyframes ip-appear { from { transform: scale(3); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); opacity: 1; } }
+
+.ip-msg {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 80vw;
+  display: grid; gap: 10px; text-align: center; pointer-events: none; transition: opacity .25s;
+}
+.ip-msg.is-leaving { opacity: 0; }
+.ip-msg b { font-size: clamp(28px, 3.2vw, 52px); font-weight: 750; letter-spacing: -.02em; }
+.ip-msg span { font-size: clamp(18px, 1.7vw, 28px); color: var(--txt2); }
+.ip-msg .stage__count { display: block; margin-top: 10px; font-style: normal; font-weight: 800; font-size: clamp(18px, 1.6vw, 26px); color: var(--blue); font-variant-numeric: tabular-nums; }
+.ip-warn {
+  position: absolute; left: 50%; top: 28px; transform: translateX(-50%); padding: 10px 20px; border-radius: 999px;
+  background: rgba(255, 159, 10, .18); color: #FFD08A; font-weight: 700;
+}
+.ip-progress { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); color: var(--txt3); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ip-cal .target.appear svg { animation: none; }
+  .ip-cal .target { transition: none; }
+}
