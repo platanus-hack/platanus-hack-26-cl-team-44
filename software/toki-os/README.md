@@ -29,6 +29,17 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 
 `eye-engine/` es un enlace simbólico a `../eye-tracking/web/js` (un solo código para la demo y el SO). `iphone-gaze.js` y `iphone-gaze.css` son el adaptador.
 
+### Modo solo mirada (activo con el iPhone)
+
+Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactivan (teclas, sensor EMG y clic con la cara) hasta volver a otro puntero.
+
+- **Siempre hay salida:** Hablar (Escribir · Volver), Escribir (Volver en ambos niveles, palabra sugerida como tecla), Reacciones (Más · Volver), selector de emociones (Volver), Descanso (mirar "Volver" 2 s), Mensajes (Cancelar). Enviar se confirma siguiendo con la mirada en el botón.
+- **Ajustes no deja atrapada a la persona:** "Confirmar con" y "Puntero" quedan fijos; "Calibrar" recalibra con la mirada y vuelve solo.
+- **Sin cara o sin señal:** nada se elige hasta volver a verte (no hay escaneo, que necesita la ceja).
+- **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
+- **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.
+- **Tamaños** (portátil de 13–14" a ~50 cm): tarjetas de 6–7 cm por lado (≥ 2× el error medio del iPhone); en Escribir, 5,4 × 6 cm por sus 10 funciones.
+
 ## Tema y atajos
 
 - **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.

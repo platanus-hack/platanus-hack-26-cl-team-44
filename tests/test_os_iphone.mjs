@@ -13,6 +13,20 @@ assert.ok(html.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhon
 assert.ok(/W\.CFG\.mode = "dwell"/.test(adapter), "con el iPhone se elige manteniendo la mirada (dwell)");
 assert.ok(html.includes('id="themeToggle"') && html.includes('id="legendToggle"'), "interruptor de tema y pestaña de atajos");
 assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa .ring (el OS la oculta con opacity:0)");
+assert.ok(/!Number\.isFinite\(validation\.meanPx\)/.test(adapter), "una calibración sin precisión medible (NaN) se rechaza");
+
+// 1b. Modo solo mirada (iPhone): ninguna pantalla sin salida y sin depender de ceja/mandíbula.
+const fn = (name) => { const i = html.indexOf(`function ${name}(`); assert.ok(i >= 0, `existe ${name}`); return html.slice(i, html.indexOf("\n}", i)); };
+assert.ok(/data-act="go:home"/.test(fn("renderCards")), "Hablar tiene 'Volver'");
+assert.ok(/data-act="go:keyboard"/.test(fn("renderCards")), "Hablar tiene 'Escribir' (antes solo con ceja ×2)");
+assert.ok(/data-act="go:home"/.test(fn("renderKeys")) && /kb:back/.test(fn("renderKeys")), "Escribir tiene 'Volver' en ambos niveles");
+assert.ok(/kb:pred/.test(fn("renderKeys")), "la palabra sugerida se acepta con la mirada (antes: mandíbula)");
+assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
+assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
+assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");
+assert.ok(/function pressSrc\(src\)\{ if\(gazeOnly\(\)/.test(html) && /function gesture\(g\)\{\n  if\(gazeOnly\(\)\)/.test(html), "ceja y mandíbula desactivadas en modo iPhone");
+assert.ok(/gazeOnly\(\) && \(arg==='mode' \|\| arg==='pointer'/.test(html), "Ajustes no permite dejar a la persona sin forma de elegir");
+assert.ok(/document\.body\.classList\.add\("gaze-only"\)/.test(adapter) && /document\.body\.classList\.remove\("gaze-only"\)/.test(adapter), "el iPhone activa y desactiva el modo solo mirada");
 
 // 2. Motor compartido con la demo (un solo código, no una copia que se desincronice).
 assert.equal(realpathSync(`${OS}/eye-engine`), realpathSync("software/eye-tracking/web/js"), "eye-engine apunta al motor de la demo");

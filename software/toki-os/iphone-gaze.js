@@ -140,6 +140,10 @@ const IPHONE = {
     // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.
     if (this.prevMode === null) this.prevMode = W.CFG.mode;
     W.CFG.mode = "dwell";
+    // Modo "solo mirada": ceja y mandíbula no actúan, sin escaneo al perder la cara, imán y
+    // relleno de progreso en las tarjetas (ver gazeOnly() en woki-os.html y layout.css).
+    document.body.classList.add("gaze-only");
+    if (W.S.screen === "agent") sendBtn(false);
     this.filter = createOneEuro2D(SMOOTHING);
     this.lastFaceAt = performance.now();
     try { localStorage.setItem("woki.ptr", "iphone"); } catch { /* no crítico */ }
@@ -154,6 +158,9 @@ const IPHONE = {
     if (!this.active && !this.source) return;
     this.active = false;
     if (this.prevMode !== null) { W.CFG.mode = this.prevMode; this.prevMode = null; }
+    document.body.classList.remove("gaze-only");
+    renderStatus();
+    if (W.S.screen === "agent") sendBtn(false);
     if (W.S.gazeLost) setGazeLost(false);
     this.disconnect(); // sin Mac conectado el iPhone baja a 30 fps y se calienta menos
     if (W.S.screen === "settings") renderSettings();
@@ -180,6 +187,10 @@ const IPHONE = {
       ui.progress.textContent = "Calculando…";
       const first = await firstPromise;
       const validation = evaluateValidation(first.model, valid.samples); // error honesto: puntos no vistos
+      // Sin datos suficientes en la comprobación el error es NaN: NO se acepta una calibración sin medir.
+      if (!Number.isFinite(validation.meanPx)) {
+        throw new Error("No pude medir la precisión: faltaron datos de tus ojos en los puntos de comprobación. Revisa que el iPhone te vea bien y repite.");
+      }
       const fixed = { kind: first.model.kind, source: first.model.source, lambda: first.model.lambda };
       const final = await fitBestAsync([...train.samples, ...valid.samples], { ...FIT_OPTS, fixed }).catch(() => first);
       if (final.model.head || final.model.kind === "head3d") throw new Error("modelo con movimiento de cabeza: no permitido en Toki OS");
@@ -264,6 +275,27 @@ const IPHONE = {
     } catch (err) {
       setStatus(String(err?.message ?? err), "err");
       return false;
+    }
+  },
+
+  /** Recalibrar desde Ajustes sin salir del modo mirada: misma dirección, vuelve solo al terminar. */
+  async recalibrate() {
+    const host = this.host;
+    if (!host) return;
+    const wasActive = this.active;
+    $("#calib").classList.add("on");
+    ensurePanel();
+    $("#calBtns").style.display = "none";
+    $("#calIphone").hidden = false;
+    await this.connectAndCalibrate(host);
+    // si la calibración falló o se canceló y había un modelo previo, se vuelve a él (nunca sin puntero)
+    if (!this.active && wasActive && this.model) {
+      try { if (!this.source) await this.connect(host); } catch { /* sin iPhone: el acompañante decide */ }
+      if (!this.source) return;
+      $("#calIphone").hidden = true;
+      $("#calBtns").style.display = "";
+      CAL.close();
+      this.activate();
     }
   },
 
