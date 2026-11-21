@@ -6,17 +6,17 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {claimSession} from './session.mjs';
-const sessionKey=createHash('sha256').update(import.meta.url).digest('hex').slice(0,12);
+const origin = 'http://localhost:8000';
+const sessionKey=createHash('sha256').update(import.meta.url+origin).digest('hex').slice(0,12);
 let readyResolve;
 const ready=new Promise(resolve=>{readyResolve=resolve;});
-const sessionLock=await claimSession(process.env.TOKI_BRIDGE_SESSION_DIR || join(tmpdir(),`toki-session-${process.getuid()}-${sessionKey}`),async()=>{
+const sessionLock=await claimSession(process.env.TOKI_BRIDGE_SESSION_DIR || join(tmpdir(),`toki-session-${process.getuid()}-${sessionKey}`),async ()=>{
  await ready;
  await cdp('Target.activateTarget',{targetId});
  await cdp('Page.bringToFront',{},sessionId);
 });
-if(!sessionLock){console.log('Reutilizando la ventana de Toki que ya estaba abierta.');process.exit(0);}
+if(!sessionLock){ console.log('Reutilizando la ventana de Toki que ya estaba abierta.');process.exit(0);}
 const token=randomBytes(32).toString('hex');
-const origin='http://localhost:8000';
 const chrome=process.env.TOKI_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile=mkdtempSync(join(tmpdir(),'toki-browser-'));
 const child=spawn(chrome,['--remote-debugging-pipe',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','--window-size=1440,1000','about:blank'],{stdio:['ignore','ignore','ignore','pipe','pipe']});
@@ -56,7 +56,8 @@ const server=http.createServer(async(req,res)=>{
   if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.y<0||p.x>10000||p.y>10000||!['move','click'].includes(p.type))throw Error('Invalid pointer');
   busy=true;
   const info=await cdp('Target.getTargetInfo',{targetId});
-  if(!info.targetInfo.url.startsWith(origin+'/prototype-motion.html'))throw Error('Toki tab navigated away');
+  const page=new URL(info.targetInfo.url);
+  if(page.origin!==origin || page.pathname!=='/prototype-motion.html')throw Error('Toki tab navigated away');
   await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y},sessionId);
   if(p.type==='click'){
    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,x:p.x,y:p.y},sessionId);

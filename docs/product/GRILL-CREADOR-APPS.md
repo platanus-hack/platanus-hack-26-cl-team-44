@@ -96,7 +96,7 @@ Jhomar autorizó arrancar mediante «ok, go». Se implementó la primera demo en
 - Seis pruebas del servicio pasan: revisión/evidencia obligatorias, persistencia, cancelación sin sobrescritura tardía, límites de API/argumentos, errores sin credenciales y espera de estado real.
 - Prueba de navegador con servicio Spotify sintético aislado: recorrido de tienda, preparación persistente, búsqueda/reproducción/pausa, revisión, solicitud/cancelación, diseño móvil, permanencia sin activación doble, pérdida de seguimiento, pausa y teclado accesible. Sin errores JavaScript en esa prueba. No se probó cámara física ni pacientes.
 - Búsqueda pública real en GitHub respondió correctamente. Las nuevas apps quedan pendientes del equipo tras descubrir candidatos; no se anuncia un generador universal operativo.
-- Skill `adapt-app` instalada y validada en `~/.codex/skills/adapt-app`.
+- Skill `adapt-app` instalada inicialmente en el equipo; ahora se distribuye y mantiene en [`.agents/skills/adapt-app/SKILL.md`](../../.agents/skills/adapt-app/SKILL.md), dentro del repositorio.
 
 La demo usa `http://127.0.0.1:8790`; el puerto 8787 ya estaba ocupado por otro servicio y se conservó intacto.
 

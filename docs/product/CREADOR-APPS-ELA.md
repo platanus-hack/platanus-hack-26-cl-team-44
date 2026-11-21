@@ -21,13 +21,23 @@ Una solicitud puede acabar en «necesita conexión», «necesita revisión» o �
 
 ## Qué está y qué falta (actualizado 21 noviembre 2026)
 
-Hay un registro común de adaptadores versionados: Spotify y BioBioChile incluidos, más lectores RSS generados e instalados como paquetes declarativos. Ambos comparten preparación, rutas de acciones, persistencia, evidencia y revisión. Las interfaces siguen siendo componentes construidos por el equipo; la metadata del adaptador determina cuál abrir.
+Hay un registro común de adaptadores versionados: Spotify, BioBioChile y YouTube incluidos, Rappi Chile parcial, más lectores RSS generados e instalados como paquetes declarativos. Comparten preparación, rutas de acciones, persistencia, evidencia y revisión. Las interfaces siguen siendo componentes construidos por el equipo; la metadata del adaptador determina cuál abrir.
 
 Spotify conserva estado, portada, reproducción/pausa y siguiente canción locales mediante spogo. La búsqueda requiere conectar una sesión web. BioBioChile lista titulares reales y permite elegir y leer extractos RSS por páginas sin cuenta; conserva fecha y procedencia, y no presenta extractos como artículos completos.
 
-Las solicitudes con una fuente RSS pública configurada por el equipo ejecutan adapt-app mediante Codex, validan una receta, comprueban listar/leer e instalan un paquete versionado local. Cooperativa ya completó ese recorrido real y espera prueba personal. El catálogo incorpora esos lectores sin añadir una pantalla por medio. Las demás solicitudes buscan candidatos en GitHub y esperan adaptación del equipo. No hay generación universal, instalación de código externo ni actualización/rollback expuestos. REA no está integrado y no fue necesario para estas conexiones.
+Las solicitudes con una fuente RSS pública configurada por el equipo ejecutan adapt-app mediante Codex, validan una receta, comprueban listar/leer e instalan un paquete versionado local. Cooperativa ya completó ese recorrido real y espera prueba personal. El catálogo incorpora esos lectores sin añadir una pantalla por medio. YouTube cuenta además con un adaptador incluido de video: selección pública de Chile Travel, reproducción y pausa con la API oficial; la generación automática sigue limitada a lectores. Las demás solicitudes buscan candidatos en GitHub y esperan adaptación del equipo. No hay generación universal, instalación de código externo ni actualización/rollback expuestos. REA no está integrado y no fue necesario para estas conexiones.
+
+Rappi Chile ya ofrece exploración accesible de categorías, restaurantes, productos y opciones reales. La conexión local y el carrito están implementados, pendientes de validación con cuenta chilena; compra y pago siguen sin habilitar. `surface-recon` es el procedimiento de investigación previsto para comprobar ese contrato pendiente.
 
 La habilitación requiere evidencia declarada por cada adaptador y prueba/revisión con la persona. Las pruebas sintéticas y técnicas no completan esa revisión personal. Contrato, extensibilidad, fuentes y límites: `software/apps-bridge/ADAPTERS.md`; arranque: `software/apps-bridge/README.md`.
+
+## Skill y generador
+
+[`adapt-app`](../../.agents/skills/adapt-app/SKILL.md) contiene las instrucciones para investigar conexiones, construir una interfaz accesible y comprobar tareas. La skill está versionada en este repositorio. El generador de RSS lee esa misma copia; no necesita una skill instalada en la carpeta personal del desarrollador. Sigue requiriendo Codex CLI y una sesión local configurada.
+
+Cuando una capacidad no está verificada, `adapt-app` usa `surface-recon` para investigar el contrato y sus resultados. El informe separa lo observado de lo pendiente y vuelve al proceso de implementación accesible. Es una instrucción para el agente de desarrollo, no una integración automática nueva del bridge; el generador RSS sin herramientas no ejecuta esa investigación. REA conserva su papel opcional.
+
+La skill guía al agente. El código de `software/apps-bridge/generator/` valida e instala los paquetes. La generación automática sigue limitada a lectores RSS; versionar las instrucciones no añade generación para otras categorías ni completa la prueba personal. [Uso y mantenimiento de las skills](../../.agents/skills/README.md).
 
 ## Decisiones por resolver
 

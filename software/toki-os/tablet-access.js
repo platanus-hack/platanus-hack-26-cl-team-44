@@ -20,6 +20,20 @@
     const saved = localStorage.getItem(dwellKey);
     if (dwellChoices.some(button => button.dataset.dwellMs === saved)) dwellMs = Number(saved);
   } catch {}
+  function gameInput(child) {
+    const game = $('.catalog-frame');
+    if (!game || game.contentWindow !== child) return null;
+    const blocked = document.hidden || !document.hasFocus() || !rest.hidden || !panel.hidden ||
+      (!layer.inert && !layer.hidden) || paused;
+    const camera = pointing !== 'Mouse';
+    const p = camera && !blocked ? currentPoint() : null;
+    let point = null;
+    if (p && document.elementFromPoint(p.x,p.y) === game) {
+      const r = game.getBoundingClientRect();
+      point = {x:(p.x-r.left)*child.innerWidth/r.width, y:(p.y-r.top)*child.innerHeight/r.height, topX:p.x, topY:p.y};
+    }
+    return {mode:pointing, camera, point, blocked, muscle, dwellMs};
+  }
   function dwellProgress(elapsed, minimumMs = 0) {
     const previewMs = 1000;
     const totalMs = Math.max(dwellMs, minimumMs);
@@ -139,6 +153,7 @@
     leaveSetup();
     sync();
     $('#location').focus({preventScroll:true});
+    $('.catalog-frame')?.contentWindow?.dispatchEvent(new Event('toki-tablet-control'));
   }
   function showChoices(message = '') {
     configuring = false;
@@ -232,7 +247,10 @@
     const w=frame?.contentWindow, n=w?.NOSE;
     if(!n?.on || !n.raw || w.WOKI.S.gazeLost || w.performance.now()-n.lastFace>240) return null;
     if(n.mode==='gaze' && (!w.GAZE.cur || w.GAZE.cur.blink)) return null;
-    const r=w.document.querySelector('#stage').getBoundingClientRect(), p=w.WOKI.gz;
+    const stage=w.document.querySelector('#stage');
+    if (!stage) return null;
+    const r=stage.getBoundingClientRect(), p=w.WOKI.gz;
+    if (!r.width || !r.height) return null;
     return {x:Math.max(1,Math.min(innerWidth-2,(p.x-r.left)/r.width*innerWidth)),y:Math.max(1,Math.min(innerHeight-2,(p.y-r.top)/r.height*innerHeight))};
   }
   function activate(button) {
@@ -275,7 +293,8 @@
       } else { locked = null; lockedButton = null; }
     }
     const el = aim.target;
-    cursor.hidden = !rest.hidden && el !== resume;
+    const overGame = pointing !== 'Mouse' && document.elementFromPoint(p.x,p.y)?.matches('.catalog-frame');
+    cursor.hidden = overGame || (!rest.hidden && el !== resume);
     document.body.classList.toggle('draws-mouse', pointing === 'Mouse' && !cursor.hidden);
     if (!cursor.hidden) {
       const tau = pointing === 'Mouse' ? 38 : 58;
@@ -295,7 +314,8 @@
 
   function edge(down) {
     if(!muscle || configuring || document.hidden)return;
-    if(down) {if(!downAt){downAt=performance.now();pressedTarget=focused;}return;}
+    const game=$('.catalog-frame')?.contentWindow?.TOKI_EXTERNAL;
+    if(down) {if(!downAt){downAt=performance.now();pressedTarget=focused || game?.switchTarget();}return;}
     if(!downAt)return;
     downAt=0;
     if(pending) {resetGesture();if(!rest.hidden)return;if(!chooser.hidden && !layer.inert){if(!$('#dismiss-chooser').hidden)$('#dismiss-chooser').click();return;}if(panel.hidden)window.dispatchEvent(new Event('toki-back'));else settings(false);return;}
@@ -303,6 +323,7 @@
     pending=setTimeout(()=>{
       pending=0;
       if(chosen && chosen===focused && currentPoint())activate(chosen);
+      else if (chosen) game?.confirmSwitch(chosen);
     },300);
   }
   for(const type of ['keydown','keyup']) window.addEventListener(type,e=>{
@@ -375,5 +396,5 @@
     active = true;
     state('Mantén el mouse sobre una opción hasta que se complete el borde.');
   }
-  sync();window.TokiAccess={setup,start,dwellProgress,get magnetEnabled(){return magnetic;}};
+  sync();window.TokiAccess={setup,start,dwellProgress,gameInput,gameSwitch:edge,get magnetEnabled(){return magnetic;}};
 })();

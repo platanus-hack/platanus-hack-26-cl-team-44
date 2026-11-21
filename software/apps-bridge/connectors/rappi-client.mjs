@@ -1,0 +1,54 @@
+// Transport for the operations audited in crafter-station/rappi-cli@5c4e5b0.
+// Chile configuration verified against www.rappi.cl, November 2026.
+import {readFile,writeFile,mkdir,rename,chmod,unlink} from 'node:fs/promises';
+import {dirname,join} from 'node:path';
+import {randomUUID} from 'node:crypto';
+
+export const RAPPI_ORIGIN='https://services.rappi.cl';
+export const RAPPI_DEFAULT_LOCATION={lat:-33.4147039,lng:-70.6023703};
+export const rappiFault=(message,status=400)=>Object.assign(new Error(message),{status});
+export function createRappiSession(stateDir){
+ const file=join(stateDir,'rappi-session.json');
+ return {
+  async read(){
+   try{const s=JSON.parse(await readFile(file,'utf8'));if(s.country!=='CL'||typeof s.token!=='string'||!s.token||s.token.length>16384||typeof s.deviceId!=='string'||s.deviceId.length>256)throw Error();return s;}
+   catch(e){if(e.code==='ENOENT')return null;throw rappiFault('La sesión de Rappi no se pudo leer. Vuelve a conectarla.',409);}
+  },
+  async save(s){
+   await mkdir(dirname(file),{recursive:true,mode:0o700});
+   const tmp=file+'.'+randomUUID()+'.tmp';
+   await writeFile(tmp,JSON.stringify({country:'CL',token:s.token,deviceId:s.deviceId,connectedAt:new Date().toISOString()}),{mode:0o600});
+   await rename(tmp,file);await chmod(file,0o600);
+  },
+  async clear(){await unlink(file).catch(e=>{if(e.code!=='ENOENT')throw e;});}
+ };
+}
+export function createRappiClient({fetcher=fetch}={}){
+ return async function request(path,{method='GET',body,session,signal,deviceId,guestKey}={}){
+  if(!path.startsWith('/')||path.startsWith('//')||path.includes('://'))throw rappiFault('Ruta de Rappi no válida.');
+  const response=await fetcher(RAPPI_ORIGIN+path,{method,redirect:'error',signal:AbortSignal.any([signal||new AbortController().signal,AbortSignal.timeout(15000)]),headers:{accept:'application/json','accept-language':'es-CL',origin:'https://www.rappi.cl',referer:'https://www.rappi.cl/',vendor:'rappi','x-application-id':'lite-mobile-web/2.0.0','app-version-name':'web_8.0.0',...(deviceId?{deviceid:deviceId}:{}),...(guestKey?{'x-guest-api-key':guestKey}:{}),...(session?{authorization:'Bearer '+session.token,deviceid:session.deviceId}:{}),...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  if(response.status===401||response.status===403)throw rappiFault('Conecta tu cuenta de Rappi Chile para continuar.',401);
+  if(response.status===429)throw rappiFault('Rappi pide esperar. Vuelve a intentarlo más tarde.',429);
+  if(!response.ok)throw rappiFault('Rappi no pudo completar la consulta. Vuelve a intentarlo.',502);
+  if(response.status===204)return null;
+  const reader=response.body.getReader();let size=0;const chunks=[];
+  try{while(true){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>6*1024*1024)throw rappiFault('La respuesta de Rappi es demasiado grande.',502);chunks.push(value);}}
+  finally{await reader.cancel().catch(()=>{});}
+  try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw rappiFault('Rappi devolvió una respuesta no reconocida.',502);}
+ };
+}
+
+// Same anonymous guest flow used by the current Chile website. Never persisted
+// as a personal session and never accepted by account-only cart operations.
+export function createRappiGuest(request,{now=Date.now}={}){
+ let cached=null,expires=0;
+ return async signal=>{
+  if(cached&&now()<expires)return cached;
+  const deviceId=randomUUID();
+  const passport=await request('/api/rocket/v2/guest/passport/',{deviceId,signal});
+  if(typeof passport?.token!=='string'||!passport.token)throw rappiFault('No se pudo abrir la exploración de Rappi.',502);
+  const guest=await request('/api/rocket/v2/guest',{method:'POST',body:{},deviceId,guestKey:passport.token,signal});
+  if(typeof guest?.access_token!=='string'||!guest.access_token)throw rappiFault('No se pudo abrir la exploración de Rappi.',502);
+  signal?.throwIfAborted();cached={token:guest.access_token,deviceId};expires=now()+Math.min(Number(guest.expires_in)||300,300)*1000;return cached;
+ };
+}

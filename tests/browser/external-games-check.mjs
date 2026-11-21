@@ -22,11 +22,11 @@ try{
  await cdp('Page.bringToFront',{},sessionId); await sleep(800);
  const p=await run('(()=>{const r=document.querySelector("button[title=Spanish]").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()',inner);
  const outer=await run('(()=>{const r=document.querySelector("#externalGame").getBoundingClientRect();return {x:r.x,y:r.y,scale:S.scale}})()');
- await run(`NOSE.on=true;NOSE.mode='nose';NOSE.lastFace=performance.now();setGaze(${outer.x+p.x*outer.scale},${outer.y+p.y*outer.scale});`);
+ await run(`NOSE.on=true;NOSE.mode='nose';NOSE.raw={dx:0,dy:0};NOSE.lastFace=performance.now();window.testTracker=setInterval(()=>NOSE.lastFace=performance.now(),25);setGaze(${outer.x+p.x*outer.scale},${outer.y+p.y*outer.scale});`);
  await sleep(3200);
  const events=await run('bridgeEvents',inner);
  if(!events.some(e=>e.type==='mousemove'&&e.trusted)||!events.some(e=>e.type==='click'&&e.trusted))throw Error('Bridge did not deliver trusted pointer and dwell click');
- await run('NOSE.on=false;setGaze(0,0)');
+ await run('clearInterval(window.testTracker);NOSE.on=false;setGaze(0,0)');
  console.log('PASS: cross-origin iframe receives trusted pointer movement and dwell click from Toki.');
  await run("activate(document.querySelector('[data-act=\"external:pause\"]'),false)");
  // Continue through the real external profile setup, then load a Unity game inside Toki.

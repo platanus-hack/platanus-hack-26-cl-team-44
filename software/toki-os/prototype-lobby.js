@@ -138,7 +138,7 @@ function render() {
       $('#content').innerHTML = contact() + '<h2>¿Qué quieres decir?</h2><div class="phrase-list">' + choices + '</div><div class="actions">' + action('compose',text.trim()?'Continuar por letras':'Elegir letras','primary') + (text.trim()?action('review','Revisar mi frase'):'') + '</div>' + preview;
     }
   } else if (screen === 'games') {
-    $('#content').innerHTML = '<iframe class="catalog-frame" title="Catálogo de juegos" src="prototype-motion.html?motion=spatial&amp;start=games&amp;tablet=1&amp;v=25" allow="fullscreen; autoplay; gamepad; camera"></iframe>';
+    $('#content').innerHTML = '<iframe class="catalog-frame" title="Catálogo de juegos" src="prototype-motion.html?motion=spatial&amp;start=games&amp;tablet=1&amp;v=28" allow="fullscreen; autoplay; gamepad"></iframe>';
   }
 }
 function enter(id=selected){selected=id;document.documentElement.style.setProperty('--accent',items.find(x=>x.id===id).accent);setArt(id);tone('confirm');move(id)}
@@ -300,6 +300,7 @@ const keyboardEntry = launchParams.get('entrada') === 'teclado';
 if (keyboardEntry) enter('messages');
 window.TOKI_LOBBY={get state(){return {screen,selected,draft,reduce,playing:!!ambient}}};
 const start = launchParams.get('start');
+if (start === 'games') enter('games');
 if (start === 'apps' || start === 'spotify') enter('apps');
 if (start === 'spotify') void window.TokiApps.active.openSpotify();
 window.TokiAccess.start({

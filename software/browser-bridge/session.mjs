@@ -9,8 +9,14 @@ export async function claimSession(directory, activate) {
  const server=net.createServer(socket=>{
   socket.on('error',()=>{});
   socket.setTimeout(15000,()=>socket.destroy());
-  socket.once('data',async data=>{
-   if(data.toString()!=='activate\n'){socket.destroy();return;}
+  let line = '';
+  socket.setEncoding('utf8');
+  socket.on('data',async part=>{
+   line += part;
+   if(line.length>9){socket.destroy();return;}
+   if(!line.endsWith('\n')) return;
+   socket.removeAllListeners('data');
+   if(line!=='activate\n'){socket.destroy();return;}
    try{await activate();socket.end('ok\n');}
    catch{socket.end('error\n');}
   });

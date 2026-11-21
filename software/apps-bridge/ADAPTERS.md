@@ -31,7 +31,9 @@ La revisión personal no debe marcarse mediante una prueba automatizada contra d
 | Adaptación | Conexión | Tareas | Cuenta | Evidencia para revisar |
 |---|---|---|---|---|
 | Spotify 1.0.0 | spogo, Spotify.app/macOS | Estado, reproducción/pausa, siguiente; búsqueda de catálogo | Sesión web para buscar | search, play, pause |
+| YouTube 1.0.0 | IFrame Player API oficial y oEmbed | Elegir videos de Chile Travel, reproducir y pausar | Ninguna para la selección pública | list, play, pause |
 | BioBioChile 1.0.0 | RSS publicado por el medio | Listar titulares, seleccionar y leer extractos paginados | Ninguna | list, read |
+| Rappi Chile 0.1.0 (parcial) | Operaciones auditadas de Crafter Station + sesión invitada oficial | Categorías, restaurantes, productos, opciones; conexión local y carrito implementados | Cuenta y dirección chilena para carrito | search, products, select, cart, quote, order, tracking; las últimas etapas siguen pendientes |
 
 Spotify conserva portada y estado real al abrir, actualización sin sustituir el control enfocado, reproducción local y vista de configuración separada.
 
@@ -41,10 +43,10 @@ RSS se limita a 2 MB, tiempo de espera de 12 segundos, sin redirecciones, DTD ni
 
 ## Añadir otra app
 
-1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK; REA cuando falte evidencia).
+1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK). Si falta contrato o evidencia, seguir la [rama de investigación de adapt-app](../../.agents/skills/adapt-app/SKILL.md#investigar-un-contrato-incompleto), que usa `surface-recon`; REA queda como herramienta opcional.
 2. Crear una fábrica en `adapters/` y su manifiesto, con acciones y validación explícitas.
 3. Añadirla al registro de `createAppsServer`; no añadir rutas específicas de HTTP ni otra lógica de revisión.
-4. Reutilizar una interfaz existente (`music` o `news`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
+4. Reutilizar una interfaz existente (`music`, `news`, `video` o `food`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
 5. Añadir el preset del catálogo si corresponde. Probar conexión, errores, cancelación, requisitos de cuenta y recorrido completo con el control acordado.
 6. Preparar, registrar evidencia funcional y realizar la prueba personal antes de marcarla lista.
 
@@ -68,8 +70,37 @@ Una prueba con un tercer adaptador sintético demuestra que registro, despacho y
 
 ## Generación de lectores
 
-`generator/codex.mjs` compila una receta limitada bajo el contrato de adapt-app. `generator/packages.mjs` verifica que nombre, fuente, capacidades y campos coincidan con el pedido; tareas no soportadas no se instalan. El servidor fija ID derivado de la URL, versión y dominio de artículos. El paquete contiene solo datos, metadata y evidencia, nunca módulos ejecutables ni cuerpos de noticias. El instalador publica el índice atómicamente después de list/read reales; al reiniciar comprueba esquema y digest antes de registrar.
+`generator/codex.mjs` lee [la skill versionada](../../.agents/skills/adapt-app/SKILL.md) mediante una URL relativa a su propio módulo y compila una receta limitada bajo ese contrato. No busca una copia en la carpeta personal. `skillSha256` identifica el contenido exacto empleado al generar cada paquete. `generator/packages.mjs` verifica que nombre, fuente, capacidades y campos coincidan con el pedido; tareas no soportadas no se instalan. El servidor fija ID derivado de la URL, versión y dominio de artículos. El paquete contiene solo datos, metadata y evidencia, nunca módulos ejecutables ni cuerpos de noticias. El instalador publica el índice atómicamente después de list/read reales; al reiniciar comprueba esquema y digest antes de registrar.
 
 `generator/public-fetch.mjs` restringe HTTPS público, sin credenciales, puertos alternativos ni redirecciones; comprueba resolución DNS y fija la IP para la conexión TLS. Se mantienen límites RSS, extracción de texto y paginación de la implementación BioBio, ahora en `adapters/rss-reader.mjs`. Los fixtures inyectan transporte y generador sin acceder a Codex ni Internet.
 
 El servidor sigue siendo local de confianza: `appsAdmin` separa presentación, no privilegios. Generar requiere una configuración asistida de fuente. Los paquetes no son un formato de importación libre ni una tienda de código descargado.
+
+
+## Video: YouTube
+
+`adapters/youtube.mjs` registra la categoría `video`. Verifica la selección pública mediante oEmbed y ofrece `list`, `select` y `observe` por las rutas comunes. `select` devuelve un ticket ligado al trabajo, video y generación; no registra reproducción. `observe` acepta únicamente estados 1/2 del video seleccionado y exige reproducción previa para acreditar pausa. Cancelar/reintentar o elegir otro video invalida la observación anterior.
+
+`toki-video.js` usa la [API oficial de reproductor](https://developers.google.com/youtube/iframe_api_reference), con origen explícito, sin autoplay y controles de Toki fuera del iframe. La evidencia procede de eventos confirmados por el reproductor en el cliente local de confianza; no es una prueba criptográfica ni una consulta independiente del servidor a YouTube. El navegador local ya puede declarar la revisión funcional/personal. Los callbacks tardíos no cambian otras pantallas. La sincronización de solicitudes conserva el iframe; salir destruye el reproductor.
+
+El catálogo ofrece seis videos públicos de Chile Travel con miniaturas de YouTube. Sin búsqueda general, cuenta personal, suscripciones ni generación automática de adaptadores de video. Un video puede dejar de permitir reproducción integrada; la interfaz muestra error, reintento y regreso. La prueba real de play/pause funciona; la habilitación personal sigue pendiente.
+
+`tests/apps/youtube.test.mjs` comprueba aislamiento de observaciones, generación, selección, orden play/pause y errores. `tests/browser/youtube-check.cjs` usa un doble explícito de la API de YouTube sobre el fixture 8791 para comprobar tamaños, estabilidad, recuperación y salida. No escribe evidencia simulada en el registro real.
+
+## Comida: Rappi Chile (parcial)
+
+`adapters/rappi.mjs` está incluido en el registro. El transporte Node de `connectors/rappi-client.mjs` implementa las operaciones verificadas de `crafter-station/rappi-cli@5c4e5b0` y el flujo de invitado observado en la web chilena. No instala código de GitHub ni levanta el servidor HTTP del CLI. Solo contacta `services.rappi.cl`; limita respuesta, tiempo, acciones y errores públicos.
+
+El paciente elige cuatro categorías, tres restaurantes/productos por página y dos opciones por página. No se exige escribir. Las búsquedas sin cuenta usan la ubicación predeterminada pública de Rappi Chile en Santiago, identificada en pantalla; no es una dirección de entrega. La selección procede de productos devueltos por la búsqueda, **no del menú completo**. Las opciones se consultan con una sesión de invitado mantenida solo en memoria. El shell compartido conserva retroceso, descanso y confirmación muscular.
+
+Para conectar una cuenta desde la configuración asistida: abrir `/?start=apps&appsAdmin=1`, elegir Rappi y «Conectar Rappi Chile». Se abre Chrome oficial; la persona introduce sus credenciales allí. «Comprobar sesión» valida la cuenta y lee la dirección activa chilena. Alternativamente:
+
+```sh
+node software/apps-bridge/connectors/rappi-login.mjs
+```
+
+El login valida origen exacto y respuesta de usuario antes de guardar `rappi-session.json` con permisos `0600`, bajo el directorio de estado (`TOKI_APPS_STATE_DIR` para el comando). El token nunca se devuelve al frontend ni se imprime. La ventana espera hasta diez minutos. Desconectar elimina el archivo local, no revoca otras sesiones del servicio.
+
+Carrito y recálculo están implementados y probados con fixtures; **falta validarlos con una cuenta real chilena**. Añadir requiere una selección reciente del mismo trabajo/generación/sesión, opciones válidas, dirección activa sin cambios y carrito previo vacío. La primera versión permite una unidad; no reemplaza carritos existentes. Un resultado incierto exige consultar el carrito; no se reenvía automáticamente. Los importes del carrito no se presentan como total final autorizado.
+
+No existe acción de crear pedido ni cobro: el checkout del CLI tiene un fallo abierto reportado y el flujo chileno actual debe verificarse con cuenta. La evidencia exigida incluye pedido, pago/cotización y seguimiento pendientes, por lo que esta versión no puede marcarse lista para comprar. No hay revisión personal acreditada. Investigación, comandos y resultados: [Rappi Chile](../../docs/research/rappi-chile/README.md).

@@ -21,18 +21,18 @@ Electrodos adhesivos en piel
           │ USB
    Mac solo a batería
 
-Usar Link Shield, NO Cable Shield para conectar al jack A0. Los conectores de aspecto idéntico no tienen la misma función. No añadir Wireless/Power Shield al montaje alimentado por UNO. CAB-12970 no hace falta con electrodos directamente en el sensor.
+Usar Link Shield, NO Cable Shield para conectar al jack A0. Para el segundo canal, repetir la conexión con otro MyoWare, Link Shield y cable TRS al jack A3. Los conectores de aspecto idéntico no tienen la misma función. No añadir Wireless/Power Shield al montaje alimentado por UNO. CAB-12970 no hace falta con electrodos directamente en el sensor.
 
 ## Procedimiento
 1. Sin electrodos en el cuerpo: confirmar UNO R3, comprobar que tiene pines soldados y rectos por debajo el Arduino Shield, sin puentes de soldadura. La marca 5V/GND/A0 de ambos debe coincidir al apilar; no desplazar una posición.
 2. Comprobar el UNO solo con el ejemplo Blink del IDE. Seleccionar Arduino Uno y el puerto real. Así se separan problemas de USB/carga de los del sensor.
 3. Desconectar USB antes de montar el shield y de insertar/quitar TRS. En UNO R3 se usa el jumper PWR de 5V de fábrica; no hace falta modificarlo. Si el jumper fue modificado, inspeccionarlo antes de alimentar.
 4. Apilar Link Shield sobre sensor, conectar TRS a A0. Seleccionar OUTPUT=ENV si el Link dispone de selector; encender su interruptor al usarlo. Consultar etiquetas/manual de la revisión real.
-5. Cargar ../../firmware/myoware_a0/myoware_a0.ino sin electrodos adheridos al cuerpo. Abrir Serial Plotter a 115200 baudios. A0 sin sensor puede fluctuar: no es una prueba de fallo ni de actividad muscular.
+5. Cargar ../../firmware/myoware_a0/myoware_a0.ino sin electrodos adheridos al cuerpo. Abrir Serial Plotter a 115200 baudios o el [monitor local](../../software/myoware-monitor/README.md), no ambos a la vez. Un pin sin sensor puede fluctuar: no es una prueba de fallo ni de actividad muscular.
 6. Antes de adherir electrodos, usar la Mac a batería y desconectar cargador, docks, monitores y otros periféricos conectados a la red. SparkFun recomienda un aislador USB para reducir ruido y riesgo eléctrico; si no se dispone de uno, su alternativa es portátil a batería sin conexión a la red. No usar un cargador USB de pared en la cadena conectada al cuerpo.
 7. Colocar electrodos según la guía oficial, empezando con un músculo fácil de contraer como bíceps. No empezar probando en la frente. Mantener postura/cables estables; registrar reposo y cinco contracciones suaves separadas por relajación.
 8. En UNO R3, ENV se representa en cuentas ADC 0–1023: debe aumentar de forma repetible al contraer y bajar al relajar. No existe un valor fijo universal; no son newtons ni porcentaje clínico de fuerza. Una señal pegada a 0/1023, o que solo cambia al mover el cable, requiere revisar alimentación, contacto, colocación y saturación.
-9. Repetir cambiando una sola pieza cada vez (otro cable, sensor, Link). Para comprobar otro jack cambiar también A0 en el sketch por A1 etc. Validar A0 no certifica los seis canales.
+9. Con ambos sensores en ENV, probar una contracción a la vez: al activar A0, comprobar que A3 siga cerca del reposo; luego invertir la prueba. Si hay problemas, cambiar solo una pieza cada vez (cable, sensor o Link). Validar A0 y A3 no certifica los otros jacks.
 
 ## Criterio de prueba de banco
 Anotar valores de reposo y contracción de cinco intentos; si la elevación coincide repetidamente con la contracción y vuelve al reposo, queda probada la cadena de ese canal para una demo inicial. Después probar movimientos sin contracción intencional para detectar falsos disparos. No afirmar validación clínica ni clasificación de gestos por esta prueba.
