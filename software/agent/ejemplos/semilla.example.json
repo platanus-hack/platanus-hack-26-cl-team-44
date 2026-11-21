@@ -1,0 +1,39 @@
+{
+  "_nota": "Datos ficticios para probar. La semilla real va en software/agent/data/semilla.json, que git ignora.",
+  "usuaria": "Ana",
+  "personas": [
+    {"id": "pedro", "nombre": "Pedro", "relacion": "pareja", "apodos": ["Pedrito"], "tipo_interlocutor": "familia", "telefono": "+56900000001"},
+    {"id": "sofi", "nombre": "Sofía", "relacion": "hija", "apodos": ["Sofi"], "tipo_interlocutor": "familia", "telefono": "+56900000002"},
+    {"id": "tomas", "nombre": "Tomás", "relacion": "nieto, 9 años", "apodos": ["Tomi"], "tipo_interlocutor": "familia", "telefono": ""},
+    {"id": "dra_perez", "nombre": "Dra. Pérez", "relacion": "neuróloga", "apodos": ["doctora"], "tipo_interlocutor": "medico", "trato": "usted"},
+    {"id": "camila", "nombre": "Camila", "relacion": "cuidadora", "apodos": ["Cami"], "tipo_interlocutor": "familia", "telefono": "+56900000003"}
+  ],
+  "temas": {
+    "diagnostico": ["ela", "esclerosis", "diagnostico", "enfermedad", "pronostico"],
+    "dinero": ["plata", "dinero", "sueldo", "deuda", "pension", "arriendo"],
+    "salud": ["dolor", "remedio", "medicamento", "respirar", "succion", "kine"]
+  },
+  "limites": [
+    {"persona_id": "tomas", "tema": "diagnostico", "motivo": "La familia no quiere hablar del diagnóstico con los nietos"},
+    {"tipo_interlocutor": "desconocido", "tema": "dinero", "motivo": "Temas de plata solo en familia"}
+  ],
+  "memorias": [
+    {"tipo": "perfil", "subtipo": "identidad", "texto": "Se llama Ana, le dicen Anita. Es de Valparaíso.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "personalidad", "texto": "Es irónica y bromista. Odia que la traten como enferma.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Le encantan los tulipanes de colores, no las rosas.", "privacidad": "publico", "personas": ["pedro"]},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Fan de Colo-Colo y de los boleros.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "salud", "texto": "Tiene ELA desde 2023. Le duele la espalda baja en la tarde.", "privacidad": "salud", "temas": ["diagnostico", "salud"]},
+    {"tipo": "perfil", "subtipo": "dinero", "texto": "Está preocupada por la deuda del arriendo.", "privacidad": "familia", "temas": ["dinero"]},
+    {"tipo": "rutina", "texto": "Kinesiólogo los martes", "hora": "10:00", "dias": "mar", "privacidad": "salud", "temas": ["salud"]},
+    {"tipo": "rutina", "texto": "Almuerzo familiar los domingos", "hora": "13:30", "dias": "dom", "privacidad": "familia", "personas": ["sofi", "tomas", "pedro"]},
+    {"tipo": "episodio", "fecha": "2026-11-16", "texto": "Fue al cine con Pedro a ver una comedia; se rieron mucho.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "episodio", "fecha": "2026-11-09", "texto": "Pedro le cocinó pastel de choclo para el almuerzo.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "episodio", "fecha": "2026-10-22", "texto": "Pedro y Ana discutieron por el arriendo.", "privacidad": "familia", "personas": ["pedro"], "temas": ["dinero"]},
+    {"tipo": "episodio", "fecha": "2026-11-18", "texto": "Sofía contó que el cumpleaños de Tomás es el sábado.", "privacidad": "familia", "personas": ["sofi", "tomas"]},
+    {"tipo": "episodio", "fecha": "2026-11-12", "texto": "La doctora ajustó la dosis del remedio para dormir.", "privacidad": "salud", "personas": ["dra_perez"], "temas": ["salud"]},
+    {"tipo": "estilo", "texto": "¡Obvio que sí! Guárdame postre.", "privacidad": "publico"},
+    {"tipo": "estilo", "texto": "Ya po, no me hagas reír que me ahogo.", "privacidad": "familia"},
+    {"tipo": "lexico", "texto": "obvio, porfa, ya po, cachai", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Dato no aprobado todavía: le gusta el sushi.", "privacidad": "publico", "estado": "propuesta"}
+  ]
+}

@@ -15,3 +15,6 @@ build/
 *.o
 data/local/
 !.env.example
+
+# Agente: memoria real del demo y base local
+software/agent/data/
