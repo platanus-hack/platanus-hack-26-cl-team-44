@@ -29,6 +29,7 @@
   const HALF_LIFE_DAYS = 60;      // olvido lento de lo personal
   const TYPO_PENALTY = 0.15;
   const TYPO_MIN_LEN = 4;
+  const VARIANT_MIN_SHARE = 0.25;
   const MAX_UNI = 4000, MAX_BI = 12000; // tope del caché personal (localStorage)
   const START = "<s>";
   const DAY = 864e5;
@@ -143,6 +144,15 @@
       save();
     }
 
+    /** Variantes que solo difieren en tildes: "cómo"/"como" son palabras distintas y frecuentes;
+     *  "unico" junto a "único" es una falta común de los subtítulos → se muestra solo si es ≥ 25 %
+     *  tan frecuente como la forma principal. */
+    function mainForms(forms) {
+      const all = [...forms];
+      const max = Math.max(...all.map(([, f]) => f));
+      return all.filter(([, f]) => f >= VARIANT_MIN_SHARE * max);
+    }
+
     function bestBaseForm(n) {
       const e = baseMap.get(n);
       if (!e) return null;
@@ -189,7 +199,7 @@
         const s = scoreOf(n) * penalty;
         if (!(s > 0)) return;
         const user = state.uni[n];
-        const forms = user?.name ? [[user.w, 1]] : baseMap.has(n) ? [...baseMap.get(n).forms] : [[user?.w ?? n, 1]];
+        const forms = user?.name ? [[user.w, 1]] : baseMap.has(n) ? mainForms(baseMap.get(n).forms) : [[user?.w ?? n, 1]];
         const fsum = forms.reduce((a, [, f]) => a + f, 0) || 1;
         for (const [w, f] of forms) {
           if (w.toLowerCase() === typed) continue; // no sugerir exactamente lo ya escrito

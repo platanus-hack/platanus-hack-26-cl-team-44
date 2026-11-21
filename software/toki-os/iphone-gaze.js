@@ -216,13 +216,27 @@ const IPHONE = {
     $("#calBtns").style.display = "none";
     panel.hidden = false;
     $("#ipSaved").hidden = !this.hasSaved();
-    renderPresets();
+    $("#ipForm").hidden = false;
+    $("#ipMainRow").hidden = false;
+    $("#ipPresetsView").hidden = true;
     const fromUrl = new URLSearchParams(location.search).get("iphone");
     const input = $("#ipHost");
     input.value = fromUrl || this.host || readStore()?.host || "";
     setStatus("");
     setTimeout(() => input.focus(), 50);
   },
+  /** Ventana de presets: elegir uno guardado (repo o navegador), guardar, descargar o cargar. */
+  openPresets() {
+    ensurePanel();
+    CAL.steps(["Presets"]);
+    CAL.ui("Presets de calibración", "Elige una calibración guardada. Los presets no cambian al recalibrar; los del repo están en software/toki-os/presets/.", 0, false);
+    $("#ipForm").hidden = true;
+    $("#ipMainRow").hidden = true;
+    $("#ipPresetsView").hidden = false;
+    setStatus("");
+    renderPresets();
+  },
+
   closePanel() {
     const panel = $("#calIphone");
     if (panel) panel.hidden = true;
@@ -269,7 +283,8 @@ const IPHONE = {
 
   /** Usa un preset protegido. La dirección escrita en el panel manda (la IP del iPhone puede cambiar). */
   async usePreset(id) {
-    const preset = listPresets(localStorage).find((p) => p.id === id);
+    await loadRepoPresets();
+    const preset = allPresets().find((p) => p.id === id);
     if (!preset) return false;
     const host = ($("#ipHost")?.value || "").trim() || preset.host;
     const ok = await this.useModel(preset, host);
@@ -357,19 +372,20 @@ function ensurePanel() {
       <button class="cbtn pri" type="submit">Conectar y calibrar</button>
     </form>
     <div class="ip-status" id="ipStatus" role="status"></div>
-    <div class="ip-presets">
-      <div class="ip-sub">Presets · no se borran al recalibrar</div>
-      <div class="ip-row wrap" id="ipPresetList"></div>
+    <div class="ip-row" id="ipMainRow">
+      <button class="cbtn" type="button" id="ipSaved" hidden>Usar la última calibración</button>
+      <button class="cbtn" type="button" id="ipPresetsBtn">Presets…</button>
+      <button class="cbtn" type="button" id="ipBack">Volver</button>
+    </div>
+    <div class="ip-presets" id="ipPresetsView" hidden>
+      <div class="ip-list" id="ipPresetList"></div>
       <div class="ip-row wrap">
         <button class="cbtn sm" type="button" id="ipSavePreset">Guardar la actual como preset</button>
         <button class="cbtn sm" type="button" id="ipExport">Descargar archivo</button>
         <button class="cbtn sm" type="button" id="ipImportBtn">Cargar archivo</button>
         <input type="file" id="ipImport" accept="application/json,.json" hidden>
       </div>
-    </div>
-    <div class="ip-row">
-      <button class="cbtn" type="button" id="ipSaved" hidden>Usar la última calibración</button>
-      <button class="cbtn" type="button" id="ipBack">Volver</button>
+      <div class="ip-row"><button class="cbtn" type="button" id="ipPresetsClose">Volver</button></div>
     </div>`;
   $("#calBtns").after(panel);
   const input = panel.querySelector("#ipHost");
@@ -385,6 +401,8 @@ function ensurePanel() {
   });
   panel.querySelector("#ipSaved").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.useSaved(); });
   panel.querySelector("#ipBack").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.closePanel(); });
+  panel.querySelector("#ipPresetsBtn").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.openPresets(); });
+  panel.querySelector("#ipPresetsClose").addEventListener("click", (e) => { e.currentTarget.blur(); IPHONE.openPanel(); });
   panel.querySelector("#ipPresetList").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-preset]");
     if (!b) return;
@@ -401,16 +419,40 @@ function ensurePanel() {
 /* ---------- presets (ver iphone-presets.js) ---------- */
 const stamp = () => new Date().toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-function renderPresets() {
+/* Presets del repo: software/toki-os/presets/index.json lista archivos .json (mismo formato que
+   "Descargar archivo"). Son de solo lectura y se validan igual que un archivo cargado a mano. */
+let repoPresets = null;
+async function loadRepoPresets() {
+  if (repoPresets) return repoPresets;
+  try {
+    const res = await fetch("presets/index.json", { cache: "no-store" });
+    if (!res.ok) return (repoPresets = []);
+    const files = (await res.json())?.presets ?? [];
+    const out = [];
+    for (const file of files) {
+      if (typeof file !== "string" || !/^[\w.-]+\.json$/.test(file)) continue; // solo nombres simples dentro de presets/
+      try {
+        const r = await fetch(`presets/${file}`, { cache: "no-store" });
+        if (r.ok) out.push({ ...fromFile(await r.text()), id: `repo:${file}`, repo: true });
+      } catch { /* un archivo inválido no impide cargar los demás */ }
+    }
+    repoPresets = out;
+  } catch { repoPresets = []; }
+  return repoPresets;
+}
+const allPresets = () => [...(repoPresets ?? []), ...listPresets(localStorage)];
+
+async function renderPresets() {
   const list = $("#ipPresetList");
   if (!list) return;
-  const presets = listPresets(localStorage);
+  await loadRepoPresets();
+  const presets = allPresets();
   list.replaceChildren(...presets.map((p) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "cbtn sm pri";
     b.dataset.preset = p.id;
-    b.textContent = `Usar «${p.name}»`; // textContent: el nombre viene de un archivo y nunca se interpreta como HTML
+    b.textContent = `${p.name}${p.repo ? " · repo" : ""}`; // textContent: el nombre viene de un archivo, nunca se interpreta como HTML
     return b;
   }));
   if (!presets.length) {
@@ -442,7 +484,7 @@ function savePresetFromCurrent() {
 
 function exportPreset() {
   const cur = currentCalibration();
-  const presets = listPresets(localStorage);
+  const presets = allPresets();
   const preset = cur?.model ? { name: `Calibración · ${stamp()}`, host: cur.host, model: cur.model, viewport: cur.viewport } : presets.at(-1);
   if (!preset) return setStatus("No hay una calibración para descargar.", "err");
   try {

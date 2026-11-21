@@ -72,3 +72,5 @@
 .cbtn[disabled] { opacity: .45; cursor: not-allowed; }
 .ip-empty { font-size: 26px; color: var(--txt3); }
 :root[data-theme="light"] .ip-presets { background: rgba(0, 0, 0, .03); }
+.ip-list { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 760px; max-height: 420px; overflow: auto; }
+.ip-list .cbtn { width: 100%; }

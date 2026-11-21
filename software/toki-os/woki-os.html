@@ -628,9 +628,12 @@ const MEM=(()=>{ let m={words:{},phrases:[]}; try{ m=JSON.parse(localStorage.get
     top(prefix){ return Object.entries(m.words).filter(([w])=>w.startsWith(prefix)&&w!==prefix).sort((a,b)=>b[1]-a[1]).map(([w])=>w); } }; })();
 /* Predicción: TokiPredict (predict.js) con el diccionario base (lexicon-es.js), las frases del
    sistema como contexto inicial y lo que la persona dice (aprende en el dispositivo). */
-// 6 sugerencias: el ahorro de pulsaciones sube hasta ~6 y luego se aplana (Adhikary et al. 2022,
-// teclado por mirada simulado, dwell 1000 ms); más palabras solo agregan tiempo de búsqueda.
-const SUG_MAX = 6;   // pantalla de sugerencias: 6 palabras + Volver (4×2)
+// Fila fija (opción A): 3 sugerencias siempre en el mismo lugar, a 1 mirada (como Gboard). Una fila
+// fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008).
+const SUG_ROW = 3;
+// "Más": las 7 siguientes (4.ª a 10.ª) + Volver (4×2), sin repetir la fila. Es una segunda oportunidad,
+// no la vía principal: el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022).
+const SUG_MORE = 7;
 const PRED = window.TokiPredict.createPredictor({
   base: (window.TOKI_LEXICON || WORDS.map((w,i)=>[w, 1000/(i+1)])),
   corpus: [...RULES.flatMap(r=>r.s.map(x=>x[0])), ...DEFAULT.map(x=>x[0]), ...REACTS.map(r=>r[1])],
@@ -642,7 +645,7 @@ function curWord(){ const m=S.kb.text.match(/([^\s]*)$/); return m?m[1]:''; }
 function prevWord(){ const m=S.kb.text.replace(/[^\s]*$/,'').match(/([^\s.!?]+)[\s]*$/); return m?m[1]:''; }
 function atSentenceStart(){ const before=S.kb.text.replace(/[^\s]*$/,''); return /^\s*$/.test(before) || /[.!?]\s*$/.test(before); }
 /** sugerencias como objetos {word,name}; la palabra en curso puede estar vacía (= predecir la siguiente) */
-function sugs(){ return PRED.suggest(prevWord(), curWord(), SUG_MAX); }
+function sugs(){ return PRED.suggest(prevWord(), curWord(), SUG_ROW+SUG_MORE); }
 function preds(){ return sugs().map(s=>s.word); }
 const showWord=w=>w.charAt(0).toLocaleUpperCase('es')+w.slice(1);   // en pantalla: con mayúscula
 function acceptSuggestion(sg){
@@ -652,25 +655,32 @@ function acceptSuggestion(sg){
 }
 function renderKeys(){
   const kb=S.kb; let html='';
-  if(kb.level===3){   // pantalla de sugerencias: palabras grandes + Volver
-    const list=sugs();
-    html=list.map((sg,i)=>`<div class="t key sug" data-t data-act="sug:${i}">${showWord(sg.word)}</div>`).join('');
-    for(let i=list.length;i<SUG_MAX;i++) html+='<div></div>';
+  if(kb.level===3){   // "Más": las sugerencias que no caben en la fila fija + Volver
+    const list=sugs(), more=list.slice(SUG_ROW);
+    html=more.map((sg,i)=>`<div class="t key sug" data-t data-act="sug:${i+SUG_ROW}">${showWord(sg.word)}</div>`).join('');
+    for(let i=more.length;i<SUG_MORE;i++) html+='<div></div>';
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
     kb.sugList=list;
   } else if(kb.level===1){
-    const list=sugs();
-    html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
-      (list.length? `<div class="t key pred" data-t data-act="kb:sug">Sugerencias<small>${list.slice(0,2).map(x=>showWord(x.word)).join(' · ')}${list.length>2?' · …':''}</small></div>` : `<div class="key pred ghost">Sin sugerencias</div>`)+
-      `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`+
-      `<div class="t key small act" data-t data-act="go:home">Volver</div>`;
+    // Fila fija de sugerencias (opción A): las 3 mejores a 1 mirada, siempre en el mismo lugar
+    // (los huecos vacíos se conservan para que las posiciones no salten), y "Más" con el resto.
+    const list=sugs(), top=list.slice(0,SUG_ROW);
+    kb.sugList=list;
+    html=top.map((sg,i)=>`<div class="t key sug row-sug${i===0?' best':''}" data-t data-act="sug:${i}">${showWord(sg.word)}</div>`).join('');
+    for(let i=top.length;i<SUG_ROW;i++) html+=`<div class="key sug row-sug ghost">${i===0 && !list.length? 'Sin sugerencias' : ''}</div>`;
+    html+= list.length>SUG_ROW
+      ? `<div class="t key small act row-sug" data-t data-act="kb:sug">Más ▸<small>${list.length-SUG_ROW} más</small></div>`
+      : `<div class="key small row-sug ghost">Más ▸</div>`;
+    html+=GROUPS.map((g,i)=>`<div class="t key row-grp" data-t data-act="grp:${i}">${g}</div>`).join('');
+    html+=`<div class="t key small act row-act" data-t data-act="kb:space">Espacio</div><div class="t key small act row-act" data-t data-act="kb:del">Borrar</div><div class="t key small act row-act" data-t data-act="kb:say">Decir</div>`+
+      `<div class="t key small act row-act" data-t data-act="go:home">Volver</div>`;
   } else {
     const L=GROUPS[kb.group].split('');
     html=L.map(c=>`<div class="t key" data-t data-act="chr:${c}">${c}</div>`).join('');
     for(let i=L.length;i<7;i++) html+='<div></div>';
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
   }
-  $('#keys').className = kb.level===1? 'grid5x2' : 'grid4x2';
+  $('#keys').className = kb.level===1? 'kbrows' : 'grid4x2';
   $('#s-keyboard').dataset.level=kb.level;
   $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys')); renderKbText();
 }
@@ -680,7 +690,7 @@ function renderKbText(){
   const norm=window.TokiPredict.normalize;
   const ghost = p[0] && w && norm(p[0]).startsWith(norm(w)) ? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
   $('#kbTxt').innerHTML=(S.kb.text||'')+'<span class="caret"></span>'+ghost;
-  const how = gazeOnly()? 'mira <b>Sugerencias</b> para elegir' : '<b>mandíbula</b> acepta la primera';
+  const how = gazeOnly()? 'mira una sugerencia para usarla' : '<b>mandíbula</b> acepta la primera';
   $('#kbPred').innerHTML = S.kb.level===3? 'Elige una palabra' : p.length? 'Sugerencias: '+p.slice(0,4).map((x,i)=>i?showWord(x):`<b>${showWord(x)}</b>`).join(' · ')+' — '+how : 'Elige un grupo de letras';
 }
 

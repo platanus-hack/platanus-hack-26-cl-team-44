@@ -19,6 +19,14 @@ assert.equal(normalize("Año pingüino"), "año pinguino");
   assert.ok(!p.suggest("", "an").some((x) => x.word === "año"), "la ñ no se confunde con n");
 }
 
+// una variante sin tilde poco frecuente (falta de ortografía) no aparece; dos formas frecuentes sí
+{
+  const p = createPredictor({ base: [...BASE, ["único", 100], ["unico", 9]], storage: memStorage() });
+  const s = p.suggest("", "uni").map((x) => x.word);
+  assert.ok(s.includes("único") && !s.includes("unico"), s);
+  assert.ok(p.suggest("", "com").map((x) => x.word).includes("como"), "como/cómo siguen ambas");
+}
+
 // completa por prefijo y ordena por frecuencia
 {
   const p = make();

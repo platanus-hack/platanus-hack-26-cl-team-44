@@ -42,17 +42,20 @@ Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactiva
 
 ### Presets de calibración
 
-- **"Usar la última calibración"** cambia cada vez que se calibra. Los **presets** no: solo cambian con "Guardar la actual como preset" o "Cargar archivo".
+- El panel del iPhone queda simple: dirección, **Conectar y calibrar**, **Usar la última calibración**, **Presets…** y **Volver**.
+- **"Usar la última calibración"** cambia cada vez que se calibra. Los **presets** (ventana **Presets…**) no: solo cambian con "Guardar la actual como preset" o "Cargar archivo".
+- **Presets del repo:** los archivos de [`presets/`](presets/) listados en `presets/index.json` aparecen marcados «repo». Para agregar uno: `node software/toki-os/tools/add-preset.mjs <archivo descargado>`.
 - La primera vez que se carga esta versión, la calibración guardada se protege sola como preset ("Mi calibración · fecha").
 - **"Descargar archivo"** guarda la calibración en un JSON; **"Cargar archivo"** la recupera (se valida: solo modelos planos, sin movimiento de cabeza).
 - Al usar un preset manda la dirección escrita en el panel (la IP del iPhone puede cambiar).
 
 ## Escribir con sugerencias
 
-- La tecla **Sugerencias** muestra las dos primeras y abre una pantalla con hasta 6 palabras grandes y **Volver**. Al elegir una se inserta (con mayúscula si empieza la frase) y se vuelve al teclado.
+- **Fila fija de sugerencias** arriba del teclado: las 3 mejores, siempre en el mismo lugar, a **1 mirada** (con mayúscula si empieza la frase). **Más ▸** abre las 7 siguientes y **Volver**. Tarjetas de 6,7 × 4 cm.
+- Medido con 15 frases de CAA no vistas: ahorra el **60 %** de las selecciones la primera vez (51 % con la lista aparte) y el **86 %** cuando ya se dijeron.
 - **Motor** (`predict.js`): n-gramas con *Stupid Backoff* (α = 0,4, Brants et al. 2007), sin conexión. Predice la palabra siguiente por contexto y completa la actual sin importar tildes ("como" → "cómo"; la ñ sí cuenta). Tolera un error de tipeo desde 4 letras.
 - **Aprende en el dispositivo** (como Gboard o QuickType): todo lo que se dice suma a un caché personal de palabras y pares de palabras, con olvido lento (vida media 60 días). Los nombres se aprenden con mayúscula si la persona los escribe así.
-- **Por qué 6 y no más:** el ahorro de pulsaciones crece hasta ~6 sugerencias y después se aplana (Adhikary et al. 2022, teclado por mirada simulado). Ver también Trnka et al. 2008: una buena predicción ahorra ~50 % de pulsaciones.
+- **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
 ## Tema y atajos

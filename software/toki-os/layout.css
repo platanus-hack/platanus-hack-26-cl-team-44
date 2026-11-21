@@ -77,3 +77,19 @@ body.gaze-only .badge { display: none; }
 @media (prefers-reduced-motion: reduce) {
   body.gaze-only .t.focus::after { transform: none; opacity: var(--p, 0); }
 }
+
+/* escribir (opción A): fila fija de sugerencias + letras + acciones, en una sola cuadrícula de 20 columnas
+   (4 tarjetas por fila = 5 columnas cada una; 5 grupos de letras = 4 columnas cada uno) */
+.kbrows { flex: 1; display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(3, 1fr); gap: 20px; min-height: 0; }
+.kbrows .row-sug, .kbrows .row-act { grid-column: span 5; }
+.kbrows .row-grp { grid-column: span 4; }
+.kbrows .key { font-size: 64px; }
+.kbrows .key.small { font-size: 44px; }
+.key.sug { font-size: 56px; letter-spacing: -.02em; background: rgba(48, 209, 88, .12); }
+.key.sug.best { box-shadow: inset 0 0 0 3px rgba(48, 209, 88, .55); }
+.key.sug.ghost { background: transparent; border-style: dashed; font-size: 30px; color: var(--txt3); }
+:root[data-theme="light"] .key.sug { background: rgba(52, 199, 89, .12); }
+/* con la fila fija, la línea "Sugerencias: …" bajo el texto sobra: más alto para las tarjetas */
+#s-keyboard[data-level="1"] .msgline { min-height: 96px; padding: 10px 40px; }
+#s-keyboard[data-level="1"] .msgline .pred { display: none; }
+#s-keyboard[data-level="1"] .msgline .txt { min-height: 0; }
