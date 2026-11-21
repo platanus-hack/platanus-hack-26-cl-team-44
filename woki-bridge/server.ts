@@ -94,6 +94,15 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
+  // Anti-CSRF: cualquier página abierta en el navegador podría hacer POST a localhost.
+  // Las rutas /api/* solo aceptan JSON (fuerza preflight CORS) y el Origin exacto de la app.
+  // El webhook de wapi queda fuera: se autentica con su firma (WAPI_WEBHOOK_SECRET).
+  if (req.method === "POST" && url.pathname.startsWith("/api/")) {
+    const ctype = String(req.headers["content-type"] ?? "").split(";")[0].trim();
+    if (req.headers.origin !== ORIGIN || ctype !== "application/json")
+      return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
+  }
+
   // TV → enviar
   if (req.method === "POST" && url.pathname === "/api/wa/send") {
     if (MODE === "off") return json(res, 503, { ok: false, reason: "WhatsApp apagado" });
@@ -182,4 +191,5 @@ function handleEvent(raw: string) {
 }
 
 await resolveLids();
-server.listen(PORT, () => console.log(`woki-bridge · modo ${MODE} · ${contacts.length} contactos · http://localhost:${PORT}`));
+// Solo en localhost: el túnel (cloudflared, etc.) se conecta a 127.0.0.1 igual, y nadie de la red local puede llamar a /api/*.
+server.listen(PORT, "127.0.0.1", () => console.log(`woki-bridge · modo ${MODE} · ${contacts.length} contactos · http://localhost:${PORT}`));
