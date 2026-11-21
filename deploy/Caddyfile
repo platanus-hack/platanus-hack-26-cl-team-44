@@ -1,0 +1,34 @@
+# URL pública de Toki: la TV (estática) y el agente.
+# El dominio sale de TOKI_DOMINIO (por ejemplo 179-66-157-161.sslip.io). Caddy saca el certificado HTTPS solo.
+# Solo HTTP/1.1 y HTTP/2: con HTTP/3 (QUIC por UDP) el navegador se colgaba si el UDP 443 no pasaba.
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$TOKI_DOMINIO} {
+	encode gzip
+
+	# Agente: /agente/api/... → 127.0.0.1:8790/api/...  (flush_interval -1 para que el SSE llegue al instante)
+	handle_path /agente/* {
+		reverse_proxy 127.0.0.1:8790 {
+			flush_interval -1
+		}
+	}
+
+	# La raíz abre la TV
+	redir / /woki-os.html?{query} 302
+
+	handle {
+		root * /opt/toki/repo/software/toki-os
+		file_server
+	}
+
+	header {
+		Referrer-Policy no-referrer
+		X-Content-Type-Options nosniff
+		# La TV usa la cámara y el micrófono del navegador
+		Permissions-Policy "camera=(self), microphone=(self)"
+	}
+}
