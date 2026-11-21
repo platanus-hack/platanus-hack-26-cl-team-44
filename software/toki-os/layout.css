@@ -1,0 +1,108 @@
+/* =========================================================
+   Toki OS · tarjetas grandes y modo "solo mirada" (iPhone)
+
+   Criterio de tamaño (datos del equipo, 24 calibraciones con iPhone): error medio 2,9°
+   (≈2,5 cm a 50 cm), peor caso 5,3°. Para acertar de forma fiable, cada tarjeta mide al
+   menos ~2× el error: ≥ 6 cm por lado (≈ 7°), es decir ≥ ~380 px del lienzo de 1920×1080
+   en un portátil de 13–14". Ninguna tarjeta queda por debajo de eso.
+   ========================================================= */
+
+/* ---------- más espacio para las tarjetas en todas las pantallas ---------- */
+.screen { padding: 28px 48px; gap: 20px; }
+.status { height: 60px; }
+.grid4x2, .grid2x2 { gap: 20px; }
+.grid3x2 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+.grid5x2 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+
+/* inicio */
+.app { width: 176px; height: 176px; border-radius: 46px; }
+.app svg { width: 92px; height: 92px; }
+.tile .lb { font-size: 58px; }
+.tile .sb { font-size: 30px; }
+
+/* hablar: 4 frases grandes + columna con Escribir y Volver */
+.talkgrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr 400px; grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+.card { padding: 36px 310px 36px 44px; }
+.card .ph { font-size: 60px; }
+/* el emoji es un objetivo propio (cambiar emoción): una franja de toda la altura a la derecha,
+   separada del texto. Medido: ~4,2 × 6 cm en un portátil (antes 2,4 cm: inalcanzable con la mirada) */
+.emo { top: 0 !important; right: 0 !important; bottom: 0; width: 270px !important; height: auto !important;
+  border-radius: 0 var(--r-lg) var(--r-lg) 0 !important; font-size: 110px !important; border-left: 1.5px solid var(--hair) !important; }
+.emo .ring { right: 18px; bottom: 18px; width: 52px; height: 52px; }
+.emo.focus { transform: none; }
+.side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; font-size: 46px; font-weight: 700; letter-spacing: -.02em; }
+.side svg { width: 76px; height: 76px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.side small { font-size: 26px; font-weight: 550; color: var(--txt2); letter-spacing: 0; }
+.ctx { min-height: 112px; padding: 14px 36px; }
+
+/* escribir: grupos y acciones del mismo tamaño */
+.msgline { min-height: 128px; padding: 16px 40px; gap: 6px; }
+.msgline .txt { font-size: 66px; min-height: 76px; }
+.key { font-size: 72px; }
+.key.small { font-size: 46px; }
+.key.pred { font-size: 46px; letter-spacing: -.01em; background: rgba(48, 209, 88, .12); }
+.key.pred small { display: block; font-size: 24px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+.key.ghost { opacity: .35; }
+
+/* reacciones: 4 por página + Más + Volver */
+.react { font-size: 64px; flex-direction: column; gap: 10px; }
+.react span { font-size: 120px; }
+
+/* ajustes */
+.set .val { font-size: 60px; }
+
+/* anillo de emociones → cuadrícula: frase + 6 emociones + Volver */
+#emoRing .c { width: 1808px; height: 960px; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 24px; transform: scale(.97); }
+#emoRing .mid { position: relative; inset: auto; border-radius: var(--r-lg); padding: 36px; font-size: 40px; line-height: 1.3; }
+#emoRing .t { position: relative; width: auto; height: auto; margin: 0; font-size: 48px; gap: 10px; }
+#emoRing .t span { font-size: 112px; }
+
+/* descanso: salida con la mirada (mantener 2 s) */
+.rest-wake { margin-top: 28px; width: 760px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 54px; font-weight: 700; color: var(--txt); cursor: pointer; }
+.rest-wake small { font-size: 28px; font-weight: 550; color: var(--txt2); }
+.rest-wake.focus { transform: scale(1.03); }
+.rest-wake .fill { position: absolute; inset: 0; border-radius: inherit; background: rgba(10, 132, 255, .18); transform: scaleX(var(--p, 0)); transform-origin: left; z-index: -1; }
+
+/* ---------- modo solo mirada (iPhone): sin gestos de ceja ni mandíbula ---------- */
+/* las pistas de gestos no aplican: se ocultan y las tarjetas ganan esa altura */
+body.gaze-only .hint { display: none; }
+/* relleno de fondo mientras se mantiene la mirada (como en la demo): más visible que el anillo */
+body.gaze-only .t.focus::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: rgba(10, 132, 255, .2); transform: scaleX(var(--p, 0)); transform-origin: left;
+}
+:root[data-theme="light"] body.gaze-only .t.focus::after { background: rgba(0, 122, 255, .14); }
+body.gaze-only .badge { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.gaze-only .t.focus::after { transform: none; opacity: var(--p, 0); }
+}
+
+/* escribir (opción A): fila fija de sugerencias + letras + acciones, en una sola cuadrícula de 20 columnas
+   (4 tarjetas por fila = 5 columnas cada una; 5 grupos de letras = 4 columnas cada uno) */
+/* filas de arriba y abajo (bordes de la pantalla) algo más altas que la del medio (centro, más preciso) */
+.kbrows { flex: 1; display: grid; grid-template-rows: 1.05fr .95fr 1fr; gap: 20px; min-height: 0; }
+.kbrow { display: grid; gap: 20px; min-height: 0; }
+.kbrow.c4 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.kbrow.c5 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
+.kbrows .key { font-size: 64px; }
+.kbrows .key.small { font-size: 44px; }
+.key.sug { font-size: 56px; letter-spacing: -.02em; background: rgba(48, 209, 88, .12); }
+.key.sug.best { box-shadow: inset 0 0 0 3px rgba(48, 209, 88, .55); }
+.key.sug.ghost { background: transparent; border-style: dashed; font-size: 30px; color: var(--txt3); }
+:root[data-theme="light"] .key.sug { background: rgba(52, 199, 89, .12); }
+/* con la fila fija, la línea "Sugerencias: …" bajo el texto sobra: más alto para las tarjetas */
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline { min-height: 96px; padding: 10px 40px; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .pred { display: none; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .txt { min-height: 0; }
+
+/* ---------- bordes más grandes ----------
+   Error de la mirada por zona (27 calibraciones reales, plano lineal): centro 2,2°, bordes ~2,7°,
+   esquinas 5,2° (×2,3). Por eso las columnas de los extremos son más anchas que las del centro:
+   crecen sobre todo las tarjetas de las esquinas, sin que las del centro bajen de lo necesario. */
+:root { --edge: 1.2fr; }
+.grid4x2 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.grid5x2 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
+.grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
+/* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
+.key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
