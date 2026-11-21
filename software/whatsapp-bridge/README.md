@@ -27,3 +27,11 @@ La configuración `.env` y los perfiles locales deben vivir en esta carpeta. Si 
 La TV usa `software/toki-os/woki-voz.js` para hablar por el puente y, si falla o no hay red, vuelve a la voz del sistema. `software/toki-os/voz.html` es el onboarding de voz para la familia. Guía completa: [GUIA-ELEVENLABS.md](../../docs/product/GUIA-ELEVENLABS.md).
 
 `voz.json` (voz elegida), `history.json` y `qr.html` son estado local y están en `.gitignore`.
+
+## Agente con memoria
+
+Las sugerencias del chat y las menciones en grupos pasan primero por el agente de `software/agent/`: memoria de la usuaria, límites por persona y últimos encuentros. Si el agente no está, todo sigue con `sugerir.ts`. Detalle en `software/agent/INTEGRACION-PUENTE.md`.
+
+- `AGENT_URL`: por defecto `http://127.0.0.1:8790`.
+- `AGENT=off`: apaga el agente.
+- `WOKI_ME_IDS`: solo para pruebas en modo `dry`, el número propio para detectar menciones sin wapi.

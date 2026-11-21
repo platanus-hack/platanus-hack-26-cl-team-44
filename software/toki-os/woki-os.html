@@ -713,6 +713,7 @@ function waAddMsg(cid,m){
   if(WA.to && WA.to.id===cid) renderChat();
 }
 async function waLoadHistory(cid){
+  if(String(cid).startsWith('g:')){ if(WA.to && WA.to.id===cid) renderChat(); return; }   // grupo: el historial lo trae la mención
   try{ const j=await waApi('/api/wa/history?contactId='+encodeURIComponent(cid)); WA.hist[cid]=j.messages||[]; }catch(_){}
   if(WA.to && WA.to.id===cid) renderChat();
 }
@@ -834,12 +835,22 @@ async function kbExpand(){
   go('talk');
 }
 
-// Mención en un grupo: solo aviso. WOKI no responde en grupos.
+// Mención en un grupo. Si el grupo tiene un disparador activo, el agente manda opciones y el grupo
+// se abre como un chat más: se responde con la misma confirmación de doble ceja. Si no, solo aviso.
 function waMention(ev){
   WA.mention={...ev, at:Date.now()};
   beep(988,140,.05); setTimeout(()=>beep(1318,160,.05),170);
-  island('@',`${ev.from} te mencionó en «${ev.group}»: ${ev.text}`,false,10000);
-  log(`mención en «${ev.group}»`); renderStatus();
+  island('@',`${ev.from} te mencionó en «${ev.group}»: ${ev.resumen||ev.text}`,false,10000);
+  log(`mención en «${ev.group}»${ev.opciones?' · el agente preparó respuestas':''}`); renderStatus();
+  if(!(ev.opciones && ev.opciones.length && ev.groupJid)) return;
+  const g={id:'g:'+ev.groupJid, name:ev.group, relation:'grupo', phone:'', group:ev.groupJid, mention:ev.mentionJid||''};
+  const mid='mention-'+WA.mention.at;
+  WA.hist[g.id]=[{id:mid, dir:'in', text:`${ev.from}: ${ev.text}`, at:WA.mention.at}];
+  WA.sug[g.id]={key:mid, list:ev.opciones};
+  const busy=S.alarm || S.rest || $('#calib').classList.contains('on') || document.body.classList.contains('panel') || (S.screen==='agent' && S.agentPending);
+  if(busy) return;                                                          // nunca interrumpe una alarma ni una confirmación en curso
+  waStart(g,{text:ev.text, key:mid});
+  setCtx(`${ev.from} te mencionó en ${ev.group}`, initial(ev.from), ev.text, CTX0.ph, faceOf({name:ev.from}));
 }
 const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
 
@@ -895,7 +906,8 @@ async function waSend(){
   if(WA.sending) return; WA.sending=true;
   island('…',`Enviando a ${c.name}…`,false,0);
   try{
-    const j=await waApi('/api/wa/send',{method:'POST',body:JSON.stringify({contactId:c.id,text:WA.text,idemKey:WA.idem})});
+    const msg = c.group ? {groupJid:c.group, mention:c.mention, text:WA.text, idemKey:WA.idem} : {contactId:c.id, text:WA.text, idemKey:WA.idem};
+    const j=await waApi('/api/wa/send',{method:'POST',body:JSON.stringify(msg)});
     WA.lastMsg={id:j.msgId,name:c.name};
     island('✓', j.dry? `Enviado a ${c.name} (prueba)` : `Enviado a ${c.name}`); MEM.add(WA.text); log('WhatsApp → '+c.name);
     go('home');

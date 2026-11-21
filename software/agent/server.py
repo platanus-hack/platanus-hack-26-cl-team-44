@@ -192,7 +192,8 @@ class Handler(BaseHTTPRequestHandler):
                 r = ejecutar(c, p, texto, historial=historial, modo=modo)
             finally:
                 c.close()
-            print(f"[sugerir] {modo} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
+            motivos = ", ".join(d["motivo"] for d in r["descartadas"]) or "ninguna"
+            print(f"[sugerir] {modo} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms · descartadas: {motivos}", flush=True)
             return self._json(200, r)
 
         if self.path == "/api/grupo":
@@ -207,7 +208,8 @@ class Handler(BaseHTTPRequestHandler):
                 emitir({"tipo": "opciones", "id": body.get("id") or uuid.uuid4().hex[:8], "canal": "grupo",
                         "texto": r["texto"], "etiqueta": f"{r['autor']} te mencionó en {r['grupo_nombre']}",
                         "inicial": r["autor"][:1].upper(), **r})
-                print(f"[grupo] mención en {r['grupo_nombre']} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
+                motivos = ", ".join(d["motivo"] for d in r["descartadas"]) or "ninguna"
+                print(f"[grupo] mención en {r['grupo_nombre']} · {r['origen']} · {r['meta'].get('ms_total')} ms · descartadas: {motivos}", flush=True)
             return self._json(200, r)
 
         if self.path == "/api/disparadores/estado":

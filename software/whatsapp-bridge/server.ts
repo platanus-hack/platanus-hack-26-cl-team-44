@@ -5,6 +5,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
 import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
 import { sugOn, suggestReplies, expandInitials, type Sug, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
+import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente con memoria (software/agent); si no está, sigue sugerir.ts
 
 // ---------- configuración ----------
 type Mode = "off" | "dry" | "sandbox" | "live";
@@ -117,7 +118,10 @@ function suggestFor(cid: string, ini = "", extra = ""): Promise<Sug[]> {
   const k = `${cid}|${lastId(cid)}|${ini}|${extra}`;
   const hit = sugCache.get(k); if (hit && Date.now() - hit.at < 10 * 60_000) return Promise.resolve(hit.list);
   if (sugBusy.has(k)) return sugBusy.get(k)!;
-  const p = (ini ? expandInitials(c.name, c.relation, linesOf(cid), ini) : suggestReplies(c.name, c.relation, linesOf(cid), extra))
+  // Primero el agente con memoria; si no está o no respondió, suggestReplies de siempre. Con contexto del acompañante, directo a sugerir.ts.
+  const replies = () => extra ? suggestReplies(c.name, c.relation, linesOf(cid), extra)
+    : agenteChat(c.phone, c.name, linesOf(cid)).then((l) => l.length ? l : suggestReplies(c.name, c.relation, linesOf(cid), extra));
+  const p = (ini ? expandInitials(c.name, c.relation, linesOf(cid), ini) : replies())
     .then((list) => { if (list.length) sugCache.set(k, { at: Date.now(), list }); if (sugCache.size > 200) sugCache.delete(sugCache.keys().next().value!); return list; })
     .catch((e) => { console.log(`[sugerir] sin respuesta de Claude (${e.message})`); return [] as Sug[]; })
     .finally(() => sugBusy.delete(k));
@@ -137,7 +141,8 @@ const contextOf = (m: any): any => {
 // ---------- menciones en grupos (solo aviso: WOKI no responde en grupos) ----------
 let me: { ids: Set<string> } = { ids: new Set() }; // mi número y mi LID, sin dominio
 async function loadMe() {
-  if (!wapi) return;
+  // Sin wapi (modo dry) se puede probar la mención con WOKI_ME_IDS=<número>,<lid>
+  if (!wapi) { me = { ids: new Set((process.env.WOKI_ME_IDS ?? "").split(",").map((x) => digits(x)).filter(Boolean)) }; return; }
   try {
     const u = await wapi.user();
     me = { ids: new Set([user(u.id), u.lid ? user(u.lid) : ""].filter(Boolean)) };
@@ -238,7 +243,8 @@ const server = http.createServer(async (req, res) => {
   // TV → enviar
   if (req.method === "POST" && url.pathname === "/api/wa/send") {
     if (MODE === "off") return json(res, 503, { ok: false, reason: "WhatsApp apagado" });
-    const { contactId, text, idemKey } = JSON.parse((await readBody(req)) || "{}");
+    const { contactId, groupJid, mention, text, idemKey } = JSON.parse((await readBody(req)) || "{}");
+    if (groupJid) return sendGroup(res, String(groupJid), String(text ?? "").trim(), idemKey, mention ? String(mention) : "");
     const c = byId.get(contactId);
     const body = String(text ?? "").trim();
     if (!c) return json(res, 403, { ok: false, reason: "Contacto fuera de la lista" });
@@ -411,15 +417,56 @@ function handleEvent(raw: string) {
   prefetchSuggest(c.id);                                                     // las respuestas de Claude llegan por SSE ("suggest")
 }
 
+// El autor de un mensaje de grupo: teléfono si es un contacto principal o si el JID trae el número.
+function authorPhone(participant?: string, alt?: string): string {
+  const ids = [participant, alt].filter(Boolean).map((j) => user(j));
+  const fav = contacts.find((c) => ids.includes(digits(c.phone)) || (c.lid && ids.includes(c.lid)));
+  if (fav) return "+" + digits(fav.phone);
+  const pn = [participant, alt].find((j) => String(j ?? "").endsWith("@s.whatsapp.net"));
+  return pn ? "+" + user(pn) : "";
+}
+
 async function handleGroup(key: any, m: any, pushName?: string) {
   if (!me.ids.size) return;
+  const raw = textOf(m).trim(); if (!raw) return;
   const mentioned: string[] = (contextOf(m)?.mentionedJid ?? []).map((j: string) => user(j));
-  if (!mentioned.some((id) => me.ids.has(id))) return;
-  const [group, from] = await Promise.all([groupName(String(key.remoteJid)), personName(key.participant ?? key.participantAlt, pushName)]);
-  let text = textOf(m);
+  const isMention = mentioned.some((id) => me.ids.has(id));
+  let text = raw;
   for (const id of me.ids) text = text.split("@" + id).join("@Tú");          // "@573…" → "@Tú"
+  const jid = String(key.remoteJid);
+  const participant = key.participant ?? key.participantAlt;
+  // El agente decide: solo procesa grupos con un disparador activo y guarda el contexto en su memoria (no en disco).
+  if (!isMention) { void agenteGrupo({ id: key.id, grupo_jid: jid, autor_tel: authorPhone(key.participant, key.participantAlt), autor_nombre: pushName, texto: text, menciona: false }); return; }
+  const [group, from] = await Promise.all([groupName(jid), personName(participant, pushName)]);
   console.log(`[mención] en un grupo`);                                       // sin nombres ni texto en el log
-  emit({ type: "mention", group, from, text: text.slice(0, 280), at: Date.now() });
+  const r = await agenteGrupo({ id: key.id, grupo_jid: jid, grupo_nombre: group === "un grupo" ? null : group,
+    autor_tel: authorPhone(key.participant, key.participantAlt), autor_nombre: from, texto: text, menciona: true });
+  const extra = r?.accion === "mencion"
+    ? { groupJid: jid, mentionJid: participant, resumen: r.resumen, ultimo: r.ultimo_encuentro, opciones: r.opciones }
+    : {};
+  emit({ type: "mention", group: r?.grupo_nombre || group, from, text: text.slice(0, 280), at: Date.now(), ...extra });
+}
+
+// Responder en un grupo: solo si el agente tiene un disparador activo para ese grupo. Mismos límites que un chat.
+async function sendGroup(res: http.ServerResponse, jid: string, body: string, idemKey: string, mention: string) {
+  if (!jid.endsWith("@g.us")) return json(res, 400, { ok: false, reason: "No es un grupo" });
+  if (!(await grupoActivo(jid))) return json(res, 403, { ok: false, reason: "Ese grupo no tiene un disparador activo" });
+  if (!body || body.length > MAX_LEN) return json(res, 400, { ok: false, reason: "Texto vacío o muy largo" });
+  if (!idemKey || usedIdem.has(idemKey)) return json(res, 409, { ok: false, reason: "Este mensaje ya se envió" });
+  const q = quotaOk(); if (q) return json(res, 429, { ok: false, reason: q });
+  usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
+  if (MODE === "dry") {
+    console.log(`[dry] → grupo: ${body}`);
+    return json(res, 200, { ok: true, msgId: -1, dry: true });
+  }
+  try {
+    const sent = await wapi!.messages.send({ to: jid, text: body, ...(mention ? { mentions: [mention] } : {}) });
+    console.log(`[send] grupo msgId=${sent.msgId}`);
+    return json(res, 200, { ok: true, msgId: sent.msgId });
+  } catch (e: any) {
+    console.error("[send] grupo error", e?.status, e?.message);
+    return json(res, 502, { ok: false, reason: "wapi no confirmó el envío. Revisa el celular antes de reintentar" });
+  }
 }
 
 await resolveLids();

@@ -1,91 +1,59 @@
-# Conectar el puente de WhatsApp con el agente
+# Puente de WhatsApp + agente: cómo corre
 
-Para la versión del puente de Emmy (`woki-bridge` con `sugerir.ts`, historial y menciones).
-El agente corre en el mismo Mac, en `http://127.0.0.1:8790`. Las llamadas son de servidor a servidor, sin `Origin`. Todas llevan `Content-Type: application/json`.
+Estado: integrado en la rama `feat/agente-whatsapp`, probado en modo `dry` con webhooks firmados y con la TV en el navegador.
 
-## Qué cambia y qué no
+## Qué hace cada pieza
 
-- **No cambia:** wapi, el webhook, la lista blanca, el historial, los límites de envío ni la seguridad de `server.ts`.
-- **Cambia:** las sugerencias pasan primero por el agente, que usa la memoria, los límites por persona y los últimos encuentros. Si el agente falla o tarda más de 12 s, el puente usa el `claude -p` de hoy.
-- **Nuevo:** los mensajes de grupo se le pasan al agente. El agente decide si el grupo tiene un disparador activo, guarda el contexto en memoria y prepara respuestas cuando mencionan a la usuaria.
+| Pieza | Archivo | Qué hace |
+|---|---|---|
+| Cliente del agente | `software/whatsapp-bridge/agente.ts` | Llama al agente en `http://127.0.0.1:8790`. Si el agente no está, falla o tarda, devuelve vacío y todo sigue como antes |
+| Chat 1 a 1 | `suggestFor()` en `server.ts` | Primero el agente (`/api/sugerir`, modo `chat`, 6 respuestas). Si no hay respuesta del modelo, `suggestReplies()` de `sugerir.ts`. Con contexto del acompañante, directo a `sugerir.ts` |
+| Mensajes de grupo | `handleGroup()` en `server.ts` | Todo mensaje de texto de grupo va a `/api/grupo`. El agente solo procesa grupos con un disparador activo y guarda el contexto en su memoria, nunca en disco. Con mención, el evento `mention` lleva `resumen`, `opciones`, `groupJid` y `mentionJid` |
+| Responder en el grupo | `sendGroup()` en `server.ts` | `/api/wa/send` con `groupJid` solo si el agente tiene un disparador activo para ese grupo. Mismos límites que un chat: idempotencia, 30 por día y 5 s entre envíos. Etiqueta a quien preguntó |
+| TV | `waMention()` y `waSend()` en `woki-os.html` | Con opciones, el grupo se abre como un chat más ("Pedro te mencionó en Familia"). Se responde con la confirmación de siempre (doble ceja). Sin opciones, queda el aviso de antes |
 
-## Cambio 1 · `sugerir.ts`: sugerencias del chat 1 a 1
+## Encender todo (Mac del demo)
 
-Antes de lanzar `claude -p` en `suggestReplies`:
-
-```ts
-const r = await fetch("http://127.0.0.1:8790/api/sugerir", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    modo: "chat",
-    telefono: contacto.phone,                 // el mismo de profile.json
-    texto: ultimoMensajeRecibido,
-    historial: ultimos14.map(m => `${m.dir === "in" ? contacto.name : "Yo"}: ${m.text}`),
-  }),
-  signal: AbortSignal.timeout(12_000),
-});
-// Respuesta: { origen: "agente" | "reglas", resumen, ultimo_encuentro, opciones: [{text, tone, emo, fuentes}] }
-// Si origen === "agente", usar opciones como suggestions (mismas claves text, tone, emo).
-// Si falla, tarda o origen === "reglas", seguir con claude -p como hoy.
+```bash
+# 1. wapi y el puente, como dice docs/product/GUIA-WAPI-SELF-HOST.md
+# 2. Agente (necesita Claude Code con sesión iniciada)
+software/agent/.venv/bin/python software/agent/server.py          # :8790
+# 3. TV
+python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
 ```
 
-`modo: "chat"` devuelve 6 opciones de hasta 8 palabras, con las emociones de la TV (`ironica`, `alegre`, `carinosa`, `susurro`, `seria`, `entusiasta`).
-
-## Cambio 2 · `server.ts`: mensajes de grupo
-
-En `handleEvent`, para **todo mensaje de texto de grupo** (con o sin mención), en vez de descartarlo:
-
-```ts
-const r = await fetch("http://127.0.0.1:8790/api/grupo", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    id: key.id,
-    grupo_jid: key.remoteJid,                 // ...@g.us
-    grupo_nombre: nombreDelGrupo,             // de la metadata del grupo, si está en caché
-    autor_tel: telefonoDelAutor,              // key.participant resuelto de LID a teléfono
-    autor_nombre: pushName,
-    texto,
-    menciona,                                 // el cálculo actual con mentionedJid y loadMe()
-  }),
-}).then(r => r.json());
-// r.accion: "ignorar" (grupo sin disparador activo) | "guardado" | "repetido" | "mencion"
-// Con "mencion": emitir el evento SSE "mention" de siempre, agregando
-//   r.resumen, r.ultimo_encuentro, r.opciones (4, la última es "Después te respondo") y r.grupo_jid.
-```
-
-- El puente sigue sin guardar mensajes de grupo. El agente guarda los últimos 30 de los grupos activos, solo en memoria.
-- La llamada puede tardar de 5 a 8 s con mención. El webhook ya responde 200 antes de procesar, así que no bloquea.
-
-## Cambio 3 · enviar al grupo
-
-`/api/wa/send` acepta también `{groupJid, text, idemKey, mencionar?}`:
-
-- Solo si `groupJid` tiene un disparador activo. Se consulta `GET http://127.0.0.1:8790/api/disparadores`.
-- Envía con `wapi.messages.send({ to: groupJid, text, mentions: [jidDelAutor] })`, así la respuesta etiqueta a quien preguntó.
-- Mantiene la idempotencia, el tope diario y los 5 s entre envíos.
-- **Falta verificar** que wapi acepte un JID de grupo en `to`. Hay que probarlo con el grupo de prueba.
-
-## Cambio 4 · TV
-
-- **Aviso de mención:** muestra el resumen, el último encuentro y las 4 opciones. Elegir una abre la confirmación de siempre (`openAgent`), con el grupo como destinatario. Se envía con doble ceja.
-- **Aprobar el disparador:** al iniciar, si `GET /api/disparadores` trae uno en `pendiente`, la TV muestra "¿Activar: avisarme si me etiquetan en Familia?". La ceja manda `POST /api/disparadores/estado {id, estado: "activo"}`. Mientras no se apruebe, el agente ignora ese grupo. Para probar sin la TV, el modo dev (`?dev=1`) ya tiene el botón Aprobar.
+Variables del puente: `AGENT_URL` (por defecto `http://127.0.0.1:8790`) y `AGENT=off` para volver al comportamiento anterior.
 
 ## Datos locales del demo (fuera de git)
 
 | Archivo | Contenido |
 |---|---|
 | `software/agent/data/semilla.json` | Emmy, sus contactos con los **mismos teléfonos** de `profile.json`, temas, límites y memorias. Se carga con `python3 software/agent/scripts/semilla.py` |
-| `software/agent/data/disparadores.json` | El disparador del grupo de prueba con su `grupo_jid` real, `audiencia` y `miembros` con límites |
+| `software/agent/data/disparadores.json` | El disparador del grupo de prueba con su `grupo_jid` real, `audiencia` y `miembros` con límites. Nace en `pendiente` |
 
 El teléfono es la llave entre `profile.json` del puente y la memoria del agente.
 
 ## Probar sin WhatsApp
 
+Puente en modo `dry`, con un número propio de prueba para detectar la mención:
+
 ```bash
-curl -s -H 'Content-Type: application/json' http://127.0.0.1:8790/api/sugerir \
-  -d '{"modo":"chat","telefono":"+56900000001","texto":"¿Te llevo al parque a las 4?"}'
-curl -s -H 'Content-Type: application/json' http://127.0.0.1:8790/api/grupo \
-  -d '{"id":"x1","grupo_jid":"120363000000000000@g.us","autor_tel":"+56900000001","texto":"@Ana ¿vienes?","menciona":true}'
+cd software/whatsapp-bridge
+WA_MODE=dry PORT=8788 PROFILE=profile.json WAPI_WEBHOOK_SECRET=prueba WOKI_ME_IDS=<tu número sin +> npx tsx server.ts
 ```
+
+Después se manda un webhook firmado (HMAC-SHA256 del cuerpo con `WAPI_WEBHOOK_SECRET`, en el header `x-webhook-signature`), como explica `docs/product/GUIA-WAPI-PASO-A-PASO.md`. La mención lleva `contextInfo.mentionedJid` con `<tu número>@s.whatsapp.net`.
+
+## Medido el 21-nov-2026 (modo dry, ejemplo ficticio)
+
+| Caso | Resultado |
+|---|---|
+| Chat 1 a 1 | 6 respuestas del agente en 4,7 a 5,2 s, 0 descartadas |
+| Mención con disparador activo | Resumen y 3 respuestas de 6 a 8 palabras en 4,4 a 5,5 s. Usaron el contexto que otra persona había escrito antes en el grupo |
+| Grupo con disparador pendiente | Ignorado, sin guardar nada |
+| Enviar a un grupo sin disparador | `403 Ese grupo no tiene un disparador activo` |
+| TV | Mención → tarjetas → "Responder a Familia" → "✓ Enviado a Familia (prueba)" |
+
+## Sin verificar
+
+- Que wapi acepte un JID de grupo en `to` y `mentions` en un envío real. Hay que probarlo con el grupo de prueba antes del demo.
