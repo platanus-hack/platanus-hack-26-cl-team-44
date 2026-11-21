@@ -1,10 +1,9 @@
 # Agente y memoria de Toki
 
-Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 2 piezas:
+Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 3 piezas:
 
 - **Memoria mínima.** SQLite con los 5 tipos del plan de Emmy, filtro de privacidad por interlocutor, límites duros por persona y revisión de las opciones del modelo.
 - **Agente de 1 turno.** Recibe un mensaje y devuelve un resumen y 4 opciones con emoción y fuente. Usa `claude-agent-sdk` con la sesión de Claude Code de la máquina.
-
 - **Servidor con SSE y modo dev en la TV.** Simula un mensaje del grupo o de la sala y muestra las opciones en la pantalla Hablar.
 
 Todavía no trae puente de WhatsApp, voz ni escucha.
