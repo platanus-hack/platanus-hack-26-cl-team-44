@@ -16,6 +16,8 @@ dpkg -s python3-venv >/dev/null 2>&1 || apt-get install -y -qq python3-venv
 id toki >/dev/null 2>&1 || useradd -m -s /bin/bash toki
 
 mkdir -p "$BASE"
+# El repo es del usuario toki; root lo actualiza sin el error "dubious ownership".
+git config --system --get-all safe.directory 2>/dev/null | grep -qx "$BASE/repo" || git config --system --add safe.directory "$BASE/repo"
 if [ ! -d "$BASE/repo/.git" ]; then
   git clone -q "$REPO_URL" "$BASE/repo"
 fi
