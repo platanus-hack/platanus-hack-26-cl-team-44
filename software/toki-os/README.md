@@ -1,6 +1,25 @@
 # Toki OS
 
-Interfaz de Emmy. Para probar con mouse o con los MyoWare:
+La pantalla principal tiene cinco tarjetas: **Hablar, Mensajes, Compañía, Servicios y Juegos**. La primera vez pide elegir el control. En las visitas siguientes recuerda la preferencia.
+
+Desde la raíz del repositorio, con Node 22 o posterior:
+
+```bash
+npm ci --prefix software/apps-bridge
+npm start --prefix software/apps-bridge
+```
+
+[Abrir Toki OS](http://127.0.0.1:8790/) · [Volver a elegir mirada, nariz o mouse](http://127.0.0.1:8790/?acceso=elegir)
+
+| HTML | Uso en el proyecto |
+|---|---|
+| [index.html](index.html) | Entrada principal que sirve `/`. Edita aquí el HTML de inicio. |
+| `prototype-lobby.html` | Redirección para enlaces guardados. |
+| `woki-os.html` | Calibración integrada en el inicio y banco independiente de gestos MyoWare y mirada con iPhone. |
+| `prototype-motion.html` | Catálogo que se abre dentro de Juegos y laboratorio de movimiento. |
+| `prototype-ela.html` | Exploración de diseño anterior. |
+
+## Banco de pruebas
 
 ### Demo sin sensor
 

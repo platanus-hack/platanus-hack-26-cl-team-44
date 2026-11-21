@@ -1,6 +1,6 @@
 # Sesión Toki con control de juegos externos
 
-Desde el [lobby de Toki](http://127.0.0.1:8790/prototype-lobby.html?start=games&acceso=elegir), el catálogo usa el control elegido en la tablet. Al seleccionar una partida con Nariz o Mirada, el servidor local abre una ventana de Chrome para jugar. Recupera la calibración y el tiempo de permanencia mediante un intercambio local de un solo uso. Chrome puede pedir permiso para usar la cámara en la ventana de juego. El mouse funciona directamente en el catálogo y la partida.
+Desde el [lobby de Toki](http://127.0.0.1:8790/?start=games&acceso=elegir), el catálogo usa el control elegido en la tablet. Al seleccionar una partida con Nariz o Mirada, el servidor local abre una ventana de Chrome para jugar. Recupera la calibración y el tiempo de permanencia mediante un intercambio local de un solo uso. Chrome puede pedir permiso para usar la cámara en la ventana de juego. El mouse funciona directamente en el catálogo y la partida.
 
 El lanzador requiere macOS, Google Chrome y Node 22+. Inicia el servidor como indica [el puente de aplicaciones](../apps-bridge/README.md). Para probar el prototipo independiente en `http://localhost:8000`, también puedes iniciar el puente manualmente.
 

@@ -29,6 +29,21 @@ async function setup(t, extra={}) {
 }
 async function settled(api,id){for(let i=0;i<80;i++){const job=(await api('jobs')).data.jobs.find(j=>j.id===id);if(job.status!=='preparing')return job;await new Promise(r=>setTimeout(r,10));}throw Error('Job did not settle');}
 
+test('the OS opens at the root and old lobby bookmarks keep their launch options', async t => {
+  const {base} = await setup(t);
+  const home = await fetch(base + '/');
+  assert.equal(home.status, 200);
+  const document = await home.text();
+  assert.match(document, /id="access-chooser"/);
+  assert.match(document, /src="prototype-lobby\.js/);
+  assert.equal(await (await fetch(base + '/index.html')).text(), document);
+
+  const query = '?start=games&v=27&acceso=elegir';
+  const bookmark = await fetch(base + '/prototype-lobby.html' + query, {redirect: 'manual'});
+  assert.equal(bookmark.status, 302);
+  assert.equal(bookmark.headers.get('location'), '/' + query);
+});
+
 test('the lobby server serves the bundled iPhone calibration presets', async t => {
   const {base} = await setup(t);
   const index = await fetch(base + '/presets/index.json');

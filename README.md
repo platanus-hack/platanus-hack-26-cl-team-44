@@ -15,22 +15,23 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes exp
 
 ## Probarlo
 
-| Experiencia | Dirección | Requisitos |
-|---|---|---|
-| Lobby accesible de Toki | [Elegir mirada, nariz o mouse](http://127.0.0.1:8790/prototype-lobby.html?acceso=elegir) | Node 22+ y el [servidor local de Toki](software/apps-bridge/README.md) |
-| MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
-| Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+; [UNO por USB o dos MyoWare por BLE](software/myoware-monitor/README.md) |
-| Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Eye Tracking; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
-| Demo de eye-tracking | http://localhost:5173 | Node 18+; `node software/eye-tracking/web/serve.mjs` |
-| Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
-
-**MVP sin hardware**, desde la raíz:
+**Toki OS** abre la pantalla con Hablar, Mensajes, Compañía, Servicios y Juegos. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
 
 ```bash
-python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
+npm ci --prefix software/apps-bridge
+npm start --prefix software/apps-bridge
 ```
 
-Abrir la URL del MVP y elegir **Usar mouse (demo)**. El archivo conserva su nombre histórico para no romper los enlaces del equipo.
+Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En el primer inicio elige Mirada, Nariz o Mouse. Para desarrollar la pantalla principal, edita [software/toki-os/index.html](software/toki-os/index.html).
+
+### Herramientas de prueba
+
+| Experiencia | Dirección | Requisitos |
+|---|---|---|
+| Banco de gestos MyoWare y mirada con iPhone | [Guía de pruebas](software/toki-os/README.md#banco-de-pruebas) | Mouse para simular gestos, sensores o iPhone para probar la entrada física |
+| Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+; [UNO por USB o dos MyoWare por BLE](software/myoware-monitor/README.md) |
+| Demo de eye-tracking | http://localhost:5173 | Node 18+; `node software/eye-tracking/web/serve.mjs` |
+| Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
 
 **Monitor con hardware**, después de seguir la [guía de conexión](docs/validation/MYOWARE.md):
 
@@ -68,7 +69,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 
 | Carpeta | Contenido |
 |---|---|
-| [software/](software/) | SO de Emmy, demo de eye-tracking con iPhone, monitor muscular y puente WhatsApp |
+| [software/](software/) | Toki OS, demo de eye-tracking con iPhone, monitor muscular y puente WhatsApp |
 | [firmware/](firmware/) | Programa del Arduino UNO |
 | [hardware/](hardware/) | Conexiones, esquemas, Raspberry e impresión 3D |
 | [docs/](docs/) | Guías, planes, investigación y requisitos del concurso |
@@ -81,7 +82,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 | Firmware A0 para UNO/ATmega328P | Compilado y cargado en el UNO del equipo |
 | USB → monitor local | Se recibieron muestras reales; visualización en Chrome |
 | Respuesta muscular | Se observaron variaciones; falta separar contracción de artefactos y confirmar ENV |
-| SO accesible | MVP heredado de `woki-ux-prototipo`; no validado clínicamente |
+| SO accesible | Inicio de cinco tarjetas con acceso por mouse, nariz o mirada. En validación. |
 | Mirada con iPhone (Face ID) | Calibración de 13+5 puntos; en el SO, 2,9° de error medio y 5,3° en el peor caso (24 calibraciones del equipo, puntos no vistos); sin movimiento de cabeza |
 | EMG → atajos en el SO | Integrado con calibración; rueda y SOS simulados probados sin hardware. Falta validar los gestos sostenidos sobre el cuerpo. |
 | WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |

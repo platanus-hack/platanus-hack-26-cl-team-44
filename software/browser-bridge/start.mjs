@@ -24,7 +24,7 @@ const token=randomBytes(32).toString('hex');
 function gameURL(id) {
  const hash=new URLSearchParams({tokiBridge:token,bridgePort:String(server.address().port)});
  if(id) hash.set('partida',id);
- return origin+(id?'/prototype-lobby.html?start=games&sesion='+Date.now():'/prototype-motion.html?motion=spatial')+'#'+hash;
+ return origin+(id?'/?start=games&sesion='+Date.now():'/prototype-motion.html?motion=spatial')+'#'+hash;
 }
 const chrome=process.env.TOKI_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const gameDirectory=process.env.TOKI_BRIDGE_SESSION_DIR || join(homedir(),'Library','Application Support','Toki','juegos',String(gamePort));
@@ -68,7 +68,7 @@ const server=http.createServer(async(req,res)=>{
   busy=true;
   const info=await cdp('Target.getTargetInfo',{targetId});
   const page=new URL(info.targetInfo.url);
-  if(page.origin!==origin || page.pathname!==(handoff?'/prototype-lobby.html':'/prototype-motion.html'))throw Error('Toki tab navigated away');
+  if(page.origin!==origin || page.pathname!==(handoff?'/':'/prototype-motion.html'))throw Error('Toki tab navigated away');
   await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y},sessionId);
   if(p.type==='click'){
    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,x:p.x,y:p.y},sessionId);

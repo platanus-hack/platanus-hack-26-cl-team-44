@@ -16,7 +16,7 @@ for(let i=0;i<600;i++){
   const line=`${current.stage}/5 · ${current.message}`;
   if(line!==previous){console.log(line);previous=line;}
   if(!['queued','preparing'].includes(current.status)){
-    console.log(`Abrir Servicios: ${base}/prototype-lobby.html?start=apps`);
+    console.log(`Abrir Servicios: ${base}/?start=apps`);
     console.log(`Estado: ${current.status}. La prueba personal no se completa automáticamente.`);
     process.exitCode=['needs_test','ready'].includes(current.status)?0:1;break;
   }

@@ -167,7 +167,12 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       }
       if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
       if (req.method !== 'GET' && req.method !== 'HEAD') throw fault('Método no permitido.', 405);
-      const path = resolve(site, '.' + decodeURIComponent(url.pathname === '/' ? '/prototype-lobby.html' : url.pathname));
+      if (url.pathname === '/prototype-lobby.html') {
+        res.writeHead(302, {Location: '/' + url.search, 'Cache-Control': 'no-store'});
+        res.end();
+        return;
+      }
+      const path = resolve(site, '.' + decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname));
       const preset = /^\/presets\/[\w-]+\.json$/.test(url.pathname);
       if (!path.startsWith(site + '/') || (!preset && !['.html', '.js', '.css', '.svg', '.png', '.jpg', '.webp', '.woff2'].includes(extname(path)))) throw fault('No encontrado.', 404);
       const data = await readFile(path);
@@ -181,7 +186,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const port = Number(process.env.TOKI_APPS_PORT || 8790);
   const server = createAppsServer({stateDir: process.env.TOKI_APPS_STATE_DIR || defaultDir});
-  server.listen(port, '127.0.0.1', () => console.log(`Toki Apps: http://127.0.0.1:${server.address().port}/prototype-lobby.html?start=apps`));
+  server.listen(port, '127.0.0.1', () => console.log(`Toki OS: http://127.0.0.1:${server.address().port}/`));
   server.on('error', e => { console.error(e.code === 'EADDRINUSE' ? 'El servicio Apps ya está usando ese puerto.' : e.message); process.exitCode = 1; });
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.close(); server.closeAllConnections(); });
 }

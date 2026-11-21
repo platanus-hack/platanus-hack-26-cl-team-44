@@ -7,13 +7,13 @@ npm ci --prefix software/apps-bridge
 node software/apps-bridge/server.mjs
 ```
 
-Abre [la tienda](http://127.0.0.1:8790/prototype-lobby.html?start=apps). El lobby usa el controlador compartido de mirada/nariz y contracción muscular. El servidor existente en el puerto 8000 también puede conectar con este servicio.
+Abre [Servicios](http://127.0.0.1:8790/?start=apps). El lobby usa el controlador compartido de mirada/nariz y contracción muscular. El servidor existente en el puerto 8000 también puede conectar con este servicio.
 
 Requiere Node 22+, `spogo` en PATH y Spotify.app para el control local en macOS. La preparación comprueba esos requisitos. No instala programas desde solicitudes del navegador. BioBioChile solo requiere Internet; usa el RSS del medio y no necesita cuenta.
 
 ## Juegos
 
-Desde [Juegos](http://127.0.0.1:8790/prototype-lobby.html?start=games&acceso=elegir), elige Nariz, Mirada o Mouse. La selección con cámara abre la partida en una ventana de Chrome controlada por Toki. Permite la cámara si Chrome la solicita. La calibración se conserva al pasar del catálogo a la partida. Consulta los [detalles de la sesión de juegos](../browser-bridge/README.md).
+Desde [Juegos](http://127.0.0.1:8790/?start=games&acceso=elegir), elige Nariz, Mirada o Mouse. La selección con cámara abre la partida en una ventana de Chrome controlada por Toki. Permite la cámara si Chrome la solicita. La calibración se conserva al pasar del catálogo a la partida. Consulta los [detalles de la sesión de juegos](../browser-bridge/README.md).
 
 ## Spotify
 
@@ -44,9 +44,9 @@ Verificación del primer piloto: estado, pausa y reanudación reales comprobados
 
 ### Recorrido del paciente y configuración
 
-La entrada `prototype-lobby.html?start=apps` muestra hasta seis servicios por página. La paginación aparece a partir del séptimo. WhatsApp se encuentra en Mensajes. En Ajustes se puede cambiar la selección por permanencia. De forma inicial hay un segundo para explorar y dos para completar la selección. Solicitar una adaptación no exige escribir. Spotify abre el reproductor directamente y prepara el control local al entrar. Cada cinco segundos actualiza la canción, su portada y el estado desde Spotify.app mientras el reproductor está visible. Un único botón alterna entre reproducir y pausar. Siguiente canción usa la cola actual. Elegir música aparece al conectar la cuenta para buscar. El enlace directo es `prototype-lobby.html?start=spotify`. BioBioChile permite elegir titulares y leer extractos RSS por páginas, sin cuenta. YouTube, Rappi y Mercado Libre siguen pendientes de integración.
+La entrada `/?start=apps` muestra hasta seis servicios por página. La paginación aparece a partir del séptimo. WhatsApp se encuentra en Mensajes. En Ajustes se puede cambiar la selección por permanencia. De forma inicial hay un segundo para explorar y dos para completar la selección. Solicitar una adaptación no exige escribir. Spotify abre el reproductor directamente y prepara el control local al entrar. Cada cinco segundos actualiza la canción, su portada y el estado desde Spotify.app mientras el reproductor está visible. Un único botón alterna entre reproducir y pausar. Siguiente canción usa la cola actual. Elegir música aparece al conectar la cuenta para buscar. El enlace directo es `/?start=spotify`. BioBioChile permite elegir titulares y leer extractos RSS por páginas, sin cuenta. YouTube, Rappi y Mercado Libre siguen pendientes de integración.
 
-La configuración del equipo está en `prototype-lobby.html?start=apps&appsAdmin=1`: elegir Spotify y abrir su preparación para conectar la cuenta; después probar funciones y registrar la revisión. Este parámetro solo separa la presentación. No concede privilegios distintos ni sustituye una prueba con la persona.
+La configuración del equipo está en `/?start=apps&appsAdmin=1`: elegir Spotify y abrir su preparación para conectar la cuenta; después probar funciones y registrar la revisión. Este parámetro solo separa la presentación. No concede privilegios distintos ni sustituye una prueba con la persona.
 
 El shell UI/UX maneja mirada/nariz, confirmación muscular, pausa e Inicio. Apps usa botones nativos, no impone dwell. El laboratorio `prototype-motion.html` es una superficie anterior; el recorrido principal y las comprobaciones actuales usan el shell del lobby.
 
