@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SoyGazeApp: App {
+struct EyeTrackingApp: App {
     @StateObject private var model = AppModel()
     @Environment(\.scenePhase) private var scenePhase
 

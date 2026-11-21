@@ -1,17 +1,17 @@
-# Soy · demo de eye-tracking (iPhone TrueDepth → Mac)
+# Demo de eye-tracking con iPhone (TrueDepth → Mac)
 
 > En este repo la demo vive en `software/eye-tracking/`. Su motor (`web/js/`) también lo usa **Toki OS** como puntero "Mirada con iPhone", sin movimiento de cabeza: ver [software/toki-os](../toki-os/README.md#mirada-con-iphone-face-id).
 
 El iPhone funciona **solo como sensor**: corre ARKit Face Tracking (infrarrojo + profundidad + cámara frontal), sin dibujar nada, y envía 192 bytes por cuadro a 60 fps. El Mac hace todo lo demás en el navegador: calibración, selección automática del mejor modelo, suavizado y la demo.
 
 ```
-iPhone (SoyGaze, ARKit)  ──WebSocket :8788 (Wi-Fi)──▶  Navegador en el Mac (web/)
+iPhone (EyeTracking, ARKit)  ──WebSocket :8788 (Wi-Fi)──▶  Navegador en el Mac (web/)
  ojos · lookAt · cabeza · parpadeo                      calibra → valida → demo
 ```
 
 ## Usarlo
 
-1. **iPhone:** abre **Soy Gaze**. Anota la dirección que muestra, por ejemplo `192.168.1.23:8788`.
+1. **iPhone:** abre **Eye Tracking**. Anota la dirección que muestra, por ejemplo `192.168.1.23:8788`.
 2. **Mac:** `node software/eye-tracking/web/serve.mjs` y abre http://localhost:5173/?host=192.168.1.23:8788 (mejor en Chrome).
 3. Escribe la dirección del iPhone → **Conectar** → sigue la guía **Ubícate** → **Calibrar** (~30 s, en pantalla completa) → **Probar la demo**.
 
@@ -99,8 +99,8 @@ Tu Team ID de Apple y tu prefijo de identificador **no van en el repo**: se pasa
 ```bash
 cd software/eye-tracking/ios
 DEVELOPMENT_TEAM=TU_TEAM_ID BUNDLE_ID_PREFIX=com.tunombre xcodegen generate
-xcodebuild -project SoyGaze.xcodeproj -scheme SoyGaze -destination 'generic/platform=iOS' -derivedDataPath build -allowProvisioningUpdates build
-xcrun devicectl device install app --device <ID> build/Build/Products/Debug-iphoneos/SoyGaze.app
+xcodebuild -project EyeTracking.xcodeproj -scheme EyeTracking -destination 'generic/platform=iOS' -derivedDataPath build -allowProvisioningUpdates build
+xcrun devicectl device install app --device <ID> build/Build/Products/Debug-iphoneos/EyeTracking.app
 ```
 
 Requisitos: Modo desarrollador activado y el iPhone **desbloqueado** al instalar. La primera vez: Ajustes › General › VPN y gestión de dispositivos › confiar en tu certificado de desarrollador. Con equipo personal (gratis), la app caduca a los 7 días; se reinstala con el mismo comando.
@@ -131,7 +131,7 @@ Requisitos: Modo desarrollador activado y el iPhone **desbloqueado** al instalar
 | Síntoma | Causa probable | Solución |
 |---|---|---|
 | "No se pudo conectar" | Redes distintas o Wi-Fi con aislamiento de clientes | Misma red; o comparte Internet del iPhone por USB al Mac y usa la IP del puente |
-| La app dice "Esperando red… Red local" | Permiso de Red local denegado | Ajustes › Privacidad › Red local › Soy Gaze |
+| La app dice "Esperando red… Red local" | Permiso de Red local denegado | Ajustes › Privacidad › Red local › Eye Tracking |
 | "Señal perdida" | iPhone bloqueado o app en segundo plano | Desbloquéalo y deja la app abierta (no se autobloquea) |
 | Error alto en la calibración | Distancia, luz, reflejos o cabeza en movimiento | Sigue los checks de **Ubícate** y recalibra |
 | "iPhone caliente" | Funda, sol o carga inalámbrica | Quita la funda y usa cable |

@@ -28,7 +28,7 @@ final class AppModel: ObservableObject {
     private static let idleFPS = 30
     private static let idleGrace: Duration = .seconds(20)
     private static let dimmedBrightness: CGFloat = 0.05
-    private static let savedBrightnessKey = "soygaze.savedBrightness"
+    private static let savedBrightnessKey = "eyetracking.savedBrightness"
     private var savedBrightness: CGFloat?
     private var dimTask: Task<Void, Never>?
     private var batteryTimer: Timer?

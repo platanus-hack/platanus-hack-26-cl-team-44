@@ -121,5 +121,5 @@ createServer(async (req, res) => {
     send(res, notFound ? 404 : 500, { ok: false, error: notFound ? "No encontrado" : String(err.message ?? err) });
   }
 }).listen(PORT, "127.0.0.1", () => {
-  process.stdout.write(`Soy · demo de mirada en http://localhost:${PORT}  ·  logs en ${LOGS}\n`);
+  process.stdout.write(`Demo de eye-tracking con iPhone en http://localhost:${PORT}  ·  logs en ${LOGS}\n`);
 });

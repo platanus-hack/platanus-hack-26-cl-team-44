@@ -22,7 +22,7 @@ const resultRecalKey = createDoublePress(1500);
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const SCREENS = ["connect", "setup", "calib", "result", "demo"];
-const HOST_KEY = "soy-gaze-host";
+const HOST_KEY = "eyetracking-host";
 
 let current = "connect";
 let source = null;
@@ -68,7 +68,7 @@ installKeyGuard({
 let physicalPxPerMeter = null;
 // Puede haber varias pantallas (p. ej. un monitor externo): usamos la que coincide con esta ventana.
 // La escala es (resolución ACTUAL de esta pantalla) / (ancho físico): vale con cualquier escalado.
-const INCHES_KEY = "soy-screen-inches";
+const INCHES_KEY = "eyetracking-screen-inches";
 function applyManualInches(inches) {
   const w = screen.width, h = screen.height;
   const widthM = inches * 0.0254 * (w / Math.hypot(w, h));
@@ -166,7 +166,7 @@ let placement = null;
    de 2,6° a 3,7° (solo 2D) o 5,8° (3D, con casos de 21°): por eso viene marcado, y si se salta
    se usa el modelo 2D, que falla menos en el peor caso. Pedirlo NO es seguro en ELA (debilidad
    de cuello frecuente), por eso se puede desmarcar. */
-const MOTION_KEY = "soy-motion-step";
+const MOTION_KEY = "eyetracking-motion-step";
 try { if (localStorage.getItem(MOTION_KEY) === "0") $("motion-opt").checked = false; } catch { /* sin almacenamiento */ }
 const withMotion = () => $("motion-opt").checked;
 function renderCalibTime() {

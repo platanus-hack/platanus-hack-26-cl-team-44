@@ -291,6 +291,9 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 }
 </style>
 <link rel="stylesheet" href="iphone-gaze.css">
+<link rel="stylesheet" href="theme.css">
+<!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
+<script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light'; }catch(_){}</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute">
@@ -406,9 +409,15 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
 
 <div id="gaze"></div>
 
+<!-- controles de desarrollo: tema claro/oscuro y mostrar/ocultar atajos -->
+<div id="devbar">
+  <button id="themeToggle" class="dbtn" role="switch" aria-checked="false" title="Tema claro / oscuro (T)"><span class="track"><span>☾</span><span>☀︎</span><span class="knob"></span></span></button>
+  <button id="legendToggle" class="dbtn" aria-expanded="false" aria-controls="legend" title="Mostrar u ocultar atajos (desarrollo)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+</div>
+
 <div id="legend">
   <div class="col" style="min-width:330px;display:flex;gap:12px">
-    <div><h3>Puntero</h3><button id="noseBtn" class="nbtn">Activar cámara</button><br><kbd>N</kbd> nariz/mouse · <kbd>E</kbd> mirada · <kbd>C</kbd>/<kbd>V</kbd> recentrar<br><kbd>G</kbd> cara perdida · <kbd>W</kbd> temblor<div id="gazeInfo" style="color:#BF5AF2"></div><div id="noseInfo" style="color:#64D2FF"></div></div>
+    <div><h3>Puntero</h3><button id="noseBtn" class="nbtn">Activar cámara</button><br><kbd>N</kbd> nariz/mouse · <kbd>E</kbd> mirada · <kbd>C</kbd>/<kbd>V</kbd> recentrar<br><kbd>G</kbd> cara perdida · <kbd>W</kbd> temblor · <kbd>T</kbd> tema<div id="gazeInfo" style="color:#BF5AF2"></div><div id="noseInfo" style="color:#64D2FF"></div></div>
     <div style="position:relative;width:128px;height:96px;border-radius:10px;overflow:hidden;background:#111;flex:none">
       <video id="cam" playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
       <canvas id="camDot" width="128" height="96" style="position:absolute;inset:0"></canvas>
@@ -496,8 +505,27 @@ const S = { screen:'home', focus:null, fStart:0, blocked:null, armed:false,
   alarm:null, agentPending:0, agentIdle:0, muted:false, voiceIdx:0, voices:[], scale:1 };
 const $ = s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
+/* ===================== Tema y panel de atajos (desarrollo) ===================== */
+const store={ get:k=>{ try{ return localStorage.getItem(k); }catch(_){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} } };
+// Atajos ocultos por defecto (son de desarrollo); se recuerda si se abrieron.
+document.body.classList.toggle('legend-off', store.get('woki.legend')!=='on');
+function syncDevbar(){
+  const light=document.documentElement.dataset.theme==='light', open=!document.body.classList.contains('legend-off');
+  $('#themeToggle').setAttribute('aria-checked',String(light));
+  $('#legendToggle').setAttribute('aria-expanded',String(open));
+  $('#legendToggle').title=open?'Ocultar atajos':'Mostrar atajos (desarrollo)';
+}
+function setTheme(light){ if(light) document.documentElement.dataset.theme='light'; else delete document.documentElement.dataset.theme;
+  store.set('woki.theme',light?'light':'dark'); syncDevbar(); }
+function toggleLegend(){ const open=document.body.classList.toggle('legend-off'); store.set('woki.legend',open?'off':'on'); syncDevbar(); fit(); }
+$('#themeToggle').addEventListener('click',e=>{ e.currentTarget.blur(); setTheme(document.documentElement.dataset.theme!=='light'); });  // blur: Espacio = ceja
+$('#legendToggle').addEventListener('click',e=>{ e.currentTarget.blur(); toggleLegend(); });
+syncDevbar();
+
 /* ===================== Escalado de la TV ===================== */
-function fit(){ const s=Math.min((innerWidth-16)/1920,(innerHeight-170)/1080); S.scale=s;
+// Con los atajos visibles se reserva su altura; ocultos, solo una franja para la barra de desarrollo.
+function fit(){ const reserve=document.body.classList.contains('legend-off')? 60 : 170;
+  const s=Math.min((innerWidth-16)/1920,(innerHeight-reserve)/1080); S.scale=s;
   const w=$('#wrap'); w.style.transform=`scale(${s})`; w.style.left=((innerWidth-1920*s)/2)+'px'; }
 addEventListener('resize',fit); fit();
 
@@ -756,6 +784,7 @@ addEventListener('keydown',e=>{
   if(e.key==='n'||e.key==='N') window.NOSE && NOSE.toggle();
   if(e.key==='c'||e.key==='C') window.NOSE && NOSE.center();
   if(e.key==='w'||e.key==='W'){ CFG.jitter=!CFG.jitter; island('〰️',CFG.jitter?'Simulando error de webcam':'Sin error simulado'); }
+  if(e.key==='t'||e.key==='T') setTheme(document.documentElement.dataset.theme!=='light');
   if(e.key==='m'||e.key==='M'){ S.muted=!S.muted; island(S.muted?'🔕':'🔔', S.muted?'Alarma en silencio':'Sonido de alarma activo'); }
 });
 addEventListener('keyup',e=>{

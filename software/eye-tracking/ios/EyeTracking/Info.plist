@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Soy Gaze</string>
+	<string>Eye Tracking</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -22,12 +22,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_soygaze._tcp</string>
+		<string>_eyetracking._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Soy Gaze usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac.</string>
+	<string>Eye Tracking usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Soy Gaze envía tu mirada al Mac de tu misma red para controlar la pantalla.</string>
+	<string>Eye Tracking envía tu mirada al Mac de tu misma red para controlar la pantalla.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

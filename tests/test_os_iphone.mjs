@@ -10,6 +10,9 @@ const adapter = readFileSync(`${OS}/iphone-gaze.js`, "utf8");
 assert.ok(html.includes('<script type="module" src="iphone-gaze.js"></script>'), "woki-os.html carga iphone-gaze.js");
 assert.ok(html.includes('data-c="iphone"'), "botón 'Mirada con iPhone' en la pantalla de inicio");
 assert.ok(html.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhone");
+assert.ok(/W\.CFG\.mode = "dwell"/.test(adapter), "con el iPhone se elige manteniendo la mirada (dwell)");
+assert.ok(html.includes('id="themeToggle"') && html.includes('id="legendToggle"'), "interruptor de tema y pestaña de atajos");
+assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa .ring (el OS la oculta con opacity:0)");
 
 // 2. Motor compartido con la demo (un solo código, no una copia que se desincronice).
 assert.equal(realpathSync(`${OS}/eye-engine`), realpathSync("software/eye-tracking/web/js"), "eye-engine apunta al motor de la demo");

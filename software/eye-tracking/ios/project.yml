@@ -1,4 +1,4 @@
-name: SoyGaze
+name: EyeTracking
 options:
   # Valores personales fuera del repo: se pasan al generar (ver README › Instalar la app).
   bundleIdPrefix: ${BUNDLE_ID_PREFIX}
@@ -14,29 +14,29 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
-  SoyGaze:
+  EyeTracking:
     type: application
     platform: iOS
     sources:
-      - path: SoyGaze
+      - path: EyeTracking
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_ID_PREFIX}.soygaze
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_ID_PREFIX}.eyetracking
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_OPTIMIZATION_LEVEL: "-O"
     info:
-      path: SoyGaze/Info.plist
+      path: EyeTracking/Info.plist
       properties:
-        CFBundleDisplayName: Soy Gaze
+        CFBundleDisplayName: Eye Tracking
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
         UIRequiredDeviceCapabilities: [arkit]
-        NSCameraUsageDescription: "Soy Gaze usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac."
-        NSLocalNetworkUsageDescription: "Soy Gaze envía tu mirada al Mac de tu misma red para controlar la pantalla."
-        NSBonjourServices: [_soygaze._tcp]
+        NSCameraUsageDescription: "Eye Tracking usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac."
+        NSLocalNetworkUsageDescription: "Eye Tracking envía tu mirada al Mac de tu misma red para controlar la pantalla."
+        NSBonjourServices: [_eyetracking._tcp]
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

@@ -299,7 +299,7 @@ export function qualityLabel(degrees, px) {
   const v = degrees ?? px / 40; // sin escala física: ~40 px por grado a 55 cm
   if (!Number.isFinite(v)) return { key: "mala", title: "No pude medir la precisión", text: "Faltaron datos válidos. Revisa la ubicación y recalibra." };
   if (v < 1.5) return { key: "excelente", title: "Excelente precisión", text: "Al nivel de un tracker infrarrojo. Puedes usar objetivos pequeños." };
-  if (v < 2.5) return { key: "buena", title: "Buena precisión", text: "Suficiente para objetivos de ~3° (los botones de Soy). El magnetismo hará el resto." };
+  if (v < 2.5) return { key: "buena", title: "Buena precisión", text: "Suficiente para objetivos de ~3° (los botones de la app). El magnetismo hará el resto." };
   if (v < 4) return { key: "regular", title: "Precisión regular", text: "Usable con objetivos grandes. Mejora la luz, acerca el iPhone y recalibra." };
   return { key: "mala", title: "Precisión baja", text: "Revisa la distancia (35–60 cm), los reflejos en lentes y que el iPhone no se mueva. Recalibra." };
 }

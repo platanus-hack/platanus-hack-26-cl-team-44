@@ -1,7 +1,7 @@
 /**
  * Toki OS · puntero con la mirada usando el iPhone (Face ID) como sensor.
  *
- * El iPhone corre la app Soy Gaze (software/eye-tracking/ios) y envía la geometría de los ojos
+ * El iPhone corre la app Eye Tracking (software/eye-tracking/ios) y envía la geometría de los ojos
  * por WebSocket (:8788). Este módulo usa el MISMO motor que la demo (./eye-engine es un enlace a
  * ../eye-tracking/web/js): misma calibración, mismo modelo, mismo filtro.
  *
@@ -52,7 +52,7 @@ function writeStore(data) {
 const IPHONE = {
   source: null, host: null, latest: null, lastFrameAt: 0,
   model: null, viewport: null, filter: null,
-  active: false, calibrating: false, abort: null,
+  active: false, calibrating: false, abort: null, prevMode: null,
   lastFaceAt: 0, backSince: null,
 
   label() { return "iPhone"; },
@@ -70,7 +70,7 @@ const IPHONE = {
       const settle = (fn, arg) => { if (!settled) { settled = true; clearTimeout(timer); fn(arg); } };
       const timer = setTimeout(() => {
         this.disconnect();
-        settle(reject, new Error(`El iPhone no responde en ${host}. ¿Soy Gaze está abierta, desbloqueada y en la misma red?`));
+        settle(reject, new Error(`El iPhone no responde en ${host}. ¿Eye Tracking está abierta, desbloqueada y en la misma red?`));
       }, CONNECT_TIMEOUT_MS);
       const onFrame = (f) => { this.onFrame(f); settle(resolve); };
       if (isSim) {
@@ -136,12 +136,16 @@ const IPHONE = {
     if (!this.model || !this.source) return;
     if (window.NOSE?.on) NOSE.stop();
     this.active = true;
+    // Clic manteniendo la mirada (dwell, como en la demo): el anillo se llena y se elige. No hace
+    // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.
+    if (this.prevMode === null) this.prevMode = W.CFG.mode;
+    W.CFG.mode = "dwell";
     this.filter = createOneEuro2D(SMOOTHING);
     this.lastFaceAt = performance.now();
     try { localStorage.setItem("woki.ptr", "iphone"); } catch { /* no crítico */ }
     const moved = this.viewport && (this.viewport.w !== innerWidth || this.viewport.h !== innerHeight);
     if (moved) island("↺", "Cambió el tamaño de la pantalla: recalibra el iPhone (Ajustes › Calibrar)", true, 4000);
-    else island("📱", "Puntero con la mirada (iPhone)");
+    else island("📱", `Mirada con iPhone · mantén la mirada ${(W.CFG.dwellMs / 1000).toLocaleString("es")} s para elegir`);
     log("puntero: mirada con iPhone");
     renderStatus();
     if (W.S.screen === "settings") renderSettings();
@@ -149,6 +153,7 @@ const IPHONE = {
   deactivate() {
     if (!this.active && !this.source) return;
     this.active = false;
+    if (this.prevMode !== null) { W.CFG.mode = this.prevMode; this.prevMode = null; }
     if (W.S.gazeLost) setGazeLost(false);
     this.disconnect(); // sin Mac conectado el iPhone baja a 30 fps y se calienta menos
     if (W.S.screen === "settings") renderSettings();
@@ -195,7 +200,7 @@ const IPHONE = {
   openPanel() {
     const panel = ensurePanel();
     CAL.steps(["Conectar", "Puntos", "Comprobación", "Listo"]);
-    CAL.ui("Mirada con iPhone", "Abre Soy Gaze en el iPhone (Face ID) y escribe la dirección que muestra. Misma red Wi-Fi. Ponlo abajo y centrado, a 40–60 cm de la cara.", 0, false);
+    CAL.ui("Mirada con iPhone", "Abre Eye Tracking en el iPhone (Face ID) y escribe la dirección que muestra. Misma red Wi-Fi. Ponlo abajo y centrado, a 40–60 cm de la cara.", 0, false);
     $("#calBtns").style.display = "none";
     panel.hidden = false;
     $("#ipSaved").hidden = !this.hasSaved();
@@ -279,7 +284,7 @@ function overlay() {
     root.className = "ip-cal";
     root.hidden = true;
     root.innerHTML = `
-      <div class="target is-hidden" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="28"/><circle class="ring" cx="32" cy="32" r="28"/><circle class="core" cx="32" cy="32" r="7"/></svg></div>
+      <div class="target is-hidden" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="28"/><circle class="ip-ring" cx="32" cy="32" r="28"/><circle class="core" cx="32" cy="32" r="7"/></svg></div>
       <div class="ip-msg" role="status"></div>
       <div class="ip-warn" hidden></div>
       <div class="ip-progress"></div>`;

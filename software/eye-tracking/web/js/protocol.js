@@ -1,5 +1,5 @@
 /**
- * Protocolo binario iPhone → Mac (v2, acepta v1). Debe coincidir con ios/SoyGaze/Packet.swift.
+ * Protocolo binario iPhone → Mac (v2, acepta v1). Debe coincidir con ios/EyeTracking/Packet.swift.
  * v2: 56 × Float32 little-endian = 224 bytes (v1: 48 = 192 bytes, sin cuaternión).
  * Coordenadas en el espacio de la CÁMARA del iPhone, en metros.
  */

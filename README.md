@@ -19,7 +19,7 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP per
 |---|---|---|
 | MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
 | Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+, UNO con firmware, sensor y Link Shield |
-| Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Soy Gaze; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
+| Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Eye Tracking; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
 | Demo de eye-tracking | http://localhost:5173 | Node 18+; `node software/eye-tracking/web/serve.mjs` |
 | Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
 

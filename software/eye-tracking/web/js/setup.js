@@ -23,7 +23,7 @@ export function faceOffsets(headPos) {
 
 /**
  * Qué tiene que hacer quien ubica el iPhone, en una frase. Las instrucciones son para MOVER EL
- * iPHONE (no a la persona): quien usa Soy puede no poder mover la cabeza.
+ * iPHONE (no a la persona): quien usa la app puede no poder mover la cabeza.
  * @returns {{state:"searching"|"adjust"|"ok", inZone:boolean, message:string, off:{h:number,v:number,distM:number}|null}}
  */
 export function placementHint(frame) {

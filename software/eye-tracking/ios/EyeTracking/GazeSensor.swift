@@ -12,7 +12,7 @@ import simd
 /// - Sin cara, los paquetes se limitan a ~20 Hz: no aportan información nueva.
 final class GazeSensor: NSObject, ARSessionDelegate {
     private let session = ARSession()
-    private let queue = DispatchQueue(label: "soygaze.ar", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "eyetracking.ar", qos: .userInteractive)
 
     // Solo se tocan en `queue`.
     private var builder = PacketBuilder()
@@ -136,7 +136,7 @@ final class GazeSensor: NSObject, ARSessionDelegate {
     func session(_ session: ARSession, didFailWithError error: Error) {
         log.error("ARKit falló: \(error.localizedDescription, privacy: .public)")
         if (error as? ARError)?.code == .cameraUnauthorized {
-            onState?(.failed("Falta permiso de cámara. Actívalo en Ajustes › Soy Gaze › Cámara."))
+            onState?(.failed("Falta permiso de cámara. Actívalo en Ajustes › Eye Tracking › Cámara."))
             return
         }
         onState?(.failed(error.localizedDescription))

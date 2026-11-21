@@ -16,10 +16,11 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. Se mant
 
 Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como sensor (ARKit, 60 fps) con el mismo motor de la [demo de eye-tracking](../eye-tracking/README.md).
 
-1. Instala y abre **Soy Gaze** en el iPhone ([instrucciones](../eye-tracking/README.md#instalar-la-app-en-el-iphone-una-vez)). Debe estar en la misma red que el computador.
+1. Instala y abre **Eye Tracking** en el iPhone (si ya tenías la versión anterior, "Soy Gaze", también sirve: el protocolo es el mismo) ([instrucciones](../eye-tracking/README.md#instalar-la-app-en-el-iphone-una-vez)). Debe estar en la misma red que el computador.
 2. En la pantalla de inicio elige **Mirada con iPhone (Face ID)** (o tecla `I`), escribe la dirección que muestra el iPhone (por ejemplo `192.168.1.23:8788`) y **Conectar y calibrar**.
 3. Sigue 13 puntos con los ojos y luego 5 de comprobación (~45 s). `Esc` cancela.
 
+- **Cómo se elige:** manteniendo la mirada sobre el objetivo hasta que se llena el anillo (0,8 s; Ajustes › Tiempo de mirada). No hace falta ceja ni EMG. Al cambiar de puntero vuelve el modo anterior.
 - **Dónde va el iPhone:** abajo, centrado bajo la pantalla, acostado (horizontal), a 40–60 cm de la cara, en un soporte (no sobre las teclas).
 - **Cambiar de puntero:** Ajustes › Puntero recorre Mouse → Nariz → Mirada → iPhone. La calibración queda guardada y se reusa con **Usar la calibración guardada**.
 - **Si se pierde la cara o la señal 1,5 s,** el SO pasa a escaneo con EMG, igual que con la nariz.
@@ -27,3 +28,8 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 - **Probar sin iPhone:** `woki-os.html?iphone=sim`, escribiendo `sim` como dirección: la "mirada" es el mouse, pasando por el motor completo.
 
 `eye-engine/` es un enlace simbólico a `../eye-tracking/web/js` (un solo código para la demo y el SO). `iphone-gaze.js` y `iphone-gaze.css` son el adaptador.
+
+## Tema y atajos
+
+- **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.
+- **Atajos de desarrollo** (teclas simuladas, cámara, LCD, eventos): ocultos por defecto. La pestaña con flecha (⌃) de abajo a la derecha los muestra u oculta.

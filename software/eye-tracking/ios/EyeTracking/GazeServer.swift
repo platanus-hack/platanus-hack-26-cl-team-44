@@ -8,7 +8,7 @@ import Network
 /// se descartan cuadros nuevos para él en vez de acumular latencia y memoria.
 final class GazeServer {
     static let port: UInt16 = 8788
-    static let serviceType = "_soygaze._tcp"
+    static let serviceType = "_eyetracking._tcp"
     private static let maxInFlight = 2
     private static let maxClients = 3
     private static let maxMessageBytes = 1024
@@ -17,7 +17,7 @@ final class GazeServer {
     /// Código DNS-SD de "Red local" denegada (kDNSServiceErr_PolicyDenied).
     private static let policyDenied: Int32 = -65_570
 
-    private let queue = DispatchQueue(label: "soygaze.net", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "eyetracking.net", qos: .userInteractive)
     private var listener: NWListener?
     private var clients: [ObjectIdentifier: Client] = [:]
     private var restartWorkItem: DispatchWorkItem?
@@ -105,7 +105,7 @@ final class GazeServer {
 
             guard let port = NWEndpoint.Port(rawValue: Self.port) else { return }
             let listener = try NWListener(using: parameters, on: port)
-            listener.service = NWListener.Service(name: "Soy Gaze", type: Self.serviceType)
+            listener.service = NWListener.Service(name: "Eye Tracking", type: Self.serviceType)
             // Se compara por identidad: un callback tardío de un listener viejo no debe tocar el nuevo.
             listener.stateUpdateHandler = { [weak self, weak listener] state in
                 guard let self, let listener else { return }
@@ -128,7 +128,7 @@ final class GazeServer {
             onState?("Listo en el puerto \(Self.port)")
         case .waiting(let error):
             if case .dns(let code) = error, code == Self.policyDenied {
-                onState?("Falta el permiso de Red local. Actívalo en Ajustes › Soy Gaze › Red local.")
+                onState?("Falta el permiso de Red local. Actívalo en Ajustes › Eye Tracking › Red local.")
             } else {
                 onState?("Esperando red: \(error.localizedDescription).")
             }

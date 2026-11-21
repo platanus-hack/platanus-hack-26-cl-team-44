@@ -28,4 +28,4 @@ enum SensorState: Sendable, Equatable {
     case unsupported
 }
 
-let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "soygaze", category: "sensor")
+let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "eyetracking", category: "sensor")
