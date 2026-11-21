@@ -651,6 +651,16 @@ function atSentenceStart(){ const before=S.kb.text.replace(/[^\s]*$/,''); return
 function sugs(){ return PRED.suggest(prevWord(), curWord(), SUG_ROW+SUG_MORE); }
 function preds(){ return sugs().map(s=>s.word); }
 const showWord=w=>w.charAt(0).toLocaleUpperCase('es')+w.slice(1);   // en pantalla: con mayúscula
+/* "Borrar" que acelera, como la tecla de borrar del iPhone: la 1.ª vez borra una letra; si se sigue
+   (mirándola o pulsándola dentro de DEL_STREAK_MS), borra el resto de la palabra y luego palabra a
+   palabra. Mirar otra tecla vuelve a letra por letra. */
+const DEL_STREAK_MS = 2600;   // > bloqueo (0,7 s) + tiempo de mirada (1,2–1,5 s): seguir mirando cuenta como seguir
+function deleteStep(text, streak){
+  if(streak<=1) return text.slice(0,-1);
+  return text.replace(/\s+$/,'').replace(/[^\s]+$/,'');
+}
+function delStreakActive(){ return performance.now()-(S.kb.delAt||0) < DEL_STREAK_MS; }
+function delLabel(){ return delStreakActive()? 'Borrar palabra<small>sigue mirando: otra</small>' : 'Borrar<small>sigue mirando: palabra</small>'; }
 function acceptSuggestion(sg){
   if(!sg) return;
   const before=S.kb.text.replace(/[^\s]*$/,'');
@@ -670,7 +680,7 @@ function renderKeys(){
     kb.sugList=list;
     html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
       (list.length? `<div class="t key pred" data-t data-act="kb:sug">Sugerencias<small>${list.slice(0,2).map(x=>showWord(x.word)).join(' · ')}${list.length>2?' · …':''}</small></div>` : `<div class="key pred ghost">Sin sugerencias</div>`)+
-      `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`+
+      `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">${delLabel()}</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`+
       `<div class="t key small act" data-t data-act="go:home">Volver</div>`;
   } else if(kb.level===1){
     // Fila fija de sugerencias (opción A): las 3 mejores a 1 mirada, siempre en el mismo lugar
@@ -683,7 +693,7 @@ function renderKeys(){
       ? `<div class="t key small act row-sug" data-t data-act="kb:sug">Más ▸<small>${list.length-SUG_ROW} más</small></div>`
       : `<div class="key small row-sug ghost">Más ▸</div>`;
     const r2=GROUPS.map((g,i)=>`<div class="t key row-grp" data-t data-act="grp:${i}">${g}</div>`).join('');
-    const r3=`<div class="t key small act row-act" data-t data-act="kb:space">Espacio</div><div class="t key small act row-act" data-t data-act="kb:del">Borrar</div><div class="t key small act row-act" data-t data-act="kb:say">Decir</div>`+
+    const r3=`<div class="t key small act row-act" data-t data-act="kb:space">Espacio</div><div class="t key small act row-act" data-t data-act="kb:del">${delLabel()}</div><div class="t key small act row-act" data-t data-act="kb:say">Decir</div>`+
       `<div class="t key small act row-act" data-t data-act="go:home">Volver</div>`;
     html=`<div class="kbrow c4">${r1}</div><div class="kbrow c5">${r2}</div><div class="kbrow c4">${r3}</div>`;
   } else {
@@ -767,6 +777,7 @@ function activate(el, calibrateGaze=true){
   if(gazeOnly()) S.lockUntil=performance.now()+LOCKOUT_MS;
   if(calibrateGaze && window.GAZE) GAZE.onConfirm(el);   // la selección confirmada corrige la deriva de la mirada
   const [a,arg]=el.dataset.act.split(':');
+  if(el.dataset.act!=='kb:del') S.kb.delAt=0;
   log('elegido → '+el.dataset.act);
   switch(a){
     case 'go': setTimeout(()=>go(arg),90); break;
@@ -779,7 +790,13 @@ function activate(el, calibrateGaze=true){
     case 'chr': S.kb.text+= (S.kb.text===''||/[.!?]\s$/.test(S.kb.text))? arg : arg.toLowerCase(); S.kb.level=1; renderKeys(); break;
     case 'kb':
       if(arg==='space') S.kb.text+=' ';
-      if(arg==='del') S.kb.text=S.kb.text.slice(0,-1);
+      if(arg==='del'){
+        S.kb.delStreak = delStreakActive()? (S.kb.delStreak||0)+1 : 1;
+        S.kb.delAt=performance.now();
+        S.kb.text=deleteStep(S.kb.text, S.kb.delStreak);
+        // al terminar la racha, la tecla vuelve a decir "Borrar"
+        clearTimeout(S.kb.delTimer); S.kb.delTimer=setTimeout(()=>{ if(S.screen==='keyboard' && S.kb.level===1) renderKeys(); }, DEL_STREAK_MS+50);
+      }
       if(arg==='back') S.kb.level=1;
       if(arg==='pred') acceptSuggestion(sugs()[0]);
       if(arg==='sug') S.kb.level=3;

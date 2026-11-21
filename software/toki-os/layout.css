@@ -104,3 +104,5 @@ body.gaze-only .badge { display: none; }
 .grid4x2 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
 .grid5x2 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
 .grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
+/* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
+.key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }

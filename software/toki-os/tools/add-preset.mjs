@@ -17,7 +17,8 @@ if (!/^[\w.-]+\.json$/.test(name)) throw new Error(`Nombre inválido: ${name}`);
 const dir = fileURLToPath(new URL("../presets/", import.meta.url));
 const indexPath = `${dir}index.json`;
 const index = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, "utf8")) : { presets: [] };
-writeFileSync(`${dir}${name}`, toFile(preset)); // se reescribe limpio (sin campos extra del archivo original)
+// Sin la dirección del iPhone: es de una red local (y el repo puede ser público); en el panel manda la escrita.
+writeFileSync(`${dir}${name}`, toFile({ ...preset, host: "" })); // se reescribe limpio (sin campos extra)
 if (!index.presets.includes(name)) index.presets.push(name);
 writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`);
 console.log(`Preset «${preset.name}» agregado como presets/${name} (${index.presets.length} en el repo)`);
