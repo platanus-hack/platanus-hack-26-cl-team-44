@@ -55,7 +55,7 @@ El shell UI/UX maneja mirada/nariz, confirmación muscular, pausa e Inicio. Apps
 
 [Contrato de adaptadores](ADAPTERS.md): manifiestos versionados, registro de implementaciones incluidas, preparación común, rutas `GET /api/adapters` y `POST /api/apps/:id/actions/:action`, evidencia y aceptación por app. Las rutas Spotify anteriores siguen disponibles.
 
-BioBioChile: Servicios → Leer noticias → Preparar BioBioChile → Probar app → elegir titular → Continuar para leer el extracto → Volver. Se muestran noticias del RSS real, dos por página y texto en segmentos de hasta 180 caracteres. La prueba técnica deja el registro en `needs_test`; no marca una prueba personal como realizada.
+Al elegir un servicio se abre directo. Si el servidor debe prepararlo, lo hace solo y muestra «Abriendo…». Si falla, aparecen un mensaje y «Reintentar». Solo se detiene cuando falta conectar una cuenta o el servicio aún no existe. Las etapas de preparación se ven solo con `?appsAdmin=1`. BioBioChile: Servicios → Leer noticias → elegir titular → Continuar para leer el extracto → Volver. Se muestran noticias del RSS real, dos por página y texto en segmentos de hasta 180 caracteres. La prueba técnica deja el registro en `needs_test`; no marca una prueba personal como realizada.
 
 Prueba adicional de navegador: `playwright-cli -s=toki-apps-test run-code --filename=tests/browser/news-check.cjs` contra el fixture 8791. Cubre lectura, paginación, retroceso, señal muscular simulada, fallo de red/reintento y aceptación separada. Datos sintéticos aislados del registro real.
 

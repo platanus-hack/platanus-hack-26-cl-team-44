@@ -2,14 +2,18 @@ import {createHash} from 'node:crypto';
 import {XMLParser} from 'fast-xml-parser';
 
 const fault = (message, status = 502) => Object.assign(new Error(message), {status});
-const scalar = value => typeof value === 'string' ? value : '';
+// Con atributos activados, un elemento con atributos llega como {'#text', '@_attr'}.
+const scalar = value => typeof value === 'string' ? value : typeof value?.['#text'] === 'string' ? value['#text'] : '';
 const entities = {amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',hellip:'…',ndash:'–',mdash:'—'};
-function plain(value) {
-  return scalar(value).replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (match,key)=>{
+function decode(text) {
+  return text.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (match,key)=>{
     if (key[0] !== '#') return entities[key] ?? match;
     const n = key[1].toLowerCase()==='x' ? parseInt(key.slice(2),16) : Number(key.slice(1));
     return n>0 && n<=0x10ffff && !(n>=0xd800 && n<=0xdfff) ? String.fromCodePoint(n) : '';
-  }).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  });
+}
+function plain(value) {
+  return decode(scalar(value)).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 }
 function articleURL(value, spec) {
   try {
@@ -17,6 +21,37 @@ function articleURL(value, spec) {
     if (url.protocol!=='https:' || !spec.articleHosts.includes(url.hostname) || url.port || url.username || url.password || !url.pathname.startsWith(spec.articlePathPrefix || '/')) return null;
     url.hash='';url.search='';return url.href;
   } catch {return null;}
+}
+// Miniaturas: solo https público, sin credenciales ni puertos, y del dominio permitido si el medio lo fija.
+export function imageURL(value, hosts) {
+  const text = typeof value === 'string' ? decode(value.trim()) : '';
+  if (!text || text.length > 2048) return null;
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    if (!url.hostname.includes('.') || /^[\d.]+$/.test(url.hostname) || url.hostname.startsWith('[')) return null;
+    if (hosts?.length && !hosts.includes(url.hostname)) return null;
+    if (/\/images\/core\/emoji\//.test(url.pathname)) return null;
+    url.hash = ''; return url.href;
+  } catch { return null; }
+}
+const list = value => Array.isArray(value) ? value : value ? [value] : [];
+// enclosure, media:content, media:thumbnail y, en último caso, la primera <img> del contenido (sin emojis).
+export function itemImage(row, hosts) {
+  const candidates = [
+    ...list(row.enclosure).filter(e => /^image\//i.test(e?.['@_type'] || '')).map(e => e['@_url']),
+    ...list(row['media:content']).filter(m => (m?.['@_medium'] || 'image') === 'image' && /^(image\/|$)/i.test(m?.['@_type'] || '')).map(m => m['@_url']),
+    ...list(row['media:thumbnail']).map(m => m?.['@_url']),
+    ...list(row['media:group']).flatMap(g => [...list(g?.['media:thumbnail']), ...list(g?.['media:content'])].map(m => m?.['@_url'])),
+  ];
+  for (const html of [row['content:encoded'], row.description].map(scalar)) {
+    for (const tag of decode(html).match(/<img\b[^>]*>/gi) || []) {
+      if (/wp-smiley|emoji/i.test(tag)) continue;
+      candidates.push(tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1]);
+    }
+  }
+  for (const candidate of candidates) { const url = imageURL(candidate, hosts); if (url) return url; }
+  return null;
 }
 const isoDate = value => Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 export function readingPages(text, limit = 180) {
@@ -31,7 +66,7 @@ export function readingPages(text, limit = 180) {
 export function parseRssFeed(xml, spec) {
   if (typeof xml!=='string' || Buffer.byteLength(xml)>2_000_000 || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw fault('El formato de noticias no es válido.');
   let channel;
-  try {channel=new XMLParser({processEntities:false,parseTagValue:false,ignoreAttributes:true}).parse(xml).rss?.channel;} catch {throw fault('No se pudo leer la fuente de noticias.');}
+  try {channel=new XMLParser({processEntities:false,parseTagValue:false,ignoreAttributes:false,attributeNamePrefix:'@_'}).parse(xml).rss?.channel;} catch {throw fault('No se pudo leer la fuente de noticias.');}
   if (!channel || plain(channel.title)!==spec.channelTitle) throw fault('La fuente no corresponde al medio configurado.');
   const rows=Array.isArray(channel.item)?channel.item:channel.item?[channel.item]:[];
   const unique=new Map();
@@ -42,15 +77,15 @@ export function parseRssFeed(xml, spec) {
     // Display the publisher's RSS excerpt only, never silently substitute a generated article.
     const excerpt=full.length>900?full.slice(0,900).replace(/\s+\S*$/,'')+'…':full;
     const id=createHash('sha256').update(url).digest('hex').slice(0,24);
-    unique.set(id,{id,title,url,publishedAt:isoDate(row.pubDate),source:spec.name,titlePages:readingPages(title),pages:readingPages(excerpt || 'Esta noticia no incluye un extracto en la fuente.'),excerptAvailable:!!excerpt});
+    unique.set(id,{id,title,url,image:itemImage(row,spec.imageHosts),publishedAt:isoDate(row.pubDate),source:spec.name,titlePages:readingPages(title),pages:readingPages(excerpt || 'Esta noticia no incluye un extracto en la fuente.'),excerptAvailable:!!excerpt});
   }
   if(!unique.size)throw fault('La fuente no entregó noticias. Puedes volver a intentarlo.');
   return {source:spec.name,sourceUrl:spec.feedUrl,publishedAt:isoDate(channel.lastBuildDate),items:[...unique.values()].slice(0,30)};
 }
-async function limitedText(response, signal) {
-  if(Number(response.headers?.get('content-length'))>2_000_000)throw fault('La fuente de noticias es demasiado grande.');
+export async function limitedText(response, signal, max = 2_000_000) {
+  if(Number(response.headers?.get('content-length'))>max)throw fault('La fuente de noticias es demasiado grande.');
   const reader=response.body.getReader();const chunks=[];let size=0;
-  try {while(true){signal.throwIfAborted();const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>2_000_000)throw fault('La fuente de noticias es demasiado grande.');chunks.push(value);}} finally {await reader.cancel().catch(()=>{});}
+  try {while(true){signal.throwIfAborted();const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>max)throw fault('La fuente de noticias es demasiado grande.');chunks.push(value);}} finally {await reader.cancel().catch(()=>{});}
   return Buffer.concat(chunks).toString('utf8');
 }
 export function rssManifest(spec) {
@@ -75,11 +110,14 @@ export async function downloadRss(spec, fetcher, signal) {
   if(!response.ok)throw fault('El medio no respondió. Puedes volver a intentarlo.');
   const xml=await limitedText(response,timeout);timeout.throwIfAborted();return xml;
 }
-export function createRssAdapter(spec,{fetcher=fetch,now=Date.now}={}) {
+// images: índice opcional {url de la noticia → miniatura} del mismo medio; si falla, las noticias se muestran sin imagen.
+export function createRssAdapter(spec,{fetcher=fetch,now=Date.now,images}={}) {
   let cache=null,fetchedAt=0;const articles=new Map();
   async function feed(signal) {
     if(cache && now()-fetchedAt<300000)return cache;
-    const parsed=parseRssFeed(await downloadRss(spec,fetcher,signal),spec);
+    const [xml,index]=await Promise.all([downloadRss(spec,fetcher,signal),images?images(fetcher,signal).catch(()=>null):null]);
+    const parsed=parseRssFeed(xml,spec);
+    if(index)for(const item of parsed.items)item.image??=imageURL(index.get(item.url),spec.imageHosts);
     cache=parsed;fetchedAt=now();
     for(const article of cache.items)articles.set(article.id,article);
     while(articles.size>120)articles.delete(articles.keys().next().value);

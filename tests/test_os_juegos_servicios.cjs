@@ -52,6 +52,8 @@ assert.match(css, /#s-apps \.toki-apps, #s-apps \.ta-screen, #s-apps \.ta-catalo
 assert.match(css, /#s-apps \.food-card strong \{ font-size: 38px;/, "comida (Rappi): nombres grandes en el lienzo de 1920");
 assert.match(css, /#s-apps \.food-note \{ font-size: 28px; line-height: 1\.3; color: var\(--txt2\); \}/, "comida: la nota usa el tema, no 16 px fijos");
 assert.match(css, /#s-apps \.video-choices \.video-card \{ display: grid;/, "YouTube: la tarjeta de video recupera su rejilla");
+assert.match(css, /#s-apps \.news-card\.has-thumb \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto;/, "BioBío: titular a la izquierda y miniatura a la derecha");
+assert.match(css, /#s-apps \.news-pagebar \.ta-button \{ min-height: 120px;/, "BioBío: paginación con objetivos de 120 px");
 assert.match(glue, /new MutationObserver\(targets\)\.observe\(root, \{ subtree: true, attributes: true, attributeFilter: \['disabled'\] \}\)/, "un botón habilitado sin repintar («Reproducir») se puede elegir con la mirada");
 
 // 6. Ajustes › Tema y color: tema y 5 colores, todos definidos en claro y oscuro, y se recuerda.
