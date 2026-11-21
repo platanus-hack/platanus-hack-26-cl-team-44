@@ -43,7 +43,7 @@ RSS se limita a 2 MB, tiempo de espera de 12 segundos, sin redirecciones, DTD ni
 
 ## Añadir otra app
 
-1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK; REA cuando falte evidencia).
+1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK). Si falta contrato o evidencia, seguir la [rama de investigación de adapt-app](../../.agents/skills/adapt-app/SKILL.md#investigar-un-contrato-incompleto), que usa `surface-recon`; REA queda como herramienta opcional.
 2. Crear una fábrica en `adapters/` y su manifiesto, con acciones y validación explícitas.
 3. Añadirla al registro de `createAppsServer`; no añadir rutas específicas de HTTP ni otra lógica de revisión.
 4. Reutilizar una interfaz existente (`music`, `news`, `video` o `food`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
