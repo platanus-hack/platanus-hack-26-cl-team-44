@@ -24,12 +24,13 @@ MODELO = os.environ.get("TOKI_MODELO", "claude-sonnet-5-5")
 
 MODOS = {
     #        opciones del modelo, total entregado, palabras máx., neutral al final
-    "chat":    {"pedir": 6, "n": 6, "palabras": 8, "neutral": False,
-                "tipos": "aceptar o decir que sí, rechazar o dudar, hacer una pregunta, mostrar afecto, y 2 ideas más"},
-    "mencion": {"pedir": 3, "n": 4, "palabras": 12, "neutral": True,
-                "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y una con otra idea"},
-    "voz":     {"pedir": 3, "n": 4, "palabras": 12, "neutral": True,
-                "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y una con otra idea"},
+    # Se piden opciones de más: si el filtro descarta una, entra otra del modelo y no una de relleno.
+    "chat":    {"pedir": 8, "n": 6, "palabras": 8, "neutral": False,
+                "tipos": "aceptar o decir que sí, rechazar o dudar, hacer una pregunta, mostrar afecto, y 4 ideas más"},
+    "mencion": {"pedir": 4, "n": 4, "palabras": 12, "neutral": True,
+                "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y 2 con otras ideas"},
+    "voz":     {"pedir": 4, "n": 4, "palabras": 12, "neutral": True,
+                "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y 2 con otras ideas"},
 }
 DONDE = {
     "chat": "Te escriben por WhatsApp, en un chat 1 a 1.",
@@ -69,7 +70,7 @@ Escribes en primera persona, como ella, en {store.meta(c, "variante", "español 
 {DONDE[modo]}
 
 Reglas:
-- Devuelve {m["pedir"]} opciones distintas: {m["tipos"]}.
+- Devuelve {m["pedir"]} opciones distintas, la mejor primero: {m["tipos"]}.
 - Cada opción tiene como máximo {m["palabras"]} palabras.
 - Usa solo datos del contexto. Si usas un dato, pon su id en "fuentes" (por ejemplo "m9").
 - Si te preguntan algo que el contexto no trae, cambia de tema con cariño o di que lo hablan después. Nunca afirmes ni niegues un dato que no está en el contexto.
