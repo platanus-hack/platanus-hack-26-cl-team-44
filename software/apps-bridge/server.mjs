@@ -3,6 +3,7 @@ import http from 'node:http';
 import {createAdapterRegistry} from './adapters/registry.mjs';
 import {createSpotifyAdapter} from './adapters/spotify.mjs';
 import {createBioBioAdapter} from './adapters/biobio.mjs';
+import {createYouTubeAdapter} from './adapters/youtube.mjs';
 import {createPackageStore,createReaderBuilder,packageAdapter,readerId} from './generator/packages.mjs';
 import {publicFetch,publicFeedURL} from './generator/public-fetch.mjs';
 import {randomBytes, randomUUID} from 'node:crypto';
@@ -21,7 +22,7 @@ export {safeMessage, runSpogo, normalizeTracks} from './adapters/spotify.mjs';
 
 export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, launchGameWindow, readerFetch = publicFetch} = {}) {
   const gameSessions = createGameSessions(launchGameWindow);
-  const registry = createAdapterRegistry(adapters || [createSpotifyAdapter({run,installed,hasSpotify}),createBioBioAdapter({fetcher})]);
+  const registry = createAdapterRegistry(adapters || [createSpotifyAdapter({run,installed,hasSpotify}),createBioBioAdapter({fetcher}),createYouTubeAdapter({fetcher})]);
   mkdirSync(stateDir, {recursive: true, mode: 0o700});
   const packageStore=createPackageStore(stateDir),loaded=packageStore.load();
   for(const pkg of loaded.packages){try{registry.register(packageAdapter(pkg.spec,{fetcher:readerFetch}));}catch{loaded.errors.push({id:pkg.spec.id});}}
@@ -76,7 +77,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
         update(job, {status: 'needs_adapter', stage: 0, candidates, message: candidates.length ? 'Encontramos posibles integraciones. El equipo debe comprobarlas y crear tu adaptación.' : 'Solicitud guardada. El equipo investigará cómo conectar esta app.'});
         return;
       }
-      if (!['music','news'].includes(adapter.manifest.interface.kind) || !existsSync(join(site,'toki-apps.js'))) throw fault('Falta la interfaz de la adaptación.');
+      if (!['music','news','video'].includes(adapter.manifest.interface.kind) || !existsSync(join(site,'toki-apps.js'))) throw fault('Falta la interfaz de la adaptación.');
       const result=await adapter.prepare({signal:controller.signal,report:patch=>{if(current())update(job,patch);}});
       if(current())update(job,{...result,adapterVersion:adapter.manifest.version});
     } catch (e) { if (current()) update(job, {status:'error',message:e.status?e.message:(registry.get(job.app)?.errorMessage?.(e)||'No se pudo preparar esta app. Vuelve a intentarlo.')}); }
@@ -98,7 +99,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
     const current=()=>job && job.generation===generation && !['cancelled','error','interrupted'].includes(job.status);
     try {
       return await adapter.execute(action,payload,{
-        signal:controller.signal,
+        signal:controller.signal,generation,
         evidence:key=>evidence(job,key,generation),
         connected:()=>{if(current())update(job,{stage:3,status:'needs_test',message:'Cuenta conectada. Prueba las funciones con tu control.'});},
         disconnected:()=>{for(const j of jobs.filter(j=>j.app===appId&&j.status!=='cancelled'))update(j,{generation:(j.generation||0)+1,status:'needs_connection',stage:2,evidence:{},message:'Sesión desconectada.'});}

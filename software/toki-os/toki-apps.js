@@ -25,7 +25,7 @@
     constructor(root, options = {}) {
       active?.destroy(); active=this;
       Object.assign(this,{root,options,jobs:[],view:'store',id:null,selected:'spotify',catalogPage:0,busy:false,error:'',query:'',group:'',field:'query',tracks:[],page:0,browser:'chrome',token:'',online:false,paused:false,functional:false,personal:false,epoch:0,destroyed:false});
-      this.adapters=[];this.newsItems=[];this.newsPage=0;this.article=null;this.articlePage=0;
+      this.videoItems=[];this.videoSelection=null;this.videoController=null;this.videoModule=null;this.adapters=[];this.newsItems=[];this.newsPage=0;this.article=null;this.articlePage=0;
       this.playbackRevision = 0;
       this.readingPlayback = false;
       this.admin=new URLSearchParams(location.search).get('appsAdmin')==='1';
@@ -38,7 +38,7 @@
       this.playbackTimer = setInterval(() => { if (!document.hidden) void this.refreshPlayback(); }, 5000);
       this.timer=setInterval(()=>{if(!root.isConnected)this.destroy();else if(!document.hidden&&!this.busy)void this.sync();},2500);
     }
-    destroy(){this.destroyed=true;this.epoch++;clearInterval(this.timer);clearInterval(this.playbackTimer);this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);}
+    destroy(){this.videoController?.destroy();this.videoController=null;this.destroyed=true;this.epoch++;clearInterval(this.timer);clearInterval(this.playbackTimer);this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);}
     async api(path,body){
       if(!this.token){const r=await fetch(this.base+'/api/session',{signal:AbortSignal.timeout(4000)});if(!r.ok)throw Error('No se pudo conectar con el servicio local.');this.token=(await r.json()).token;}
       const r=await fetch(this.base+path,{method:body===undefined?'GET':'POST',headers:{'x-toki-token':this.token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(45000)});
@@ -49,6 +49,7 @@
         const [{jobs}, manifest]=await Promise.all([this.api('/api/jobs'),this.api('/api/adapters')]);
         const changed=JSON.stringify(jobs)!==JSON.stringify(this.jobs)||!this.online||JSON.stringify(manifest.adapters)!==JSON.stringify(this.adapters);
         this.jobs=jobs;if(manifest)this.adapters=manifest.adapters;this.online=true;
+        if(this.view==='video-player'&&(!['needs_test','ready'].includes(this.job?.status)||this.videoSelection?.generation!==this.job?.generation)){this.view='progress';this.epoch++;}
         if(changed&&!this.busy)this.render();
       }catch{if(this.online){this.online=false;this.render();}}
     }
@@ -59,8 +60,30 @@
     }
     async openAdapter(){
       const entry=this.adapter?.interface.entry;
+      if(entry==='videos'){this.view='videos';this.epoch++;this.render();await this.loadVideos();return;}
       if(entry==='player'){this.view='player';this.epoch++;this.render();void this.refreshPlayback();return;}
       if(entry==='news'){this.view='news';this.epoch++;this.newsPage=0;this.article=null;this.newsItems=[];this.newsInfo=null;this.render();await this.loadNews();}
+    }
+    async loadVideos(){
+      if(this.busy)return;const epoch=this.epoch;this.busy=true;this.error='';this.render();
+      try{const [data,module]=await Promise.all([this.appAction('list'),import('./toki-video.js')]);if(this.epoch===epoch&&!this.destroyed){this.videoItems=data.items;this.videoModule=module;}}
+      catch(e){if(this.epoch===epoch)this.error=e.message;}
+      finally{this.busy=false;if(this.epoch===epoch)this.render();}
+    }
+    videos(){return this.header('Videos','YouTube · Selección de Chile Travel')+`<div class="ta-control-grid video-choices">${this.videoItems.map(v=>this.btn('choose-video',`<strong>${esc(v.label)}</strong><small>${esc(v.author)}</small>`,{value:v.id})).join('')}${!this.videoItems.length?this.btn('reload-videos','Cargar videos'):''}</div>`;}
+    videoPlayer(){return `<section class="ta-video-player"><h2>${esc(this.videoSelection?.video.label||'YouTube')}</h2><div class="ta-video-frame"><div id="toki-video-frame"></div></div><p class="ta-video-status" role="status">Conectando con YouTube…</p><div class="ta-video-controls">${this.btn('video-toggle','Reproducir',{disabled:true})}${this.btn('retry-video','Reintentar video')}</div></section>`;}
+    mountVideo(){
+      if(this.view!=='video-player'||this.videoController||!this.videoSelection||!this.videoModule)return;
+      const {ticket,video}=this.videoSelection,jobId=this.id;let pending=Promise.resolve(),lastState=null;
+      const current=()=>!this.destroyed&&this.view==='video-player'&&this.videoSelection?.ticket===ticket;
+      const transport=()=>this.root.querySelector('[data-app-action="video-toggle"]');
+      this.videoController=this.videoModule.mountVideo(this.root.querySelector('#toki-video-frame'),{videoId:video.id,
+        onReady:(ready=true)=>{if(current())transport().disabled=!ready;},
+        onMessage:(text,error)=>{if(!current())return;const el=this.root.querySelector('.ta-video-status');el.textContent=text;el.classList.toggle('has-error',!!error);transport().textContent=this.videoController?.state===1?'Pausar':'Reproducir';},
+        onState:state=>{if(!current())return;transport().textContent=state===1?'Pausar':'Reproducir';if(lastState===state)return;lastState=state;
+          pending=pending.catch(()=>{}).then(()=>this.api('/api/apps/youtube/actions/observe',{jobId,ticket,videoId:video.id,state})).catch(()=>{if(current()){this.error='No se pudo guardar la comprobación. Vuelve a elegir el video.';this.render();}});
+        }
+      });
     }
     async loadNews(){
       if(this.busy)return;
@@ -96,6 +119,8 @@
     }
     header(title,sub){return `<div class="ta-heading"><h1>${title}</h1><p>${sub}</p></div>`;}
     nav(){
+      if(this.view==='video-player')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('back','← Videos')}${this.btn('store','Ver servicios')}</nav>`;
+      if(this.view==='videos')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('store','← Volver a servicios')}</nav>`;
       if(this.view==='news')return `<nav class="ta-nav spotify-nav" aria-label="Navegación de noticias">${this.btn('store','← Volver a servicios')}</nav>`;
       if (this.view === 'store') {
         const home = this.options.shellHome ? '' : this.btn('home', 'Inicio');
@@ -114,6 +139,7 @@
         if(this.catalogPage===0)return false;
         this.catalogPage--;
       }
+      else if(this.view==='video-player')this.view='videos';
       else if(this.view==='reading')this.view='news';
       else if(this.view==='news')this.view='store';
       else if(this.view==='results')this.view='music';
@@ -133,7 +159,7 @@
       });
       return `<div class="ta-catalog" role="group" aria-label="Servicios">${cards.join('')}</div>`;
     }
-    detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
+    detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':a.id==='youtube'?'Elige entre videos de Chile Travel y controla reproducción y pausa. La disponibilidad depende de YouTube.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
     progress(){
       if(this.admin)return this.adminProgress();
       const j=this.job;if(!j)return this.store();const stage=j.stage||0;
@@ -257,12 +283,14 @@
     }
     render(){
       if(this.destroyed||!this.root.isConnected)return;
+      if(this.view==='video-player'&&this.videoController&&this.root.querySelector('.ta-video-player')){this.root.querySelector('.ta-feedback').textContent=this.busy?'Un momento…':this.error||(!this.online?'Sin conexión con la preparación local.':'');return;}
+      this.videoController?.destroy();this.videoController=null;
       this.root.classList.toggle('ta-store', this.view === 'store');
       this.catalogPage = Math.max(0, Math.min(this.catalogPage, Math.ceil(this.catalog.length / servicesPerPage) - 1));
       const focus=document.activeElement?.dataset;this.options.beforePaint?.();
-      const content=({store:()=>this.store(),detail:()=>this.detail(),progress:()=>this.progress(),player:()=>this.player(),music:()=>this.music(),results:()=>this.results(),news:()=>this.news(),reading:()=>this.reading()}[this.view]||(()=>this.store()))();
+      const content=({store:()=>this.store(),detail:()=>this.detail(),progress:()=>this.progress(),player:()=>this.player(),music:()=>this.music(),results:()=>this.results(),news:()=>this.news(),reading:()=>this.reading(),videos:()=>this.videos(),'video-player':()=>this.videoPlayer()}[this.view]||(()=>this.store()))();
       this.root.innerHTML=`<div class="ta-screen">${content}</div><div class="ta-feedback" role="status" aria-live="polite">${this.busy?'Un momento…':esc(this.error)||(!this.online?'Sin conexión con la preparación local.':'')}</div>${this.nav()}`;
-      this.paintPlayback();
+      this.paintPlayback();this.mountVideo();
       this.options.afterPaint?.(this.root,this);
       if (['catalog-prev','catalog-next'].includes(focus?.appAction)) {
         const nextFocus = this.root.querySelector(`[data-app-action="${focus.appAction}"]`) || this.root.querySelector('.ta-app-card');
@@ -283,6 +311,8 @@
       if(action==='job'){this.id=value;if(this.job?.status==='ready')return this.openAdapter();this.view='progress';this.render();return;}
       if(['progress','player','music'].includes(action)){this.view=action;this.epoch++;this.render();return;}
       if(action==='open-adapter')return this.openAdapter();
+      if(action==='video-toggle'){this.videoController?.toggle();return;}
+      if(action==='reload-videos')return this.loadVideos();
       if(action==='reload-news')return this.loadNews();
       if(action==='news-prev'||action==='news-next'){this.newsPage+=action==='news-next'?1:-1;this.render();return;}
       if(action==='article-prev'||action==='article-next'){this.articlePage+=action==='article-next'?1:-1;this.render();return;}
@@ -298,6 +328,9 @@
           const a=this.preset;const {job}=await this.api('/api/jobs',{name:a.name,tasks:a.tasks,...(a.sourceUrl?{sourceUrl:a.sourceUrl}:{})});if(this.epoch===epoch){this.id=job.id;next='progress';}
         }else if(['cancel','retry','review'].includes(action)){
           await this.api(`/api/jobs/${jobId}/${action}`,{functional:this.functional,personal:this.personal});next='progress';
+        }else if(action==='choose-video'||action==='retry-video'){
+          const selection=await this.appAction('select',{videoId:action==='retry-video'?this.videoSelection?.video.id:value});
+          if(this.epoch===epoch){this.videoController?.destroy();this.videoController=null;this.videoSelection=selection;next='video-player';}
         }else if(action==='read-news'){
           const result=await this.appAction('read',{articleId:value});
           if(this.epoch===epoch){this.article=result.article;this.articlePage=0;next='reading';}

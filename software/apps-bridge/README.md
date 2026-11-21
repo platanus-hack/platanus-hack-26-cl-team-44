@@ -23,7 +23,7 @@ El control local usa `spogo --engine applescript`; búsqueda usa el motor `conne
 
 ## Pedir otra app
 
-El paciente elige un preset, que aporta nombre y tareas sin formulario. El servicio consulta repositorios públicos en GitHub; los candidatos solo aparecen en la configuración del equipo. La API conserva la posibilidad de solicitudes personalizadas asistidas. Los resultados son pistas, no conectores validados. La solicitud queda pendiente del equipo para trabajar con `$adapt-app`. Spotify y BioBioChile ya tienen adaptadores incluidos; el descubrimiento se usa cuando no existe uno registrado. Para fuentes RSS asistidas, el generador ya ejecuta adapt-app con Codex y produce un paquete declarativo; no descarga código de los resultados de GitHub. La skill está instalada en el entorno del agente en `~/.codex/skills/adapt-app`.
+El paciente elige un preset, que aporta nombre y tareas sin formulario. El servicio consulta repositorios públicos en GitHub; los candidatos solo aparecen en la configuración del equipo. La API conserva la posibilidad de solicitudes personalizadas asistidas. Los resultados son pistas, no conectores validados. La solicitud queda pendiente del equipo para trabajar con `$adapt-app`. Spotify, BioBioChile y YouTube ya tienen adaptadores incluidos; el descubrimiento se usa cuando no existe uno registrado. Para fuentes RSS asistidas, el generador ya ejecuta adapt-app con Codex y produce un paquete declarativo; no descarga código de los resultados de GitHub. La skill está instalada en el entorno del agente en `~/.codex/skills/adapt-app`.
 
 Solicitudes y avance se guardan en `~/Library/Application Support/Toki/apps/requests.json`. No se guardan allí credenciales ni búsquedas musicales. El servidor se limita a loopback, valida host/origen y exige un token temporal para la API. Solo ejecuta acciones explícitas con argumentos separados; no recibe comandos arbitrarios.
 
@@ -76,6 +76,15 @@ El resultado es **configuración validada para el lector compartido**, no JavaSc
 
 Los paquetes se guardan por SHA-256 en `~/Library/Application Support/Toki/apps/packages/`, con índice activo atómico, versión, origen del generador y evidencia. Se validan al arrancar. El catálogo incorpora las apps instaladas y las solicitudes de lectores automáticamente, con hasta seis tarjetas por página. La fuente aparece con su nombre en titulares y extractos.
 
-Cooperativa fue generado con Codex y comprobado contra su fuente real el 21 de noviembre de 2026; queda `needs_test`. Instalar no acredita prueba personal. Aún no hay actualización ni rollback expuestos, instalación de CLIs externos, ni generación universal para WhatsApp, YouTube, Rappi o Mercado Libre.
+Cooperativa fue generado con Codex y comprobado contra su fuente real el 21 de noviembre de 2026; queda `needs_test`. Instalar no acredita prueba personal. Aún no hay actualización ni rollback expuestos, instalación de CLIs externos, ni generación universal para WhatsApp, YouTube, Rappi o Mercado Libre; YouTube tiene un adaptador incluido para la selección pública.
 
 Para verificar el catálogo dinámico: `playwright-cli -s=toki-apps-test run-code --filename=tests/browser/generated-reader-check.cjs` después de los demás recorridos contra el fixture 8791. Usa un generador sintético y un directorio temporal; no ejecuta Codex ni marca la revisión real.
+
+
+### YouTube: elegir, reproducir y pausar
+
+En [Servicios](http://127.0.0.1:8790/?start=apps), elige **Ver videos → Preparar YouTube → Probar app**. Hay dos opciones iniciales de Chile Travel; se verifican título y canal con YouTube. Elige una y pulsa **Reproducir**; el mismo botón cambia a **Pausar** cuando el reproductor confirma reproducción. **Videos** vuelve a la selección y **Ver servicios** sale. Ambas acciones destruyen el reproductor y detienen el audio.
+
+No requiere instalar un CLI ni introducir una clave de API para estos videos públicos. Usa el [reproductor oficial](https://developers.google.com/youtube/iframe_api_reference); bloqueos de reproducción integrada, red o navegador se muestran con recuperación. El catálogo inicial no equivale a búsqueda general de YouTube. El generador de paquetes continúa limitado a RSS.
+
+Prueba real realizada en el navegador contra YouTube: reproducción y pausa confirmadas, evidencia `list/play/pause`, revisión personal pendiente. Prueba adicional reproducible con datos aislados: `playwright-cli -s=toki-video run-code --filename=tests/browser/youtube-check.cjs` sobre el fixture 8791. La prueba con cámara y sensor muscular físico sigue pendiente.

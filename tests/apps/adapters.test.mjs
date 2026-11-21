@@ -19,7 +19,7 @@ async function fixture(t,options={}){
 async function settle(api,id){for(let n=0;n<100;n++){const job=(await api('jobs')).jobs.find(j=>j.id===id);if(!['queued','preparing'].includes(job.status))return job;await new Promise(r=>setTimeout(r,5));}throw Error('Did not settle');}
 test('two real adapter contracts share preparation, dispatch, evidence and acceptance',async t=>{
  const api=await fixture(t);
- assert.deepEqual((await api('adapters')).adapters.map(a=>a.id),['spotify','biobio']);
+ assert.deepEqual((await api('adapters')).adapters.map(a=>a.id),['spotify','biobio','youtube']);
  const j=(await api('jobs',{name:'BioBioChile',tasks:'Leer extractos'})).job;
  assert.equal((await settle(api,j.id)).status,'needs_test');
  assert.equal((await settle(api,j.id)).adapterVersion,'1.0.0');
