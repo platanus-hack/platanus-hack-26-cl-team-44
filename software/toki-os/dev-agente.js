@@ -8,7 +8,8 @@
  * El panel no tiene data-t, así que la mirada y la ceja no lo seleccionan.
  */
 (() => {
-  const URL_AGENTE = localStorage.getItem('toki.dev.url') || 'http://127.0.0.1:8790';
+  const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const URL_AGENTE = localStorage.getItem('toki.dev.url') || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + '/agente');
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
   let panel = null, sse = null;
 

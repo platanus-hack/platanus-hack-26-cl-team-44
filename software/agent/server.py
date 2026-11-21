@@ -41,7 +41,10 @@ DATA = AGENT / "data"
 DB = DATA / "memoria.db"
 DISPARADORES = grupos.Disparadores(DATA / "disparadores.json")
 ORIGENES = {o.strip() for o in os.environ.get(
-    "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000").split(",")}
+    "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766").split(",")}
+MAX_DIA = int(os.environ.get("TOKI_MAX_DIA", "0"))   # 0 = sin tope. En la URL pública protege la suscripción.
+_uso = {"dia": time.strftime("%Y-%m-%d"), "n": 0}
+_uso_lock = threading.Lock()
 CANALES = {"grupo": ("mencion", "escribe en Familia"), "voz": ("voz", "dice")}
 
 _clientes: set[queue.Queue] = set()
@@ -57,7 +60,18 @@ def emitir(ev: dict) -> int:
         return len(_clientes)
 
 
+class TopeDiario(Exception):
+    pass
+
+
 def ejecutar(*a, **k) -> dict:
+    with _uso_lock:
+        hoy = time.strftime("%Y-%m-%d")
+        if _uso["dia"] != hoy:
+            _uso.update(dia=hoy, n=0)
+        if MAX_DIA and _uso["n"] >= MAX_DIA:
+            raise TopeDiario(f"se alcanzó el tope de {MAX_DIA} llamadas de hoy")
+        _uso["n"] += 1
     with _agente_lock:
         return run_agent(*a, **k)
 
@@ -131,6 +145,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
+                    "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None,
                     "modos": list(MODOS), "disparadores": [{k: d.get(k) for k in ("id", "grupo_nombre", "estado")}
                                                           for d in DISPARADORES.listar()]}
             c.close()
@@ -190,6 +205,8 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 p = resolver_persona(c, body)
                 r = ejecutar(c, p, texto, historial=historial, modo=modo)
+            except TopeDiario as e:
+                return self._json(429, {"error": str(e)})
             finally:
                 c.close()
             motivos = ", ".join(d["motivo"] for d in r["descartadas"]) or "ninguna"
@@ -202,6 +219,8 @@ class Handler(BaseHTTPRequestHandler):
             c = store.conectar(DB)
             try:
                 r = grupos.procesar(c, body, DISPARADORES, ejecutar)
+            except TopeDiario as e:
+                return self._json(429, {"error": str(e)})
             finally:
                 c.close()
             if r["accion"] == "mencion":

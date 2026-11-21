@@ -586,6 +586,9 @@ const tabletComposer = new URLSearchParams(location.search).get('entrada') === '
 const requestedMethod = trackerOnly ? new URLSearchParams(location.search).get('metodo') : null;
 const guidedSetup = requestedMethod === 'gaze' || requestedMethod === 'nose';
 const DWELL_OPTIONS = [800,1000,1200,1500];
+// En el equipo del demo (localhost o el monitor MyoWare en 127.0.0.1:8766) se usan los servicios locales.
+// Desde la URL pública: WhatsApp y EMG simulados; el agente se sirve en /agente del mismo sitio.
+const LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
 const CFG = {
   // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
   // la elección en Ajustes se recuerda en el navegador
@@ -597,8 +600,8 @@ const CFG = {
   scanMs: 1300,          // escaneo cuando no hay mirada
   doubleMs: 300, longMs: 400, comboMs: 900,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
-  EMG_WS: 'ws://localhost:8765', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
-  WA_URL: 'http://localhost:8788', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
+  WA_URL: LOCAL ? 'http://localhost:8788' : '', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
   EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
   WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)
   magnet: true,          // imán: si la mirada cae en un hueco, el foco va al objetivo más probable cercano (tecla I)
