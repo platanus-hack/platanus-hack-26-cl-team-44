@@ -108,50 +108,45 @@ test('stream cursor skips history, consumes each frame once and rejects broken s
   assert.equal(read({ ...next, sequence: 4, frames: [[130, 100, null]] }, 10), null);
 });
 
-test('physical click confirms only unfrozen focus in the visible click layer, never routes to gestures', () => {
+test('confirmation only accepts available focus on the current layer', () => {
   const html = readFileSync('software/toki-os/woki-os.html', 'utf8');
   const functions = html.slice(html.indexOf('function targetLayer('), html.indexOf('/* Clic directo'));
   const element = { dataset: { act: 'go:settings' }, classList: { add() {} } };
   const S = { focus: element, armed: true, blocked: null };
   const CFG = { mode: 'click' };
-  const document = { visibilityState: 'visible' };
-  const flags = { calib: false, alarm: false, inside: true, iphone: false };
+  const flags = { inside: true, iphone: false };
   let clicks = 0;
   const context = vm.createContext({
-    S, CFG, document, activate: () => clicks++, flashPill() {}, log() {}, gazeOnly: () => flags.iphone,
-    $: id => ({ contains: () => flags.inside && (id !== '#rest' || element.dataset.act === 'wake'), classList: { contains: () => flags[id.slice(1)] } })
+    S, CFG, activate: () => clicks++, gazeOnly: () => flags.iphone,
+    $: id => ({ contains: () => flags.inside && (id !== '#rest' || element.dataset.act === 'wake') })
   });
   vm.runInContext(functions, context);
-  context.confirmMyoWareFocus();
+  context.confirmFocus();
   assert.equal(clicks, 1);
-  context.confirmMyoWareFocus();
+  context.confirmFocus();
   S.blocked = null;
-  for (const flag of ['calib', 'alarm']) {
-    flags[flag] = true; context.confirmMyoWareFocus(); flags[flag] = false;
-  }
-  S.rest = true; context.confirmMyoWareFocus(); S.rest = false;
-  S.armed = false; context.confirmMyoWareFocus(); S.armed = true;
-  flags.inside = false; context.confirmMyoWareFocus(); flags.inside = true;
-  document.visibilityState = 'hidden'; context.confirmMyoWareFocus(); document.visibilityState = 'visible';
-  CFG.mode = 'dwell'; context.confirmMyoWareFocus(); CFG.mode = 'click';
+  S.rest = true; context.confirmFocus(); S.rest = false;
+  S.armed = false; context.confirmFocus(); S.armed = true;
+  flags.inside = false; context.confirmFocus(); flags.inside = true;
+  CFG.mode = 'dwell'; context.confirmFocus(); CFG.mode = 'click';
   assert.equal(clicks, 1);
-  context.confirmMyoWareFocus();
+  context.confirmFocus();
   assert.equal(clicks, 2);
   S.blocked = null;
   S.rest = true;
   element.dataset.act = 'wake';
-  context.confirmMyoWareFocus();
+  context.confirmFocus();
   assert.equal(clicks, 3);
   S.rest = false;
   S.blocked = null;
   S.armed = false;
   CFG.mode = 'dwell';
   flags.iphone = true;
-  context.confirmMyoWareFocus();
+  context.confirmFocus();
   assert.equal(clicks, 4, 'physical brow may confirm without dwell in iPhone mode');
 });
 
-test('monitor shares persistent calibration with Woki, which only clicks on brow', async () => {
+test('monitor shares persistent calibration and Woki receives fresh edges for both channels', async () => {
   const elements = Object.fromEntries(['controls', 'calibrate', 'toggle', 'status', 'result', 'open-woki', 'use-woki'].map(name => [
     `myoware-${name}`, { addEventListener(_, listener) { this.click = listener; }, blur() {} }
   ]));
@@ -159,7 +154,9 @@ test('monitor shares persistent calibration with Woki, which only clicks on brow
   const status = elements['myoware-status'];
   const timers = [], frames = [[0, 100, 512]], storage = new Map(), tabStorage = new Map();
   const storageApi = map => ({ getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) });
-  let sequence = 1, clicks = 0, entries = 0, age = 0, usbSource = 'uno';
+  const events = [];
+  const browDowns = () => events.filter(([src, edge]) => src === 'ceja' && edge === 'down').length;
+  let sequence = 1, entries = 0, age = 0, usbSource = 'uno';
   const listeners = {};
   const register = (name, listener) => { listeners[name] = listener; };
   const document = { visibilityState: 'visible', getElementById: id => elements[id], addEventListener: register };
@@ -202,7 +199,7 @@ test('monitor shares persistent calibration with Woki, which only clicks on brow
   assert.equal(elements['myoware-open-woki'].textContent, 'Abrir Woki OS con esta calibración');
   const [savedKey, savedProfile] = storage.entries().next().value;
   assert.equal(tabStorage.size, 0, 'calibration lives beyond this tab');
-  assert.equal(clicks, 0);
+  assert.equal(browDowns(), 0);
   toggle.click();
   await new Promise(setImmediate);
   await sample();
@@ -211,9 +208,9 @@ test('monitor shares persistent calibration with Woki, which only clicks on brow
   assert.match(elements['myoware-result'].textContent, /Último gesto: Mandíbula.*Mandíbula: 1/);
   toggle.click();
   await timers.shift()();
-  context.setupMyoWareGestures(() => clicks++, () => entries++);
+  context.setupMyoWareGestures((...event) => events.push(event), () => entries++);
   assert.equal(toggle.hidden, false);
-  assert.equal(toggle.textContent, 'Activar clic');
+  assert.equal(toggle.textContent, 'Activar gestos');
   assert.equal(elements['myoware-use-woki'].hidden, false);
   elements['myoware-use-woki'].click();
   assert.equal(entries, 1);
@@ -222,10 +219,11 @@ test('monitor shares persistent calibration with Woki, which only clicks on brow
   await sample();
   await sample();
   await sample(140, 504, 25);
-  assert.equal(clicks, 0);
+  assert.equal(browDowns(), 0);
+  assert.ok(events.some(([src, edge]) => src === 'mandibula' && edge === 'down'));
   await sample(100, 512, 25);
   await sample(100, 505, 30);
-  assert.equal(clicks, 1);
+  assert.equal(browDowns(), 1);
 
   document.visibilityState = 'hidden';
   listeners.visibilitychange();
@@ -239,25 +237,26 @@ test('monitor shares persistent calibration with Woki, which only clicks on brow
   listeners.visibilitychange();
   await new Promise(setImmediate);
   await sample(100, 504, 30);
-  assert.equal(clicks, 1, 'cannot click with hidden or held samples after returning');
+  assert.equal(browDowns(), 1, 'cannot start a gesture with hidden or held samples after returning');
   await sample(100, 512, 25);
   await sample(100, 504, 30);
-  assert.equal(clicks, 2, 'fresh eyebrow after release still works');
+  assert.equal(browDowns(), 2, 'fresh eyebrow after release still works');
 
   age = null;
   await timers.shift()();
   assert.match(status.textContent, /la calibración sigue guardada/);
+  assert.deepEqual(events.at(-1), [null, 'cancel']);
   assert.equal(toggle.hidden, false);
   assert.equal(elements['myoware-use-woki'].hidden, false);
   age = 0;
   usbSource = 'reopened';
   toggle.click();
   await new Promise(setImmediate);
-  assert.match(status.textContent, /Cambió la conexión USB/);
+  assert.match(status.textContent, /Cambió la conexión del sensor/);
   assert.equal(toggle.hidden, true);
   assert.equal(storage.has(savedKey), false, 'new USB source invalidates persistent calibration');
   assert.equal(timers.length, 0);
-  assert.equal(clicks, 2);
+  assert.equal(browDowns(), 2);
 
   tabStorage.set(savedKey, savedProfile);
   listeners.pageshow();

@@ -6,7 +6,7 @@
     <small>ENV · últimos 10 segundos · escala ADC 0–1023</small>
     <div class="legend"><span class="channel-a0">A0</span><span class="channel-a3">A3</span></div>
     <canvas id="plot" role="img" aria-label="Gráfico de las señales de A0 y A3 durante los últimos 10 segundos"></canvas>
-    <p id="hint">Esperando datos reales del Arduino.</p>
+    <p id="hint">Esperando datos del sensor.</p>
   </section>
   <section class="card" aria-label="Lecturas y umbrales de prueba">
     <div class="channel">
@@ -25,7 +25,7 @@
 </div>
 <section class="card" id="myoware-controls" style="margin-top:20px" hidden>
   <h2>Prueba de gestos</h2>
-  <p><strong>A0: mandíbula. A3: ceja.</strong> Si se activan ambos, cuenta solo mandíbula.</p>
+   <p><strong>A0: mandíbula. A3: ceja.</strong> Si la mandíbula también activa el canal de ceja, se cuenta solo la mandíbula.</p>
   <button type="button" id="myoware-calibrate">Calibrar gestos</button>
   <button type="button" id="myoware-toggle" hidden>Probar gestos</button>
   <p id="myoware-status" role="status">Confirma que los dos sensores estén en modo ENV.</p>
@@ -118,18 +118,20 @@ async function poll() {
   try {
     const response = await fetch('/data');
     if (!response.ok) throw Error();
-    const { samples, now, last, connected, unrecognized } = await response.json();
+    const { samples, now, last, connected, unrecognized, transport, error } = await response.json();
+    const ble = transport === 'ble';
     data = samples;
     lastNow = now;
     const fresh = connected && last > 0 && now - last < 1.5;
     latest = fresh ? data.at(-1) : [];
     status.textContent = fresh ? '● Recibiendo señal' : connected
-      ? 'USB abierto · esperando datos compatibles' : 'Arduino no disponible';
+      ? 'Conectado · esperando datos compatibles' : ble ? 'MyoWare BLE no disponible' : 'Arduino no disponible';
     status.className = 'pill ' + (fresh ? 'good' : 'warning');
     hint.textContent = fresh
       ? latest[2] == null ? 'Solo llegan datos de A0. Carga el sketch de dos canales para leer A3.'
-        : 'Llegan datos de ambos canales. Comprueba que respondan por separado.'
-      : unrecognized ? 'Se recibieron datos con otro formato. Revisa el sketch y la velocidad serial.'
+        : `${ble ? 'BLE · ' : ''}Llegan datos de ambos canales. Comprueba que respondan por separado.`
+      : ble ? error || 'Buscando los dos MyoWare BLE…'
+        : unrecognized ? 'Se recibieron datos con otro formato. Revisa el sketch y la velocidad serial.'
         : 'Esperando datos del Arduino a 115200 baudios.';
   } catch {
     latest = [];

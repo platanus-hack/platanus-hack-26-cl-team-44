@@ -142,19 +142,31 @@ export function createCalibration() {
   };
 }
 
-export function createGestureDetector({ brow, jaw }) {
+export function createGestureDetector({ brow, jaw }, onEdge) {
   const smoothJaw = jaw.center === undefined ? medianFilter() : activityFilter(jaw.center);
   const smoothBrow = medianFilter();
   const crossed = (value, profile) => (value - profile.trigger) * profile.direction >= 0;
   const rested = (value, profile) => (value - profile.release) * profile.direction <= 0;
   let armed = false, restSince = null, jawSince = null, browSince = null, browDeadline = null;
+  let active = null;
   return (time, a0, a3) => {
     const jawValue = smoothJaw(a0), browValue = smoothBrow(a3);
     if (jawValue === null || browValue === null) return;
     if (!armed) {
+      if (active === 'brow' && crossed(jawValue, jaw)) {
+        onEdge?.(active, 'cancel', time);
+        active = null;
+      }
+      if (active === 'brow' ? crossed(browValue, brow) : active === 'jaw' && crossed(jawValue, jaw)) {
+        onEdge?.(active, 'hold', time);
+      } else if (active && (active === 'brow' ? rested(browValue, brow) : rested(jawValue, jaw))) {
+        onEdge?.(active, 'break', time);
+      }
       if (!rested(jawValue, jaw) || !rested(browValue, brow)) { restSince = null; return; }
       restSince ??= time;
       if (time - restSince >= RELEASE_MS) {
+        if (active) onEdge?.(active, 'up', restSince);
+        active = null;
         armed = true;
         jawSince = browSince = browDeadline = null;
       }
@@ -170,6 +182,8 @@ export function createGestureDetector({ brow, jaw }) {
     if (gesture) {
       armed = false;
       restSince = null;
+      active = gesture;
+      onEdge?.(gesture, 'down', time);
       return gesture;
     }
   };
@@ -217,7 +231,7 @@ function readProfile(storage) {
     validChannel(value.profile?.brow) && validChannel(value.profile?.jaw) ? value : null;
 }
 
-export function setupMyoWareGestures(confirm = null, enterWoki = null) {
+export function setupMyoWareGestures(onInput = null, enterWoki = null) {
   const panel = document.getElementById('myoware-controls');
   const calibrateButton = document.getElementById('myoware-calibrate');
   const toggleButton = document.getElementById('myoware-toggle');
@@ -259,8 +273,8 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
     calibrateButton.textContent = mode === 'calibrating' ? 'Cancelar calibración' : 'Calibrar gestos';
     calibrateButton.disabled = mode === 'active';
     toggleButton.hidden = !saved;
-    toggleButton.textContent = confirm
-      ? mode === 'active' ? 'Desactivar clic' : 'Activar clic'
+    toggleButton.textContent = onInput
+      ? mode === 'active' ? 'Desactivar gestos' : 'Activar gestos'
       : mode === 'active' ? 'Detener prueba' : 'Probar gestos';
     if (openWoki) openWoki.textContent = saved
       ? 'Abrir Woki OS con esta calibración' : 'Abrir Woki OS sin activar el sensor';
@@ -268,6 +282,7 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
   }
 
   function stop(message, clear = false) {
+    if (mode === 'active') onInput?.(null, 'cancel');
     runId++;
     mode = 'off';
     resume = false;
@@ -280,11 +295,15 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
     mode = nextMode;
     const id = ++runId;
     const calibration = mode === 'calibrating' ? createCalibration() : null;
-    const detect = calibration ? null : createGestureDetector(saved.profile);
+    let freshAfter = Infinity;
+    const detect = calibration ? null : createGestureDetector(saved.profile, (name, edge, time) => {
+      if (edge === 'cancel' || time >= freshAfter) onInput?.(name === 'brow' ? 'ceja' : 'mandibula', edge, time);
+      else onInput?.(null, 'cancel');
+    });
     const read = createGestureCursor(calibration ? null : saved.source);
     counts = { brow: 0, jaw: 0 };
     result.textContent = 'Último gesto: —';
-    setStatus(calibration ? 'Buscando A0 y A3 para calibrar…' : 'Relaja la frente y la mandíbula antes del primer gesto.');
+    setStatus(calibration ? 'Buscando ambos canales para calibrar…' : 'Relaja la frente y la mandíbula antes del primer gesto.');
     updateButtons();
 
     async function poll() {
@@ -296,7 +315,7 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
         const packet = await response.json();
         if (id !== runId || document.visibilityState !== 'visible') return;
         if (!calibration && packet.source && packet.source !== saved.source) {
-          stop('Cambió la conexión USB. Vuelve a calibrar los gestos.', true);
+          stop('Cambió la conexión del sensor. Vuelve a calibrar los gestos.', true);
           return;
         }
         const roundTrip = performance.now() - started;
@@ -312,21 +331,24 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
           }
           setStatus(calibration.message());
         } else {
+          if (frames.length) {
+            freshAfter = frames.at(-1)[0] + packet.age + roundTrip - MAX_AGE_MS;
+          }
           for (const row of frames) {
             const gesture = detect(...row);
             if (!gesture || packet.frames.at(-1)[0] - row[0] + packet.age + roundTrip > MAX_AGE_MS) continue;
             counts[gesture]++;
             const label = gesture === 'brow' ? 'Ceja' : 'Mandíbula';
             result.textContent = `Último gesto: ${label} · Ceja: ${counts.brow} · Mandíbula: ${counts.jaw}`;
-            if (gesture === 'brow') confirm?.();
           }
-          setStatus(confirm ? 'Clic de ceja activo. La mandíbula no hace clic.'
+          if (frames.length) onInput?.(null, 'alive');
+          setStatus(onInput ? 'Gestos activos: ceja para confirmar; mandíbula 3 s para abrir atajos.'
             : 'Prueba activa. Relaja la cara entre gestos.');
         }
       } catch {
         if (id === runId) stop(calibration
-          ? 'No hay señal reciente de ambos canales. Revisa el USB y vuelve a iniciar la calibración.'
-          : 'Señal interrumpida. Revisa el USB y activa de nuevo; la calibración sigue guardada.');
+          ? 'No hay señal reciente de ambos canales. Revisa la conexión y vuelve a iniciar la calibración.'
+          : 'Señal interrumpida. Revisa la conexión y activa de nuevo; la calibración sigue guardada.');
       }
       if (id === runId) setTimeout(poll, 60);
     }
@@ -339,7 +361,7 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
     start('calibrating');
   });
   toggleButton.addEventListener('click', () => {
-    if (mode === 'active') stop(confirm ? 'Clic desactivado.' : 'Prueba detenida.');
+    if (mode === 'active') stop(onInput ? 'Gestos desactivados.' : 'Prueba detenida.');
     else if (saved) start('active');
   });
   useWoki?.addEventListener('click', () => {
@@ -364,7 +386,7 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
       return;
     }
     resume = false;
-    if (saved && !previous) setStatus('Calibración guardada disponible. Activa el clic o la prueba para usarla.');
+    if (saved && !previous) setStatus('Calibración guardada. Activa los gestos o la prueba para usarla.');
     else if (!saved && previous) setStatus('No hay una calibración guardada.');
     updateButtons();
   }
@@ -379,7 +401,7 @@ export function setupMyoWareGestures(confirm = null, enterWoki = null) {
     if (mode === 'active') stop('La calibración cambió en otra pestaña. Vuelve a activar cuando esté lista.');
     restore();
   });
-  if (saved) setStatus('Calibración guardada disponible. Activa el clic o la prueba para usarla.');
+  if (saved) setStatus('Calibración guardada. Activa los gestos o la prueba para usarla.');
   updateButtons();
   panel.hidden = false;
 }

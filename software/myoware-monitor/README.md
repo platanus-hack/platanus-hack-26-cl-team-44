@@ -1,6 +1,6 @@
 # Monitor MyoWare
 
-Python 3.10+ en macOS/Linux, sin dependencias de pip. Usa `termios`; Windows no está soportado en esta versión. El puerto serie es obligatorio para no asumir el identificador de otra máquina. Escucha HTTP únicamente en 127.0.0.1; no desplegar ni exponer por túnel.
+Python 3.10+ en macOS/Linux. El modo USB usa `termios` y no necesita dependencias de pip; el modo Bluetooth necesita Bleak. Escucha HTTP únicamente en 127.0.0.1; no desplegar ni exponer por túnel.
 
 ## Preparar el UNO R3
 
@@ -17,6 +17,21 @@ python3 software/myoware-monitor/server.py --serial-port /dev/cu.usbserial-1130
 
 Confirmar ATmega328P/UNO R3 antes de cargar; no usar este destino para UNO R4. Cerrar el monitor/Serial Plotter antes de cargar porque ambos necesitan el mismo puerto. Abrir http://127.0.0.1:8766. Puerto HTTP alternativo: `--http-port 8767`. Ctrl+C detiene el servidor y libera el puerto serie.
 
+## Usar dos MyoWare BLE
+
+1. Usa dos Wireless Shield con el sketch [`myoware_env_ble`](../../firmware/myoware_env_ble/myoware_env_ble.ino), equivalente a `MyoWareEnvTest.ino`. Asigna un nombre distinto a cada dispositivo (`MyoWareMandibula` y `MyoWareCeja`, por ejemplo), o usa sus identificadores BLE si ya están cargados con el mismo nombre.
+2. Con electrodos puestos, usa alimentación autónoma por batería y Bluetooth; no conectes los sensores por USB a un cargador, Mac o Raspberry. Si nRF Connect está conectado a uno, desconéctalo primero.
+3. Desde la raíz, en tu entorno Python, ejecuta:
+
+   ```bash
+   python3 -m pip install bleak
+   python3 software/myoware-monitor/server.py --ble-jaw MyoWareMandibula --ble-brow MyoWareCeja
+   ```
+
+4. Abre http://127.0.0.1:8766, verifica ambas señales y sigue la [calibración de Toki](../toki-os/README.md#gestos-con-myoware-usb-o-ble). Si macOS pide acceso a Bluetooth, concédelo a la app desde la que ejecutas Python.
+
+El modo BLE recibe números ASCII `0–4095` en la característica ENV del sketch (~20 Hz por dispositivo), los escala a `0–1023` y solo entrega pares recientes. En el panel A0 representa mandíbula y A3 ceja, aunque no hay Arduino UNO en este montaje.
+
 ## Qué muestra
 
 - Últimos 10 segundos y lectura actual de A0 y A3 en cuentas ADC 0–1023.
@@ -31,7 +46,7 @@ Confirma que ambos selectores físicos estén en ENV. El servidor no configura n
 
 Para distinguir gestos, usa **Prueba de gestos** con A0 en la mandíbula y A3 en la frente. Calibra ambos y observa el último gesto y los contadores: A3 solo cuenta como ceja; A0, aun cuando A3 también se active, cuenta como mandíbula. Esto no activa ni envía acciones.
 
-Para usar la ceja como clic, selecciona **Abrir Woki OS con esta calibración** en el monitor y, en la pantalla de bienvenida, **Usar mouse + clic con la ceja**. La calibración se guarda en el navegador para esa dirección (`localhost` y `127.0.0.1` guardan perfiles por separado). Con otro puntero, actívalo primero y abre la pestaña **⌃** para pulsar **Activar clic**. No se necesita otro proceso para leer el puerto serie. Los umbrales manuales del gráfico no se usan para clasificar gestos.
+Selecciona **Abrir Woki OS con esta calibración** en el monitor y, en la pantalla de bienvenida, **Usar mouse + gestos MyoWare**. La calibración se guarda en el navegador para esa dirección (`localhost` y `127.0.0.1` guardan perfiles por separado). Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
 
 ## Diagnóstico
 

@@ -1,12 +1,25 @@
-import os, termios, threading, time, json, re, argparse, select
+import os, termios, threading, time, json, re, argparse, select, asyncio
 from collections import deque
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from uuid import uuid4
 parser=argparse.ArgumentParser(description='Panel local MyoWare (macOS/Linux, Python 3.10+)')
-parser.add_argument('--serial-port', required=True, help='Puerto del UNO; consultar arduino-cli board list')
+parser.add_argument('--serial-port', help='Puerto del UNO; consultar arduino-cli board list')
+parser.add_argument('--ble-jaw', help='Nombre anunciado o identificador del MyoWare BLE de la mandíbula')
+parser.add_argument('--ble-brow', help='Nombre anunciado o identificador del MyoWare BLE de la ceja')
 parser.add_argument('--http-port', type=int, default=8766)
 args=parser.parse_args()
+if args.serial_port:
+    if args.ble_jaw or args.ble_brow:
+        parser.error('Usa --serial-port o ambos --ble-jaw y --ble-brow, no los tres.')
+elif not args.ble_jaw or not args.ble_brow or args.ble_jaw.lower()==args.ble_brow.lower():
+    parser.error('Indica --serial-port o dos periféricos distintos con --ble-jaw y --ble-brow.')
+else:
+    try:
+        import bleak
+    except ImportError:
+        parser.error('Instala Bleak en el entorno Python para usar los MyoWare BLE.')
+    from ble_input import read_ble
 PORT=args.serial_port
 state={'connected':False,'error':'','last':0,'received':0,'unrecognized':0}
 samples=deque(maxlen=6000)
@@ -24,6 +37,24 @@ toki_assets={
 dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
 legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
 
+def connected():
+    global source
+    with lock:
+        state.update(connected=True,error='',last=0)
+        source=uuid4().hex
+        gesture_frames.clear()
+
+def disconnected(error):
+    with lock:
+        state.update(connected=False,error=error)
+
+def record(a0,a3):
+    with lock:
+        if not state['connected']:
+            return
+        now=time.time(); samples.append([now,a0,a3]);state['last']=now;state['received']+=1
+        gesture_frames.append([time.monotonic_ns()//1_000_000,a0,a3])
+
 def parse_sample(line):
     if match := dual_sample.fullmatch(line):
         a0,a3=map(int,match.groups())
@@ -36,7 +67,6 @@ def parse_sample(line):
     return None
 
 def reader():
-    global source
     while True:
         fd=None
         try:
@@ -44,10 +74,7 @@ def reader():
             a=termios.tcgetattr(fd); a[0]=0; a[1]=0; a[2]=termios.CS8|termios.CREAD|termios.CLOCAL; a[3]=0
             a[4]=a[5]=termios.B115200; a[6][termios.VMIN]=0; a[6][termios.VTIME]=0
             termios.tcsetattr(fd,termios.TCSANOW,a)
-            with lock:
-                state.update(connected=True,error='',last=0)
-                source=uuid4().hex
-                gesture_frames.clear()
+            connected()
             buf=b''
             while True:
                 ready,_,_=select.select([fd],[],[],.1)
@@ -61,15 +88,14 @@ def reader():
                         line,buf=buf.split(b'\n',1)
                         s=line.decode('ascii',errors='replace').strip()
                         sample=parse_sample(s)
-                        with lock:
-                            if sample is not None:
-                                now=time.time(); samples.append([now,*sample]);state['last']=now;state['received']+=1
-                                gesture_frames.append([time.monotonic_ns()//1_000_000,*sample])
-                            else: state['unrecognized']+=1
+                        if sample is not None:
+                            record(*sample)
+                        else:
+                            with lock: state['unrecognized']+=1
                 if not os.path.exists(PORT): raise OSError('Arduino desconectado')
                 time.sleep(.01)
         except Exception as e:
-            with lock:state.update(connected=False,error=str(e))
+            disconnected(str(e))
             time.sleep(1)
         finally:
             if fd is not None:os.close(fd)
@@ -99,7 +125,7 @@ class Handler(SimpleHTTPRequestHandler):
                     recent=recent[-1500:]
                 else:
                     recent=[sample for sample in recent if sample[0] >= now-60]
-                payload={**state,'samples':recent,'now':now}
+                payload={**state,'samples':recent,'now':now,'transport':'serial' if PORT else 'ble'}
             self.send_body(json.dumps(payload).encode(),'application/json')
         elif self.path=='/emg/gestures':
             with lock:
@@ -119,6 +145,8 @@ class Handler(SimpleHTTPRequestHandler):
         else:self.send_error(404)
     def log_message(self,*args):pass
 os.chdir(Path(__file__).parent)
-threading.Thread(target=reader,daemon=True).start()
+def ble_reader():
+    asyncio.run(read_ble(args.ble_jaw,args.ble_brow,connected,record,disconnected))
+threading.Thread(target=reader if PORT else ble_reader,daemon=True).start()
 print(f'Panel local: http://127.0.0.1:{args.http_port}',flush=True)
 ThreadingHTTPServer(('127.0.0.1',args.http_port),Handler).serve_forever()
