@@ -1,14 +1,36 @@
 # Toki OS
 
-Interfaz de Emmy, trasladada desde `prototipo/` sin cambios al HTML ni a su JavaScript.
+Interfaz de Emmy. Para probar con mouse o con los MyoWare:
 
-Desde la raíz:
+### Demo sin sensor
+
+Desde la raíz del repositorio:
 
 ```bash
 python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
 ```
 
-Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. Se mantiene el nombre del archivo para conservar la URL del prototipo. Cámara y servicios externos requieren su propia configuración.
+Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. `J` simula la mandíbula y `Espacio` la ceja: mantén `J` 3 s, suelta y enfoca una opción. También puedes elegir en la rueda con clic o Tab y Enter, y cerrarla con `Esc`.
+
+### Gestos con MyoWare (USB o BLE)
+
+1. Inicia el [monitor MyoWare](../myoware-monitor/README.md) con dos sensores en ENV: **mandíbula y ceja**, por USB (A0/A3) o BLE (dos Wireless Shield). Con electrodos puestos, sigue las precauciones de alimentación del montaje elegido.
+2. En el monitor, pulsa **Calibrar gestos**. Sigue los avisos: hablar y parpadear normalmente, cinco levantadas de ceja y cinco contracciones suaves de mandíbula. Pulsa **Probar gestos** para confirmar las etiquetas antes de usar el clic.
+3. Selecciona **Abrir Woki OS con esta calibración** desde el monitor. En la bienvenida, pulsa **Usar mouse + gestos MyoWare**. Para usar otro puntero, actívalo y abre **⌃** abajo a la derecha para pulsar **Activar gestos**. También puedes calibrar desde esa barra.
+4. Prueba la rueda y la navegación:
+
+   | Gesto | Acción |
+   |---|---|
+   | Ceja corta | Confirma la opción enfocada. |
+   | Dos cejas rápidas | Cierra la rueda o vuelve un nivel, sin borrar el borrador. |
+   | Mandíbula sostenida 3 s | Abre **Sí / No**, **Acomódame**, **Ven cuando puedas** y **Me duele**. Suelta para habilitar la selección. |
+   | Ceja sostenida 3 s | Abre el **SOS de prueba**, incluso con la rueda abierta. |
+
+Dentro de la rueda, la mirada enfoca sin elegir automáticamente. Si se pierde la mirada, el escaneo recorre las opciones y la ceja confirma. Los dos avisos son **simulados**: no llaman ni envían mensajes. `R` simula una respuesta; `Esc` o **Cerrar simulación** cierran el SOS.
+
+La calibración de banco acepta al menos tres detecciones por gesto y rechaza activaciones en reposo, confusiones o repeticiones. El detector da prioridad a la mandíbula cuando contamina la señal de ceja; no hay combinación simultánea. Soltar antes de 3 s cancela la acción sostenida. La falta de muestras recientes cancela el gesto pendiente en vez de simular una liberación.
+
+La detección se pausa cuando la página está oculta; al regresar requiere relajar la cara. La calibración se conserva en el mismo navegador y dirección mientras no cambie la conexión del sensor. Si recolocas los electrodos, desactiva los gestos antes de moverlos y vuelve a calibrar. No es un sistema de emergencia validado.
 
 [Guía de diseño](../../docs/product/GUIA-DISENO.md) · [Plan](../../docs/product/PLAN.md)
 
@@ -31,7 +53,7 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 
 ### Modo solo mirada (activo con el iPhone)
 
-Se elige de **dos formas, las dos activas**: manteniendo la mirada hasta que se llena, o con la **ceja** (elige al instante lo que estás mirando). La mandíbula y el resto de gestos (teclas `Espacio`/`J`, sensor EMG, clic con la cara) funcionan como siempre.
+Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una **ceja corta** sobre la opción enfocada. En la rueda de atajos, mantener la mirada no elige automáticamente.
 
 - **Siempre hay salida:** Hablar (Escribir · Volver), Escribir (Volver en ambos niveles, palabra sugerida como tecla), Reacciones (Más · Volver), selector de emociones (Volver), Descanso (mirar "Volver" 2 s), Mensajes (Cancelar). Enviar se confirma siguiendo con la mirada en el botón.
 - **Ajustes no deja atrapada a la persona:** "Confirmar con" y "Puntero" quedan fijos; "Calibrar" recalibra con la mirada y vuelve solo.

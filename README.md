@@ -11,7 +11,7 @@
 
 > Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
 
-Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP permite explorar interacción por mouse, cabeza y mirada; el banco lee un sensor MyoWare con un Arduino UNO y muestra sus muestras en el navegador. **Todavía no están integrados.** El alcance y nombre final del producto siguen abiertos; no es un dispositivo médico ni una alarma de emergencia validada.
+Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir, volver o activar un SOS simulado. Toki no es un dispositivo médico ni una alarma de emergencia validada.
 
 ## Probarlo
 
@@ -19,7 +19,7 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP per
 |---|---|---|
 | Lobby accesible de Toki | [Elegir mirada, nariz o mouse](http://127.0.0.1:8790/prototype-lobby.html?acceso=elegir) | Node 22+ y el [servidor local de Toki](software/apps-bridge/README.md) |
 | MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
-| Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+, UNO con firmware, sensor y Link Shield |
+| Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+; [UNO por USB o dos MyoWare por BLE](software/myoware-monitor/README.md) |
 | Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Eye Tracking; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
 | Demo de eye-tracking | http://localhost:5173 | Node 18+; `node software/eye-tracking/web/serve.mjs` |
 | Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
@@ -78,10 +78,10 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 | Respuesta muscular | Se observaron variaciones; falta separar contracción de artefactos y confirmar ENV |
 | SO accesible | MVP heredado de `woki-ux-prototipo`; no validado clínicamente |
 | Mirada con iPhone (Face ID) | Calibración de 13+5 puntos; en el SO, 2,9° de error medio y 5,3° en el peor caso (24 calibraciones del equipo, puntos no vistos); sin movimiento de cabeza |
-| EMG → clic en el SO | Pendiente de integración y calibración |
+| EMG → atajos en el SO | Integrado con calibración; rueda y SOS simulados probados sin hardware. Falta validar los gestos sostenidos sobre el cuerpo. |
 | WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |
 | Carcasas y soportes 3D | Estructura preparada; sin modelos imprimibles todavía |
-| BLE, Ray-Ban Meta, Alexa y actuadores | Fuera de la prueba cableada actual |
+| BLE, Ray-Ban Meta, Alexa y actuadores | Entrada BLE dual disponible; falta probar ambos sensores reales juntos. El resto queda fuera del prototipo. |
 
 ## Esquemas y documentación
 
