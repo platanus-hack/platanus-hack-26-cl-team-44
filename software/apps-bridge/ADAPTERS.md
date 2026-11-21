@@ -1,0 +1,75 @@
+# Adaptaciones de Toki
+
+El registro contiene código revisado incluido con Toki y paquetes declarativos validados que usan el lector RSS compartido. El servidor no carga módulos elegidos por una petición web ni ejecuta resultados de GitHub.
+
+## Contrato v1
+
+Cada fábrica devuelve `manifest`, `prepare(context)`, `execute(action, payload, context)` y opcionalmente `errorMessage(error)`.
+
+- `manifest`: `schemaVersion`, `id`, `name`, `aliases`, `version`, `interface: {kind, entry}`, `auth`, `dependencies`, `source`, `actions` y `requiredEvidence`.
+- Una acción declara `id`, `mutates` y `requiresAccount`. El servidor rechaza acciones no declaradas y solicitudes cuyo trabajo pertenece a otra app.
+- `prepare({signal, report})`: comprueba requisitos y conexión; devuelve el estado real de preparación. `report` publica etapas comprobadas. No marca `ready`.
+- `execute(action, payload, {signal, evidence, connected, disconnected})`: valida sus argumentos, ejecuta una capacidad concreta y devuelve datos estructurados. `evidence` registra éxito comprobado, no una orden simplemente enviada.
+- `errorMessage` evita filtrar respuestas sensibles del conector. Los errores intencionales con `status` deben incluir exclusivamente mensajes aptos para la interfaz.
+
+La preparación guarda `adapterVersion`. Una versión distinta bloquea la ejecución hasta volver a preparar. Cancelar/reintentar incrementa una generación: resultados tardíos no pueden reactivar el trabajo ni sumar evidencia a su nueva ejecución. Las acciones que modifican el servicio se serializan por adaptador; las lecturas pueden coexistir.
+
+## API común
+
+Todas requieren el token temporal del bridge, salvo obtener la sesión:
+
+- `GET /api/adapters`: manifiestos de las adaptaciones incluidas e instaladas (`generated:true`).
+- `POST /api/jobs`: `{name, tasks, sourceUrl?}`. Los nombres registrados usan su adaptador. Una fuente RSS asistida activa el generador; sin fuente se conserva descubrimiento GitHub y espera del equipo. La API no es un formulario para pacientes.
+- `POST /api/apps/:id/actions/:action`: `{jobId, ...argumentos}`.
+- `POST /api/jobs/:jobId/review`: requiere evidencia declarada por ese adaptador, `functional:true` y `personal:true`.
+- Cancelación/reintento y persistencia son compartidos. `/api/spotify/:action` se conserva para clientes anteriores; los componentes actuales usan la API común.
+
+La revisión personal no debe marcarse mediante una prueba automatizada contra datos reales. Los fixtures prueban esa transición en un registro temporal separado.
+
+## Adaptaciones incluidas
+
+| Adaptación | Conexión | Tareas | Cuenta | Evidencia para revisar |
+|---|---|---|---|---|
+| Spotify 1.0.0 | spogo, Spotify.app/macOS | Estado, reproducción/pausa, siguiente; búsqueda de catálogo | Sesión web para buscar | search, play, pause |
+| BioBioChile 1.0.0 | RSS publicado por el medio | Listar titulares, seleccionar y leer extractos paginados | Ninguna | list, read |
+
+Spotify conserva portada y estado real al abrir, actualización sin sustituir el control enfocado, reproducción local y vista de configuración separada.
+
+BioBioChile usa `https://www.biobiochile.cl/static/feed-rss`, enlazado en el pie de la página oficial. El enlace alternativo Feedburner estaba atrasado durante la comprobación y no se usa. La interfaz muestra fecha de fuente y señala fuentes con más de 48 horas. No presenta extractos como artículos completos ni redacta noticias nuevas.
+
+RSS se limita a 2 MB, tiempo de espera de 12 segundos, sin redirecciones, DTD ni entidades definidas por el documento. Se descartan enlaces fuera de noticias del dominio oficial. Se sirve texto escapado, nunca HTML del feed. Caché de cinco minutos en memoria; un fallo al actualizar muestra recuperación, sin inventar contenido. La lectura conserva el artículo elegido aunque cambie el feed mientras se recorre la lista.
+
+## Añadir otra app
+
+1. Comprobar una conexión real a las tareas solicitadas (CLI/API/SDK; REA cuando falte evidencia).
+2. Crear una fábrica en `adapters/` y su manifiesto, con acciones y validación explícitas.
+3. Añadirla al registro de `createAppsServer`; no añadir rutas específicas de HTTP ni otra lógica de revisión.
+4. Reutilizar una interfaz existente (`music` o `news`) si encaja, o implementar una nueva con botones nativos, pocas opciones y paginación. El servidor comprueba que el tipo de interfaz esté soportado.
+5. Añadir el preset del catálogo si corresponde. Probar conexión, errores, cancelación, requisitos de cuenta y recorrido completo con el control acordado.
+6. Preparar, registrar evidencia funcional y realizar la prueba personal antes de marcarla lista.
+
+Una prueba con un tercer adaptador sintético demuestra que registro, despacho y revisión no requieren rutas especiales por app. Para lectura pública, `generator/` añade generación declarativa e instalación sin una fábrica nueva por medio. Las demás capacidades siguen el proceso de desarrollo anterior.
+
+## Límites pendientes
+
+- Para lectores con `sourceUrl`, preparar invoca Codex con la skill `adapt-app`, valida una receta RSS, comprueba funciones e instala. No genera interfaces arbitrarias: selecciona la interfaz de noticias compartida.
+- Hay instalación local de paquetes RSS por contenido y recarga tras reinicio. No hay instalación de código externo, actualizaciones ni rollback expuestos; los artefactos previos no se borran.
+- REA no está integrado ni fue necesario para estas dos conexiones.
+- Autenticación asistida y prueba física/personal siguen pendientes donde corresponda. BioBioChile puede usarse como prueba sin cuenta; Spotify conserva su búsqueda pendiente de sesión web.
+
+## Evidencia de esta entrega (21 noviembre 2026)
+
+- 16 pruebas de servicio pasan: contrato común, tercer adaptador sintético, revisión específica por capacidades, aislamiento de apps, cancelación y resultados tardíos, sanitización de RSS, red y regresiones Spotify.
+- Cuatro recorridos de navegador contra fixture: `apps-check.cjs`, `apps-access-check.cjs`, `news-check.cjs`, `generated-reader-check.cjs`. Incluyen contracción simulada, doble retroceso, pausa, errores/reintento, paginación y tamaños 1280×800, 1024×768 y 390×844.
+- En el servidor real, BioBioChile devolvió 20 titulares, fecha de fuente del mismo día y extractos. Listar y abrir un extracto registraron `list` y `read`; la solicitud permanece `needs_test`.
+- El endpoint genérico de estado Spotify se comprobó contra Spotify.app real. No se cambió la reproducción para esta comprobación.
+- La búsqueda Spotify sigue pendiente de sesión web; la comodidad con cámara y sensor físico requiere prueba personal.
+
+
+## Generación de lectores
+
+`generator/codex.mjs` compila una receta limitada bajo el contrato de adapt-app. `generator/packages.mjs` verifica que nombre, fuente, capacidades y campos coincidan con el pedido; tareas no soportadas no se instalan. El servidor fija ID derivado de la URL, versión y dominio de artículos. El paquete contiene solo datos, metadata y evidencia, nunca módulos ejecutables ni cuerpos de noticias. El instalador publica el índice atómicamente después de list/read reales; al reiniciar comprueba esquema y digest antes de registrar.
+
+`generator/public-fetch.mjs` restringe HTTPS público, sin credenciales, puertos alternativos ni redirecciones; comprueba resolución DNS y fija la IP para la conexión TLS. Se mantienen límites RSS, extracción de texto y paginación de la implementación BioBio, ahora en `adapters/rss-reader.mjs`. Los fixtures inyectan transporte y generador sin acceder a Codex ni Internet.
+
+El servidor sigue siendo local de confianza: `appsAdmin` separa presentación, no privilegios. Generar requiere una configuración asistida de fuente. Los paquetes no son un formato de importación libre ni una tienda de código descargado.
