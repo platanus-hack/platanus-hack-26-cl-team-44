@@ -1,66 +1,111 @@
-# WOKI · Comunicador manos libres para personas con ELA
+# Toki · Interfaz accesible con señales musculares
 
-<img src="./project-logo.png" alt="WOKI" width="160" />
+**Nombre provisional · Track: 🔧 Hardware · team-44 · Platanus Hack 26: Santiago ft. Buk**
 
-**Track:** 🔧 Hardware · Platanus Hack 26: Santiago ft. Buk · team-44
+![Hardware](https://img.shields.io/badge/Hardware-MyoWare_2_%2B_UNO-174E42?style=flat-square)
+![Firmware](https://img.shields.io/badge/Firmware-Arduino_C%2B%2B-174E42?style=flat-square)
+![Monitor](https://img.shields.io/badge/Monitor-Python_3_%2B_HTML-174E42?style=flat-square)
+![MVP](https://img.shields.io/badge/MVP-Web_%2B_TypeScript-174E42?style=flat-square)
+![3D](https://img.shields.io/badge/Impresión_3D-Por_diseñar-9B6B22?style=flat-square)
+![Estado](https://img.shields.io/badge/Estado-Prototipo_en_validación-9B6B22?style=flat-square)
 
-WOKI le devuelve la conversación a quien perdió el habla y las manos. La persona apunta con la **nariz** o con la **mirada** usando una webcam común, y confirma con un **clic de ceja** (sensor EMG MyoWare o la cámara). Claude propone 4 respuestas con su estilo, y la voz clonada las dice **con la emoción que ella elige**. Si algo pasa de noche, un combo de gestos avisa a la cuidadora y la alarma sube de nivel hasta que alguien confirma con un llavero RFID.
+> Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
 
-> Es un prototipo de hackathon. No es un dispositivo médico certificado y solo se probó con personas sanas del equipo.
+Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP permite explorar interacción por mouse, cabeza y mirada; el banco lee un sensor MyoWare con un Arduino UNO y muestra sus muestras en el navegador. **Todavía no están integrados.** El alcance y nombre final del producto siguen abiertos; no es un dispositivo médico ni una alarma de emergencia validada.
 
-## Probar el prototipo (2 minutos)
+## Probarlo
+
+| Experiencia | Dirección | Requisitos |
+|---|---|---|
+| MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
+| Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+, UNO con firmware, sensor y Link Shield |
+| Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
+
+**MVP sin hardware**, desde la raíz:
 
 ```bash
-cd prototipo
-python3 -m http.server 8000
-# abrir http://localhost:8000/woki-os.html en Chrome, Arc o Safari
+python3 -m http.server 8000 --bind 127.0.0.1 --directory prototipo
 ```
 
-- **Sin cámara:** elige "Usar mouse (demo)". El mouse es la mirada, `Espacio` es la ceja y `J` la mandíbula.
-- **Con la nariz:** "Calibrar con la nariz" (centro, 4 esquinas y prueba).
-- **Con la mirada:** "Calibrar con la mirada" (9 puntos más validación). Funciona mejor con la cámara a 50–80 cm de la cara.
-- **Emergencia:** ceja ×2 y luego mandíbula. `R` simula el llavero de la cuidadora.
-- El panel de abajo (fuera de la "TV") muestra atajos, la LCD y los LEDs simulados, y un registro de eventos.
+Abrir la URL del MVP y elegir **Usar mouse (demo)**. El archivo conserva su nombre histórico para no romper los enlaces del equipo.
 
-## Qué hay en este repo
+**Monitor con hardware**, después de seguir la [guía de conexión](docs/validation/MYOWARE.md):
 
-| Carpeta / archivo | Qué es |
+```bash
+arduino-cli board list
+# Sustituir el puerto por el de tu UNO:
+python3 software/myoware-monitor/server.py --serial-port /dev/cu.usbserial-1130
+```
+
+El programa no carga firmware automáticamente. [Compilación, carga y diagnóstico](software/myoware-monitor/README.md).
+
+## Cómo se conecta
+
+```
+Electrodos → MyoWare + Link Shield
+                       │ TRS: alimentación + señal
+                       ▼
+               Arduino Shield · A0
+                       │ sobre UNO
+                       ▼
+                 Arduino UNO
+                       │ USB de datos
+                       ▼
+              Monitor local en Mac
+```
+
+El Cable Shield es una pieza diferente y no participa en este montaje directo. Con electrodos sobre el cuerpo, el portátil debe estar solo a batería, sin cargador, dock ni monitor conectado a la red. Desconectar USB antes de cambiar conexiones. [Manual del fabricante](https://myoware.com/wp-content/uploads/2022/03/MyoWare_v2_QuickStartGuide.pdf).
+
+## Estructura del proyecto
+
+| Ruta | Responsabilidad |
 |---|---|
-| `prototipo/woki-os.html` | **WOKI OS.** Interfaz completa en un solo HTML: inicio, hablar con 4 sugerencias y emociones, teclado por grupos con predicción, reacciones, mensajes con agente, ajustes, alarma, descanso. Puntero con nariz o con mirada (MediaPipe Face Landmarker), calibración y clic con la cara |
-| `woki-bridge/` | Puente Node/TypeScript para enviar y recibir **WhatsApp** reales con [wapi](https://github.com/crafter-station/wapi), con una lista cerrada de contactos |
-| `raspberry/` | Plan del aparato dedicado: **Raspberry Pi 5 + pantalla SunFounder TS7 Pro de 7"** (especificaciones verificadas y montaje) |
-| `GUIA-DISENO.md` | Guía de diseño con números: tamaños para TV, tiempos de mirada, gestos y combos, pantallas, alarmas |
-| `PLAN.md` | Plan de construcción de la hackathon |
-| `PLAN-ONBOARDING-MEMORIA.md` | Onboarding de contexto y memoria personal (personas, rutinas, estilo, privacidad) |
-| `PLAN-WHATSAPP-WAPI.md`, `GUIA-WAPI-*.md` | Cómo funciona y cómo se monta la mensajería por WhatsApp |
-| `INFORME.md` · `hallazgos/` | Investigación UX/UI: productos de CAA, papers de HCI sobre mirada, IA, voz y emoción, testimonios de usuarios, alarmas |
-| `reports/` · `research_notes/` | Estado del arte de la calibración de eye tracking por webcam |
-| `mockups.html` | Mockups estáticos de las pantallas para TV |
+| [`firmware/`](firmware/) | Código que se carga a los microcontroladores |
+| [`software/`](software/) | Monitor local e índice del SO |
+| [`hardware/`](hardware/) | Inventario, conexiones, esquemas y fotos reales |
+| [`mechanical/`](mechanical/) | CAD editable, STL/3MF y registro de impresiones |
+| [`docs/`](docs/) | Arquitectura, concurso y pruebas |
+| [`tests/`](tests/) | Comprobaciones reproducibles del monitor |
+| [`scripts/`](scripts/) | Lugar para futuras herramientas de instalación y mantenimiento |
+| [`data/`](data/) | Política de datos; las capturas personales no se versionan |
+| [`prototipo/`](prototipo/) | MVP heredado del SO, conservado en su ruta original |
+| [`woki-bridge/`](woki-bridge/) | Puente WhatsApp heredado; conserva rutas y variables de entorno |
+| [`raspberry/`](raspberry/) | Investigación y montaje del equipo dedicado |
 
-## Arquitectura
+La documentación de investigación de Emmy sigue en sus rutas originales. [Mapa y criterio de organización](docs/architecture/README.md).
 
-```
-MyoWare ×3 (BLE) ──┐
-Webcam ── MediaPipe (nariz / iris) ──▶ WOKI OS (navegador) ──▶ Claude (4 frases + emoción) ──▶ voz (TTS)
-                   └── ws://localhost:8765 ◀── sensores           │
-                                                                   ├──▶ woki-bridge ──▶ WhatsApp (wapi)
-                                                                   └──▶ Arduino / Pi: LCD, LEDs, relé, servo, RFID
-```
+## Estado demostrado
 
-- **Protocolo de sensores** (WebSocket `:8765`): `{"src":"ceja"|"mandibula","edge":"down"|"up"}` y, opcional, `{"gaze":{"x":px,"y":px}}`.
-- **woki-bridge:** `cp profile.example.json profile.json`, crear `.env` (ver `GUIA-WAPI-PASO-A-PASO.md`) y luego `npm install && npm run dev`.
-  - **Seguridad:** escucha solo en `127.0.0.1`. Por el túnel solo se expone `/webhook/wapi`, que se autentica con su firma. Rechaza todo `/api/*` que llegue por un túnel, y los POST deben ser JSON desde `ALLOWED_ORIGIN`. Se recomienda definir `WOKI_API_TOKEN` en `.env`; la app lo envía en el encabezado `X-Woki-Token`.
+| Capacidad | Estado y límite |
+|---|---|
+| Firmware A0 para UNO/ATmega328P | Compilado y cargado en el UNO del equipo |
+| USB → monitor local | Se recibieron muestras reales; visualización en Chrome |
+| Respuesta muscular | Se observaron variaciones; falta separar contracción de artefactos y confirmar ENV |
+| SO accesible | MVP heredado de `woki-ux-prototipo`; no validado clínicamente |
+| EMG → clic en el SO | Pendiente de integración y calibración |
+| WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |
+| Carcasas y soportes 3D | Estructura preparada; sin modelos imprimibles todavía |
+| BLE, Ray-Ban Meta, Alexa y actuadores | Fuera de la prueba cableada actual |
 
-## Por qué así (lo que dice la investigación)
+## Esquemas y documentación
 
-- Ningún producto de CAA revisado ofrece **emoción en la voz** ni **alarma de emergencia** nativa.
-- La queja número uno de las personas con ELA es el **ritmo de la conversación**. Por eso WOKI usa frases completas, no letra a letra.
-- **Apuntar con la mirada o la cabeza y confirmar con otro canal** evita las selecciones accidentales del dwell.
-- A 2 m de una TV el iris casi no se ve en una webcam. Por eso la **nariz** es el canal estable a distancia y la **mirada** se usa con la cámara cerca.
+- [Diferencia entre las placas](hardware/schematics/myoware-componentes.png)
+- [Conexión al UNO](hardware/schematics/myoware-conexion-uno.png)
+- [Orientación en bíceps](hardware/schematics/myoware-biceps.png)
+- [Limitaciones de las ilustraciones](hardware/schematics/README.md)
+- [Inventario](hardware/README.md) · [Prueba y evidencia](docs/validation/MYOWARE.md) · [Índice documental](docs/README.md)
 
-## Seguridad
+Las imágenes son ilustraciones generadas, no planos eléctricos ni fotos del montaje real. Identificar cada conector por su etiqueta física.
 
-Los sensores que van sobre el cuerpo son **solo inalámbricos**. Ningún electrodo se conecta por cable a un equipo enchufado a la red sin aislador.
+## Entrega del concurso
+
+Se conservan en la raíz los archivos esperados por el organizador:
+
+- [`platanus-hack-project.jsonc`](platanus-hack-project.jsonc): mismas claves y comentarios; nombre provisional Toki. URL de despliegue pendiente.
+- [`project-description.md`](project-description.md): descripción del alcance actual.
+- [`project-logo.png`](project-logo.png): original conservado, pendiente de identidad Toki.
+
+El organizador solicita un logo PNG de **1000 × 1000 y máximo 500 KB**, y recomienda desplegar mediante un repositorio personal espejo. No se creó un espejo ni se modificaron remotos de despliegue. [Requisitos completos y plantilla original](docs/competition/README.md).
 
 ## Equipo
 
@@ -69,3 +114,5 @@ Los sensores que van sobre el cuerpo son **solo inalámbricos**. Ningún electro
 - Nicolas Vargas ([@MrUprizing](https://github.com/MrUprizing))
 - Manuel Torres ([@AmunM9](https://github.com/AmunM9))
 - Emmy Daniela Arias Pardo ([@estparcae](https://github.com/estparcae))
+
+Organización del README inspirada en [team-28 Bogotá](https://github.com/platanus-hack/platanus-hack-26-co-team-28): badges, mapa de servicios, estado demostrado y documentación navegable.
