@@ -1,6 +1,8 @@
 {
   "_nota": "Datos ficticios para probar. La semilla real va en software/agent/data/semilla.json, que git ignora.",
   "usuaria": "Ana",
+  "variante": "español de Chile, con tuteo",
+  "genero": "femenino",
   "personas": [
     {"id": "pedro", "nombre": "Pedro", "relacion": "pareja", "apodos": ["Pedrito"], "tipo_interlocutor": "familia", "telefono": "+56900000001"},
     {"id": "sofi", "nombre": "Sofía", "relacion": "hija", "apodos": ["Sofi"], "tipo_interlocutor": "familia", "telefono": "+56900000002"},

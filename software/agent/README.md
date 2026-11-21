@@ -6,7 +6,9 @@ Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 3 piezas:
 - **Agente de 1 turno.** Recibe un mensaje y devuelve un resumen y 4 opciones con emoción y fuente. Usa `claude-agent-sdk` con la sesión de Claude Code de la máquina.
 - **Servidor con SSE y modo dev en la TV.** Simula un mensaje del grupo o de la sala y muestra las opciones en la pantalla Hablar.
 
-Todavía no trae puente de WhatsApp, voz ni escucha.
+- **Endpoints para el puente de WhatsApp.** `/api/sugerir` (modos `chat`, `mencion`, `voz`) y `/api/grupo` con disparadores que la usuaria aprueba. Ver `INTEGRACION-PUENTE.md`.
+
+Todavía no trae voz ni escucha.
 
 ## Probar en la TV (modo dev)
 

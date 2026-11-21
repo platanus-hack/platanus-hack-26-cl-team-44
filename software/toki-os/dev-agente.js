@@ -26,6 +26,10 @@
   #tokiDev .ej{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
   #tokiDev .ej span{background:#222;border:1px solid #333;border-radius:20px;padding:2px 8px;cursor:pointer;font-size:11px}
   #tokiDev pre{white-space:pre-wrap;background:#0b0b0d;border-radius:8px;padding:8px;margin:8px 0 0;font-size:11px;color:#cfcfcf;max-height:260px;overflow:auto}
+  #tokiDev .disp{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#111;border:1px solid #333;border-radius:8px;padding:6px 8px;margin-top:4px}
+  #tokiDev .disp button{width:auto;margin:0;padding:4px 8px;font-size:11px}
+  #tokiDev .est{font-size:10px;padding:1px 6px;border-radius:10px;background:#333}
+  #tokiDev .est.activo{background:#30d158;color:#000} #tokiDev .est.pendiente{background:#ff9f0a;color:#000}
   #devMeta{font-size:22px;color:var(--txt2,#aaa);margin-top:6px}`;
 
   const EJEMPLOS = [
@@ -47,16 +51,31 @@
       const ps = await (await fetch(URL_AGENTE + '/api/personas')).json();
       $('#devPersona').innerHTML = '<option value="">(detectar por nombre)</option>' +
         ps.map((p) => `<option value="${esc(p.id)}">${esc(p.nombre)} · ${esc(p.relacion)} · ${esc(p.tipo_interlocutor)}</option>`).join('');
+      await cargarDisparadores();
       conectarSSE();
     } catch (e) {
       dot.className = 'dot ko'; st.textContent = `Sin agente en ${URL_AGENTE}. Corre software/agent/server.py`;
     }
   }
 
+  let DISP = [];
+  async function cargarDisparadores() {
+    DISP = await (await fetch(URL_AGENTE + '/api/disparadores')).json();
+    $('#devDisp').innerHTML = DISP.length ? DISP.map((d) => `
+      <div class="disp"><span>${esc(d.grupo_nombre)} · mención <span class="est ${esc(d.estado)}">${esc(d.estado)}</span></span>
+      <button data-did="${esc(d.id)}" data-est="${d.estado === 'activo' ? 'pausado' : 'activo'}">${d.estado === 'activo' ? 'Pausar' : 'Aprobar'}</button></div>`).join('')
+      : '<div style="color:#888">Sin disparadores</div>';
+    $('#devDisp').querySelectorAll('[data-did]').forEach((b) => b.onclick = async () => {
+      await fetch(URL_AGENTE + '/api/disparadores/estado', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: b.dataset.did, estado: b.dataset.est }) });
+      traza(`disparador ${b.dataset.did} → ${b.dataset.est}`); cargarDisparadores();
+    });
+  }
+
   function conectarSSE() {
     if (sse) return;
     sse = new EventSource(URL_AGENTE + '/api/eventos');
-    sse.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
+    sse.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'disparador') cargarDisparadores(); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
     sse.onerror = () => { $('#devDot').className = 'dot ko'; };
     sse.onopen = () => { $('#devDot').className = 'dot ok'; };
   }
@@ -96,11 +115,27 @@
   async function simular() {
     const texto = $('#devTexto').value.trim(); if (!texto) return;
     $('#devBtn').disabled = true;
+    if ($('#devCanal').value === 'grupo') return simularGrupo(texto);
     try {
       const r = await fetch(URL_AGENTE + '/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texto, persona: $('#devPersona').value || null, canal: $('#devCanal').value }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
       traza(`→ enviado ${j.id} · en bandeja ${j.en_bandeja} · TVs ${j.tvs}`);
+    } catch (e) { traza('ERROR ' + e.message); $('#devBtn').disabled = false; }
+  }
+
+  async function simularGrupo(texto) {
+    const d = DISP[0];
+    if (!d) { traza('No hay disparador de grupo'); $('#devBtn').disabled = false; return; }
+    const sel = $('#devPersona');
+    const nombre = sel.value ? sel.options[sel.selectedIndex].text.split(' · ')[0] : 'Alguien';
+    pensando({ etiqueta: `${nombre} te mencionó en ${d.grupo_nombre}`, texto });
+    try {
+      const r = await fetch(URL_AGENTE + '/api/grupo', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 'dev-' + Date.now(), grupo_jid: d.grupo_jid, grupo_nombre: d.grupo_nombre,
+          persona: sel.value || null, autor_nombre: nombre, texto, menciona: true }) });
+      const j = await r.json();
+      if (j.accion !== 'mencion') { traza(`grupo → ${j.accion}${j.motivo ? ' · ' + j.motivo : ''}`); $('#cards').classList.remove('loading'); $('#devBtn').disabled = false; }
     } catch (e) { traza('ERROR ' + e.message); $('#devBtn').disabled = false; }
   }
 
@@ -111,9 +146,10 @@
     panel.innerHTML = `
       <h3><span><span class="dot" id="devDot"></span>Modo dev · agente</span><span style="color:#888">Shift+D cierra</span></h3>
       <div id="devEstado" style="color:#aaa;font-size:11px">conectando…</div>
+      <label>Disparadores</label><div id="devDisp"></div>
       <label>Quién habla</label><select id="devPersona"></select>
       <label>Canal</label>
-      <select id="devCanal"><option value="grupo">Mención en el grupo de WhatsApp</option><option value="voz">Voz en la sala</option></select>
+      <select id="devCanal"><option value="grupo">Mención en el grupo (usa el disparador)</option><option value="voz">Voz en la sala</option></select>
       <label>Mensaje</label><input id="devTexto" placeholder="Escribe y aprieta Enter">
       <div class="ej">${EJEMPLOS.map((e, i) => `<span data-ej="${i}">${esc(e[2].slice(0, 28))}…</span>`).join('')}</div>
       <button id="devBtn">Simular</button>

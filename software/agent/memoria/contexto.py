@@ -13,8 +13,8 @@ ORDEN = ("perfil", "rutina", "episodio", "estilo", "lexico")
 N_ENCUENTROS = 3
 
 
-def armar(c: sqlite3.Connection, persona: dict | None) -> dict:
-    ok, fuera = filtros.visibles(c, persona)
+def armar(c: sqlite3.Connection, persona: dict | None, extra: set[str] | None = None) -> dict:
+    ok, fuera = filtros.visibles(c, persona, extra)
     pid = persona["id"] if persona else None
     encuentros = sorted((m for m in ok if m["tipo"] == "episodio" and pid in m["personas"]),
                         key=lambda m: m["fecha"], reverse=True)[:N_ENCUENTROS]
@@ -24,7 +24,7 @@ def armar(c: sqlite3.Connection, persona: dict | None) -> dict:
         "interlocutor": persona,
         "ultimos_encuentros": encuentros,
         "memorias": por_tipo,
-        "bloqueados": sorted(filtros.temas_bloqueados(store.limites(c), persona)),
+        "bloqueados": sorted(filtros.temas_bloqueados(store.limites(c), persona) | (extra or set())),
         "descartadas": [{"id": m["id"], "motivo": m["motivo"]} for m in fuera],
     }
 

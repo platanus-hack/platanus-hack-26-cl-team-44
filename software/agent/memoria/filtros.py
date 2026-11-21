@@ -37,12 +37,15 @@ def temas_bloqueados(limites: list[dict], persona: dict | None) -> set[str]:
             if (l["persona_id"] and l["persona_id"] == pid) or (l["tipo_interlocutor"] and l["tipo_interlocutor"] == tipo)}
 
 
-def visibles(c: sqlite3.Connection, persona: dict | None) -> tuple[list[dict], list[dict]]:
-    """Memorias que puede usar el modelo con este interlocutor, y las descartadas con su motivo."""
+def visibles(c: sqlite3.Connection, persona: dict | None,
+             extra: set[str] | None = None) -> tuple[list[dict], list[dict]]:
+    """Memorias que puede usar el modelo con este interlocutor, y las descartadas con su motivo.
+
+    extra: temas bloqueados adicionales (por ejemplo, los de otros miembros de un grupo)."""
     tipo = persona["tipo_interlocutor"] if persona else "desconocido"
     niveles = VISIBLE.get(tipo, VISIBLE["desconocido"])
     tms = store.temas(c)
-    bloqueados = temas_bloqueados(store.limites(c), persona)
+    bloqueados = temas_bloqueados(store.limites(c), persona) | (extra or set())
     ok, fuera = [], []
     for m in store.memorias_aprobadas(c):
         m_temas = set(m["temas"]) | temas_de_texto(m["texto"], tms)
@@ -53,3 +56,14 @@ def visibles(c: sqlite3.Connection, persona: dict | None) -> tuple[list[dict], l
         else:
             ok.append({**m, "temas": sorted(m_temas)})
     return ok, fuera
+
+
+def bloqueados_de(c: sqlite3.Connection, persona_ids: list[str]) -> set[str]:
+    """Unión de los temas bloqueados para varias personas (los miembros de un grupo)."""
+    lim = store.limites(c)
+    out: set[str] = set()
+    for pid in persona_ids:
+        p = store.persona(c, pid)
+        if p:
+            out |= temas_bloqueados(lim, p)
+    return out

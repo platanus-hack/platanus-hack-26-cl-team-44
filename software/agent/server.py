@@ -1,20 +1,27 @@
-"""Servidor del agente: recibe eventos, corre el agente y manda las opciones a la TV por SSE.
+"""Servidor del agente. Lo llaman el puente de WhatsApp y la TV.
 
     software/agent/.venv/bin/python software/agent/server.py        # http://127.0.0.1:8790
 
-Rutas:
-  GET  /api/salud      estado, usuaria, modelo
-  GET  /api/personas   personas de la memoria
-  GET  /api/eventos    SSE: {tipo: "pensando" | "opciones" | "error", ...}
-  POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, el resultado llega por SSE
+Rutas para el puente (respuesta síncrona, el puente reenvía a la TV por su SSE):
+  POST /api/sugerir    {modo: "chat" | "voz" | "mencion", texto, telefono?, persona?, historial?: [str]}
+  POST /api/grupo      {id, grupo_jid, grupo_nombre, autor_tel, autor_nombre, texto, menciona}
 
-Solo escucha en 127.0.0.1. Un solo trabajador: los eventos se atienden de a uno.
+Disparadores (la TV los muestra y la usuaria los aprueba):
+  GET  /api/disparadores
+  POST /api/disparadores/estado   {id, estado: "activo" | "pausado" | "pendiente"}
+
+Modo dev de la TV:
+  GET  /api/salud, /api/personas, /api/eventos (SSE)
+  POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, resultado por SSE
+
+Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
 """
 from __future__ import annotations
 
 import json
 import os
 import queue
+import shutil
 import sys
 import threading
 import time
@@ -25,18 +32,22 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
 
-from agente import MODELO, run_agent  # noqa: E402
+import grupos  # noqa: E402
+from agente import MODELO, MODOS, run_agent  # noqa: E402
 from memoria import store  # noqa: E402
 
 PORT = int(os.environ.get("TOKI_AGENTE_PORT", "8790"))
-DB = AGENT / "data" / "memoria.db"
+DATA = AGENT / "data"
+DB = DATA / "memoria.db"
+DISPARADORES = grupos.Disparadores(DATA / "disparadores.json")
 ORIGENES = {o.strip() for o in os.environ.get(
     "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000").split(",")}
-CANALES = {"grupo": "escribe en Familia", "voz": "dice"}
+CANALES = {"grupo": ("mencion", "escribe en Familia"), "voz": ("voz", "dice")}
 
 _clientes: set[queue.Queue] = set()
 _clientes_lock = threading.Lock()
 _bandeja: queue.Queue = queue.Queue()
+_agente_lock = threading.Lock()   # un solo trabajo del agente a la vez
 
 
 def emitir(ev: dict) -> int:
@@ -46,21 +57,38 @@ def emitir(ev: dict) -> int:
         return len(_clientes)
 
 
-def trabajador() -> None:
-    """Un solo trabajador: atiende los eventos de a uno, en orden de llegada."""
+def ejecutar(*a, **k) -> dict:
+    with _agente_lock:
+        return run_agent(*a, **k)
+
+
+def resolver_persona(c, body: dict) -> dict | None:
+    if body.get("persona"):
+        return store.persona(c, body["persona"])
+    if body.get("telefono"):
+        p = store.persona_por_telefono(c, body["telefono"])
+        if p:
+            return p
+    nombradas = store.detectar_personas(c, str(body.get("texto", "")))
+    return store.persona(c, nombradas[0]) if nombradas else None
+
+
+def trabajador_dev() -> None:
+    """Atiende /api/simular de a uno y manda el resultado por SSE."""
     while True:
         ev = _bandeja.get()
         c = store.conectar(DB)
         try:
-            pid = ev.get("persona") or next(iter(store.detectar_personas(c, ev["texto"])), None)
-            p = store.persona(c, pid) if pid else None
+            modo, verbo = CANALES[ev["canal"]]
+            p = resolver_persona(c, ev)
             quien = p["nombre"] if p else "Alguien"
+            etiqueta = f"{quien} {verbo}"
             emitir({"tipo": "pensando", "id": ev["id"], "canal": ev["canal"], "texto": ev["texto"],
-                    "persona": pid, "etiqueta": f"{quien} {CANALES[ev['canal']]}"})
-            r = run_agent(c, p, ev["texto"])
+                    "persona": p and p["id"], "etiqueta": etiqueta})
+            r = ejecutar(c, p, ev["texto"], modo=modo)
             emitir({"tipo": "opciones", "id": ev["id"], "canal": ev["canal"], "texto": ev["texto"],
-                    "etiqueta": f"{quien} {CANALES[ev['canal']]}", "inicial": quien[:1].upper(), **r})
-            print(f"[{ev['id']}] {pid or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
+                    "etiqueta": etiqueta, "inicial": quien[:1].upper(), **r})
+            print(f"[dev {ev['id']}] {r['persona'] or 'desconocido'} · {modo} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
         except Exception as e:
             emitir({"tipo": "error", "id": ev["id"], "error": f"{type(e).__name__}: {e}"[:300]})
         finally:
@@ -68,7 +96,7 @@ def trabajador() -> None:
 
 
 class Handler(BaseHTTPRequestHandler):
-    def log_message(self, *a):  # menos ruido en la terminal
+    def log_message(self, *a):
         pass
 
     def _cors(self):
@@ -86,6 +114,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _body(self) -> dict | None:
+        try:
+            return json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        except json.JSONDecodeError:
+            return None
+
     def do_OPTIONS(self):
         self.send_response(204)
         self._cors()
@@ -96,8 +130,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/salud":
             c = store.conectar(DB)
-            body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)),
-                    "modelo": MODELO, "bandeja": _bandeja.qsize()}
+            body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
+                    "modos": list(MODOS), "disparadores": [{k: d.get(k) for k in ("id", "grupo_nombre", "estado")}
+                                                          for d in DISPARADORES.listar()]}
             c.close()
             return self._json(200, body)
         if self.path == "/api/personas":
@@ -105,54 +140,106 @@ class Handler(BaseHTTPRequestHandler):
             body = [{k: p[k] for k in ("id", "nombre", "relacion", "tipo_interlocutor")} for p in store.personas(c)]
             c.close()
             return self._json(200, body)
+        if self.path == "/api/disparadores":
+            return self._json(200, DISPARADORES.listar())
         if self.path == "/api/eventos":
-            self.send_response(200)
-            self.send_header("Content-Type", "text/event-stream")
-            self.send_header("Cache-Control", "no-cache")
-            self._cors()
-            self.end_headers()
-            q: queue.Queue = queue.Queue()
-            with _clientes_lock:
-                _clientes.add(q)
-            try:
-                self.wfile.write(b'data: {"tipo": "hola"}\n\n')
-                self.wfile.flush()
-                while True:
-                    try:
-                        ev = q.get(timeout=15)
-                        self.wfile.write(f"data: {json.dumps(ev, ensure_ascii=False)}\n\n".encode())
-                    except queue.Empty:
-                        self.wfile.write(b": latido\n\n")
-                    self.wfile.flush()
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            finally:
-                with _clientes_lock:
-                    _clientes.discard(q)
-            return
+            return self._sse()
         self._json(404, {"error": "no existe"})
 
-    def do_POST(self):
-        if self.path != "/api/simular":
-            return self._json(404, {"error": "no existe"})
+    def _sse(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self._cors()
+        self.end_headers()
+        q: queue.Queue = queue.Queue()
+        with _clientes_lock:
+            _clientes.add(q)
         try:
-            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
-        except json.JSONDecodeError:
+            self.wfile.write(b'data: {"tipo": "hola"}\n\n')
+            self.wfile.flush()
+            while True:
+                try:
+                    self.wfile.write(f"data: {json.dumps(q.get(timeout=15), ensure_ascii=False)}\n\n".encode())
+                except queue.Empty:
+                    self.wfile.write(b": latido\n\n")
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        finally:
+            with _clientes_lock:
+                _clientes.discard(q)
+
+    def do_POST(self):
+        o = self.headers.get("Origin")
+        if o and o not in ORIGENES:
+            return self._json(403, {"error": "origen no permitido"})
+        if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+            return self._json(415, {"error": "solo application/json"})
+        body = self._body()
+        if body is None:
             return self._json(400, {"error": "JSON inválido"})
-        texto = str(body.get("texto", "")).strip()[:1000]
-        canal = body.get("canal") if body.get("canal") in CANALES else "grupo"
-        if not texto:
-            return self._json(400, {"error": "falta el texto"})
-        ev = {"id": uuid.uuid4().hex[:8], "texto": texto, "canal": canal,
-              "persona": body.get("persona") or None, "t": time.time()}
-        _bandeja.put(ev)
-        return self._json(202, {"ok": True, "id": ev["id"], "en_bandeja": _bandeja.qsize(), "tvs": len(_clientes)})
+
+        if self.path == "/api/sugerir":
+            texto = str(body.get("texto", "")).strip()[:2000]
+            modo = body.get("modo") if body.get("modo") in MODOS else "chat"
+            if not texto:
+                return self._json(400, {"error": "falta el texto"})
+            historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
+            c = store.conectar(DB)
+            try:
+                p = resolver_persona(c, body)
+                r = ejecutar(c, p, texto, historial=historial, modo=modo)
+            finally:
+                c.close()
+            print(f"[sugerir] {modo} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
+            return self._json(200, r)
+
+        if self.path == "/api/grupo":
+            if not body.get("grupo_jid") or not str(body.get("texto", "")).strip():
+                return self._json(400, {"error": "faltan grupo_jid o texto"})
+            c = store.conectar(DB)
+            try:
+                r = grupos.procesar(c, body, DISPARADORES, ejecutar)
+            finally:
+                c.close()
+            if r["accion"] == "mencion":
+                emitir({"tipo": "opciones", "id": body.get("id") or uuid.uuid4().hex[:8], "canal": "grupo",
+                        "texto": r["texto"], "etiqueta": f"{r['autor']} te mencionó en {r['grupo_nombre']}",
+                        "inicial": r["autor"][:1].upper(), **r})
+                print(f"[grupo] mención en {r['grupo_nombre']} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
+            return self._json(200, r)
+
+        if self.path == "/api/disparadores/estado":
+            try:
+                d = DISPARADORES.cambiar_estado(str(body.get("id", "")), str(body.get("estado", "")))
+            except KeyError:
+                return self._json(404, {"error": "no existe ese disparador"})
+            except ValueError as e:
+                return self._json(400, {"error": str(e)})
+            emitir({"tipo": "disparador", **d})
+            return self._json(200, d)
+
+        if self.path == "/api/simular":
+            texto = str(body.get("texto", "")).strip()[:1000]
+            canal = body.get("canal") if body.get("canal") in CANALES else "grupo"
+            if not texto:
+                return self._json(400, {"error": "falta el texto"})
+            ev = {"id": uuid.uuid4().hex[:8], "texto": texto, "canal": canal,
+                  "persona": body.get("persona") or None, "t": time.time()}
+            _bandeja.put(ev)
+            return self._json(202, {"ok": True, "id": ev["id"], "en_bandeja": _bandeja.qsize(), "tvs": len(_clientes)})
+
+        return self._json(404, {"error": "no existe"})
 
 
 def main() -> None:
     if not DB.exists():
         sys.exit("Falta la base. Corre primero: python3 software/agent/scripts/semilla.py --ejemplo")
-    threading.Thread(target=trabajador, daemon=True).start()
+    if not DISPARADORES.path.exists():
+        shutil.copy(AGENT / "ejemplos" / "disparadores.example.json", DISPARADORES.path)
+        print(f"Copié el disparador de ejemplo a {DISPARADORES.path.relative_to(AGENT)} (estado pendiente)")
+    threading.Thread(target=trabajador_dev, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     srv.daemon_threads = True
     print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · orígenes {', '.join(sorted(ORIGENES))}", flush=True)
