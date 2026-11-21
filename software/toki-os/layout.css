@@ -80,9 +80,11 @@ body.gaze-only .badge { display: none; }
 
 /* escribir (opción A): fila fija de sugerencias + letras + acciones, en una sola cuadrícula de 20 columnas
    (4 tarjetas por fila = 5 columnas cada una; 5 grupos de letras = 4 columnas cada uno) */
-.kbrows { flex: 1; display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(3, 1fr); gap: 20px; min-height: 0; }
-.kbrows .row-sug, .kbrows .row-act { grid-column: span 5; }
-.kbrows .row-grp { grid-column: span 4; }
+/* filas de arriba y abajo (bordes de la pantalla) algo más altas que la del medio (centro, más preciso) */
+.kbrows { flex: 1; display: grid; grid-template-rows: 1.05fr .95fr 1fr; gap: 20px; min-height: 0; }
+.kbrow { display: grid; gap: 20px; min-height: 0; }
+.kbrow.c4 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.kbrow.c5 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
 .kbrows .key { font-size: 64px; }
 .kbrows .key.small { font-size: 44px; }
 .key.sug { font-size: 56px; letter-spacing: -.02em; background: rgba(48, 209, 88, .12); }
@@ -90,6 +92,15 @@ body.gaze-only .badge { display: none; }
 .key.sug.ghost { background: transparent; border-style: dashed; font-size: 30px; color: var(--txt3); }
 :root[data-theme="light"] .key.sug { background: rgba(52, 199, 89, .12); }
 /* con la fila fija, la línea "Sugerencias: …" bajo el texto sobra: más alto para las tarjetas */
-#s-keyboard[data-level="1"] .msgline { min-height: 96px; padding: 10px 40px; }
-#s-keyboard[data-level="1"] .msgline .pred { display: none; }
-#s-keyboard[data-level="1"] .msgline .txt { min-height: 0; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline { min-height: 96px; padding: 10px 40px; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .pred { display: none; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .txt { min-height: 0; }
+
+/* ---------- bordes más grandes ----------
+   Error de la mirada por zona (27 calibraciones reales, plano lineal): centro 2,2°, bordes ~2,7°,
+   esquinas 5,2° (×2,3). Por eso las columnas de los extremos son más anchas que las del centro:
+   crecen sobre todo las tarjetas de las esquinas, sin que las del centro bajen de lo necesario. */
+:root { --edge: 1.2fr; }
+.grid4x2 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.grid5x2 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
+.grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }

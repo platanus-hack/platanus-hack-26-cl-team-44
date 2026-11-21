@@ -38,6 +38,7 @@ Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactiva
 - **Sin cara o sin señal:** nada se elige hasta volver a verte (no hay escaneo, que necesita la ceja).
 - **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
 - **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.
+- **Bordes más grandes:** con 27 calibraciones reales, el error mediano fue 2,2° en el centro, ~2,7° en los bordes y 5,2° en las esquinas. Las columnas de los extremos son 1,2× más anchas y, en el teclado de 3 filas, las de arriba y abajo algo más altas que la del medio.
 - **Tamaños** (portátil de 13–14" a ~50 cm): tarjetas de 6–7 cm por lado (≥ 2× el error medio del iPhone); en Escribir, 5,4 × 6 cm por sus 10 funciones.
 
 ### Presets de calibración
@@ -55,6 +56,7 @@ Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactiva
 - Medido con 15 frases de CAA no vistas: ahorra el **60 %** de las selecciones la primera vez (51 % con la lista aparte) y el **86 %** cuando ya se dijeron.
 - **Motor** (`predict.js`): n-gramas con *Stupid Backoff* (α = 0,4, Brants et al. 2007), sin conexión. Predice la palabra siguiente por contexto y completa la actual sin importar tildes ("como" → "cómo"; la ñ sí cuenta). Tolera un error de tipeo desde 4 letras.
 - **Aprende en el dispositivo** (como Gboard o QuickType): todo lo que se dice suma a un caché personal de palabras y pares de palabras, con olvido lento (vida media 60 días). Los nombres se aprenden con mayúscula si la persona los escribe así.
+- **Ajustes › Teclado** elige entre **Sugerencias fijas** (la fila de arriba, 1 mirada) y **Sugerencias en lista** (un solo botón que abre la lista, 2 miradas, tarjetas más altas). Se recuerda.
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 

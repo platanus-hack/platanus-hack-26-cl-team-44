@@ -22,6 +22,10 @@ assert.ok(/data-act="go:keyboard"/.test(fn("renderCards")), "Hablar tiene 'Escri
 assert.ok(/data-act="go:home"/.test(fn("renderKeys")) && /kb:back/.test(fn("renderKeys")), "Escribir tiene 'Volver' en ambos niveles");
 assert.ok(/kb:sug/.test(fn("renderKeys")) && /data-act="sug:\$\{i\}"/.test(fn("renderKeys")), "las sugerencias se abren y eligen con la mirada (antes: mandíbula)");
 assert.ok(/kb\.level===3[\s\S]*kb:back/.test(fn("renderKeys")), "la pantalla de sugerencias tiene 'Volver'");
+assert.ok(/CFG\.sugMode==='lista'/.test(fn("renderKeys")) && /set:sugmode/.test(fn("renderSettings")), "Ajustes › Teclado elige sugerencias fijas o en lista");
+assert.ok(/set:theme/.test(fn("renderSettings")), "el tema también se cambia desde Ajustes (con la mirada)");
+const layoutCss = readFileSync(`${OS}/layout.css`, "utf8");
+assert.ok(/--edge: 1\.2fr/.test(layoutCss) && /grid4x2 \{ grid-template-columns: var\(--edge\)/.test(layoutCss), "columnas de los extremos más anchas (esquinas: más error)");
 assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
 assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
 assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");
