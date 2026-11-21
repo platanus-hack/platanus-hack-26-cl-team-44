@@ -17,8 +17,11 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. El MVP per
 
 | Experiencia | Dirección | Requisitos |
 |---|---|---|
+| Lobby accesible de Toki | [Elegir mirada, nariz o mouse](http://127.0.0.1:8790/prototype-lobby.html?acceso=elegir) | Node 22+ y el [servidor local de Toki](software/apps-bridge/README.md) |
 | MVP del SO | http://localhost:8000/woki-os.html | Python 3; mouse para la demo, cámara para explorar seguimiento |
 | Monitor muscular | http://127.0.0.1:8766 | macOS/Linux, Python 3.10+, UNO con firmware, sensor y Link Shield |
+| Mirada con iPhone en el SO | En el MVP: **Mirada con iPhone (Face ID)** | iPhone con Face ID y la app Eye Tracking; misma red Wi-Fi. [Guía](software/eye-tracking/README.md) |
+| Demo de eye-tracking | http://localhost:5173 | Node 18+; `node software/eye-tracking/web/serve.mjs` |
 | Despliegue público | Pendiente | Completar `deploy-url` cuando exista una URL real |
 
 **MVP sin hardware**, desde la raíz:
@@ -60,7 +63,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 
 | Carpeta | Contenido |
 |---|---|
-| [software/](software/) | SO de Emmy, monitor muscular y puente WhatsApp |
+| [software/](software/) | SO de Emmy, demo de eye-tracking con iPhone, monitor muscular y puente WhatsApp |
 | [firmware/](firmware/) | Programa del Arduino UNO |
 | [hardware/](hardware/) | Conexiones, esquemas, Raspberry e impresión 3D |
 | [docs/](docs/) | Guías, planes, investigación y requisitos del concurso |
@@ -74,6 +77,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 | USB → monitor local | Se recibieron muestras reales; visualización en Chrome |
 | Respuesta muscular | Se observaron variaciones; falta separar contracción de artefactos y confirmar ENV |
 | SO accesible | MVP heredado de `woki-ux-prototipo`; no validado clínicamente |
+| Mirada con iPhone (Face ID) | Calibración de 13+5 puntos; en el SO, 2,9° de error medio y 5,3° en el peor caso (24 calibraciones del equipo, puntos no vistos); sin movimiento de cabeza |
 | EMG → clic en el SO | Pendiente de integración y calibración |
 | WhatsApp | Código heredado; no probado de extremo a extremo en esta rama |
 | Carcasas y soportes 3D | Estructura preparada; sin modelos imprimibles todavía |

@@ -164,9 +164,10 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
       if (req.method !== 'GET' && req.method !== 'HEAD') throw fault('Método no permitido.', 405);
       const path = resolve(site, '.' + decodeURIComponent(url.pathname === '/' ? '/prototype-lobby.html' : url.pathname));
-      if (!path.startsWith(site + '/') || !['.html', '.js', '.css', '.svg', '.png', '.jpg', '.webp', '.woff2'].includes(extname(path))) throw fault('No encontrado.', 404);
+      const preset = /^\/presets\/[\w-]+\.json$/.test(url.pathname);
+      if (!path.startsWith(site + '/') || (!preset && !['.html', '.js', '.css', '.svg', '.png', '.jpg', '.webp', '.woff2'].includes(extname(path)))) throw fault('No encontrado.', 404);
       const data = await readFile(path);
-      const mime = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2'}[extname(path)];
+      const mime = {'.json': 'application/json', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2'}[extname(path)];
       res.writeHead(200, {'Content-Type': mime, 'Cache-Control': 'no-cache'}); res.end(req.method === 'HEAD' ? undefined : data);
     } catch (e) { send({error: e.status ? e.message : 'No se pudo completar la solicitud.'}, e.status || (e.code === 'ENOENT' ? 404 : 500)); }
   });

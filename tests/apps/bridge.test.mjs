@@ -29,6 +29,20 @@ async function setup(t, extra={}) {
 }
 async function settled(api,id){for(let i=0;i<80;i++){const job=(await api('jobs')).data.jobs.find(j=>j.id===id);if(job.status!=='preparing')return job;await new Promise(r=>setTimeout(r,10));}throw Error('Job did not settle');}
 
+test('the lobby server serves the bundled iPhone calibration presets', async t => {
+  const {base} = await setup(t);
+  const index = await fetch(base + '/presets/index.json');
+  assert.equal(index.status, 200);
+  const {presets} = await index.json();
+  assert.ok(presets.length);
+  for (const name of presets) {
+    const preset = await fetch(base + '/presets/' + name);
+    assert.equal(preset.status, 200);
+    assert.equal(preset.headers.get('content-type'), 'application/json');
+    assert.ok((await preset.json()).preset.model);
+  }
+});
+
 test('real evidence and both reviews are required; sessions and progress survive reload',async t=>{
   const {api,restart}=await setup(t);
   const id=(await api('jobs',{name:'Spotify',tasks:'Buscar y escuchar'})).data.job.id;
