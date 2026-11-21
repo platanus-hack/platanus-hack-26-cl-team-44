@@ -1,6 +1,6 @@
 import {spawn} from 'node:child_process';
 import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
-import {tmpdir,homedir} from 'node:os';
+import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 
@@ -9,7 +9,7 @@ export const recipeSchema={type:'object',additionalProperties:false,required:['s
   capabilities:{type:'array',items:{type:'string',enum:['list','read']}},unsupportedTasks:{type:'array',items:{type:'string'}},reason:{type:'string'}
 }};
 export async function generateRecipe(request,{signal,onProgress=()=>{},binary='codex'}={}) {
-  const skill=await readFile(join(homedir(),'.codex/skills/adapt-app/SKILL.md'),'utf8');
+  const skill=await readFile(new URL('../../../.agents/skills/adapt-app/SKILL.md',import.meta.url),'utf8');
   const dir=await mkdtemp(join(tmpdir(),'toki-adapt-'));
   try {
     const schemaPath=join(dir,'schema.json'),outputPath=join(dir,'recipe.json');

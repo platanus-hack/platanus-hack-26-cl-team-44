@@ -29,6 +29,12 @@ Las solicitudes con una fuente RSS pública configurada por el equipo ejecutan a
 
 La habilitación requiere evidencia declarada por cada adaptador y prueba/revisión con la persona. Las pruebas sintéticas y técnicas no completan esa revisión personal. Contrato, extensibilidad, fuentes y límites: `software/apps-bridge/ADAPTERS.md`; arranque: `software/apps-bridge/README.md`.
 
+## Skill y generador
+
+[`adapt-app`](../../.agents/skills/adapt-app/SKILL.md) contiene las instrucciones para investigar conexiones, construir una interfaz accesible y comprobar tareas. La skill está versionada en este repositorio. El generador de RSS lee esa misma copia; no necesita una skill instalada en la carpeta personal del desarrollador. Sigue requiriendo Codex CLI y una sesión local configurada.
+
+La skill guía al agente. El código de `software/apps-bridge/generator/` valida e instala los paquetes. La generación automática sigue limitada a lectores RSS; versionar las instrucciones no añade generación para otras categorías ni completa la prueba personal. [Uso y mantenimiento de las skills](../../.agents/skills/README.md).
+
 ## Decisiones por resolver
 
 - Criterios de comodidad y recuperación que se comprobarán con la persona.
