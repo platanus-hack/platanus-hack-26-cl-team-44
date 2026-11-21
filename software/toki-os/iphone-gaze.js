@@ -141,8 +141,8 @@ const IPHONE = {
     // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.
     if (this.prevMode === null) this.prevMode = W.CFG.mode;
     W.CFG.mode = "dwell";
-    // Modo "solo mirada": ceja y mandíbula no actúan, sin escaneo al perder la cara, imán y
-    // relleno de progreso en las tarjetas (ver gazeOnly() en woki-os.html y layout.css).
+    // Modo mirada con iPhone: mantener la mirada O ceja (al instante); mandíbula y escaneo como siempre;
+    // imán, huecos y relleno de progreso en las tarjetas (ver gazeOnly() en woki-os.html y layout.css).
     document.body.classList.add("gaze-only");
     if (W.S.screen === "agent") sendBtn(false);
     this.filter = createOneEuro2D(SMOOTHING);

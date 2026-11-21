@@ -519,7 +519,8 @@ const S = { screen:'home', focus:null, fStart:0, blocked:null, armed:false,
   cards:[], kb:{level:1,group:null,text:''}, reactPage:0,
   alarm:null, agentPending:0, agentIdle:0, muted:false, voiceIdx:0, voices:[], scale:1 };
 const $ = s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-/* Modo "solo mirada" (puntero iPhone): todo se elige manteniendo la mirada; ceja y mandíbula no actúan. */
+/* Modo mirada con iPhone: se elige manteniendo la mirada O con la ceja (al instante); mandíbula y demás
+   gestos funcionan como siempre. Agrega imán, huecos, bloqueo tras elegir y salidas en cada pantalla. */
 function gazeOnly(){ return document.body.classList.contains('gaze-only'); }
 const SNAP_PX = 70;   // la mirada en el hueco entre tarjetas toma la más cercana (px del lienzo)
 const MAGNET = .35;   // el cursor se acerca al centro de la tarjeta enfocada (como en la demo)
@@ -561,7 +562,7 @@ function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb])=>
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
   const go=gazeOnly();
-  $('#btnSend').innerHTML = pending ? `<svg><use href="#i-check"/></svg>${go?'Sigue mirando':'Otra ceja'}<small>para enviar · 3 s</small>` : `<svg><use href="#i-check"/></svg>Enviar<small>${go?'Mantén la mirada y sigue mirando para confirmar':'Ceja, y otra ceja en 3 s'}</small>`;
+  $('#btnSend').innerHTML = pending ? `<svg><use href="#i-check"/></svg>${go?'Sigue mirando u otra ceja':'Otra ceja'}<small>para enviar · 3 s</small>` : `<svg><use href="#i-check"/></svg>Enviar<small>${go?'Mirada o ceja, y otra vez para confirmar':'Ceja, y otra ceja en 3 s'}</small>`;
   decorate($('#btnSend').parentElement); }
 
 /* ===================== Barra de estado ===================== */
@@ -571,8 +572,9 @@ function renderStatus(){
   const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
   const al = S.alarm ? '<span class="dot al"></span>Alarma en curso' : '<span class="dot"></span>Alarma armada';
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
+  const howPick = gazeOnly() ? `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja` : mode;
   const sensors = gazeOnly()
-    ? `<div class="pill glass"><span class="dot"></span>iPhone</div><div class="pill glass" style="color:var(--txt2)">Mantén la mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s para elegir</div>`
+    ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
     : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
   $$('.status').forEach(el=>el.innerHTML=
    `<div class="pill glass">${mir}</div>${sensors}<div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
@@ -713,7 +715,7 @@ function renderKbText(){
   const norm=window.TokiPredict.normalize;
   const ghost = p[0] && w && norm(p[0]).startsWith(norm(w)) ? `<span class="ghost">${p[0].slice(w.length)}</span>`:'';
   $('#kbTxt').innerHTML=(S.kb.text||'')+'<span class="caret"></span>'+ghost;
-  const how = gazeOnly()? 'mira una sugerencia para usarla' : '<b>mandíbula</b> acepta la primera';
+  const how = gazeOnly()? 'mira una sugerencia (o ceja) · <b>mandíbula</b> acepta la primera' : '<b>mandíbula</b> acepta la primera';
   $('#kbPred').innerHTML = S.kb.level===3? 'Elige una palabra' : p.length? 'Sugerencias: '+p.slice(0,4).map((x,i)=>i?showWord(x):`<b>${showWord(x)}</b>`).join(' · ')+' — '+how : 'Elige un grupo de letras';
 }
 
@@ -838,7 +840,7 @@ function activate(el, calibrateGaze=true){
 
 /* ===================== Gestos EMG ===================== */
 const G={down:{},pend:{},combo:null};
-function pressSrc(src){ if(gazeOnly() || G.down[src]) return; G.down[src]=performance.now(); flashPill(src); }
+function pressSrc(src){ if(G.down[src]) return; G.down[src]=performance.now(); flashPill(src); }
 function releaseSrc(src){
   if(!G.down[src]) return; const d=performance.now()-G.down[src]; delete G.down[src];
   if(d>=CFG.longMs){ if(G.pend[src]){clearTimeout(G.pend[src]);G.pend[src]=null} gesture(src+'_larga'); return; }
@@ -846,7 +848,6 @@ function releaseSrc(src){
   else G.pend[src]=setTimeout(()=>{G.pend[src]=null; gesture(src);},CFG.doubleMs);
 }
 function gesture(g){
-  if(gazeOnly()){ log('gesto ignorado (modo solo mirada): '+g.replace('mandibula','mandíbula')); return; }
   log('gesto: '+g.replace('mandibula','mandíbula'));
   if(S.alarm && S.alarm.level==='emergencia' && !S.alarm.ack && performance.now()-S.alarm.t0<3000){ stopAlarm('Emergencia cancelada'); return; }
   if(g==='ceja_doble'){ G.combo=setTimeout(()=>{G.combo=null; action('ceja_doble')},CFG.comboMs); island('··','Ceja ×2'); return; }
@@ -875,7 +876,8 @@ function action(g){
 }
 function confirmFocus(){
   const f=S.focus; if(!f) return;
-  if(S.gazeLost || (CFG.mode==='click' && S.armed && S.blocked!==f)){ S.blocked=f; f.classList.add('blocked'); activate(f); }
+  const cejaYa = gazeOnly() && S.blocked!==f;   // iPhone: la ceja elige lo enfocado al instante
+  if(S.gazeLost || cejaYa || (CFG.mode==='click' && S.armed && S.blocked!==f)){ S.blocked=f; f.classList.add('blocked'); activate(f); }
 }
 
 /* Clic directo como alternativa al gesto; respeta la capa visible y sus confirmaciones. */
@@ -954,8 +956,7 @@ function tick(now){
   if(S.rest && !S.gazeLost && !$('#alarm').classList.contains('on')) restWakeTick(now);
   const busy = $('#alarm').classList.contains('on') || S.rest || $('#calib').classList.contains('on');
   if(!busy){
-    if(S.gazeLost && gazeOnly()){ if(S.focus) clearFocus(); }   // sin cara: nada se elige (no hay ceja para escanear)
-    else if(S.gazeLost){ // escaneo: la ceja elige
+    if(S.gazeLost){ // escaneo: la ceja elige
       if(now-S.scanT>CFG.scanMs){ const v=visibleTargets(); if(v.length){ S.scanIdx=(S.scanIdx+1)%v.length; setFocus(v[S.scanIdx]); S.armed=true; S.focus.classList.add('armed'); S.focus.style.setProperty('--p',1);} S.scanT=now; }
     } else {
       const hit=document.elementFromPoint(gz.x,gz.y);

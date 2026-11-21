@@ -31,11 +31,11 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 
 ### Modo solo mirada (activo con el iPhone)
 
-Todo se hace manteniendo la mirada; los gestos de ceja y mandíbula se desactivan (teclas, sensor EMG y clic con la cara) hasta volver a otro puntero.
+Se elige de **dos formas, las dos activas**: manteniendo la mirada hasta que se llena, o con la **ceja** (elige al instante lo que estás mirando). La mandíbula y el resto de gestos (teclas `Espacio`/`J`, sensor EMG, clic con la cara) funcionan como siempre.
 
 - **Siempre hay salida:** Hablar (Escribir · Volver), Escribir (Volver en ambos niveles, palabra sugerida como tecla), Reacciones (Más · Volver), selector de emociones (Volver), Descanso (mirar "Volver" 2 s), Mensajes (Cancelar). Enviar se confirma siguiendo con la mirada en el botón.
 - **Ajustes no deja atrapada a la persona:** "Confirmar con" y "Puntero" quedan fijos; "Calibrar" recalibra con la mirada y vuelve solo.
-- **Sin cara o sin señal:** nada se elige hasta volver a verte (no hay escaneo, que necesita la ceja).
+- **Sin cara o sin señal:** escaneo con la ceja, igual que con la nariz.
 - **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
 - **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.
 - **Bordes más grandes:** con 27 calibraciones reales, el error mediano fue 2,2° en el centro, ~2,7° en los bordes y 5,2° en las esquinas. Las columnas de los extremos son 1,2× más anchas y, en el teclado de 3 filas, las de arriba y abajo algo más altas que la del medio.

@@ -29,7 +29,8 @@ assert.ok(/--edge: 1\.2fr/.test(layoutCss) && /grid4x2 \{ grid-template-columns:
 assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
 assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
 assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");
-assert.ok(/function pressSrc\(src\)\{ if\(gazeOnly\(\)/.test(html) && /function gesture\(g\)\{\n  if\(gazeOnly\(\)\)/.test(html), "ceja y mandíbula desactivadas en modo iPhone");
+assert.ok(!/function pressSrc\(src\)\{ if\(gazeOnly\(\)/.test(html) && !/gesto ignorado/.test(html), "ceja y mandíbula funcionan también con el iPhone");
+assert.ok(/const cejaYa = gazeOnly\(\) && S\.blocked!==f;/.test(fn("confirmFocus")), "con el iPhone la ceja elige al instante (además de mantener la mirada)");
 assert.ok(/gazeOnly\(\) && \(arg==='mode' \|\| arg==='pointer'/.test(html), "Ajustes no permite dejar a la persona sin forma de elegir");
 assert.ok(/document\.body\.classList\.add\("gaze-only"\)/.test(adapter) && /document\.body\.classList\.remove\("gaze-only"\)/.test(adapter), "el iPhone activa y desactiva el modo solo mirada");
 
