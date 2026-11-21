@@ -84,7 +84,20 @@ try {
   await until(()=>events.some(e=>e.trusted && e.type==='mousemove' && Math.abs(e.x-.32)<.04),4000);
   assert.equal(launches,1);assert.equal(host.pages().length,1);assert.equal(page.url(),originalURL);
   const catalog=page.frameLocator('.catalog-frame');
-  await catalog.locator('img#externalGame').evaluate(img=>{if(!img.complete||!img.naturalWidth)throw Error('Missing game image');});
+  const gameImage = catalog.locator('img#externalGame');
+  async function checkGameImage() {
+    const sizes = await gameImage.evaluate(img => {
+      const panel = img.parentElement.getBoundingClientRect();
+      return {width:img.naturalWidth, height:img.naturalHeight, panelWidth:panel.width, panelHeight:panel.height};
+    });
+    assert.ok(sizes.width >= Math.min(1280, Math.floor(sizes.panelWidth) - 1),
+      `Game frame is only ${sizes.width}px wide in a ${Math.round(sizes.panelWidth)}px panel`);
+    assert.ok(Math.abs(sizes.width / sizes.height - sizes.panelWidth / sizes.panelHeight) < .02,
+      'The decoded game frame should have the same proportions as the pointer surface');
+  }
+  await checkGameImage();
+  await page.setViewportSize({width:960,height:640});
+  await checkGameImage();
   await page.locator('#take-rest').click();
   await page.locator('#resume-rest').waitFor();
   const beforeRest=events.filter(e=>e.type==='click').length;
