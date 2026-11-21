@@ -15,3 +15,9 @@ build/
 *.o
 data/local/
 !.env.example
+
+# Eye-tracking: logs de sesiones de mirada (datos biométricos y fotos: nunca a git)
+software/eye-tracking/logs/
+software/eye-tracking/ios/build/
+xcuserdata/
+software/eye-tracking/ios/SoyGaze.xcodeproj/
