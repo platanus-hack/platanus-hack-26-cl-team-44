@@ -30,7 +30,7 @@ STOP = set("""que de no la el es en lo un por me una te los se con para mi esta 
 quiero puedo hoy cuando como donde porque tambien todo nada algo eso esto aqui ahora despues antes otra otro mucho poco
 estoy estas tengo tienes tiene vamos hacer quieres sabes creo luego claro bueno buena siempre nunca cosa favor mejor tiempo
 casa dias semana noche tarde verdad hiciste estas quieres puedes tienes viene vienes fuiste ellas ellos usted ustedes
-amor mama papa esto contigo conmigo nosotros""".split())
+amor mama papa esto contigo conmigo nosotros gusta gustan gusto encanta encantan quiere prefiere""".split())
 _CATALOGO = Path(__file__).resolve().parents[1] / "catalogo" / "temas.json"
 _temas_cache: dict | None = None
 
