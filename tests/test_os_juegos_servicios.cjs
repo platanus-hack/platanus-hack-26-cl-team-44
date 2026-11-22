@@ -33,6 +33,8 @@ assert.match(games, /window\.TOKI_OS_SHELL\?button\('home','← Inicio'\)/);
 assert.match(games, /if\(act==='home'\) return go\('home'\);/);
 assert.match(external, /window\.TOKI_OS_SHELL\?b\('toki','← Juegos'\)/);
 assert.match(external, /if\(act==='toki'\)return window\.TOKI_GAMES\?\.lobby\(\);/);
+assert.match(games, /baseGo\(name, \.\.\.args\)/, "el envoltorio no reescribe el historial al volver");
+assert.match(external, /oldGo\(name,\.\.\.args\)/, "la partida externa conserva el indicador de historial al volver");
 
 // 4. Dentro del SO el puntero se elige en Ajustes (no hay botones Nariz/Mirada/Mouse que apaguen el iPhone).
 assert.match(games, /if \(window\.TOKI_OS_SHELL\) return `<p class="game-note">/);

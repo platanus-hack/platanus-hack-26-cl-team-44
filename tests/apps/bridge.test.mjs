@@ -58,6 +58,48 @@ test('the lobby server serves the bundled iPhone calibration presets', async t =
   }
 });
 
+test('MyoWare monitor uses the Woki origin and only proxies the two fixed local sensor feeds', async t => {
+  const requests = [];
+  const {base} = await setup(t, {myowareFetch: async (url, options) => {
+    requests.push([url,options.redirect]);
+    return Response.json({ age: 15, sequence: 20, frames: [] });
+  }});
+  const ui = await fetch(base + '/myoware/');
+  assert.equal(ui.status, 200);
+  assert.match(await ui.text(), /Abrir Woki OS/);
+  assert.deepEqual(await (await fetch(base + '/emg/gestures')).json(), { age: 15, sequence: 20, frames: [] });
+  assert.equal((await fetch(base + '/myoware/data')).status, 200);
+  const foreign = await fetch(base + '/emg/gestures', { headers: { Origin: 'https://example.com' } });
+  assert.equal(foreign.status, 403);
+  assert.equal(foreign.headers.get('access-control-allow-origin'), null);
+  assert.deepEqual(requests, [['http://127.0.0.1:8766/emg/gestures','error'], ['http://127.0.0.1:8766/data','error']]);
+});
+
+test('legacy MyoWare calibration transfers only from the monitor and the same live sensor', async t => {
+  const source = 'a'.repeat(32);
+  const {base} = await setup(t, {myowareFetch: async () => Response.json({ source, age: 20 })});
+  const calibration = { source, profile: {
+    brow: { direction: -1, trigger: 490, release: 500 },
+    jaw: { direction: 1, trigger: 150, release: 120 },
+  }};
+  const post = (value, origin = 'http://127.0.0.1:8766') => fetch(base + '/myoware/handoff', {
+    method: 'POST', headers: { Origin: origin },
+    body: new URLSearchParams({ calibration: JSON.stringify(value) }),
+  });
+  assert.equal((await post(calibration,'https://example.com')).status, 403);
+  assert.equal((await post({...calibration, source:'b'.repeat(32)})).status, 409);
+  assert.equal((await post({...calibration, profile:{}})).status, 400);
+  assert.equal((await post({...calibration, junk:'x'.repeat(3000)})).status, 413);
+  const handoff = await post({...calibration, ignored:'</script>'});
+  assert.equal(handoff.status, 200);
+  const nonce = /script-src 'nonce-([^']+)'/.exec(handoff.headers.get('content-security-policy'))[1];
+  const document = await handoff.text();
+  assert.ok(document.includes(`<script nonce="${nonce}">`));
+  assert.ok(document.includes(JSON.stringify(JSON.stringify(calibration))));
+  assert.match(document, /location\.replace\('\/woki-os\.html\?myoware=1'\)/);
+  assert.doesNotMatch(document, /ignored/);
+});
+
 test('real evidence and both reviews are required; sessions and progress survive reload',async t=>{
   const {api,restart}=await setup(t);
   const id=(await api('jobs',{name:'Spotify',tasks:'Buscar y escuchar'})).data.job.id;

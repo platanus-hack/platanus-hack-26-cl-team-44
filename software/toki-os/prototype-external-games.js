@@ -92,9 +92,9 @@ window.addEventListener('load',()=>{
   pointerInGame=false;
  }
  function pause(value){if(value)leaveSurface();paused=value;anchor=null;document.querySelector('#externalCurtain')?.toggleAttribute('hidden',!paused);const e=document.querySelector('[data-act="external:pause"]');if(e)e.firstChild.textContent=paused?'Continuar control':'Pausar control';}
- go=function(name){if(S.screen==='games'){stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');}oldGo(name);if(name==='games'&&!window.TOKI_OS_SHELL)catalog();};
- activate=function(el,calibrate=true){
-  if(!el?.dataset.act?.startsWith('external:'))return oldActivate(el,calibrate);
+  go=function(name,...args){if(S.screen==='games'){stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');}oldGo(name,...args);if(name==='games'&&!window.TOKI_OS_SHELL)catalog();};
+  activate=function(el,calibrate=true,immediate=false){
+   if(!el?.dataset.act?.startsWith('external:'))return oldActivate(el,calibrate,immediate);
   const [,act,arg]=el.dataset.act.split(':');
   if(act==='catalog')return catalog();
   if(act==='toki')return window.TOKI_GAMES?.lobby();
@@ -142,7 +142,7 @@ window.addEventListener('load',()=>{
    type='leave';pointerInGame=false;
   } else {
    if(!anchor || Math.hypot(x-anchor.x,y-anchor.y)>28){anchor={x,y,t:now};didClick=false;}
-   if(autoClick && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
+    if(autoClick && !window.WOKI?.myowareConfirming?.() && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
    if(type==='move' && lastPoint && Math.hypot(x-lastPoint.x,y-lastPoint.y)<.7) return;
    lastPoint={x,y};pointerInGame=true;
   }

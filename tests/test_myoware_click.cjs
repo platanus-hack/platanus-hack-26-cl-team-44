@@ -108,16 +108,41 @@ test('stream cursor skips history, consumes each frame once and rejects broken s
   assert.equal(read({ ...next, sequence: 4, frames: [[130, 100, null]] }, 10), null);
 });
 
+test('jaw is available at its original detection edge and a clean brow still confirms on the same frame', async () => {
+  const { createGestureDetector } = await modulePromise;
+  const profile = { jaw: { direction: 1, trigger: 120, release: 105 }, brow: { direction: -1, trigger: 508, release: 511 } };
+  const events = [];
+  let time = 0;
+  const detect = createGestureDetector(profile, (...edge) => events.push(edge));
+  const feed = (duration, a0 = 100, a3 = 512) => {
+    for (let elapsed = 0; elapsed < duration; elapsed += 10) detect(time += 10, a0, a3);
+  };
+  feed(300);
+  feed(180, 100, 504);
+  assert.deepEqual(events, [['brow', 'down', 480]], 'two raw settle frames plus the original 150 ms window');
+  feed(250);
+  const started = time;
+  feed(110, 145, 504);
+  assert.notEqual(events.at(-1)?.[0], 'jaw');
+  feed(10, 145, 504);
+  assert.deepEqual(events.at(-1), ['jaw', 'down', started + 120], 'no separate hold needed for the shortcut');
+  feed(750, 145, 504);
+  assert.equal(events.filter(([name, edge]) => name === 'jaw' && edge === 'down').length, 1, 'holding does not repeat');
+  assert.equal(events.filter(([name, edge]) => name === 'brow' && edge === 'down').length, 1, 'jaw overlap cannot click');
+});
+
 test('confirmation only accepts available focus on the current layer', () => {
   const html = readFileSync('software/toki-os/woki-os.html', 'utf8');
   const functions = html.slice(html.indexOf('function targetLayer('), html.indexOf('/* Clic directo'));
   const element = { dataset: { act: 'go:settings' }, classList: { add() {} } };
   const S = { focus: element, armed: true, blocked: null };
   const CFG = { mode: 'click' };
-  const flags = { inside: true, iphone: false };
+  const flags = { inside: true, iphone: false, myoware: false };
+  const window = {};
   let clicks = 0;
   const context = vm.createContext({
-    S, CFG, activate: () => clicks++, iphonePointing: () => flags.iphone,
+    S, CFG, window, performance: { now: () => 100 }, activate: () => clicks++, iphonePointing: () => flags.iphone,
+    careWheel: null, myowareConfirming: () => flags.myoware,
     $: id => ({ contains: () => flags.inside && (id !== '#rest' || element.dataset.act === 'wake') })
   });
   vm.runInContext(functions, context);
@@ -144,33 +169,62 @@ test('confirmation only accepts available focus on the current layer', () => {
   flags.iphone = true;
   context.confirmFocus();
   assert.equal(clicks, 4, 'physical brow may confirm without dwell in iPhone mode');
+  S.blocked = null;
+  S.armed = true;
+  CFG.mode = 'click';
+  flags.iphone = false;
+  window.NOSE = { on: true, mode: 'gaze' };
+  window.GAZE = { blocksPointer: () => true };
+  context.confirmFocus();
+  assert.equal(clicks, 4, 'stale webcam gaze cannot confirm the previous focus');
+  window.GAZE.blocksPointer = () => false;
+  context.confirmFocus();
+  assert.equal(clicks, 5);
+  flags.myoware = true;
+  S.blocked = null;
+  S.armed = false;
+  context.confirmFocus();
+  context.confirmFocus();
+  assert.equal(clicks, 6, 'MyoWare accepts a new focus immediately but cannot repeat its click');
+  S.rest = true;
+  element.dataset.act = 'wake';
+  S.blocked = null;
+  context.confirmFocus();
+  assert.equal(clicks, 7, 'MyoWare wakes from rest without arming');
+  S.rest = false;
+  element.dataset.act = 'agentSend';
+  S.agentPending = 1;
+  context.confirmFocus();
+  assert.equal(clicks, 8, 'the separate confirmation can use the same send target');
 });
 
 test('monitor shares persistent calibration and Woki receives fresh edges for both channels', async () => {
-  const elements = Object.fromEntries(['controls', 'calibrate', 'toggle', 'status', 'result', 'open-woki', 'use-woki'].map(name => [
+  const elements = Object.fromEntries(['controls', 'calibrate', 'toggle', 'status', 'result', 'open-woki', 'use-woki', 'use-gaze'].map(name => [
     `myoware-${name}`, { addEventListener(_, listener) { this.click = listener; }, blur() {} }
   ]));
   const calibration = elements['myoware-calibrate'], toggle = elements['myoware-toggle'];
   const status = elements['myoware-status'];
-  const timers = [], frames = [[0, 100, 512]], storage = new Map(), tabStorage = new Map();
+  const timers = [], delays = [], frames = [[0, 100, 512]], storage = new Map(), tabStorage = new Map();
   const storageApi = map => ({ getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) });
-  const events = [];
+  const events = [], unavailable = [];
   const browDowns = () => events.filter(([src, edge]) => src === 'ceja' && edge === 'down').length;
-  let sequence = 1, entries = 0, age = 0, usbSource = 'uno';
+  let sequence = 1, entries = 0, gazeEntries = 0, age = 0, usbSource = 'uno';
+  let now = 0, recovered = 0, transportAvailable = true;
   const listeners = {};
   const register = (name, listener) => { listeners[name] = listener; };
   const document = { visibilityState: 'visible', getElementById: id => elements[id], addEventListener: register };
   const context = vm.createContext({
     document, window: { addEventListener: register },
-    performance: { now: () => 0 },
+    performance: { now: () => now },
     AbortSignal: { timeout() {} },
     localStorage: storageApi(storage), sessionStorage: storageApi(tabStorage),
-    fetch: async () => ({ ok: true, json: async () => ({ source: usbSource, sequence, age, frames }) }),
-    setTimeout: poll => timers.push(poll),
+    fetch: async () => ({ ok: transportAvailable, json: async () => ({ source: usbSource, sequence, age, frames }) }),
+    setTimeout(poll, delay) { timers.push(poll); delays.push(delay); },
   });
-  vm.runInContext(source.toString().replaceAll('export function', 'function'), context);
+  vm.runInContext(source.toString().replace(/^export (?=(function|const) )/gm, ''), context);
   context.setupMyoWareGestures();
   assert.equal(toggle.hidden, true);
+  assert.equal(elements['myoware-use-gaze'].hidden, true);
   calibration.click();
   await new Promise(setImmediate);
 
@@ -208,10 +262,19 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
   assert.match(elements['myoware-result'].textContent, /Último gesto: Mandíbula.*Mandíbula: 1/);
   toggle.click();
   await timers.shift()();
-  const myoware = context.setupMyoWareGestures((...event) => events.push(event), () => entries++);
+  const myoware = context.setupMyoWareGestures((...event) => events.push(event), () => entries++, {
+    enterGaze: () => gazeEntries++,
+    onUnavailable: message => unavailable.push(message),
+    onRecovered: () => recovered++,
+  });
   assert.equal(toggle.hidden, false);
   assert.equal(toggle.textContent, 'Activar gestos');
   assert.equal(elements['myoware-use-woki'].hidden, false);
+  assert.equal(elements['myoware-use-gaze'].hidden, false);
+  elements['myoware-use-gaze'].click();
+  assert.equal(gazeEntries, 1);
+  assert.equal(entries, 0);
+  assert.equal(toggle.textContent, 'Activar gestos', 'gaze must finish setup before activating gestures');
   elements['myoware-use-woki'].click();
   assert.equal(entries, 1);
   assert.equal(elements['myoware-use-woki'].hidden, true);
@@ -244,19 +307,61 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
 
   age = null;
   await timers.shift()();
-  assert.match(status.textContent, /la calibración sigue guardada/);
+  assert.match(status.textContent, /Recuperando la señal/);
+  assert.equal(unavailable.length, 0, 'a transient failure is not a banner');
   assert.deepEqual(events.at(-1), [null, 'cancel']);
-  assert.equal(toggle.hidden, false);
-  assert.equal(elements['myoware-use-woki'].hidden, false);
+  assert.equal(toggle.textContent, 'Desactivar gestos', 'recovery keeps the previous intent');
+  assert.equal(storage.get(savedKey), savedProfile);
+  age = 0;
+  await sample(100, 505, 25);
+  assert.match(status.textContent, /Recuperando la señal/, 'a snapshot alone does not establish live input');
+  await sample(100, 505, 30);
+  assert.equal(browDowns(), 2, 'a brow held through the outage cannot replay');
+  await sample(100, 512, 25);
+  await sample(100, 505, 30);
+  assert.equal(browDowns(), 3, 'same source resumes without a click on the toggle');
+  assert.equal(recovered, 0, 'no recovery toast for a brief interruption');
+
+  now += 400;
+  queueSamples(100, 512, 25);
+  await sample(100, 505, 30);
+  await sample(100, 505, 30);
+  assert.equal(browDowns(), 3, 'no stale gesture if the browser was too slow to poll');
+  await sample(100, 512, 25);
+  await sample(100, 505, 30);
+  assert.equal(browDowns(), 4);
+
+  transportAvailable = false;
+  await timers.shift()();
+  assert.equal(delays.at(-1), 120);
+  now += 1500;
+  await timers.shift()();
+  assert.match(status.textContent, /Revisa la conexión/);
+  assert.equal(unavailable.at(-1), status.textContent);
+  assert.equal(delays.at(-1), 500);
+  await timers.shift()();
+  assert.equal(unavailable.length, 1, 'one alert per sustained outage');
+  transportAvailable = true;
+  await sample(100, 505, 25);
+  await sample(100, 505, 30);
+  assert.equal(recovered, 1);
+  assert.equal(browDowns(), 4);
+
+  age = null;
+  await timers.shift()();
+  toggle.click();
+  await timers.shift()();
+  assert.equal(timers.length, 0, 'manual disable stops automatic retries');
   age = 0;
   usbSource = 'reopened';
   toggle.click();
   await new Promise(setImmediate);
   assert.match(status.textContent, /Cambió la conexión del sensor/);
+  assert.equal(unavailable.at(-1), status.textContent);
   assert.equal(toggle.hidden, true);
   assert.equal(storage.has(savedKey), false, 'new USB source invalidates persistent calibration');
   assert.equal(timers.length, 0);
-  assert.equal(browDowns(), 2);
+  assert.equal(browDowns(), 4);
 
   tabStorage.set(savedKey, savedProfile);
   listeners.pageshow();
@@ -266,5 +371,8 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
   storage.set(savedKey, 'invalid');
   listeners.storage({ key: savedKey });
   assert.equal(elements['myoware-use-woki'].hidden, true, 'invalid stored data cannot enable a click');
+  assert.equal(elements['myoware-use-gaze'].hidden, true);
+  elements['myoware-use-gaze'].click();
+  assert.equal(gazeEntries, 1);
   assert.equal(myoware.enable(), false, 'iPhone cannot enable an invalid profile');
 });

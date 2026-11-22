@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba de mirada · Toki</title>
+<link rel="stylesheet" href="/gaze-benchmark/style.css">
+<main>
+  <h1>Prueba de mirada</h1>
+  <p>Compara el puntero de Toki y WebEyeTrack con la misma webcam. Mantén la postura y el tamaño de la ventana. Mira el centro de cada recuadro; no necesitas hacer clic.</p>
+  <p>Son dos rondas de 12 objetivos, después de calibrar cada modelo. No se guarda video ni se suben los datos de la cámara.</p>
+  <button id="start" type="button">Empezar comparación</button>
+  <button id="retry" type="button" hidden>Reintentar solo WebEyeTrack</button>
+  <button id="rehearse" type="button">Ensayar la demo con WebEyeTrack</button>
+  <p>El ensayo usa las tarjetas reales de Inicio, sin abrirlas. Meta: 10 de 12 al primer intento.</p>
+  <button id="compare-calibration" type="button">Comparar calibraciones en Woki</button>
+  <p>Dos rondas con la misma webcam y las 10 tarjetas de Woki: último fotograma frente a tres muestras estables por punto. No hace falta confirmar con la ceja.</p>
+  <section id="calibration-results" hidden>
+    <h2 id="calibration-title" tabindex="-1">Resultados de calibración</h2>
+    <p>Se mide la predicción del modelo sin imán ni suavizado. Un acierto requiere 180 ms continuos en la tarjeta indicada, antes que en otra.</p>
+    <table>
+      <thead><tr><th scope="col">Muestras por punto</th><th scope="col">Aciertos</th><th scope="col">Sin señal</th><th scope="col">Tiempo mediano</th><th scope="col">Temblor al centro (p90)</th></tr></thead>
+      <tbody id="calibration-scores"></tbody>
+    </table>
+  </section>
+  <section id="results" hidden>
+    <h2 id="result-title" tabindex="-1">Resultados</h2>
+    <p>Un acierto es mantener la predicción del cursor 180 ms seguidos dentro del recuadro. Los objetivos sin señal cuentan como no acertados.</p>
+    <table>
+      <thead><tr><th scope="col">Modelo</th><th scope="col">Aciertos</th><th scope="col">Sin señal</th><th scope="col">Tiempo mediano (aciertos)</th></tr></thead>
+      <tbody id="scores"></tbody>
+    </table>
+  </section>
+  <section id="rehearsal-results" hidden>
+    <h2 id="rehearsal-verdict" tabindex="-1"></h2>
+    <p>Cuenta la primera tarjeta que recibe 180 ms de mirada estable. Si es otra, el intento no cuenta como acierto.</p>
+    <p id="rehearsal-summary"></p>
+    <p id="rehearsal-motion"></p>
+    <details>
+      <summary>Ver los 12 intentos</summary>
+      <ol id="rehearsal-attempts"></ol>
+    </details>
+  </section>
+</main>
+<section id="trial" aria-label="Ronda de mirada" hidden>
+  <p id="phase" role="status"></p>
+  <button id="stop" type="button">Cancelar</button>
+  <div id="target" aria-hidden="true" hidden></div>
+  <span id="rehearsal-cue" aria-hidden="true" hidden></span>
+</section>
+<p id="error" role="alert"></p>
+<video id="camera" autoplay muted playsinline hidden></video>
+<script type="module" src="/gaze-benchmark/run.js"></script>
+</html>

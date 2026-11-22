@@ -6,10 +6,14 @@ const MIN_DETECTIONS = 3;
 const MAX_AGE_MS = 250;
 const MAX_GAP_MS = 150;
 const ACTIVE_POLL_MS = 30;
+const RETRY_POLL_MS = 120;
+const OUTAGE_NOTICE_MS = 1500;
+const OUTAGE_POLL_MS = 500;
 const JAW_PRIORITY_MS = 150;
 const ACTIVATE_MS = 90;
 const RELEASE_MS = 120;
-const PROFILE_KEY = 'toki.myoware.gestures.v3';
+export const MYOWARE_PROFILE_KEY = 'toki.myoware.gestures.v3';
+const PROFILE_KEY = MYOWARE_PROFILE_KEY;
 
 const quantile = (values, q) => [...values].sort((a, b) => a - b)[Math.floor(q * (values.length - 1))];
 
@@ -217,17 +221,21 @@ export function createGestureCursor(expectedSource = null) {
   };
 }
 
-function readProfile(storage) {
-  const value = JSON.parse(storage.getItem(PROFILE_KEY));
+export function validMyoWareProfile(value) {
   const validChannel = channel => channel && [1, -1].includes(channel.direction) &&
     Number.isFinite(channel.trigger) && Number.isFinite(channel.release) &&
     (channel.trigger - channel.release) * channel.direction > 0 &&
     (channel.center === undefined || Number.isFinite(channel.center));
-  return typeof value?.source === 'string' && value.source &&
-    validChannel(value.profile?.brow) && validChannel(value.profile?.jaw) ? value : null;
+  return typeof value?.source === 'string' && !!value.source &&
+    validChannel(value.profile?.brow) && validChannel(value.profile?.jaw);
 }
 
-export function setupMyoWareGestures(onInput = null, enterWoki = null) {
+function readProfile(storage) {
+  const value = JSON.parse(storage.getItem(PROFILE_KEY));
+  return validMyoWareProfile(value) ? value : null;
+}
+
+export function setupMyoWareGestures(onInput = null, enterWoki = null, { launchOrigin, transfer = false, enterGaze, onActivate, onUnavailable, onRecovered } = {}) {
   const panel = document.getElementById('myoware-controls');
   const calibrateButton = document.getElementById('myoware-calibrate');
   const toggleButton = document.getElementById('myoware-toggle');
@@ -235,6 +243,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
   const result = document.getElementById('myoware-result');
   const openWoki = document.getElementById('myoware-open-woki');
   const useWoki = document.getElementById('myoware-use-woki');
+  const useGaze = document.getElementById('myoware-use-gaze');
   let saved = null, mode = 'off', runId = 0, resume = false;
   let counts = { brow: 0, jaw: 0 };
   function loadSaved() {
@@ -277,9 +286,12 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
     toggleButton.textContent = onInput
       ? mode === 'active' ? 'Desactivar gestos' : 'Activar gestos'
       : mode === 'active' ? 'Detener prueba' : 'Probar gestos';
-    if (openWoki) openWoki.textContent = saved
-      ? 'Abrir Woki OS con esta calibración' : 'Abrir Woki OS sin activar el sensor';
+    if (openWoki) {
+      openWoki.textContent = saved ? 'Abrir Woki OS con esta calibración' : 'Abrir Woki OS sin activar el sensor';
+      if (launchOrigin) openWoki.href = `${launchOrigin}/woki-os.html${saved && !transfer ? '?myoware=1' : ''}`;
+    }
     if (useWoki) useWoki.hidden = !saved || !enterWoki || mode !== 'off';
+    if (useGaze) useGaze.hidden = !saved || !enterGaze || mode === 'calibrating';
   }
 
   function stop(message, clear = false) {
@@ -296,19 +308,34 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
     mode = nextMode;
     const id = ++runId;
     const calibration = mode === 'calibrating' ? createCalibration() : null;
-    let freshAfter = Infinity;
-    const detect = calibration ? null : createGestureDetector(saved.profile, (name, edge, time) => {
+    let freshAfter = Infinity, lastPollAt = null, retrySince = null, warned = false;
+    const createDetector = () => createGestureDetector(saved.profile, (name, edge, time) => {
       if (edge === 'cancel' || time >= freshAfter) onInput?.(name === 'brow' ? 'ceja' : 'mandibula', edge, time);
       else onInput?.(null, 'cancel');
     });
-    const read = createGestureCursor(calibration ? null : saved.source);
+    let read = createGestureCursor(calibration ? null : saved.source);
+    let detect = calibration ? null : createDetector();
     counts = { brow: 0, jaw: 0 };
     result.textContent = 'Último gesto: —';
     setStatus(calibration ? 'Buscando ambos canales para calibrar…' : 'Relaja la frente y la mandíbula antes del primer gesto.');
     updateButtons();
 
+    function resetActiveInput(now) {
+      if (retrySince === null) {
+        retrySince = now;
+        onInput?.(null, 'cancel');
+        setStatus('Recuperando la señal MyoWare… La calibración sigue guardada.');
+      }
+      // Reseed from live data. Do not reuse an armed gesture or its history.
+      freshAfter = Infinity;
+      lastPollAt = null;
+      read = createGestureCursor(saved.source);
+      detect = createDetector();
+    }
+
     async function poll() {
       if (id !== runId) return;
+      let valid = false;
       try {
         const started = performance.now();
         const response = await fetch('/emg/gestures', { cache: 'no-store', signal: AbortSignal.timeout(750) });
@@ -316,12 +343,16 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
         const packet = await response.json();
         if (id !== runId || document.visibilityState !== 'visible') return;
         if (!calibration && packet.source && packet.source !== saved.source) {
-          stop('Cambió la conexión del sensor. Vuelve a calibrar los gestos.', true);
+          const message = 'Cambió la conexión del sensor. Vuelve a calibrar los gestos.';
+          stop(message, true);
+          onUnavailable?.(message);
           return;
         }
-        const roundTrip = performance.now() - started;
+        const now = performance.now(), roundTrip = now - started;
+        if (!calibration && lastPollAt !== null && now - lastPollAt > MAX_AGE_MS) resetActiveInput(now);
         const frames = read(packet, roundTrip);
         if (!frames) throw Error();
+        valid = true;
         if (calibration) {
           for (const row of frames) {
             const outcome = calibration.sample(...row);
@@ -332,7 +363,11 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
           }
           setStatus(calibration.message());
         } else {
+          lastPollAt = now;
           if (frames.length) {
+            retrySince = null;
+            if (warned) onRecovered?.();
+            warned = false;
             freshAfter = frames.at(-1)[0] + packet.age + roundTrip - MAX_AGE_MS;
           }
           for (const row of frames) {
@@ -343,15 +378,29 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
             result.textContent = `Último gesto: ${label} · Ceja: ${counts.brow} · Mandíbula: ${counts.jaw}`;
           }
           if (frames.length) onInput?.(null, 'alive');
-          setStatus(onInput ? 'Gestos activos: levanta la ceja para elegir. Suéltala antes del siguiente clic.'
+          if (retrySince === null) setStatus(onInput ? 'Gestos activos: levanta la ceja para elegir. Suéltala antes del siguiente clic.'
             : 'Prueba activa. Relaja la cara entre gestos.');
         }
       } catch {
-        if (id === runId) stop(calibration
-          ? 'No hay señal reciente de ambos canales. Revisa la conexión y vuelve a iniciar la calibración.'
-          : 'Señal interrumpida. Revisa la conexión y activa de nuevo; la calibración sigue guardada.');
+        if (id !== runId) return;
+        if (calibration) {
+          stop('No hay señal reciente de ambos canales. Revisa la conexión y vuelve a iniciar la calibración.');
+          return;
+        }
+        resetActiveInput(performance.now());
       }
-      if (id === runId) setTimeout(poll, calibration || !onInput ? 60 : ACTIVE_POLL_MS);
+      if (id === runId) {
+        const outage = retrySince === null ? 0 : performance.now() - retrySince;
+        if (!valid && outage >= OUTAGE_NOTICE_MS && !warned) {
+          warned = true;
+          const message = 'Sin señal MyoWare. Revisa la conexión; Woki seguirá intentando.';
+          setStatus(message);
+          onUnavailable?.(message);
+        }
+        const delay = valid ? (calibration || !onInput ? 60 : ACTIVE_POLL_MS)
+          : warned ? OUTAGE_POLL_MS : RETRY_POLL_MS;
+        setTimeout(poll, delay);
+      }
     }
     poll();
   }
@@ -363,13 +412,36 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
   });
   toggleButton.addEventListener('click', () => {
     if (mode === 'active') stop(onInput ? 'Gestos desactivados.' : 'Prueba detenida.');
-    else if (saved) start('active');
+    else if (saved) {
+      onActivate?.();
+      start('active');
+    }
+  });
+  if (openWoki && launchOrigin && transfer) openWoki.addEventListener('click', event => {
+    if (!saved) return;
+    event.preventDefault();
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = `${launchOrigin}/myoware/handoff`;
+    form.hidden = true;
+    const profile = document.createElement('input');
+    profile.type = 'hidden';
+    profile.name = 'calibration';
+    profile.value = JSON.stringify(saved);
+    form.append(profile);
+    document.body.append(form);
+    form.requestSubmit();
   });
   useWoki?.addEventListener('click', () => {
     if (!saved || !enterWoki || mode !== 'off') return;
     useWoki.blur();
     enterWoki();
     start('active');
+  });
+  useGaze?.addEventListener('click', () => {
+    if (!saved || !enterGaze || mode === 'calibrating') return;
+    useGaze.blur();
+    enterGaze();
   });
   function pause() {
     if (mode === 'off') return;

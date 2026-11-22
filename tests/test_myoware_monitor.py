@@ -69,6 +69,8 @@ class MonitorTest(unittest.TestCase):
                 ('/layout.css','text/css','.rest-wake'),
                 ('/magnetic-pointer.js?v=24','text/javascript','createMenuPointer'),
                 ('/magnetic-pointer.css?v=24','text/css','.dwell-outline'),
+                ('/gaze-calibration.js','text/javascript','gazeCalibrationPoints'),
+                ('/care-wheel.js','text/javascript','createCareWheel'),
                 ('/tablet-keyboard.js?v=21','text/javascript','toki-'),
                 ('/tablet-keyboard.css?v=21','text/css','tablet'),
                 ('/eye-engine/connection.js','text/javascript','createConnection'),

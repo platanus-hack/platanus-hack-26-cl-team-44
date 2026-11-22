@@ -31,7 +31,7 @@ toki_assets={
     '/woki-os.html':'text/html',
     **{f'/{name}.js':'text/javascript' for name in (
         'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
-        'magnetic-pointer','tablet-keyboard',
+        'magnetic-pointer','tablet-keyboard','gaze-calibration','care-wheel',
         'woki-voz','dev-agente',   # voz ElevenLabs (PR #7) y panel dev del agente (PR #4)
     )},
     **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard')},
