@@ -37,6 +37,18 @@
   const SALA_MS = 15 * 60 * 1000;   // modo sala: hubo un turno escuchado en los últimos 15 min
   try { E.hablantes = JSON.parse(sessionStorage.getItem('myo.hablantes') || '{}'); } catch (_) {}
 
+  // ---------- modos de escucha (se comparan en el ensayo; queda uno) ----------
+  //   siempre  la TV escucha desde que abre: micrófono y sesión de ElevenLabs abiertos todo el tiempo
+  //   voz      el micrófono queda abierto solo en el navegador; la sesión se abre al detectar voz
+  //            (con 1,5 s de audio previo) y se cierra tras 45 s de silencio
+  //   manual   como antes: el acompañante aprieta «Escuchar»
+  // Teclas del acompañante: O enciende o apaga · Mayús+O cambia de modo. También se cambia en el indicador.
+  const MODOS = ['siempre', 'voz', 'manual'];
+  const NOMBRE_MODO = { siempre: 'siempre encendida', voz: 'se activa con la voz', manual: 'manual' };
+  let modo = (() => { try { const m = localStorage.getItem('myo.escucha.modo'); return MODOS.includes(m) ? m : 'siempre'; } catch (_) { return 'siempre'; } })();
+  const SILENCIO_MS = 45000, PREVIO_CHUNKS = 15;   // 15 × 100 ms = 1,5 s de audio previo
+  const ST = { sesiones: 0, msConectado: 0, desde: 0 };   // para comparar el gasto de los modos
+
   // ---------- interfaz: botón y barra de voces (para el acompañante) ----------
   const css = `
   #escuchaBtn{margin-left:auto;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:inherit;font:600 18px/1 system-ui;cursor:pointer;white-space:nowrap}
@@ -46,11 +58,28 @@
   #escuchaBar .voz{display:inline-flex;gap:6px;align-items:center;padding:3px 8px 3px 10px;border-radius:999px;background:rgba(255,255,255,.1)}
   #escuchaBar .voz.anon{outline:2px dashed rgba(255,255,255,.35);outline-offset:-2px}
   #escuchaBar select{background:#111;color:#eee;border:1px solid #444;border-radius:8px;padding:4px 8px;font:inherit}
-  #escuchaBar .priv{opacity:.75}`;
+  #escuchaBar .priv{opacity:.75}
+  #escuchaInd{position:fixed;top:14px;right:18px;z-index:60;display:flex;gap:8px;align-items:center;padding:6px 12px;border-radius:999px;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font:600 14px/1 system-ui;cursor:pointer;opacity:.8}
+  #escuchaInd i{width:9px;height:9px;border-radius:50%;background:#8e8e93;display:inline-block}
+  #escuchaInd.oye i{background:#ff9f0a}
+  #escuchaInd.vivo i{background:#ff453a;box-shadow:0 0 0 0 rgba(255,69,58,.6);animation:escPulso 1.6s infinite}
+  @keyframes escPulso{70%{box-shadow:0 0 0 8px rgba(255,69,58,0)}100%{box-shadow:0 0 0 0 rgba(255,69,58,0)}}`;
   document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
   const ctx = document.querySelector('#s-talk .ctx');
   const btn = Object.assign(document.createElement('button'), { id: 'escuchaBtn', type: 'button', textContent: '🎙 Escuchar', title: 'Escuchar la sala y separar las voces (lo usa el acompañante)' });
   ctx.appendChild(btn);
+  // Indicador fijo en todas las pantallas: la sala sabe cuándo Myo escucha. Clic = encender o apagar; Mayús+clic = modo.
+  const ind = Object.assign(document.createElement('div'), { id: 'escuchaInd', title: 'Escucha de la sala (O enciende o apaga · Mayús+O cambia de modo)' });
+  ind.append(document.createElement('i'), document.createElement('span'));
+  document.body.appendChild(ind);
+  function pintarInd() {
+    const vivo = !!(ws && ws.readyState === 1);
+    ind.classList.toggle('vivo', E.on && vivo);
+    ind.classList.toggle('oye', E.on && !vivo);
+    ind.lastChild.textContent = !E.on ? 'Escucha apagada · ' + NOMBRE_MODO[modo]
+      : vivo ? 'Escuchando' : modo === 'voz' ? 'Esperando voz' : 'Conectando…';
+  }
   const bar = Object.assign(document.createElement('div'), { id: 'escuchaBar' });
   bar.setAttribute('aria-live', 'polite');
   ctx.insertAdjacentElement('afterend', bar);
@@ -294,12 +323,31 @@
   };
   const b64 = (i16) => { const u = new Uint8Array(i16.buffer); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 
+  // Detector de voz local (modo «voz»): energía de cada bloque de 100 ms contra el ruido de fondo, que se adapta.
+  const V = { piso: 0.004, ultimaVoz: 0, recientes: [], previo: [] };
+  function hayVoz(f) {
+    let e = 0; for (let i = 0; i < f.length; i++) e += f[i] * f[i];
+    const rms = Math.sqrt(e / f.length);
+    V.piso = rms < V.piso ? V.piso * 0.9 + rms * 0.1 : V.piso * 0.998 + rms * 0.002;   // baja rápido, sube lento
+    V.recientes.push(rms > Math.max(V.piso * 3, 0.012)); if (V.recientes.length > 5) V.recientes.shift();
+    return V.recientes.filter(Boolean).length >= 3;   // 300 ms de voz en los últimos 500 ms
+  }
   function audio(f32) {
     const j = new Float32Array(buf.length + f32.length); j.set(buf); j.set(f32, buf.length); buf = j;
     while (buf.length >= CHUNK) {
+      const bloque = buf.subarray(0, CHUNK), mudo = callado();
       const out = new Int16Array(CHUNK);
-      if (!callado()) for (let i = 0; i < CHUNK; i++) out[i] = Math.max(-1, Math.min(1, buf[i])) * 0x7fff;
-      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ message_type: 'input_audio_chunk', audio_base_64: b64(out), commit: false, sample_rate: RATE }));
+      if (!mudo) for (let i = 0; i < CHUNK; i++) out[i] = Math.max(-1, Math.min(1, bloque[i])) * 0x7fff;
+      const msg = JSON.stringify({ message_type: 'input_audio_chunk', audio_base_64: b64(out), commit: false, sample_rate: RATE });
+      if (modo === 'voz' && E.on) {
+        if (!mudo && hayVoz(bloque)) {
+          V.ultimaVoz = Date.now();
+          if (!ws) conectar().catch((e) => say(e.message));
+        }
+        if (ws && ws.readyState === 1 && Date.now() - V.ultimaVoz > SILENCIO_MS) { say('45 s sin voz: cierro la sesión'); ws.close(); }
+      }
+      if (ws && ws.readyState === 1) ws.send(msg);
+      else if (modo === 'voz') { V.previo.push(msg); if (V.previo.length > PREVIO_CHUNKS) V.previo.shift(); }
       buf = buf.slice(CHUNK);
     }
   }
@@ -344,16 +392,37 @@
     }
   }
 
+  let conectando = false;   // una sola sesión a la vez: pedir el token tarda y llegan bloques de audio mientras tanto
   async function conectar() {
+    if (conectando || ws) return;
+    conectando = true;
+    try { await abrirSesion(); } finally { conectando = false; }
+  }
+  async function abrirSesion() {
     const d = await post(URL_PUENTE, '/api/voz/escucha', {});
     const q = new URLSearchParams({ token: d.token });
     for (const [k, v] of Object.entries(d.params)) q.set(k, v);
     const vistos = new Set();
-    for (const n of [E.usuaria, ...E.personas.map((p) => p.nombre)])   // el nombre de la usuaria primero (sin él, «Emmy» salía «Emi») if (n && !vistos.has(n.toLowerCase()) && vistos.size < 50) { vistos.add(n.toLowerCase()); q.append('keyterms', n); }
+    // El nombre de la usuaria va primero (sin él, «Emmy» salía «Emi»).
+    for (const n of [E.usuaria, ...E.personas.map((p) => p.nombre)])
+      if (n && !vistos.has(n.toLowerCase()) && vistos.size < 50) { vistos.add(n.toLowerCase()); q.append('keyterms', n); }
     sesion += 1;
-    ws = new WebSocket(WS_URL + '?' + q);
-    ws.onmessage = (ev) => { try { mensaje(JSON.parse(ev.data)); } catch (_) {} };
-    ws.onclose = () => { ws = null; if (E.on) setTimeout(() => E.on && conectar().catch((e) => say(e.message)), 600); };
+    const yo = ws = new WebSocket(WS_URL + '?' + q);
+    yo.onopen = () => {
+      ST.sesiones += 1; ST.desde = Date.now(); say(`sesión ${ST.sesiones} abierta (${modo})`);
+      for (const m of V.previo.splice(0)) yo.send(m);   // modo «voz»: el inicio de la frase no se pierde
+      pintarInd();
+    };
+    yo.onmessage = (ev) => { try { mensaje(JSON.parse(ev.data)); } catch (_) {} };
+    yo.onclose = () => {
+      if (ST.desde) { ST.msConectado += Date.now() - ST.desde; ST.desde = 0; }
+      if (ws === yo) ws = null;
+      pintarInd();
+      // siempre/manual: reconecta. voz: solo si hubo voz hace poco (si no, espera la próxima).
+      const seguir = E.on && (modo !== 'voz' || Date.now() - V.ultimaVoz < SILENCIO_MS);
+      if (seguir) setTimeout(() => E.on && !ws && conectar().catch((e) => say(e.message)), 600);
+    };
+    pintarInd();
   }
 
   async function abrirMic() {
@@ -382,17 +451,40 @@
     try {
       if (!E.personas.length) E.personas = await getJ(URL_AGENTE, '/api/personas').catch(() => []);
       if (!E.usuaria) E.usuaria = (await getJ(URL_AGENTE, '/api/salud').catch(() => ({}))).usuaria || '';
-      await abrirMic(); await conectar();
+      await abrirMic();
+      if (actx && actx.state === 'suspended') say('el audio espera un clic o una tecla para empezar (política de Chrome)');
+      if (modo !== 'voz') await conectar();
+      pintarInd();
     } catch (e) { say('no se pudo escuchar: ' + e.message); apagar(); }
   }
   function apagar() {
-    E.on = false; cerrar(); btn.classList.remove('on'); btn.textContent = '🎙 Escuchar';
+    E.on = false; cerrar(); V.previo = []; btn.classList.remove('on'); btn.textContent = '🎙 Escuchar'; pintarInd();
     const i = document.getElementById('ctxIn'); if (i) i.placeholder = 'El acompañante escribe y aprieta Enter';
   }
   btn.addEventListener('click', () => { btn.blur(); E.on ? apagar() : encender(); });
-  getJ(URL_AGENTE, '/api/personas').then((p) => { E.personas = p; pintarBarra(); }).catch(() => {});
+  function cambiarModo() {
+    modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
+    try { localStorage.setItem('myo.escucha.modo', modo); } catch (_) {}
+    const estaba = E.on; apagar();
+    if (estaba && modo !== 'manual') encender();
+    try { island('🎙', 'Escucha: ' + NOMBRE_MODO[modo]); } catch (_) {}
+    say('modo ' + modo); pintarInd();
+  }
+  ind.addEventListener('click', (e) => { e.shiftKey ? cambiarModo() : (E.on ? apagar() : encender()); });
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'o' && e.key !== 'O') return;
+    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+    if (e.shiftKey) cambiarModo(); else E.on ? apagar() : encender();
+  });
+  // Chrome deja el audio en pausa hasta el primer gesto si no se abrió con --autoplay-policy: se reanuda con cualquier tecla o clic.
+  const reanudar = () => { if (actx && actx.state === 'suspended') actx.resume().catch(() => {}); };
+  addEventListener('pointerdown', reanudar, true); addEventListener('keydown', reanudar, true);
+  getJ(URL_AGENTE, '/api/personas').then((p) => { E.personas = p; pintarBarra(); }).catch(() => {})
+    .finally(() => { pintarInd(); if (modo !== 'manual') encender(); });   // sin botón: escucha sola al abrir la TV
 
   // Para probar sin micrófono: MYO_ESCUCHA.turno("¿Le duele la espalda?", {hablante: "S2"}); MYO_ESCUCHA.asignar("S2", "juan")
   window.MYO_ESCUCHA = { encender, apagar, turno, asignar, mas, enSala,
+    modo: () => modo, cambiarModo,
+    gasto: () => ({ modo, sesiones: ST.sesiones, segundos: Math.round((ST.msConectado + (ST.desde ? Date.now() - ST.desde : 0)) / 1000) }),
     estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes }, pool: E.pool.map((c) => c.text), inicio: E.inicio }) };
 })();

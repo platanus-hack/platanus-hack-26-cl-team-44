@@ -94,10 +94,13 @@ case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected":
 # 6) Chrome con su propio perfil (guarda la calibración entre ensayos) y en pantalla completa
 URL="http://127.0.0.1:$PUERTO/woki-os.html"
 PERFIL="$HOME/.toki-chrome"
+# Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
+# Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.
+CHROME_FLAGS=(--use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required)
 if [ -d "/Applications/Google Chrome.app" ]; then
-  open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "$URL"
+  open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL"
 elif command -v google-chrome >/dev/null; then
-  google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "$URL" >/dev/null 2>&1 &
+  google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL" >/dev/null 2>&1 &
 else
   echo "  Abre en Chrome: $URL"
 fi
