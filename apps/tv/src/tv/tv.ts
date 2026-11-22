@@ -20,6 +20,8 @@ import {
 } from '../domain/phrases';
 import { type CareWheel, createCareWheel, type DialogLike } from '../engines/careWheel/careWheel';
 import { createGestures, type Gestures, type Source } from '../engines/gestures/gestures';
+import { MyoWareClient } from '../engines/myoware/client';
+import { MYOWARE_PROFILE_KEY } from '../engines/myoware/detector';
 import { PointerEngine } from '../engines/pointer/engine';
 import { createPredictor, type Predictor, type Suggestion } from '../engines/predict/predict';
 import { createStore, type Store } from './store';
@@ -91,6 +93,7 @@ function initialState(): TvState {
     voiceLabel: '',
     voiceCount: 0,
     myowareConfirm: false,
+    myo: { mode: 'off', saved: false, status: '', result: 'Último gesto: —' },
     emgChannels: [],
     scale: 1,
   };
@@ -104,6 +107,9 @@ export class Tv {
   readonly mem: Memory;
   readonly voz: Voz;
   readonly wa: WhatsApp;
+  readonly myoware: MyoWareClient;
+  /** ?myoware=1: el monitor pasó la calibración; se activa al cerrar la elección de control. */
+  private fromMonitor = new URLSearchParams(location.search).has('myoware');
   predictor: Predictor;
   careWheel: CareWheel | null = null;
   private readonly pick: ReturnType<typeof createVariantPicker>;
@@ -163,6 +169,28 @@ export class Tv {
       flash: () => {},
     });
     this.wa = new WhatsApp(this);
+    // MyoWare: la ceja solo hace clic y la mandíbula es el atajo. woki-os.html:2265-2306
+    this.myoware = new MyoWareClient({
+      onInput: (src, edge, time) => this.gestures.receiveMyoWare(src, edge, time ?? performance.now()),
+      onChange: (myo) => this.set({ myo }),
+      onActivate: () => this.setMyoWareConfirmation(true),
+      onUnavailable: (message) => {
+        if (this.s.myowareConfirm) this.island('⚠️', message, true, 6000);
+      },
+      onRecovered: () => {
+        if (this.s.myowareConfirm) this.island('✓', 'Señal MyoWare recuperada');
+      },
+    });
+    this.set({ myo: this.myoware.view });
+  }
+
+  /** «Usar mouse + gestos MyoWare» en la elección de control. */
+  startMouseWithMyoWare() {
+    this.myoware.enterWithMouse(() => {
+      this.fromMonitor = false;
+      this.setMyoWareConfirmation(true);
+      this.closeCalibration();
+    });
   }
 
   get s(): TvState {
@@ -187,8 +215,25 @@ export class Tv {
     };
     const onBlur = () => this.gestures.cancel();
     const onVis = () => {
-      if (document.hidden) this.gestures.cancel();
+      if (document.hidden) {
+        this.gestures.cancel();
+        this.myoware.pause();
+      } else this.myoware.restore();
     };
+    const onPageHide = () => this.myoware.pause();
+    const onPageShow = () => this.myoware.restore();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === MYOWARE_PROFILE_KEY) this.myoware.storageChanged();
+    };
+    addEventListener('pagehide', onPageHide);
+    addEventListener('pageshow', onPageShow);
+    addEventListener('storage', onStorage);
+    this.cleanup.push(() => {
+      removeEventListener('pagehide', onPageHide);
+      removeEventListener('pageshow', onPageShow);
+      removeEventListener('storage', onStorage);
+      this.myoware.pause();
+    });
     const onPop = () => {
       const name = this.screenFromUrl();
       if (name !== this.s.screen) this.go(name, false);
@@ -858,6 +903,11 @@ export class Tv {
   closeCalibration() {
     if (!this.s.calibOpen) return;
     this.set({ calibOpen: false });
+    // Llegó desde el monitor MyoWare con calibración: activa los gestos. woki-os.html:2299-2301
+    if (this.fromMonitor && this.myoware.enable()) {
+      this.fromMonitor = false;
+      this.setMyoWareConfirmation(true);
+    }
     // Al salir de la calibración: revisa si quedó una mención por responder. woki-os.html:1159-1162
     setTimeout(() => void this.wa.reviewMentions(), 400);
   }

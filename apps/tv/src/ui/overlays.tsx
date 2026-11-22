@@ -176,6 +176,7 @@ export function Calibration() {
   const open = useTvState((s) => s.calibOpen);
   const title = useTvState((s) => s.calibTitle);
   const text = useTvState((s) => s.calibText);
+  const myo = useTvState((s) => s.myo);
   const alarm = useTvState((s) => s.alarm?.level === 'emergencia');
   return (
     <div
@@ -215,6 +216,18 @@ export function Calibration() {
               </span>
             </button>
           ))}
+          <button
+            type="button"
+            className="cbtn resume-control"
+            id="myoware-use-woki"
+            hidden={!(myo.saved && myo.mode === 'off')}
+            onClick={(e) => {
+              e.currentTarget.blur();
+              tv.startMouseWithMyoWare();
+            }}
+          >
+            Usar mouse + gestos MyoWare
+          </button>
         </div>
       </div>
       <div className="cal-dot" id="calDot">

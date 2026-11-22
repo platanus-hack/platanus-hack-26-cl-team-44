@@ -210,6 +210,56 @@ function Diagnostics() {
   );
 }
 
+/** Sensores MyoWare en Controles. woki-os.html:623-634, myoware-click.js:282-295 */
+function MyoWarePanel() {
+  const tv = useTv();
+  const myo = useTvState((s) => s.myo);
+  return (
+    <details name="panel-tools" id="myoware-controls">
+      <summary>Sensores MyoWare</summary>
+      <div className="tool-content">
+        <p>Ceja en A3 · Mandíbula en A0</p>
+        <button
+          type="button"
+          className="nbtn"
+          id="myoware-calibrate"
+          disabled={myo.mode === 'active'}
+          onClick={(e) => {
+            e.currentTarget.blur();
+            tv.myoware.calibrate();
+          }}
+        >
+          {myo.mode === 'calibrating' ? 'Cancelar calibración' : 'Calibrar gestos'}
+        </button>{' '}
+        <button
+          type="button"
+          className="nbtn"
+          id="myoware-toggle"
+          hidden={!myo.saved}
+          onClick={(e) => {
+            e.currentTarget.blur();
+            tv.myoware.toggle();
+          }}
+        >
+          {myo.mode === 'active' ? 'Desactivar gestos' : 'Activar gestos'}
+        </button>
+        <div id="myoware-status" role="status">
+          {myo.status}
+        </div>
+        <div id="myoware-result" role="status">
+          {myo.result}
+        </div>
+        <div id="myoware-shortcuts">
+          <strong>Atajos con mandíbula</strong>
+          <br />
+          En Inicio abre Cuidados. En otras pantallas vuelve. La ceja solo hace clic.
+        </div>
+        <a href="/myoware/">Volver al monitor MyoWare</a>
+      </div>
+    </details>
+  );
+}
+
 export function Legend() {
   const tv = useTv();
   return (
@@ -241,6 +291,7 @@ export function Legend() {
           </div>
         </section>
         <div className="panel-tools">
+          <MyoWarePanel />
           <details name="panel-tools">
             <summary>Atajos de teclado</summary>
             <div className="tool-content">

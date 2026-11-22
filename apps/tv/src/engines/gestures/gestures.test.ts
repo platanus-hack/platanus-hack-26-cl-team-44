@@ -88,6 +88,21 @@ describe('gestos', () => {
     expect(calls).toEqual([]);
   });
 
+  it('llama a setTimeout sin otro receptor (en Chrome eso da «Illegal invocation»)', () => {
+    const real = globalThis.setTimeout;
+    const strict = function (this: unknown, fn: () => void, ms?: number) {
+      if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+      return real(fn, ms);
+    } as unknown as typeof setTimeout;
+    globalThis.setTimeout = strict;
+    try {
+      const { g } = setup();
+      expect(() => g.receiveMyoWare(null, 'alive', 0)).not.toThrow();
+    } finally {
+      globalThis.setTimeout = real;
+    }
+  });
+
   it('sin latido de MyoWare en 250 ms se cancela la ceja pendiente', () => {
     vi.useFakeTimers();
     const { g, calls } = setup();

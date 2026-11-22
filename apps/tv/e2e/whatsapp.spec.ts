@@ -75,7 +75,7 @@ for (const tv of TVS) {
       await expectScreen(page, 'home');
       const send = waCalls.find((c) => c.path === '/api/wa/send');
       expect(send?.body).toMatchObject({ contactId: 'c1', text: 'Claro, nos vemos. 😄' });
-      expect(String((send?.body as { idemKey?: string }).idemKey)).toMatch(/^[0-9a-f-]{36}$/);
+      expect(String((send?.body as { idemKey?: string } | undefined)?.idemKey)).toMatch(/^[0-9a-f-]{36}$/);
     });
 
     test('K8 · teclado por iniciales en un chat con «✨ Completar» de Claude', async ({ page }) => {
@@ -196,7 +196,7 @@ for (const tv of TVS) {
       await expect(panel).not.toHaveClass(/\bon\b/);
       await expect(island(page)).toHaveText('3 contactos principales guardados');
       const save = waCalls.find((c) => c.path === '/api/wa/favorites' && c.method === 'POST');
-      expect((save?.body as { contacts: { name: string; relation: string }[] }).contacts).toEqual([
+      expect((save?.body as { contacts: unknown[] } | undefined)?.contacts).toEqual([
         { phone: ANA.phone, name: 'Ana Prueba', relation: 'hija' },
         { phone: BETO.phone, name: 'Beto Prueba', relation: 'cuidador' },
         { phone: CARLA.phone, name: 'Carla Prueba', relation: 'amiga' },

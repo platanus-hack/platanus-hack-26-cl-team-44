@@ -1,4 +1,5 @@
 import type { Card } from '../domain/phrases';
+import type { MyoView } from '../engines/myoware/client';
 
 export type Screen = 'home' | 'talk' | 'keyboard' | 'reactions' | 'agent' | 'contacts' | 'settings' | 'apps' | 'games';
 
@@ -145,6 +146,7 @@ export interface TvState {
   voiceLabel: string;
   voiceCount: number;
   myowareConfirm: boolean;
+  myo: MyoView;
   emgChannels: string[];
   scale: number;
 }

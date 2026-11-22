@@ -34,7 +34,14 @@ export interface Gestures {
   readonly watchdogActive: boolean;
 }
 
-export function createGestures(host: GestureHost, timers = { set: setTimeout, clear: clearTimeout }): Gestures {
+// Los temporizadores van envueltos: llamar a setTimeout como método de otro objeto da "Illegal invocation" en Chrome.
+export function createGestures(
+  host: GestureHost,
+  timers = {
+    set: (fn: () => void, ms: number) => setTimeout(fn, ms),
+    clear: (id: ReturnType<typeof setTimeout>) => clearTimeout(id),
+  },
+): Gestures {
   let brow: { origin: Origin; time: number; focus: unknown } | null = null;
   let jaw = false;
   let watchdog: ReturnType<typeof setTimeout> | null = null;
