@@ -137,6 +137,14 @@ class Handler(SimpleHTTPRequestHandler):
                          'age':now-frames[-1][0] if frames and state['connected'] else None,
                          'frames':frames}
             self.send_body(json.dumps(payload).encode(),'application/json')
+        elif path=='/toki-config.js':
+            # Escenario: WhatsApp y agente en la VPS. Sale de variables de entorno (TOKI_REMOTO, TOKI_WA_TOKEN).
+            # Solo para la propia TV: un <script src> de otro sitio no puede leer el token.
+            local=self.headers.get('Host','') in (f'127.0.0.1:{args.http_port}',f'localhost:{args.http_port}')
+            if not local or self.headers.get('Sec-Fetch-Site','same-origin')!='same-origin':
+                return self.send_error(403)
+            cfg={'remoto':os.environ.get('TOKI_REMOTO','').rstrip('/'),'waToken':os.environ.get('TOKI_WA_TOKEN','')}
+            self.send_body(('window.TOKI_ENV='+json.dumps(cfg)+';').encode(),'text/javascript')
         elif path in toki_assets:
             self.send_toki_asset(Path(path[1:]),toki_assets[path])
         elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):

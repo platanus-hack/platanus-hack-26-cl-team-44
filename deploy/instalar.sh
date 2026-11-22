@@ -109,6 +109,8 @@ pon_si_falta() { grep -q "^$1=" "$PUENTE_ENV" || printf '%s=%s\n' "$1" "$2" >> "
 pon_si_falta WA_MODE dry                      # pasa a live con deploy/vincular-whatsapp.sh, al vincular el celular
 pon_si_falta PORT 8788
 pon_si_falta ALLOWED_ORIGIN "https://$DOMINIO"
+# El monitor MyoWare del escenario (TV en http://127.0.0.1:8766) también usa este puente: se agrega si falta.
+grep -q '^ALLOWED_ORIGIN=.*127.0.0.1:8766' "$PUENTE_ENV" || sed -i 's#^ALLOWED_ORIGIN=\(.*\)#ALLOWED_ORIGIN=\1,http://127.0.0.1:8766#' "$PUENTE_ENV"
 pon_si_falta PUBLIC_HOST "$DOMINIO"
 pon_si_falta WAPI_BASE_URL http://127.0.0.1:3101
 pon_si_falta AGENT_URL http://127.0.0.1:8790

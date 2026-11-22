@@ -11,7 +11,9 @@ import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente co
 type Mode = "off" | "dry" | "sandbox" | "live";
 const MODE = (process.env.WA_MODE ?? "dry") as Mode;
 const PORT = Number(process.env.PORT ?? 8787);
-const ORIGIN = process.env.ALLOWED_ORIGIN ?? "http://localhost:8000";
+// Orígenes de la TV, separados por coma: p. ej. la URL pública y el monitor MyoWare del escenario (http://127.0.0.1:8766).
+const ORIGINS = (process.env.ALLOWED_ORIGIN ?? "http://localhost:8000").split(",").map((o) => o.trim()).filter(Boolean);
+const corsOf = (req: http.IncomingMessage) => { const o = String(req.headers.origin ?? ""); return ORIGINS.includes(o) ? o : ORIGINS[0]; };
 const SECRET = process.env.WAPI_WEBHOOK_SECRET ?? "";
 const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Woki-Token
 // Dominio público detrás de Caddy (/wa/* → este puerto), p. ej. 179-66-157-161.sslip.io. Acepta ese Host y el tráfico
@@ -202,7 +204,7 @@ function trackStatus(msgId: number, contactId: string) {
 const readBody = (req: http.IncomingMessage) =>
   new Promise<string>((ok, ko) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => ok(b)); req.on("error", ko); });
 function json(res: http.ServerResponse, code: number, body: unknown) {
-  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": ORIGIN });
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": (res as any).cors ?? ORIGINS[0], Vary: "Origin" });
   res.end(JSON.stringify(body));
 }
 const safeEqual = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
@@ -212,9 +214,11 @@ const verify = (raw: string, sig?: string) =>
 // ---------- rutas ----------
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://x");
+  const ORIGIN = corsOf(req);              // el Origin de este pedido si está permitido; si no, el primero
+  (res as any).cors = ORIGIN;
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
+    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
     return res.end();
   }
 
@@ -243,7 +247,7 @@ const server = http.createServer(async (req, res) => {
     // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
     if (req.method === "POST") {
       const ctype = String(h["content-type"] ?? "").split(";")[0].trim();
-      if (h.origin !== ORIGIN || ctype !== "application/json")
+      if (!ORIGINS.includes(String(h.origin ?? "")) || ctype !== "application/json")
         return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
     }
   }

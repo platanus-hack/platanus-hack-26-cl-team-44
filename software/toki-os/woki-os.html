@@ -395,6 +395,7 @@ body.panel #gaze{opacity:0}
 <link rel="stylesheet" href="os-juegos-servicios.css">
 <link rel="stylesheet" href="os-colores.css">
 <!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
+<script src="toki-config.js"></script>
 <script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light';
   const p=localStorage.getItem('woki.palette'); if(['bosque','oceano','atardecer','lavanda'].includes(p)) document.documentElement.dataset.palette=p; }catch(_){}</script>
 <link rel="stylesheet" href="magnetic-pointer.css?v=24">
@@ -632,7 +633,19 @@ const WA_TOKEN = (()=>{ try{
     if(t) localStorage.setItem('woki_wa_token', t); else localStorage.removeItem('woki_wa_token');
     const u=new URL(location.href); u.searchParams.delete('wa_token'); history.replaceState(null,'',u);   // el token no queda en la barra
   }
-  return localStorage.getItem('woki_wa_token')||'';
+  return (window.TOKI_ENV||{}).waToken || localStorage.getItem('woki_wa_token') || '';
+}catch(_){ return ''; } })();
+// Escenario: la TV la sirve el monitor MyoWare (127.0.0.1:8766) y WhatsApp + agente están en la VPS.
+// Lo normal: el monitor lee TOKI_REMOTO y TOKI_WA_TOKEN del entorno y los entrega en toki-config.js (window.TOKI_ENV).
+// Sin monitor configurado: ?remoto=https://<dominio>&wa_token=<token> una vez; queda en el navegador.
+const REMOTO = (()=>{ try{
+  const q=new URLSearchParams(location.search);
+  if(q.has('remoto')){
+    const r=(q.get('remoto')||'').trim().replace(/\/+$/,'');
+    if(/^https:\/\//.test(r)) localStorage.setItem('woki_remoto', r); else localStorage.removeItem('woki_remoto');
+    const u=new URL(location.href); u.searchParams.delete('remoto'); history.replaceState(null,'',u);
+  }
+  return LOCAL ? ((window.TOKI_ENV||{}).remoto || localStorage.getItem('woki_remoto') || '') : '';
 }catch(_){ return ''; } })();
 const CFG = {
   // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
@@ -646,7 +659,8 @@ const CFG = {
   doubleMs: 500, tapMs: 900, holdMs: 3000,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
-  WA_URL: LOCAL ? 'http://localhost:8788' : (WA_TOKEN ? location.origin+'/wa' : ''), // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  WA_URL: REMOTO ? REMOTO+'/wa' : LOCAL ? 'http://localhost:8788' : (WA_TOKEN ? location.origin+'/wa' : ''), // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  AGENTE_URL: REMOTO ? REMOTO+'/agente' : '',   // modo dev: agente de la VPS en vez del local
   WA_TOKEN,              // header X-Woki-Token hacia el puente (también lo usa woki-voz.js)
   EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
   WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)

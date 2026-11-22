@@ -9,9 +9,10 @@
  */
 (() => {
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
-  const URL_AGENTE = localStorage.getItem('toki.dev.url') || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + '/agente');
+  const REMOTO = (typeof CFG !== 'undefined' && CFG.AGENTE_URL) || '';   // CFG es global léxico (const), no está en window
+  const URL_AGENTE = localStorage.getItem('toki.dev.url') || REMOTO || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + '/agente');
   // En la URL pública el agente exige el token (el mismo del puente, ?wa_token= una vez). En local no hace falta.
-  const TOKEN = LOCAL ? '' : (localStorage.getItem('woki_wa_token') || '');
+  const TOKEN = (LOCAL && !REMOTO) ? '' : ((typeof CFG !== 'undefined' && CFG.WA_TOKEN) || localStorage.getItem('woki_wa_token') || '');
   const hdr = (h = {}) => TOKEN ? { ...h, 'X-Woki-Token': TOKEN } : h;
   const api = (path, opts = {}) => fetch(URL_AGENTE + path, { ...opts, headers: hdr(opts.headers) });
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
