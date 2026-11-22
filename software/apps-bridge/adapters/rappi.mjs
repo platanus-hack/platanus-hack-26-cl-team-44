@@ -20,7 +20,7 @@ function image(value,prefix='products'){
  if(typeof value!=='string'||!value)return '';
  try{const url=new URL(value.startsWith('https:')?value:`https://${RAPPI_PAIS.images}/${prefix}/${value}`);return url.protocol==='https:'&&['images.rappi.cl','images.rappi.com'].includes(url.hostname)?url.href:'';}catch{return '';}
 }
-export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace con confirmación doble y tope. Si Rappi pide CVV o 3DS, lo completa una persona en la app.']};
+export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'tip',mutates:true,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace con confirmación doble y tope. Si Rappi pide CVV o 3DS, lo completa una persona en la app.']};
 
 export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRappiSession(stateDir),login,now=Date.now}={}){
  const request=createRappiClient({fetcher});
@@ -42,7 +42,7 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
  async function account(){const session=await sessionStore.read();if(!session)throw fault(`Falta conectar la cuenta de ${RAPPI_PAIS.nombre} desde la configuración del equipo.`,409);return session;}
  function normalizedCart(raw){
   if(!raw||!Array.isArray(raw.stores)||!number(raw.product_total)||!number(raw.shipping_total))throw fault('Rappi devolvió un carrito no reconocido. Revísalo en Rappi.',502);
-  return {productsTotal:raw.product_total,shippingTotal:raw.shipping_total,stores:raw.stores.map(s=>({id:s.id,name:text(s.name),valid:s.valid===true,items:(Array.isArray(s.products)?s.products:[]).map(p=>({id:text(p.id),name:text(p.name),quantity:p.units,price:p.price,total:p.total}))})),paymentEnabled:false};
+  return {productsTotal:raw.product_total,shippingTotal:raw.shipping_total,tip:number(raw.tip)?raw.tip:0,total:number(raw.total)?raw.total:undefined,stores:raw.stores.map(s=>({id:s.id,name:text(s.name),valid:s.valid===true,items:(Array.isArray(s.products)?s.products:[]).map(p=>({id:text(p.id),name:text(p.name),quantity:p.units,price:p.price,total:p.total}))})),paymentEnabled:false};
  }
  async function cart(session,signal){
   const carts=await request('/api/ms/shopping-cart/v1/all/get',{method:'POST',body:{},session,signal});
@@ -136,8 +136,17 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
     const result=normalizedCart(raw);
     // This is NOT a final charge: checkout widgets/payment authorization remain unverified.
     const firma=JSON.stringify(result.stores.map(s=>[s.id,s.items.map(i=>[i.id,i.quantity])]));
-    cotizacion={ticket:randomUUID(),at:now(),firma,total:result.productsTotal+result.shippingTotal};
+    cotizacion={ticket:randomUUID(),at:now(),firma,total:result.total??(result.productsTotal+result.shippingTotal+result.tip)};
     return {...result,ticket:cotizacion.ticket,notice:'Revisa los importes. Para pedir, confirma dos veces; el total final lo muestra Rappi en el checkout.'};
+   }
+   if(action==='tip'){
+    // Propina elegida por la persona. Cambia el total: la revisión anterior deja de valer.
+    const session=await account(),tip=payload.tip;
+    if(!Number.isSafeInteger(tip)||tip<0||tip>50000)throw fault('Elige una propina válida.');
+    await request('/api/ms/shopping-cart/v1/restaurant/tip',{method:'PUT',body:{tip},session,signal:ctx.signal});
+    cotizacion=null;
+    const raw=await request('/api/ms/shopping-cart/v1/restaurant/recalculate',{method:'POST',body:{store_type:'restaurant'},session,signal:ctx.signal});
+    return {...normalizedCart(raw),notice:'Propina actualizada. Revisa los importes otra vez para pedir.'};
    }
    if(action==='order'){
     // Confirmación: ticket de la última revisión (5 min), mismo carrito y un tope. Un intento; sin reintentos.
