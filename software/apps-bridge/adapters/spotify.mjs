@@ -11,25 +11,30 @@ export function safeMessage(error) {
   if (/timeout|timed out|abort|killed/i.test(raw)) return 'La operación tardó demasiado. Puedes volver a intentarlo.';
   return 'No se pudo completar la operación. Comprueba que Spotify esté abierto y vuelve a intentarlo.';
 }
-let artworkTrack = '';
-let artworkUrl = '';
+// Canción, carátula y posición en milisegundos ENTEROS: `spogo status` deja progress_ms en 0
+// cuando macOS usa coma decimal (AppleScript entrega "73,92"), y la línea de tiempo no avanzaba.
+const META_SCRIPT = 'if application "Spotify" is running then tell application "Spotify" to return (spotify url of current track) & linefeed & (artwork url of current track) & linefeed & ((round ((player position) * 1000)) as text)';
+
+/** Aplica la salida de META_SCRIPT al estado de spogo, solo si es la misma canción. Devuelve una copia. */
+export function applySpotifyMeta(result, stdout) {
+  const track = result?.item?.uri;
+  const [uri, url, position] = String(stdout || '').trim().split(/\r?\n/);
+  if (!track || uri !== track) return result;
+  const duration = Number(result.item.duration_ms) || Infinity;
+  const ms = /^\d+$/.test(position || '') ? Number(position) : NaN;
+  const progress = Number.isFinite(ms) && ms <= duration + 2000 ? Math.min(ms, duration) : result.progress_ms;
+  const artwork = /^https:\/\/i\.scdn\.co\/image\/[a-z0-9]+$/i.test(url || '') ? url : '';
+  return {...result, progress_ms: progress, item: {...result.item, artwork}};
+}
+
 export async function runSpogo(args, {signal} = {}) {
+  const isStatus = args.includes('applescript') && args.includes('status');
+  // En paralelo con spogo: la consulta de posición no suma tiempo a reproducir/pausar.
+  const meta = isStatus ? exec('/usr/bin/osascript', ['-e', META_SCRIPT], {timeout: 1800, signal}).catch(() => null) : null;
   const {stdout} = await exec('spogo', ['--no-input', '--timeout', '12s', ...args], {timeout: 18000, maxBuffer: 1024 * 1024, signal});
   const result = stdout.trim() ? JSON.parse(stdout) : {};
-  const track = result.item?.uri;
-  if (track && args.includes('applescript') && args.includes('status')) {
-    if (track !== artworkTrack) {
-      const script = 'if application "Spotify" is running then tell application "Spotify" to return (spotify url of current track) & linefeed & (artwork url of current track)';
-      const meta = await exec('/usr/bin/osascript', ['-e', script], {timeout: 1800, signal}).catch(() => null);
-      const [uri, url] = (meta?.stdout || '').trim().split(/\r?\n/);
-      if (uri === track) {
-        artworkTrack = track;
-        artworkUrl = /^https:\/\/i\.scdn\.co\/image\/[a-z0-9]+$/i.test(url || '') ? url : '';
-      }
-    }
-    if (artworkTrack === track) result.item.artwork = artworkUrl;
-  }
-  return result;
+  if (!isStatus || !result.item?.uri) return result;
+  return applySpotifyMeta(result, (await meta)?.stdout);
 }
 export function normalizeTracks(data) {
   const rows = data.items || data.tracks?.items || data.tracks || [];

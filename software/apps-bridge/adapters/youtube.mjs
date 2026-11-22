@@ -8,6 +8,22 @@ export const youtubeVideos=[
   {id:'RmkDIKRDVD8',label:'Caleta Tortel'},
   {id:'3uRxhIuMQOU',label:'Valle del río Puelo'}
 ];
+// Más videos: los últimos del canal oficial Chile Travel (feed RSS público, hasta 15). Si falla, quedan los 6 fijos.
+export const chileTravelFeed='https://www.youtube.com/feeds/videos.xml?channel_id=UCG1U3Oy0aDBHvh7mylxXSpQ';
+const decode=s=>s.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+/** Videos del feed del canal: [{id,label,title,author,thumbnail}], sin repetir los ya conocidos. */
+export function parseChannelFeed(xml,known=new Set()){
+ const out=[];
+ for(const entry of String(xml||'').split('<entry>').slice(1)){
+  const id=/<yt:videoId>([\w-]{11})<\/yt:videoId>/.exec(entry)?.[1];
+  const title=decode(/<title>([^<]*)<\/title>/.exec(entry)?.[1]||'').replace(/#\S+/g,'').replace(/\s+/g,' ').trim();
+  if(!id||!title||known.has(id))continue;
+  known.add(id);
+  const label=title.length>60?title.slice(0,57).trimEnd()+'…':title;
+  out.push({id,label,title:title.slice(0,200),author:'Chile Travel',thumbnail:'https://i.ytimg.com/vi/'+id+'/mqdefault.jpg'});
+ }
+ return out;
+}
 export const youtubeManifest={schemaVersion:1,id:'youtube',name:'YouTube',aliases:[],version:'1.0.0',interface:{kind:'video',entry:'videos'},auth:{type:'none'},dependencies:['Internet','YouTube IFrame Player API'],source:'https://developers.google.com/youtube/iframe_api_reference',requiredEvidence:['list','play','pause'],actions:[{id:'list',mutates:false,requiresAccount:false},{id:'select',mutates:false,requiresAccount:false},{id:'observe',mutates:false,requiresAccount:false}]};
 export function createYouTubeAdapter({fetcher=fetch,now=Date.now}={}){
  let cache=null,at=0;const sessions=new Map();
@@ -22,7 +38,12 @@ export function createYouTubeAdapter({fetcher=fetch,now=Date.now}={}){
    }catch{signal.throwIfAborted();return null;}
   }));
   signal.throwIfAborted();const available=items.filter(Boolean);if(!available.length)throw fault('No se pudieron cargar los videos. Comprueba Internet y reintenta.',502);
-  cache=available;at=now();return cache;
+  let more=[];
+  try{
+   const response=await fetcher(chileTravelFeed,{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),redirect:'error'});
+   if(response.ok)more=parseChannelFeed(await response.text(),new Set(youtubeVideos.map(v=>v.id)));
+  }catch{signal.throwIfAborted();}
+  cache=[...available,...more];at=now();return cache;
  }
  return {manifest:youtubeManifest,errorMessage:()=> 'No se pudo conectar con YouTube. Vuelve a intentarlo.',
   async prepare({signal,report}){report({stage:1,connector:'youtube-iframe-api',message:'Comprobando la selección de videos…'});await list(signal);return {stage:3,status:'needs_test',message:'Videos disponibles. Falta comprobar reproducción y pausa en este navegador.'};},
