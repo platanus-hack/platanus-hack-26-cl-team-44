@@ -17,7 +17,7 @@ function setup({ myoware = true, wheel = false } = {}) {
     S, history, trackerOnly: false, document: { visibilityState: 'visible', body: { classList: { contains: name => flags[name] } } },
     CFG: { faceBrowMaxMs: Number(html.match(/\bfaceBrowMaxMs:\s*(\d+)/)[1]) },
     $: selector => ({ classList: { contains: () => flags[selector.slice(1)] } }),
-    flashPill() {}, confirmFocus: () => actions.push('confirm'),
+    flashGesture() {}, confirmFocus: () => actions.push('confirm'),
     myowareConfirming: () => myoware, targetLayer: () => S.screen,
     careWheel, openCareWheel() { careWheel.active = true; actions.push('wheel'); },
     renderKeys: () => actions.push('keys'), go: name => actions.push(name),
@@ -49,12 +49,13 @@ test('a detected brow confirms immediately; holding or releasing it does not con
   assert.deepEqual(actions, ['confirm', 'confirm']);
 });
 
-test('only dwell-capable modes fill progress and select timed targets or leave rest', () => {
+test('only gaze-dwell modes fill progress and select timed targets', () => {
   const code = html.slice(html.indexOf('function tick(now)'), html.indexOf('/* ===================== Alarma'));
-  function simulate({ myoware = false, iphone = false, dwell = false, rest = false }) {
+  function simulate({ myoware = false, iphone = false, dwell = false, rest = false, strict = false }) {
     let now = 0, selections = 0, progress = 0;
     const target = { dataset: { dwell: '2000' }, isConnected: true,
       classList: { add() {}, toggle() {}, contains() { return false; } },
+      matches: selector => strict && selector === '.sos-nav,.rest-nav',
       getBoundingClientRect: () => ({ left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 }),
       style: { setProperty(key, value) { if (key === '--p') progress = value; } } };
     const S = { rest, scale: 1, focus: null };
@@ -63,11 +64,18 @@ test('only dwell-capable modes fill progress and select timed targets or leave r
       document: { body: target, elementFromPoint: () => ({ closest: () => target }) },
       $: () => target, mouse: { x: 50, y: 50 }, gz: { x: 50, y: 50 }, noise: { x: 0, y: 0 },
       gauss: () => 0, myowareConfirming: () => myoware, iphonePointing: () => iphone, iphoneDwell: () => iphone && dwell,
-      window: {}, tabletComposer: false, trackerOnly: false, SNAP_PX: 0, MAGNET: 0,
+      window: {
+        createMagneticPointer: () => ({ aim: (_point, _now, accepts) => ({ target: accepts(target) ? target : null }), reset() {} }),
+        createPointerDwell: () => ({ sample: () => 0, reset() {} }),
+      }, tabletComposer: false, trackerOnly: false, SNAP_PX: 0, MAGNET: 0,
       careWheel: null, menuPointer: { reset() {}, resolve: () => ({ target, inside: true }) },
-      menuDwell: { sample: () => now - 10, reset() {} }, menuOutline: { clear() {}, paint() {} },
+       menuDwell: {
+         started: null,
+         sample(_el, now, inside) { if (!inside) { this.reset(); return -1; } this.started ??= now; return now - this.started; },
+         reset() { this.started = null; }
+       }, menuOutline: { clear() {}, paint() {} },
       setFocus(el) { if (S.focus !== el) { S.focus = el; S.fStart = now; } }, targetLayer: () => ({ contains: () => true }),
-      activate() { selections++; }, clearFocus() { S.focus = null; }, island() {}, log() {}, alarmTick() {},
+      activate() { selections++; if (S.rest) S.rest = false; }, clearFocus() { S.focus = null; }, island() {}, log() {}, alarmTick() {},
       requestAnimationFrame() {}, suggestionExitAt: null,
     };
     vm.createContext(context);
@@ -81,8 +89,9 @@ test('only dwell-capable modes fill progress and select timed targets or leave r
   }
   for (const mode of [{ dwell: true }, { iphone: true, dwell: true }]) {
     assert.deepEqual(simulate(mode), { selections: 1, progress: 1, resting: false });
-    assert.equal(simulate({ ...mode, rest: true }).resting, false);
   }
+  assert.deepEqual(simulate({ iphone: true, dwell: true, strict: true }), { selections: 1, progress: 1, resting: false });
+  assert.deepEqual(simulate({ iphone: true, strict: true }), { selections: 0, progress: 0, resting: false });
 });
 
 test('successful webcam setup enables saved MyoWare without a monitor link', () => {
@@ -137,9 +146,10 @@ test('jaw, blocked UI, and release without a new detection do not confirm', () =
 });
 
 test('Back button returns a screen or keyboard level without deleting a draft', () => {
-  assert.match(html, /class="t pill glass back-nav" data-t data-act="back">‹ Volver/);
+  assert.match(html, /class="t nav-action back-nav" data-t data-act="back">‹ Volver/);
   assert.match(html, /case 'back': goBack\(\); break/);
   assert.doesNotMatch(html, /id="quickDialog"/);
+  assert.doesNotMatch(html, /S\.quick|G\.down|gazeOnly/);
   const { app, S, history, actions } = setup();
   S.screen = 'keyboard';
   S.kb.level = 3;
@@ -152,6 +162,18 @@ test('Back button returns a screen or keyboard level without deleting a draft', 
   history.state.wokiStep = 0;
   app.goBack();
   assert.deepEqual(actions, ['keys', 'back', 'home']);
+});
+
+test('official rest screen keeps explicit Volver and SOS targets with freshness guards', () => {
+  const rest = html.match(/<div class="overlay" id="rest"[\s\S]*?<\/div>\s*<\/div>/)?.[0] || '';
+  assert.match(rest, /id="restWake"[^>]*data-act="wake"/);
+  assert.match(rest, /class="t rest-sos"[^>]*data-act="sos"/);
+  assert.match(html, /function setRest\(on\)\{\s*if\(S\.rest===on\) return;/);
+  assert.match(html, /function controlPointFresh\(now\)/);
+  assert.match(html, /restDwell\.reset\(\); restMagnet\.reset\(\)/);
+  assert.match(html, /if\(!A\.fromCareWheel && !A\.called\)[\s\S]{0,100}VOZ\.emergencia\(A\)/);
+  assert.match(html, /onSOS:\(\)=>\{[\s\S]{0,100}fromCareWheel:true/);
+  assert.match(html, /SOS de prueba\. No se contactó a nadie/);
 });
 
 test('jaw goes back immediately away from Home and opens or closes the wheel at Home', () => {
@@ -177,6 +199,13 @@ test('jaw goes back immediately away from Home and opens or closes the wheel at 
   flags.calib = true;
   app.receiveMyoWare('mandibula', 'down', 700);
   assert.deepEqual(actions, ['keys', 'wheel', 'wheel-back'], 'calibration still blocks shortcuts');
+});
+
+test('jaw exits Rest to the current screen instead of opening the Home wheel', () => {
+  const { app, S, actions } = setup({ wheel: true });
+  S.rest = true;
+  app.receiveMyoWare('mandibula', 'down', 0);
+  assert.deepEqual(actions, ['wake']);
 });
 
 test('paired ENV confirms before release and gives the jaw priority inside the overlap window', async () => {

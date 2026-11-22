@@ -1,7 +1,7 @@
 /**
  * Toki OS · puntero con la mirada usando el iPhone (Face ID) como sensor.
  *
- * El iPhone corre la app Eye Tracking (software/eye-tracking/ios) y envía la geometría de los ojos
+ * El iPhone corre la app Myo (software/eye-tracking/ios) y envía la geometría de los ojos
  * por WebSocket (:8788). Este módulo usa el MISMO motor que la demo (./eye-engine es un enlace a
  * ../eye-tracking/web/js): misma calibración, mismo modelo, mismo filtro.
  *
@@ -51,7 +51,7 @@ function writeStore(data) {
 }
 
 const IPHONE = {
-  source: null, host: null, latest: null, lastFrameAt: 0,
+  source: null, host: null, latest: null, lastFrameAt: 0, pointAt: null,
   model: null, viewport: null, filter: null,
   active: false, calibrating: false, abort: null, prevMode: null,
   lastFaceAt: 0, backSince: null,
@@ -71,7 +71,7 @@ const IPHONE = {
       const settle = (fn, arg) => { if (!settled) { settled = true; clearTimeout(timer); fn(arg); } };
       const timer = setTimeout(() => {
         this.disconnect();
-        settle(reject, new Error(`El iPhone no responde en ${host}. ¿Eye Tracking está abierta, desbloqueada y en la misma red?`));
+        settle(reject, new Error(`El iPhone no responde en ${host}. ¿Myo está abierta, desbloqueada y en la misma red?`));
       }, CONNECT_TIMEOUT_MS);
       const onFrame = (f) => { this.onFrame(f); settle(resolve); };
       if (isSim) {
@@ -110,6 +110,7 @@ const IPHONE = {
   onFrame(f) {
     this.latest = f;
     this.lastFrameAt = performance.now();
+    this.pointAt = null;
     for (const cb of listeners) cb(f);
     if (!this.active || !this.model) return;
     const now = this.lastFrameAt;
@@ -127,6 +128,7 @@ const IPHONE = {
     }
     const p = predict(this.model, f);
     if (!p) return; // parpadeo: el puntero se queda donde estaba
+    this.pointAt = now;
     const g = this.filter(p, f.t);
     W.mouse.x = clamp(g.x, 0, innerWidth);
     W.mouse.y = clamp(g.y, 0, innerHeight);
@@ -135,7 +137,7 @@ const IPHONE = {
   /* ---------- activar / desactivar el puntero ---------- */
   activate() {
     if (!this.model || !this.source) return;
-    if (window.NOSE?.on) NOSE.stop();
+    if (window.NOSE?.on || window.NOSE?.starting) NOSE.stop();
     this.active = true;
     // The default is eyebrow confirmation; dwell is available only when selected.
     if (this.prevMode === null) this.prevMode = W.CFG.mode;
@@ -215,7 +217,7 @@ const IPHONE = {
   openPanel() {
     const panel = ensurePanel();
     CAL.steps(["Conectar", "Puntos", "Comprobación", "Listo"]);
-    CAL.ui("Mirada con iPhone", "Abre Eye Tracking en el iPhone (Face ID) y escribe la dirección que muestra. Misma red Wi-Fi. Ponlo abajo y centrado, a 40–60 cm de la cara.", 0, false);
+    CAL.ui("Mirada con iPhone", "Abre Myo en el iPhone (Face ID) y escribe la dirección que muestra. Misma red Wi-Fi. Ponlo abajo y centrado, a 40–60 cm de la cara.", 0, false);
     $("#calBtns").style.display = "none";
     panel.hidden = false;
     $("#ipSaved").hidden = !this.hasSaved();

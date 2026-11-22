@@ -1,4 +1,4 @@
-# WOKI · ElevenLabs (voz, elegir voz, llamada de emergencia)
+# Myo · ElevenLabs (voz, elegir voz, llamada de emergencia)
 
 Todo pasa por el puente (`software/whatsapp-bridge`). La API key solo vive en `software/whatsapp-bridge/.env` y nunca llega al navegador.
 
@@ -6,30 +6,34 @@ Todo pasa por el puente (`software/whatsapp-bridge`). La API key solo vive en `s
 
 | Momento | Qué pasa | Archivo |
 |---|---|---|
-| Marta elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). La emoción de la tarjeta cambia la expresividad. Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `prototipo/woki-voz.js` + `speak()` en `woki-os.html` |
-| Aparecen las 4 tarjetas | Se pide el audio de las 4 por adelantado, así suena al instante cuando elige. Consume créditos: 4 frases por turno (`VOZ.PREFETCH=false` lo apaga) | `renderCards()` |
-| Alarma de **emergencia** (ceja ×2 → mandíbula) | Pasada la ventana de 3 s para cancelar, un agente de ElevenLabs llama por teléfono al contacto de emergencia, explica qué pasó y pide que vaya. La pantalla de alarma muestra el estado de la llamada. La de **atención** no llama | `alarmTick()` → `POST /api/emergencia/llamar` |
-| Onboarding de voz (familia, desde el celular) | `voz.html`: (1) clonar su voz subiendo notas de voz de WhatsApp o grabando 1 minuto; (2) escuchar y elegir voces; (3) dejar hasta 6 candidatas | `prototipo/voz.html` |
-| Marta elige la que le acomoda | En la TV: **Ajustes → Voz**. Cada ceja pasa a la siguiente candidata y la dice en voz alta | `VOZ.siguiente()` |
+| Emmy elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). Modelo `eleven_multilingual_v2`: es el que mejor respeta el acento de una voz clonada (con `eleven_v3`, la voz colombiana clonada salía con acento argentino). La emoción de la tarjeta cambia estabilidad, estilo y velocidad. Con `ELEVENLABS_TTS_MODEL=eleven_v3` se usan etiquetas de emoción (`[sarcastically]`, `[whispers]`…), más expresivas pero el acento del clon se pierde. Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `software/toki-os/woki-voz.js` + `speak()` en `woki-os.html` |
+| Aparecen las 4 tarjetas, y al iniciar las reacciones | Se pide el audio por adelantado (~0,5–2,5 s por frase según el modelo), así suena al instante cuando elige. Consume créditos: 4 frases por turno (`VOZ.PREFETCH=false` lo apaga) | `renderCards()`, `VOZ.init()` |
+| Alarma de **emergencia** (ceja ×2 → mandíbula) | Pasada la ventana de 3 s para cancelar, un agente de ElevenLabs llama por teléfono al contacto de emergencia, explica qué pasó y pide que vaya. La de **atención** no llama | `alarmTick()` → `VOZ.emergencia(A)` → `POST /api/emergencia/llamar` |
+| La llamada avanza | Llama a todos los contactos en paralelo. La pantalla de alarma le muestra a Emmy: *Llamada enviada a Jhomar, Juan y Paolo* → *Jhomar y Paolo contestaron* → **pantalla verde "Paolo viene en camino"** (el primero que confirma) con su respuesta, un sonido y un aviso hablado; si nadie puede: *… no pueden ir* (la alarma sigue). Al terminar cada llamada, ElevenLabs extrae `viene` y `respuesta` de la conversación. Una llamada que el operador rechaza se da por fallida a los 75 s | `GET /api/emergencia/estado` |
+| Onboarding de voz (familia, desde el celular) | `voz.html`: (1) clonar su voz subiendo notas de voz de WhatsApp o grabando 1 minuto; (2) escuchar y elegir voces; (3) dejar hasta 6 candidatas | `software/toki-os/voz.html` |
+| Emmy elige la que le acomoda | En la TV: **Ajustes → Voz**. Cada ceja pasa a la siguiente candidata y la dice en voz alta | `VOZ.siguiente()` |
 
 ## Configuración (`software/whatsapp-bridge/.env`)
 
 ```
 ELEVENLABS_API_KEY=...
-# opcional: ELEVENLABS_TTS_MODEL=eleven_flash_v2_5   (por defecto, la de menor latencia)
+# opcional: ELEVENLABS_TTS_MODEL=eleven_v3   (por defecto eleven_multilingual_v2: respeta el acento del clon; v3 es más expresivo; eleven_flash_v2_5 más rápido)
 
 # Llamada de emergencia
 ELEVENLABS_AGENT_ID=...            # lo imprime setup-emergencia.ts
 ELEVENLABS_PHONE_NUMBER_ID=...     # número de Twilio importado en ElevenLabs
-EMERGENCY_NUMBER=+569XXXXXXXX      # celular de la cuidadora o familiar (NO 131/133/911: el bridge lo bloquea)
-WOKI_NOMBRE=Marta
-WOKI_DIRECCION=Av. Ejemplo 123, depto 4, Providencia
+# Contactos a los que llama el SOS, TODOS A LA VEZ (máx. 5). Gana el primero que confirma que va.
+EMERGENCY_CONTACTS=Jhomar:+51XXXXXXXXX,Juan:+57XXXXXXXXXX,Paolo:+569XXXXXXXX
+# (NO 131/133/911/123: el puente descarta números de servicios públicos)
+# Con un solo contacto también sirve el formato anterior: EMERGENCY_NAME=Camila + EMERGENCY_NUMBER=+569XXXXXXXX
+WOKI_NOMBRE=Emmy
+WOKI_DIRECCION=Av. Ejemplo 123, depto 4, Providencia   # con espacios, como se dice en voz alta: el agente la lee tal cual
 ```
 
 Crear el agente (una vez):
 
 ```bash
-cd woki-bridge
+cd software/whatsapp-bridge
 npx tsx --env-file=.env setup-emergencia.ts
 # con TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y TWILIO_PHONE_NUMBER en .env también importa el número
 ```
@@ -47,20 +51,64 @@ Tienen las mismas protecciones que `/api/wa/*`: solo local, Origin exacto y JSON
 | `GET /api/voz/voces` | Voces de la cuenta (prediseñadas + clonadas) |
 | `POST /api/voz/clonar` `{consentimiento:true, audios:[{b64,mime,nombre}]}` | Clonación instantánea. Sin consentimiento no clona |
 | `POST /api/voz/opciones` `{opciones, actual}` | Guarda las candidatas (máx. 6) en `voz.json` |
-| `POST /api/voz/elegir` `{id}` | Marta cambia de voz (solo entre las candidatas) |
+| `POST /api/voz/elegir` `{id}` | Emmy cambia de voz (solo entre las candidatas) |
 | `POST /api/emergencia/llamar` `{alarmId}` | Una llamada por alarma, máximo una por minuto |
 | `GET /api/emergencia/estado` | initiated · in-progress · done · failed |
 
+## Plan de ElevenLabs y voces
+
+- **Plan gratis:** solo voces prediseñadas (en inglés, hablan español con acento). La API responde *"Free users cannot use library voices via the API"* y no deja clonar ni diseñar voces.
+- **Plan Creator (o superior):** voces de la *Voice Library* (hay chilenas: Olivia, Emma, Angela, Marcela, Silvana, Camila), clonación instantánea y ~129 mil créditos al mes. Para usar una voz de la biblioteca hay que agregarla a "Mis voces" (`POST /v1/voices/add/{public_owner_id}/{voice_id}`).
+- La TV, si nadie eligió voces en `voz.html`, ofrece sola las voces de la cuenta aptas para español (las de mujer primero; nunca las clonadas de otras personas).
+
+## Protocolo de la llamada de emergencia
+
+1. El SOS llama a **todos** los contactos de `EMERGENCY_CONTACTS` al mismo tiempo.
+2. Quien contesta oye: *"Hola, te llamo de Myo, el asistente de Emmy. ¿Me escuchas?"*. Ese saludo no se puede interrumpir.
+3. Cuando responde, el agente le pregunta al puente su rol (`GET /api/emergencia/protocolo?conv=…`) y dice el mensaje exacto:
+   - **El primero en contestar:** *"Emmy activó su alarma de emergencia a las 22:26, en [dirección]. Necesita ayuda ahora. ¿Puedes ir?"*
+   - **Los siguientes:** *"…Juan ya contestó el aviso. Igual, si puedes brindar ayuda, acércate a [dirección]. ¿Puedes ir?"* o, si alguien ya confirmó, *"Juan ya va en camino. Igual, si puedes…"*
+4. Cuando alguien dice que va o que no puede, el agente lo avisa (`GET /api/emergencia/confirmar?conv=…&viene=si|no`) y **la TV se pone verde al instante**, sin esperar a que termine la llamada.
+   - **Si va:** el agente dice la dirección una vez, *"Gracias, le aviso a Emmy"*, y cuelga.
+   - **Si no puede ayudar:** dice solo *"Entendido, estamos llamando a otras personas. Gracias."* y cuelga. No insiste ni pide nada más.
+   - Ninguna llamada pasa de **2 minutos**.
+5. Si el puente no responde, el agente da el aviso completo igual.
+
+Las dos rutas exigen el id de una llamada activa, que no se puede adivinar. En el VPS exigen además el token del puente, guardado como secreto en ElevenLabs. ElevenLabs tiene que poder llegar al puente, así que el protocolo funciona con el **puente del VPS** (`/wa/api/*`). Con un puente local, el agente da siempre el aviso completo.
+
+Configurar el agente (no llama a nadie):
+
+```bash
+TOKI_PUBLIC_URL=https://179-66-157-161.sslip.io/wa npx tsx --env-file=.env protocolo-agente.ts
+```
+
+## Agente telefónico de emergencia
+
+`setup-emergencia.ts` lo crea ya estable, como quedó tras probarlo con llamadas reales:
+
+- **Voz chilena nativa** ("Camila", biblioteca). Las voces con *live moderation* no se pueden usar en agentes.
+- **Nada lo interrumpe:** sin el evento `interruption`, primer mensaje no interrumpible, turno `patient` y detección de voces de fondo. Antes, cada "sí, sí" o el ruido lo cortaban a mitad de frase.
+- **Primer mensaje con todo:** qué pasó, hora, dirección y "¿Puedes ir?". Respuestas de una o dos frases. Puede colgar solo (`end_call`).
+- **Extrae la respuesta** al terminar (`viene`, `respuesta`) para que la TV se la muestre a Emmy.
+
+**Twilio:** usar un número de EE.UU. (los chilenos y colombianos piden registro regulatorio con documentos). Habilitar en *Voice → Settings → Geo permissions* cada país al que se llama.
+
+| Destino probado el 21-nov | Resultado |
+|---|---|
+| Celular de Chile | ✅ contesta y conversa |
+| Celular de Perú (Claro) | ✅ contesta y conversa |
+| Celular de Colombia (Movistar) | ❌ el operador rechaza (SIP 484), también llamando directo desde Twilio sin ElevenLabs |
+
 ## Decisiones
 
-- **El agente no usa la voz de Marta** al llamar: se presenta como "WOKI, el asistente de Marta", para que nadie crea que ella está hablando.
+- **El agente no usa la voz de Emmy** al llamar: se presenta como "Myo, el asistente de Emmy", para que nadie crea que ella está hablando.
 - **No llama a servicios públicos.** Un robot llamando al SAMU es mala idea, y puede ser ilegal. Llama a una persona, y si esa persona no puede ir, el agente le pide que llame al 131.
 - **Clonar con audio antiguo.** Con ELA, muchas veces la voz actual ya cambió. Las notas de voz de WhatsApp de antes sirven para recuperar su voz real.
 - Los ajustes de emoción (estabilidad y estilo) son un primer cálculo: hay que afinarlos al oído.
 
 ## Pendiente o sin verificar
 
-- Probado contra un **mock** de ElevenLabs. Falta probarlo con la key real: TTS, clonación y la llamada.
+- **Probado con la key real:** TTS (flash, multilingual, v3, v4 turbo), voces de la biblioteca con Creator, la llamada (Chile y Perú) y la extracción de la respuesta. **Sin probar con audio real:** la clonación desde `voz.html`.
 - Que ElevenLabs acepte `.opus` de WhatsApp tal cual. Si lo rechaza, hay que convertirlo a mp3.
-- Que las variables `{{persona}}` y `{{direccion}}` funcionen en `first_message`. La página de la API no lo confirma.
-- Las voces de la *Voice Library* pública (no las de la cuenta) no se listan todavía. Para usarlas, se agregan primero a la cuenta desde la web de ElevenLabs.
+- El agente siempre ofrece el SAMU 131 (Chile). En Colombia es el 123 y en Perú el 106: falta una variable por país.
+- Llamadas a Colombia: probar otro operador (Claro, Tigo) o un número colombiano de Twilio.

@@ -26,7 +26,7 @@ Fuentes que no se pudieron leer: el HIG de Apple solo entregó la introducción 
 ### Fatiga de alarmas (salud)
 
 - Alerta Centinela n.º 50 de la Joint Commission (abril 2013): 98 eventos relacionados con alarmas entre enero 2009 y junio 2012 (80 muertes, 13 pérdidas permanentes de función, 5 con atención adicional). La fatiga de alarmas aparece como el factor contribuyente más común. Estima que entre 85 % y 99 % de las alarmas no requieren intervención clínica. Causas típicas: configuraciones por defecto sin ajustar y electrodos secos o mal puestos. [Buscador] https://digitalassets.jointcommission.org/api/public/content/f65e5c9df2b94000a99445e0a7877007 y https://www.beckershospitalreview.com/quality/joint-commission-alert-medical-device-alarm-safety/
-- Lo que importa para WOKI: **los electrodos EMG que se secan o se despegan son la fuente de falsas alarmas más probable**, igual que en hospital.
+- Lo que importa para Myo: **los electrodos EMG que se secan o se despegan son la fuente de falsas alarmas más probable**, igual que en hospital.
 - ECRI señala que no hay consenso amplio de mejores prácticas de gestión de alarmas. [Buscador] https://www.ecri.org/search-results/member-preview/hdjournal/pages/alarm-management-resource-list/
 - Marco de 2025 para reducir alertas a enfermería: define alarmas "inalcanzables" (no llegan a tiempo al cuidador correcto) e "inalcanzables por ocupación" (llegan a alguien que no puede actuar). También propone enrutar por proximidad en vez de avisar a todos. [Buscador] https://pmc.ncbi.nlm.nih.gov/articles/PMC12608296
 - Interrupciones fragmentan el trabajo del cuidador, suben el estrés y la carga cognitiva. [Buscador] mismo PMC12608296.
@@ -40,7 +40,7 @@ Fuentes que no se pudieron leer: el HIG de Apple solo entregó la introducción 
 - Sobre confirmación (ack) por RFID/NFC: **no encontré** una fuente que describa confirmar una alerta con NFC. Lo que sí existe es NFC/RFID como prueba de presencia del cuidador en visitas de cuidado domiciliario (EVV) y patentes de residencias con RFID en personal y residentes. [Buscador] https://www3.hidglobal.com/solutions/electronic-visit-verification y https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/12614439
 - **Conclusión [Inferido]:** usar el llavero RFID como "estoy aquí, lo vi" es una extensión natural del patrón de prueba de presencia. No hay precedente directo documentado.
 
-### Propuesta de alarma para WOKI (todo [Inferido], valores a calibrar el sábado)
+### Propuesta de alarma para Myo (todo [Inferido], valores a calibrar el sábado)
 
 Dos prioridades y no más (para no fabricar fatiga):
 
@@ -60,7 +60,7 @@ Escalamiento de emergencia (el reloj parte en cuanto se confirma el gesto):
 Reglas de diseño:
 
 1. **Nunca se apaga sola.** Solo se apaga con confirmación humana (RFID o botón en el teléfono). Es el patrón de la patente de caídas.
-2. **Cerrar el lazo hacia Marta:** al confirmar, la TV muestra en letra grande "Camila viene". Marta tiene que saber que alguien recibió el aviso.
+2. **Cerrar el lazo hacia Emmy:** al confirmar, la TV muestra en letra grande "Camila viene". Emmy tiene que saber que alguien recibió el aviso.
 3. **Cancelación barata:** ventana de 3 s para cancelar el escalamiento remoto con un solo gesto fácil (mandíbula). La alarma local suena igual desde el segundo 0.
 4. **Pérdida de sensor no es emergencia.** Es un aviso técnico en TV y LCD. Solo se avisa a la cuidadora si dura más de 60 s en modo vigilia (así no se repite el problema de electrodos secos de la Joint Commission).
 5. **De noche:** pantalla en brillo mínimo, sin parpadeo, LED rojo fijo. La emergencia siempre al volumen máximo; la atención con volumen bajo configurable. Un solo tono por nivel, distintos entre sí.
@@ -76,13 +76,13 @@ Reglas de diseño:
 - Tiempo de escaneo usado en un estudio: de 0,48 a 2,00 s por ítem; los usuarios podían agregar un retraso extra para la primera fila y columna. [Buscador] https://arxiv.org/pdf/2204.01619
 - Subir el retraso reduce la sensibilidad al ruido en el momento del clic, a costa de velocidad. [Buscador] https://ar5iv.arxiv.org/html/1712.10073
 - Valor por defecto de PRC-Saltillo: 1 s. Tienen "tiempo de aceptación" (cuánto hay que sostener el interruptor) y "tiempo de liberación" (bloquea un doble clic accidental). [Buscador] https://saltillo.com/support/article/Scan-Timing (la página dio error de certificado al abrirla; es dato del buscador).
-- Apple Switch Control trae: "hold before perform" (segundos de sostén para registrar), "ignore switch repeats" (descarta pulsaciones repetidas en una ventana), "auto scanning time" y "move repeat". Es lo que WOKI tiene que superar o igualar. [Buscador] https://support.apple.com/guide/mac-help/mh43181/mac
+- Apple Switch Control trae: "hold before perform" (segundos de sostén para registrar), "ignore switch repeats" (descarta pulsaciones repetidas en una ventana), "auto scanning time" y "move repeat". Es lo que Myo tiene que superar o igualar. [Buscador] https://support.apple.com/guide/mac-help/mh43181/mac
 - Muchas interfaces vuelven a filas tras N ciclos de columnas sin entrada; un estudio usó dos ciclos completos. Algunas dan una ventana de "deshacer" durante el escaneo. [Buscador] https://arxiv.org/pdf/2204.01619 y https://ar5iv.arxiv.org/html/1712.10073
-- Un usuario de ELA en un foro dice que con NeuroNode hay que escanear opciones y que la mirada, si funciona, es mucho más rápida. [Buscador] https://www.alsforums.com/community/threads/emg-switch-by-control-bionics-is-tinkertron.39924/post-424163 (anecdótico). Esto respalda el modelo de WOKI: la mirada elige, el EMG confirma, sin escanear.
+- Un usuario de ELA en un foro dice que con NeuroNode hay que escanear opciones y que la mirada, si funciona, es mucho más rápida. [Buscador] https://www.alsforums.com/community/threads/emg-switch-by-control-bionics-is-tinkertron.39924/post-424163 (anecdótico). Esto respalda el modelo de Myo: la mirada elige, el EMG confirma, sin escanear.
 
 ### Mirada y activación accidental (Midas touch)
 
-- El problema: con dwell basta mirar para activar. Los diseños híbridos agregan un segundo canal para confirmar, lo que es la arquitectura de WOKI. [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf y https://pmc.ncbi.nlm.nih.gov/articles/PMC7715037
+- El problema: con dwell basta mirar para activar. Los diseños híbridos agregan un segundo canal para confirmar, lo que es la arquitectura de Myo. [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf y https://pmc.ncbi.nlm.nih.gov/articles/PMC7715037
 - Dwell más corto da más velocidad y más activaciones falsas; el artículo CHI 2017 propone subir el dwell de teclas improbables y bajarlo en las probables. Esto es la lógica del "cursor que predice". [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf
 - Estudio de 2008 con pacientes de ELA fijó el dwell en 800 ms. Es el único valor concreto que encontré; no hay estudio que recomiende un dwell óptimo para ELA. [Buscador] https://www.researchgate.net/profile/Kristian-Torning/publication/220810980_Gaze_typing_compared_with_input_by_head_and_hand/links/0912f513092d1a2e8a000000/Gaze-typing-compared-with-input-by-head-and-hand.pdf
 - Look to Speak (Google) usa gestos de mirada fuera de pantalla (izquierda, derecha, arriba), con distancia (cerca, media, lejos) y duración (rápida, media, larga) configurables por dirección. Advierte que menos distancia y menos duración suben las activaciones accidentales. [Buscador] https://g.co/looktospeak y https://storage.googleapis.com/experiments-uploads/LTS_GUIDE.pdf
@@ -94,7 +94,7 @@ Reglas de diseño:
 - **Mandíbula (masetero):** proyecto de BU con interruptor sEMG de umbral por paciente, partes comerciales, software abierto, CAD de la carcasa. Es el punto de partida abierto más cercano. [Buscador] https://sites.bu.edu/stepplab/research/semg-based-switch-design
 - Silla de ruedas por apretar mandíbula en ELA: apretón corto y largo, izquierda y derecha. El artículo avisa que la progresión de la ELA puede borrar la diferencia entre reposo y contracción. [Buscador] https://pmc.ncbi.nlm.nih.gov/articles/PMC9375912 (probable; confirmar)
 - Instructables con MyoWare y BITalino que manda teclas a The Grid 3, con potenciómetro de sensibilidad. [Buscador] https://www.instructables.com/Muscle-EMG-Activated-Switch
-- No encontré ningún proyecto que combine varios clics en secuencia como lenguaje de comandos. **El combo de gestos de WOKI no tiene precedente directo.** [Inferido]
+- No encontré ningún proyecto que combine varios clics en secuencia como lenguaje de comandos. **El combo de gestos de Myo no tiene precedente directo.** [Inferido]
 
 ### Diseño de combos (todo [Inferido], valores iniciales a calibrar con los sensores reales)
 
@@ -108,7 +108,7 @@ Principio: lo común y barato va en un gesto; lo raro y peligroso va en secuenci
 | Clic sostenido (mandíbula) | 400 ms para contar como "largo" | Distinguir corto/largo, ya que la ELA puede borrar el contraste reposo/contracción. |
 | Combo de emergencia propuesto | ceja, ceja, mandíbula | Dos canales distintos reducen la coincidencia accidental. |
 | Cancelar | mandíbula sostenida o cualquier clic durante los 3 s de aviso | Un solo gesto, sin menús. |
-| Máximo de combos activos | 3 | Marta tiene que recordarlos y la fatiga cognitiva pesa. |
+| Máximo de combos activos | 3 | Emmy tiene que recordarlos y la fatiga cognitiva pesa. |
 | Retroalimentación por gesto | marca en pantalla a los 100 ms | Que vea que el gesto fue leído. |
 
 Diseño de confirmación durante el combo: mostrar tres puntos en la esquina inferior que se llenan a medida que se completan los gestos, con el color del canal de cada uno. Si pasa la ventana, los puntos se vacían suavemente (sin sonido de error).
@@ -198,7 +198,7 @@ Todos son valores iniciales. Los marcados "Fuente" salen de una guía; los demá
 | Pantalla de alerta | color de alto contraste, sin parpadeo mayor a 3 Hz | WCAG 2.3.1 [Memoria] |
 | Colores | evitar rojo o naranja saturados para texto grande; que el estado no dependa solo del color (forma, ícono, texto) | Fire TV [Leído], WCAG 1.4.1 [Memoria] |
 
-Modo oscuro: es lo adecuado para cuarto con poca luz y fotofobia. Personas con fotofobia por migraña, traumatismo, ojo seco o albinismo suelen preferirlo. [Buscador] https://buttondown.com/access-ability/archive/accessible-color-choices-are-about-so-much-more/ . Pero la fórmula de contraste de WCAG 2 no mide bien texto claro sobre oscuro (APCA lo critica). [Buscador] https://www.github.com/Myndex/SAPC-APCA/discussions/103 . Por eso: probar en la TV real, de noche, con la persona o con alguien de baja visión, antes de dar por buena la combinación. No encontré fuentes sobre halación o astigmatismo. Ofrecer además un modo claro por si Marta prefiere el día.
+Modo oscuro: es lo adecuado para cuarto con poca luz y fotofobia. Personas con fotofobia por migraña, traumatismo, ojo seco o albinismo suelen preferirlo. [Buscador] https://buttondown.com/access-ability/archive/accessible-color-choices-are-about-so-much-more/ . Pero la fórmula de contraste de WCAG 2 no mide bien texto claro sobre oscuro (APCA lo critica). [Buscador] https://www.github.com/Myndex/SAPC-APCA/discussions/103 . Por eso: probar en la TV real, de noche, con la persona o con alguien de baja visión, antes de dar por buena la combinación. No encontré fuentes sobre halación o astigmatismo. Ofrecer además un modo claro por si Emmy prefiere el día.
 
 ---
 
@@ -228,9 +228,9 @@ Una franja de 64 a 80 px de alto en el borde superior, siempre visible, con tres
 | Señal perdida | Mensaje a pantalla completa y calmo: "No te veo. Mírame a la cámara o usa [gesto]". Si persiste más de 60 s en vigilia, aviso a la cuidadora. |
 
 Reglas:
-1. El descanso no se activa solo por la mirada perdida; lo decide Marta (gesto largo) o un temporizador que se confirma. Así una mala pasada de la cámara no la deja "dormida" sin que lo sepa.
+1. El descanso no se activa solo por la mirada perdida; lo decide Emmy (gesto largo) o un temporizador que se confirma. Así una mala pasada de la cámara no la deja "dormida" sin que lo sepa.
 2. Al volver de una pérdida de señal, mostrar 1,5 s de "listo" antes de aceptar clics (evita activaciones al recalibrar).
-3. El canal que acaba de disparar un clic se marca en pantalla: así Marta y la familia entienden qué leyó el sistema.
+3. El canal que acaba de disparar un clic se marca en pantalla: así Emmy y la familia entienden qué leyó el sistema.
 4. Un deshacer visible y permanente: "borrar la última palabra/frase" con un gesto fijo, siempre en el mismo lugar.
 
 ---
@@ -256,15 +256,15 @@ Notas de seguridad para la demo: la demo es un prototipo y no un dispositivo mé
 
 ---
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
 1. **La alarma es un diferenciador real.** No encontré alarma nativa ni integración con nurse call en los CAA que revisé. Es un argumento frente a Apple y Look to Speak.
 2. **Dos niveles y no más (atención y emergencia).** La Joint Commission estima que 85 a 99 % de las alarmas no requieren intervención; más niveles y más ruido fabrican fatiga.
-3. **La alarma no se apaga sola.** Solo con confirmación humana (RFID o teléfono), y la TV le dice a Marta quién viene.
+3. **La alarma no se apaga sola.** Solo con confirmación humana (RFID o teléfono), y la TV le dice a Emmy quién viene.
 4. **Escalar en segundos, no en minutos.** PagerDuty usa 30 minutos por defecto y mínimo 3; eso no sirve acá. Propuesta: 0 s, 30 s, 90 s.
 5. **El combo de emergencia es la excepción a "difícil de activar".** Debe ser fácil y cancelable en 3 s. Ceja, ceja, mandíbula con dos canales distintos reduce la coincidencia accidental.
 6. **No existe precedente de combos de gestos como lenguaje de comandos.** Hay que decirlo con honestidad en la presentación y mostrar el resultado de pruebas propias.
-7. **Con mirada de 3,7° de error a 3 m cabe una sola fila de objetivos.** O se sienta a Marta a 2 a 2,5 m, o se usa una TV de 65 pulgadas o más, o la mirada solo elige zona y el cursor predictivo con el EMG hace el resto.
+7. **Con mirada de 3,7° de error a 3 m cabe una sola fila de objetivos.** O se sienta a Emmy a 2 a 2,5 m, o se usa una TV de 65 pulgadas o más, o la mirada solo elige zona y el cursor predictivo con el EMG hace el resto.
 8. **Máximo 4 frases en 2x2 o en fila, con tarjetas grandes.** Coincide con el diseño de las 4 frases de Claude.
 9. **Franja de estado fija con tres indicadores (mirada, EMG, alarma), con ícono, texto y color**, y el canal que acaba de disparar se marca. Es útil también para la familia.
 10. **El hardware físico hace la demo creíble:** LCD y LEDs como bedside, servo como bandera que queda arriba hasta la confirmación, RFID como "llegué", relé para llevar la alarma a otra habitación. Y el heartbeat Mac-Arduino hace visible la pérdida de la app.
@@ -288,4 +288,4 @@ Notas de seguridad para la demo: la demo es un prototipo y no un dispositivo mé
 | Parpadeo | 3 Hz máximo en cualquier elemento (WCAG 2.3.1 [Memoria]); preferir luz fija |
 | Heartbeat Mac a Arduino | cada 2 s; sin latido por 6 s, "SIN CONEXION" |
 
-Todos los tiempos son puntos de partida para calibrar con los sensores y con alguien que juegue el papel de Marta; ninguno sale de un estudio.
+Todos los tiempos son puntos de partida para calibrar con los sensores y con alguien que juegue el papel de Emmy; ninguno sale de un estudio.

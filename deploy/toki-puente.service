@@ -1,0 +1,18 @@
+[Unit]
+Description=Toki · puente de WhatsApp (software/whatsapp-bridge, 127.0.0.1:8788)
+After=network-online.target wapi-api.service toki-agente.service
+Wants=network-online.target wapi-api.service
+
+[Service]
+User=toki
+WorkingDirectory=/opt/toki/repo/software/whatsapp-bridge
+# WA_MODE, WOKI_API_TOKEN, WAPI_*, PROFILE... Archivo solo para root, fuera de git.
+EnvironmentFile=/opt/toki/puente.env
+ExecStart=/opt/toki/repo/software/whatsapp-bridge/node_modules/.bin/tsx server.ts
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

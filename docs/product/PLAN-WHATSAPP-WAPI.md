@@ -1,6 +1,6 @@
-# WOKI · Plan de mensajes por WhatsApp con wapi
+# Myo · Plan de mensajes por WhatsApp con wapi
 
-**Objetivo:** que la pantalla **Mensajes** de `software/toki-os/woki-os.html` deje de simular y envíe de verdad desde el WhatsApp del celular a una lista cerrada de contactos (Sofía, Camila). Y que los mensajes que llegan aparezcan en la TV como "Sofía dice…" para que Marta responda con las 4 frases.
+**Objetivo:** que la pantalla **Mensajes** de `software/toki-os/woki-os.html` deje de simular y envíe de verdad desde el WhatsApp del celular a una lista cerrada de contactos (Sofía, Camila). Y que los mensajes que llegan aparezcan en la TV como "Sofía dice…" para que Emmy responda con las 4 frases.
 
 **Base:** el mismo gateway que usa `Repositorios/wspbot` (kekito-crafter / Crafter Station): **wapi**, `https://api.wapi.crafter.run`. Es un WhatsApp por HTTP, open source ([crafter-station/wapi](https://github.com/crafter-station/wapi)), que vincula un número personal por QR. Reutilizamos su SDK oficial en TypeScript (`wspbot/lib/wapi-sdk/`) y su receptor de webhook (`wspbot/.agents/skills/wapi-nextjs/references/webhook-route.ts`).
 
@@ -53,10 +53,10 @@
 
 ## 3. Flujos
 
-### A. Marta envía (lo que hoy está simulado)
+### A. Emmy envía (lo que hoy está simulado)
 
 ```
-1. Intención      Marta elige "Mensajes" → contacto (Sofía) → frase (de las 4 o escrita)
+1. Intención      Emmy elige "Mensajes" → contacto (Sofía) → frase (de las 4 o escrita)
 2. Plan           Tarjeta de 3 pasos ya existente: destinatario + texto en grande
 3. Confirmación   Ceja, y otra ceja en 3 s (ya existe). Nunca se envía por no responder
 4. Envío          browser → POST /api/wa/send { contactId:"sofia", text, idemKey }
@@ -73,21 +73,21 @@
 2. wapi → webhook firmado → backend: verifica la firma, responde 200 y procesa después
 3. ¿remitente (teléfono o LID) en lista blanca? Si no, se descarta sin guardar ni mostrar
 4. backend → SSE → TV: tarjeta "Sofía dice: ¿vienes el domingo?" + sonido suave
-5. Marta mira la tarjeta → se abre Hablar con #ctxIn = ese texto y persona = Sofía
-6. genSuggestions() con el tono de Sofía → 4 frases → Marta elige
+5. Emmy mira la tarjeta → se abre Hablar con #ctxIn = ese texto y persona = Sofía
+6. genSuggestions() con el tono de Sofía → 4 frases → Emmy elige
 7. "Responder por WhatsApp" → flujo A desde el paso 2, con la frase ya cargada
    Atajo: una reacción (❤️ 😂 👍) sobre el mensaje con wapi.messages.react(key, emoji)
 ```
 
-Este es el momento de la demo: el jurado escribe desde el celular de "Sofía", la TV lo muestra, Marta responde con la mirada y el mensaje llega en segundos.
+Este es el momento de la demo: el jurado escribe desde el celular de "Sofía", la TV lo muestra, Emmy responde con la mirada y el mensaje llega en segundos.
 
 ### C. Alarma (opcional, P2)
 
-Escalamiento de 90 s ya definido en `hallazgos/06`: si Camila no confirma, el backend manda un WhatsApp al contacto 2 con una plantilla fija ("Marta pidió ayuda hace 90 s y nadie ha confirmado"). Misma lista blanca, sin IA.
+Escalamiento de 90 s ya definido en `hallazgos/06`: si Camila no confirma, el backend manda un WhatsApp al contacto 2 con una plantilla fija ("Emmy pidió ayuda hace 90 s y nadie ha confirmado"). Misma lista blanca, sin IA.
 
 ### D. Onboarding de contactos (después de la hackathon)
 
-`GET /api/contacts` trae la agenda real. En el formulario de la familia (capa A de `PLAN-ONBOARDING-MEMORIA.md`) se eligen de ahí las 3 a 6 personas de Marta, con relación y tono. Así nadie escribe números a mano.
+`GET /api/contacts` trae la agenda real. En el formulario de la familia (capa A de `PLAN-ONBOARDING-MEMORIA.md`) se eligen de ahí las 3 a 6 personas de Emmy, con relación y tono. Así nadie escribe números a mano.
 
 ---
 
@@ -177,10 +177,10 @@ Total ≈ 4 h. Si el tiempo no alcanza, cortar después del paso 3: el envío re
 | Bloqueo del número por automatización | Volumen mínimo y `account_protection`. Idealmente un número secundario del equipo, no el personal |
 | El Wi-Fi del evento bloquea el túnel | Hotspot del iPhone. El envío (paso 3) no necesita túnel, solo los entrantes |
 | Mensaje duplicado por reintento del webhook | Responder 200 de inmediato y deduplicar por id |
-| La IA propone algo que Marta no quería enviar | Imposible enviar sin las dos cejas; el texto se ve completo en la tarjeta |
+| La IA propone algo que Emmy no quería enviar | Imposible enviar sin las dos cejas; el texto se ve completo en la tarjeta |
 
 ---
 
 ## 9. Para el pitch
 
-"El agente solo puede escribirle a las personas que Marta eligió, y nada sale sin su doble confirmación." Privacidad y control en una frase, en línea con `PLAN-ONBOARDING-MEMORIA.md`.
+"El agente solo puede escribirle a las personas que Emmy eligió, y nada sale sin su doble confirmación." Privacidad y control en una frase, en línea con `PLAN-ONBOARDING-MEMORIA.md`.

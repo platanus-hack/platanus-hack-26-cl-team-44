@@ -6,9 +6,11 @@ window.addEventListener('load', () => {
   section.innerHTML = '<div class="status"></div><div id="gameContent"></div>';
   document.querySelector('#stage').append(section);
   document.querySelector('svg defs')?.insertAdjacentHTML('beforeend', '<symbol id="i-game" viewBox="0 0 80 80"><rect x="10" y="20" width="60" height="40" rx="16"/><path d="M23 40h18m-9-9v18M55 35h1m5 12h1"/></symbol>');
-  TILES.splice(6, 0, ['go:games', 'g-purple', 'i-game', 'Juegos', 'A tu ritmo']);
   document.body.classList.add('has-games');
-  renderTiles();
+  if (!TILES.some(([action]) => action === 'go:games')) {
+    TILES.splice(6, 0, ['go:games', 'g-purple', 'i-game', 'Juegos', 'A tu ritmo']);
+    renderTiles();
+  }
   let state = null, paused = false, suspended = false, inputPending = false, latch = null;
   const content = document.querySelector('#gameContent');
   const KEY = 'toki.games.records.v1';
@@ -22,7 +24,7 @@ window.addEventListener('load', () => {
     return (now-s.startedAt-s.pausedMs-(s.pauseAt!=null?now-s.pauseAt:0))/1000;
   }
   function mode() { return NOSE.on ? (NOSE.mode === 'gaze' ? 'Mirada' : 'Nariz') : 'Mouse'; }
-  const browClick = () => window.WOKI?.myowareConfirming?.();
+  const browClick = () => Boolean(window.TOKI_OS_SHELL && window.myowareConfirming?.());
   function inputControls() { if (window.TOKI_OS_SHELL) return `<p class="game-note">${browClick()?'Apunta a una opción y levanta la ceja para elegir.':'Mantén la mirada sobre una opción para elegirla.'} El puntero se cambia en Ajustes.</p>`; return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
   function paint(html) {
     const blockedAction=S.blocked?.dataset.act;
@@ -50,7 +52,7 @@ window.addEventListener('load', () => {
     const revealed=s.open.length===2;
     if(s.kind==='stars') clock(s);
     const flip=s.flipBack; s.flipBack=[];
-    const starHint = browClick() ? 'Apunta a la estrella y levanta la ceja para recogerla.' : 'Mira la estrella y mantén el puntero sobre ella.';
+    const starHint = browClick() ? 'Apunta a la estrella y levanta la ceja para recogerla.' : 'Mira la estrella y mantén el puntero sobre ella para recogerla.';
     paint(`<div class="game-heading"><div><p class="game-eyebrow">${progress}</p><h1>${title}</h1></div>${button('pause',paused?'Continuar':'Pausa')}</div><p class="game-instruction" aria-live="polite">${paused?'Descansa. La partida te espera.':s.kind==='stars'?starHint:revealed?'No son iguales. Se dan vuelta solas.':s.lastMatch?'¡Pareja! Sigue buscando.':'Elige dos tarjetas para encontrar una pareja.'}</p>${paused?'<div class="game-pause">☾</div>':`<div class="game-board">${Array.from({length:6},(_,i)=> {
       if(s.kind==='stars') return i===s.target?button('pick:'+i,'✦',`aria-label="Recoger estrella"`):'<div class="game-empty" aria-hidden="true">·</div>';
       if(s.matched.includes(i)) return `<div class="game-matched" aria-label="Pareja encontrada">${s.deck[i]}<small>✓</small></div>`;
@@ -120,7 +122,7 @@ window.addEventListener('load', () => {
     }
   };
   const baseGo=go;
-  go=function(name, ...args) { if(name==='games') lobby(); baseGo(name, ...args); };
+  go=function(name, ...args) { if(name==='games' && !window.TOKI_OS_SHELL && !window.TOKI_EXTERNAL) lobby(); baseGo(name, ...args); };
   // Losing face, hiding the page or opening calibration must never collect a target.
   function syncSuspension() {
     if(latch) {

@@ -284,7 +284,7 @@ async function readWokiHome(frame, signal) {
   const deadline = performance.now() + 8000;
   while (performance.now() < deadline) {
     const doc = frame.contentDocument, elements = doc?.querySelectorAll('#tiles .tile[data-act]');
-    if (elements?.length === 10 && doc.readyState === 'complete') {
+    if (elements?.length && doc.readyState === 'complete') {
       doc.querySelector('#calib').classList.remove('on');
       doc.querySelector('#gaze').style.display = 'none';
       // Wait for the normal tile entrance to settle before measuring its rects.
@@ -303,7 +303,7 @@ async function readWokiHome(frame, signal) {
     }
     await wait(40, signal);
   }
-  throw new Error('No se pudieron cargar las 10 tarjetas de Woki.');
+  throw new Error('No se pudieron cargar las tarjetas de Inicio de Woki.');
 }
 
 async function runCalibrationComparison() {
@@ -324,7 +324,7 @@ async function runCalibrationComparison() {
   try {
     phase.textContent = 'Abriendo las tarjetas de Woki…';
     const { stage, tiles } = await readWokiHome(frame, signal);
-    const order = [0, 9, 3, 6, 8, 1, 5, 4, 2, 7].map(i => tiles[i].id);
+    const order = tiles.map((_, i) => tiles[i % 2 ? tiles.length - 1 - (i >> 1) : i >> 1].id);
     const rounds = Math.random() < .5 ? calibrationModes : [...calibrationModes].reverse();
     for (const method of rounds) {
       model = createWebEyeTrack(signal);

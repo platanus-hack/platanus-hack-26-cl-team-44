@@ -11,9 +11,15 @@ import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente co
 type Mode = "off" | "dry" | "sandbox" | "live";
 const MODE = (process.env.WA_MODE ?? "dry") as Mode;
 const PORT = Number(process.env.PORT ?? 8787);
-const ORIGIN = process.env.ALLOWED_ORIGIN ?? "http://localhost:8000";
+// Orígenes de la TV, separados por coma: p. ej. la URL pública y el monitor MyoWare del escenario (http://127.0.0.1:8766).
+const ORIGINS = (process.env.ALLOWED_ORIGIN ?? "http://localhost:8000").split(",").map((o) => o.trim()).filter(Boolean);
+const corsOf = (req: http.IncomingMessage) => { const o = String(req.headers.origin ?? ""); return ORIGINS.includes(o) ? o : ORIGINS[0]; };
 const SECRET = process.env.WAPI_WEBHOOK_SECRET ?? "";
 const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Woki-Token
+// Dominio público detrás de Caddy (/wa/* → este puerto), p. ej. 179-66-157-161.sslip.io. Acepta ese Host y el tráfico
+// reenviado por el proxy, siempre con token. Vacío = solo local, como antes.
+const PUBLIC_HOST = (process.env.PUBLIC_HOST ?? "").trim().toLowerCase();
+if (PUBLIC_HOST && !API_TOKEN) throw new Error("PUBLIC_HOST exige WOKI_API_TOKEN: sin token, cualquiera podría mandar mensajes");
 const MAX_PER_DAY = 30;
 const MIN_GAP_MS = 5_000;
 const MAX_LEN = 500;
@@ -138,7 +144,7 @@ const contextOf = (m: any): any => {
   return undefined;
 };
 
-// ---------- menciones en grupos (solo aviso: WOKI no responde en grupos) ----------
+// ---------- menciones en grupos (solo aviso: Myo no responde en grupos) ----------
 let me: { ids: Set<string> } = { ids: new Set() }; // mi número y mi LID, sin dominio
 async function loadMe() {
   // Sin wapi (modo dry) se puede probar la mención con WOKI_ME_IDS=<número>,<lid>
@@ -198,7 +204,7 @@ function trackStatus(msgId: number, contactId: string) {
 const readBody = (req: http.IncomingMessage) =>
   new Promise<string>((ok, ko) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => ok(b)); req.on("error", ko); });
 function json(res: http.ServerResponse, code: number, body: unknown) {
-  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": ORIGIN });
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": (res as any).cors ?? ORIGINS[0], Vary: "Origin" });
   res.end(JSON.stringify(body));
 }
 const safeEqual = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
@@ -208,9 +214,11 @@ const verify = (raw: string, sig?: string) =>
 // ---------- rutas ----------
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://x");
+  const ORIGIN = corsOf(req);              // el Origin de este pedido si está permitido; si no, el primero
+  (res as any).cors = ORIGIN;
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
+    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
     return res.end();
   }
 
@@ -220,22 +228,24 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname.startsWith("/api/")) {
     // 0) Anti DNS rebinding: una página maliciosa puede hacer que su dominio resuelva a 127.0.0.1 y leer /api/* por GET.
     //    El navegador manda su propio Host (evil.com:PORT), así que solo se acepta el Host local exacto.
-    if (![`localhost:${PORT}`, `127.0.0.1:${PORT}`].includes(String(req.headers.host)))
+    const hosts = [`localhost:${PORT}`, `127.0.0.1:${PORT}`, ...(PUBLIC_HOST ? [PUBLIC_HOST] : [])];
+    if (!hosts.includes(String(req.headers.host).toLowerCase()))
       return json(res, 421, { ok: false, reason: "host no permitido" });
     // 1) /api/* es solo para la app local. Lo que entra por un túnel trae estos encabezados → fuera,
     //    así una URL de túnel filtrada no permite mandar ni leer mensajes (solo /webhook/wapi es público).
+    //    Con PUBLIC_HOST, el proxy propio (Caddy) agrega X-Forwarded-*: se acepta porque el token es obligatorio.
     const h = req.headers;
-    if (h["cf-connecting-ip"] || h["cf-ray"] || h["x-forwarded-for"] || h["x-forwarded-host"] || h["ngrok-trace-id"])
+    if (!PUBLIC_HOST && (h["cf-connecting-ip"] || h["cf-ray"] || h["x-forwarded-for"] || h["x-forwarded-host"] || h["ngrok-trace-id"]))
       return json(res, 403, { ok: false, reason: "api solo local" });
     // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Woki-Token.
     if (API_TOKEN) {
-      const tok = String(h["x-woki-token"] ?? "");
+      const tok = String(h["x-woki-token"] ?? "");   // solo header: el token nunca va en la URL (la TV usa toki-sse.js)
       if (!tok || !safeEqual(tok, API_TOKEN)) return json(res, 401, { ok: false, reason: "token inválido" });
     }
     // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
     if (req.method === "POST") {
       const ctype = String(h["content-type"] ?? "").split(";")[0].trim();
-      if (h.origin !== ORIGIN || ctype !== "application/json")
+      if (!ORIGINS.includes(String(h.origin ?? "")) || ctype !== "application/json")
         return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
     }
   }
@@ -254,7 +264,7 @@ const server = http.createServer(async (req, res) => {
     usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
 
     if (MODE === "dry") {
-      console.log(`[dry] → ${c.name}: ${body}`);
+      console.log(`[dry] → ${c.id}: ${body.length} caracteres`);   // sin nombres ni texto en el log
       pushHist(c.id, { id: "dry-" + idemKey, dir: "out", text: body, at: Date.now(), via: "tv" });
       emit({ type: "status", msgId: -1, contactId, status: 2 });
       return json(res, 200, { ok: true, msgId: -1, dry: true });
@@ -262,7 +272,7 @@ const server = http.createServer(async (req, res) => {
     try {
       recentTv.push({ cid: c.id, text: body, at: Date.now() });
       const sent = await wapi!.messages.send({ to: "+" + digits(c.phone), text: body });
-      console.log(`[send] ${c.name} msgId=${sent.msgId}`);
+      console.log(`[send] ${c.id} msgId=${sent.msgId}`);
       pushHist(c.id, { id: "api-" + sent.msgId, dir: "out", text: body, at: Date.now(), via: "tv", msgId: sent.msgId });
       trackStatus(sent.msgId, contactId);
       return json(res, 200, { ok: true, msgId: sent.msgId });
@@ -411,7 +421,7 @@ function handleEvent(raw: string) {
   if (!c) return;                                                             // fuera de la lista: ni se muestra ni se guarda
   const text = textOf(m);
   if (!text) return;                                                          // por ahora solo texto
-  console.log(`[in] ${c.name}: ${text}`);
+  console.log(`[in] ${c.id}: ${text.length} caracteres`);       // el texto puede traer datos privados o secretos
   pushHist(c.id, { id: String(key.id ?? "in-" + Date.now()), dir: "in", text, at: Date.now() });
   emit({ type: "incoming", contactId: c.id, name: c.name, relation: c.relation, tone: c.tone, text, key });
   prefetchSuggest(c.id);                                                     // las respuestas de Claude llegan por SSE ("suggest")
@@ -456,7 +466,7 @@ async function sendGroup(res: http.ServerResponse, jid: string, body: string, id
   const q = quotaOk(); if (q) return json(res, 429, { ok: false, reason: q });
   usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
   if (MODE === "dry") {
-    console.log(`[dry] → grupo: ${body}`);
+    console.log(`[dry] → grupo: ${body.length} caracteres`);
     return json(res, 200, { ok: true, msgId: -1, dry: true });
   }
   try {

@@ -22,7 +22,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 header
                 if case .unsupported = model.sensorState {
-                    notice("Este dispositivo no tiene cámara TrueDepth (Face ID). Eye Tracking necesita un iPhone con Face ID.", color: .red)
+                    notice("Este dispositivo no tiene cámara TrueDepth (Face ID). Myo necesita un iPhone con Face ID.", color: .red)
                 }
                 connectionCard
                 statusGrid
@@ -42,7 +42,7 @@ struct ContentView: View {
             }
             .frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Eye Tracking · sensor").font(.title2.bold())
+                Text("Myo · sensor").font(.title2.bold())
                 Text("Tu iPhone sigue tu mirada para el Mac").font(.subheadline).foregroundStyle(.secondary)
             }
         }

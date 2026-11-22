@@ -1,10 +1,10 @@
 # 02 - Evidencia de HCI sobre interfaces controladas con la mirada
 
-Fecha: 2026-11-21. Autor: agente de investigación (informe para WOKI, solo hackathon).
+Fecha: 2026-11-21. Autor: agente de investigación (informe para Myo, solo hackathon).
 
 Convención: **[V]** = verificado, leí la fuente (PDF o página). **[I]** = inferido o calculado por mí. **[NV]** = no verificado: solo vi un resumen o un buscador, o no lo encontré.
 
-Advertencia general: casi todos los estudios usan rastreadores infrarrojos comerciales (precisión de 0,5 grados o mejor) con voluntarios sin discapacidad, pantallas de escritorio a 50-70 cm. WOKI usa webcam (1,5 a 3,7 grados), TV a 2-3 m y una usuaria con ELA. Los números de dwell y de wpm son una **cota superior optimista** para Marta. Los números de tamaño de objetivo hay que reescalarlos.
+Advertencia general: casi todos los estudios usan rastreadores infrarrojos comerciales (precisión de 0,5 grados o mejor) con voluntarios sin discapacidad, pantallas de escritorio a 50-70 cm. Myo usa webcam (1,5 a 3,7 grados), TV a 2-3 m y una usuaria con ELA. Los números de dwell y de wpm son una **cota superior optimista** para Emmy. Los números de tamaño de objetivo hay que reescalarlos.
 
 ---
 
@@ -19,8 +19,8 @@ Advertencia general: casi todos los estudios usan rastreadores infrarrojos comer
 - Dwell en cascada (Mott, Williams, Wobbrock, Morris, CHI 2017): baja el dwell de las teclas probables (según predicción de la siguiente letra) y sube el de las improbables; 17 participantes sin discapacidad, 8 sesiones: 12,39 wpm vs 10,62 wpm con dwell fijo. Con 5 personas con ELA: 9,51 wpm. Dwell inicial de 600 ms. https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf
 - Expertos y dwell cercano a la fijación natural: lo cita un artículo de JEMR de 2016 sobre Räihä y Ovaska 2012; no leí el original de CHI 2012. [NV] https://dblp.org/rec/conf/chi/RaihaO12.html
 
-**Lectura para WOKI [I]**
-- Novata: arrancar en 600 a 900 ms. Marta no es novata ni experta en WOKI; la demo será su primera vez, así que 700 ms por defecto.
+**Lectura para Myo [I]**
+- Novata: arrancar en 600 a 900 ms. Emmy no es novata ni experta en Myo; la demo será su primera vez, así que 700 ms por defecto.
 - Con webcam ruidosa el dwell debe ser más largo que con rastreador IR, porque el cursor tiembla; bajar de 400 ms no está respaldado por nada de lo que leí para esta precisión.
 - Ofrecer un control de velocidad visible (más rápido / más lento) en vez de adaptación automática.
 
@@ -59,7 +59,7 @@ Regla propuesta [I]: para que el punto reportado caiga dentro del objetivo aunqu
 
 Consecuencia [I]: con objetivos de 8 grados y un margen entre zonas, en una TV de 55 pulgadas a 2 m caben **unas 4 columnas x 2 filas (6 a 8 zonas)**; a 3 m caben **unas 2 a 3 columnas x 1 fila**. Una grilla 3 x 3 de zonas de 8 grados necesita ~24 x 24 grados, que no cabe en una TV 16:9 a 3 m. Hay que acercar la TV (2 m o menos), usar una pantalla de 65 pulgadas o más, o aceptar menos zonas. La altura es el factor limitante.
 
-Nota: un ángulo se mantiene al cambiar la distancia, pero el error de la webcam en cm crece con la distancia, y la cara de Marta también se verá más pequeña para la cámara. [I]
+Nota: un ángulo se mantiene al cambiar la distancia, pero el error de la webcam en cm crece con la distancia, y la cara de Emmy también se verá más pequeña para la cámara. [I]
 
 ---
 
@@ -80,7 +80,7 @@ Nota: un ángulo se mantiene al cambiar la distancia, pero el error de la webcam
 3. **Cruce de objetivos / sin dwell**: EyeSwipe (Kurauchi et al., CHI 2016, 10 participantes) usa "cruce inverso" para la primera y última letra: 11,7 wpm tras 30 minutos, contra ~9 wpm con dwell de 600 ms; los participantes con anteojos lo pasaron peor. [V] https://www.cs.bu.edu/fac/betke/papers/Kurauchi-etal-CHI-2016.pdf
 4. **Pausa explícita**: Look to Speak (Google) se pausa mirando hacia arriba y exige mirar hasta el extremo izquierdo, derecho o arriba para que cuente como deliberado. [NV, solo notas de prensa y la página del experimento] https://experiments.withgoogle.com/looktospeak
 
-**Lectura para WOKI [I]:** WOKI ya tiene la mejor solución documentada para Midas: separar apuntar (mirada) de confirmar (EMG). Con webcam hay que usar la mirada solo para elegir **zona** y el EMG para confirmar. Los gestos de mirada grandes hacia las esquinas son una alternativa sin EMG.
+**Lectura para Myo [I]:** Myo ya tiene la mejor solución documentada para Midas: separar apuntar (mirada) de confirmar (EMG). Con webcam hay que usar la mirada solo para elegir **zona** y el EMG para confirmar. Los gestos de mirada grandes hacia las esquinas son una alternativa sin EMG.
 
 ---
 
@@ -102,7 +102,7 @@ Nota: un ángulo se mantiene al cambiar la distancia, pero el error de la webcam
 
 Aviso sobre el 46 wpm: **no es un sistema real**. Es una simulación en la que el sistema ya sabe la frase y solo verifica que la mirada pase a 1,5 radios de cada tecla; 8 participantes, teclado de 15 x 6 cm, rastreador de 40 Hz y 0,5 grados. Nadie ha logrado un sistema real parecido. [V] https://www.keithv.com/pub/dwellfree/kristensson-dwell-free.pdf. En ese paper también dicen que los sistemas de mirada "parecen haber llegado a una meseta de ~20 wpm".
 
-Las conversiones a wpm de Pannasch son mías (5 caracteres = 1 palabra). [I] Marta, con ELA, probablemente estará **entre 3 y 10 wpm** escribiendo letra a letra con dwell: es el rango observado con pacientes. Esa es la razón de ser de las frases propuestas por Claude: una frase de 8 palabras a 4 wpm son 2 minutos; elegir entre 4 frases con una zona grande son segundos. [I]
+Las conversiones a wpm de Pannasch son mías (5 caracteres = 1 palabra). [I] Emmy, con ELA, probablemente estará **entre 3 y 10 wpm** escribiendo letra a letra con dwell: es el rango observado con pacientes. Esa es la razón de ser de las frases propuestas por Claude: una frase de 8 palabras a 4 wpm son 2 minutos; elegir entre 4 frases con una zona grande son segundos. [I]
 
 ---
 
@@ -111,8 +111,8 @@ Las conversiones a wpm de Pannasch son mías (5 caracteres = 1 palabra). [I] Mar
 - Pocas zonas grandes, con área activa mayor que el dibujo visible (Majaranta 2009, [V]). Cálculo de cuántas caben en la sección 2 [I].
 - Menús jerárquicos con botones grandes: GazeTalk es un diseño de este tipo. En el estudio con ELA rindió **menos** que EyeGaze (QWERTY), pero N=4, sistemas distintos y 800 ms de dwell. No sirve como prueba de que lo jerárquico sea malo. [V el dato, I la lectura] https://bop.unibe.ch/JEMR/article/download/2278/3474/8502
 - Dwell en cascada baja el dwell de teclas probables pero sube el de las teclas vecinas de teclas probables, para evitar activaciones erróneas (los vecinos "probables" aislados toman el dwell mínimo; los rodeados de otros probables vuelven al dwell base). Dwell del espacio = 2/3 del base si la palabra actual existe en el diccionario. [V] Mott 2017.
-- Para doble letra, Majaranta 2006 subió el dwell +120 ms (450 a 570 ms) para evitar entradas duplicadas ("aa"). [V] UAIS 2006. [I] Equivale en WOKI a: tras confirmar una zona, no permitir re-confirmar la misma al instante.
-- Esquinas y bordes: Drewes y Schmidt usan las esquinas de la pantalla como puntos naturales para gestos [V]. Pero Feit recomienda **evitar** el borde inferior y derecho para objetivos de mirada (peor precisión) [V vía diapositivas]. [I] Para WOKI hay una tensión: gestos de mirada hacia esquinas sí (no necesitan precisión), objetivos de selección en bordes derecho e inferior no.
+- Para doble letra, Majaranta 2006 subió el dwell +120 ms (450 a 570 ms) para evitar entradas duplicadas ("aa"). [V] UAIS 2006. [I] Equivale en Myo a: tras confirmar una zona, no permitir re-confirmar la misma al instante.
+- Esquinas y bordes: Drewes y Schmidt usan las esquinas de la pantalla como puntos naturales para gestos [V]. Pero Feit recomienda **evitar** el borde inferior y derecho para objetivos de mirada (peor precisión) [V vía diapositivas]. [I] Para Myo hay una tensión: gestos de mirada hacia esquinas sí (no necesitan precisión), objetivos de selección en bordes derecho e inferior no.
 - Kristensson y Vertanen: los usuarios miran "una región amplia alrededor de las teclas" (solo el 51% de las activaciones fue con la mirada dentro de la tecla), consistente con un error de rastreo. [V]
 - Dasher: dibuja letras más grandes cuanto más probables; no necesita dwell pero necesita mucho espacio y horas de práctica (Tuisku y Kumar 2020). [V la limitación en TAGSwipe]
 
@@ -127,7 +127,7 @@ Las conversiones a wpm de Pannasch son mías (5 caracteres = 1 palabra). [I] Mar
 - Mott 2017 señala que en usuarios con ELA la fatiga hace que se pausen y tarden más. [V a nivel de frase]
 - Fatiga como causa de abandono en ELA ("8 sujetos"): vi la cifra en un resumen de búsqueda sin poder ubicar la fuente. [NV]
 - Parpadeo: **no encontré** estudios concretos de parpadeo como selección o su efecto en dwell. [NV]. [I] Con webcam los parpadeos producen pérdidas de datos; un filtro que ignore huecos menores a ~150 a 300 ms es habitual en rastreadores, pero no verifiqué un número de fuente. No cuento ese número como hallazgo.
-- Pausar el seguimiento: Look to Speak pausa mirando arriba [NV]. [I] WOKI necesita un "modo descanso" (mirada en zona dedicada o EMG largo) para que Marta no active cosas cuando mira a la familia.
+- Pausar el seguimiento: Look to Speak pausa mirando arriba [NV]. [I] Myo necesita un "modo descanso" (mirada en zona dedicada o EMG largo) para que Emmy no active cosas cuando mira a la familia.
 
 ---
 
@@ -140,7 +140,7 @@ Majaranta, MacKenzie, Aula y Räihä, Univ Access Inf Soc 2006 [V], tres experim
 - Guías del paper: clic corto no vocal para confirmar; combinar voz con visual, no voz sola; con dwell corto usar feedback simple de un nivel; que foco y selección sean distinguibles; animación para dwell largo; parámetros ajustables.
 - Majaranta 2009: 6 de 9 participantes consideraron el sonido más importante que lo visual y 3 igual; querían mantener el círculo que se cierra incluso con dwell muy corto (solo 2 de 5 que probaron sin él lo dejaron apagado al final). [V]
 
-**Para WOKI [I]:** círculo que se cierra sobre la zona, clic corto al confirmar y **nada de voz sintética para cada selección** (la voz clonada de Marta solo para el mensaje final). Como la confirmación es por EMG, el círculo no es de dwell sino de "estoy sobre esta zona".
+**Para Myo [I]:** círculo que se cierra sobre la zona, clic corto al confirmar y **nada de voz sintética para cada selección** (la voz clonada de Emmy solo para el mensaje final). Como la confirmación es por EMG, el círculo no es de dwell sino de "estoy sobre esta zona".
 
 ---
 
@@ -153,7 +153,7 @@ Majaranta, MacKenzie, Aula y Räihä, Univ Access Inf Soc 2006 [V], tres experim
 - Bubble cursor aplicado a mirada: solo encontré un trabajo en VR (Cone&Bubble) con resumen, que dice que la técnica pierde efectividad cuando los objetivos están muy juntos. [NV] https://eprints.lancs.ac.uk/id/eprint/222892/1/Multimodal_Bubble_Selection_in_VR_1_.pdf
 - Ninja cursors desambiguados con mirada: pocos cursores muy separados evitan el problema de precisión; los participantes sintieron más rápido 4 cursores por monitor pero prefirieron 1 para uso propio. [V] Räihä y Špakov 2009.
 
-**Lectura para WOKI [I]:** el "cursor que predice" tiene respaldo indirecto (cascada, magnetismo, campos de captura) pero **ningún paper que encontré lo prueba con webcam de 1,5 a 3,7 grados ni con ELA**. Es un punto de diferenciación defendible, pero la demo debería medir sus propios números (aciertos con y sin imán).
+**Lectura para Myo [I]:** el "cursor que predice" tiene respaldo indirecto (cascada, magnetismo, campos de captura) pero **ningún paper que encontré lo prueba con webcam de 1,5 a 3,7 grados ni con ELA**. Es un punto de diferenciación defendible, pero la demo debería medir sus propios números (aciertos con y sin imán).
 
 ---
 
@@ -180,19 +180,19 @@ Majaranta, MacKenzie, Aula y Räihä, Univ Access Inf Soc 2006 [V], tres experim
 | Feedback de voz por selección | No usar | V | Majaranta 2006 exp. 3 |
 | Largo de la sesión de uso continuo | Pausas sugeridas cada 10 a 15 minutos | I (los estudios usaron 10-15 min de sesión y 10 min de descanso) | Kristensson y Vertanen 2012; Majaranta 2009 |
 | Gesto de mirada para comando especial | Patrón grande hacia esquinas, ~2 s; evitar izquierda-derecha repetido | V | Drewes y Schmidt 2007 |
-| Velocidad esperable de Marta escribiendo letra a letra | 3 a 10 wpm | V el rango observado, I la aplicación | Pannasch 2008; Mott 2017 |
+| Velocidad esperable de Emmy escribiendo letra a letra | 3 a 10 wpm | V el rango observado, I la aplicación | Pannasch 2008; Mott 2017 |
 | Precisión necesaria si hay pocas zonas muy separadas | menos de 5 grados | V | Räihä y Špakov 2009 |
 
 ---
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
 1. **Diseñar para un error de 4 grados, no de 1,5.** Todos los números de la literatura son con rastreadores de 0,5 grados. Con webcam, una zona de selección de menos de 8 grados fallará.
 2. **A 3 m una TV de 55 pulgadas no da para más de 2 o 3 zonas.** Hay que acercar la TV (2 m), subir a 65 pulgadas o más, o usar el movimiento de cabeza para elegir entre zonas. Decidir esto antes del domingo.
 3. **Mirada para zona, EMG para confirmar.** Es la solución más documentada al toque de Midas y evita el dwell largo, que cansa. Aun así el clic de mandíbula o ceja no tiene estudio directo; lo presentamos como diseño propio, no como evidencia.
-4. **No se debe prometer 46 wpm.** Ese número es una simulación. Con ELA se observaron 3 a 10 wpm con dwell. La ventaja de WOKI es que **no escribe letra a letra**: frases completas propuestas por Claude.
+4. **No se debe prometer 46 wpm.** Ese número es una simulación. Con ELA se observaron 3 a 10 wpm con dwell. La ventaja de Myo es que **no escribe letra a letra**: frases completas propuestas por Claude.
 5. **Feedback: círculo que se cierra y clic corto.** Es lo que mejor funcionó y lo preferido por la mayoría. Sin voz sintética por selección.
-6. **Dwell ajustable por Marta**, con un control visible; el dwell adaptativo automático tiene retardos y confunde.
+6. **Dwell ajustable por Emmy**, con un control visible; el dwell adaptativo automático tiene retardos y confunde.
 7. **Pausas y modo descanso.** La fatiga ocular está documentada y los descansos largos recuperan el rendimiento. Un gesto o zona de "descanso" evita selecciones involuntarias cuando mira a la familia.
 8. **El imán hacia el objetivo probable se defiende por analogía**, no por evidencia directa con webcam. Para la demo, mostrar una métrica propia: aciertos con y sin imán sobre el mismo recorrido.
 9. **Gestos grandes para emergencia** son viables sin precisión (esquinas, ~2 s) pero no deben ser izquierda-derecha repetido. ceja-ceja-mandíbula como combo es más seguro porque no depende de la mirada.

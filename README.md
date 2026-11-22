@@ -11,18 +11,20 @@
 
 > Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
 
-Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La ceja permite elegir el control enfocado, incluido **Volver**. Toki no es un dispositivo médico ni una alarma de emergencia validada.
+Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir el control enfocado, incluido **Volver**. La acción SOS normal intenta llamar al contacto de emergencia si está configurado. El SOS de la rueda de cuidados es solo una prueba simulada: no llama ni envía mensajes. Toki no es un dispositivo médico ni una alarma de emergencia validada.
 
 ## Probarlo
 
-**Toki OS** abre la pantalla con Hablar, Mensajes, Compañía, Servicios y Juegos. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
+**Toki OS** es la interfaz oficial. Su inicio reúne seis tarjetas, entre ellas Juegos y Apps. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
 
 ```bash
 npm ci --prefix software/apps-bridge
 npm start --prefix software/apps-bridge
 ```
 
-Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En el primer inicio elige Mirada, Nariz o Mouse. Para desarrollar la pantalla principal, edita [software/toki-os/index.html](software/toki-os/index.html).
+Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En la bienvenida puedes calibrar la mirada o la nariz, conectar la mirada con iPhone o usar el mouse. Desarrolla las pantallas del SO en [software/toki-os/woki-os.html](software/toki-os/woki-os.html) y sus módulos.
+
+Los juegos del catálogo forman parte de Eye Gaze Games, una plataforma de SpecialEffect desarrollada junto a Sun & Moon Studios y Earth Interactive. [Jugar en el sitio oficial](https://www.eyegazegames.com/) · [Créditos de SpecialEffect](https://www.specialeffect.org.uk/how-we-can-help/eye-gaze-games).
 
 ### Herramientas de prueba
 

@@ -1,18 +1,14 @@
 /* =========================================================
-   Juegos y Servicios dentro de Toki OS · estilo de Woki (vidrio, recuadros grandes)
+   Juegos y Servicios dentro de Toki OS · estilo de Myo (vidrio, recuadros grandes)
    Lienzo de 1920×1080. Todo objetivo mide ≥ 120 px de alto; las tarjetas, mucho más.
    Usa los colores del tema (var(--txt), var(--glass)…), así funciona en claro y oscuro.
    ========================================================= */
 
-/* ---------- inicio: 10 tarjetas en 5×2 ---------- */
+/* ---------- iconos del inicio ---------- */
 .g-teal  { background: linear-gradient(160deg, #5AC8FA, #0A7EA4); }
 .g-white { background: linear-gradient(160deg, #ffffff, #dfe3ea); }
-#tiles.grid5x2 .app { width: 160px; height: 160px; border-radius: 42px; }
-#tiles.grid5x2 .app svg { width: 84px; height: 84px; }
-#tiles.grid5x2 .tile .lb { font-size: 50px; line-height: 1.05; }
-#tiles.grid5x2 .tile .sb { font-size: 27px; }
-.service-mosaic { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 116px; height: 116px; }
-.service-mosaic .service-logo { width: 100%; height: 100%; border-radius: 14px; padding: 12%; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); }
+.home-mosaic { display: grid; grid-template: repeat(2, 1fr) / repeat(2, 1fr); gap: 10px; width: 116px; height: 116px; }
+.home-mosaic img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); }
 
 /* ---------- objetivos comunes ---------- */
 #s-games .game-button, #s-games .external-card, #s-apps .ta-button {
@@ -82,7 +78,7 @@
 .external-toolbar { display: flex; align-items: center; gap: 18px; flex: none; }
 .external-toolbar strong { font-size: 44px; margin-right: auto; }
 .external-frame-wrap { flex: 1; position: relative; min-height: 0; border-radius: var(--r-md); overflow: hidden; background: #111; }
-#externalGame { width: 100%; height: 100%; border: 0; }
+#externalGame { display: block; width: 100%; height: 100%; border: 0; }
 #externalCurtain { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
   font-size: 34px; color: #fff; background: rgba(0, 0, 0, .82); pointer-events: none; }
 #externalCurtain[hidden] { display: none; }
@@ -96,8 +92,41 @@
 .external-title small { font-size: 22px; color: var(--txt2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .external-playing .external-frame-wrap { border-radius: var(--r-sm); }
 
+/* La partida usa píxeles de la ventana. La cámara sigue capturando en segundo plano. */
+.game-immersive #wrap { position: fixed; inset: 0; }
+.game-immersive #stage { width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
+.game-immersive :is(#legend, #devbar), .game-immersive #s-games .status { display: none; }
+.game-immersive #s-games {
+  padding: max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right))
+           max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+  gap: 6px;
+}
+.game-immersive #gameContent { gap: 6px; }
+.game-immersive .external-toolbar { gap: clamp(8px,1vw,18px); }
+.game-immersive .external-title { gap: 2px; }
+.game-immersive .external-title strong { font-size: clamp(18px,1.8vw,28px); }
+.game-immersive .external-title small { font-size: clamp(13px,1vw,17px); }
+.game-immersive #s-games .external-toolbar .game-button {
+  min-height: clamp(48px,6.4dvh,72px); min-width: 0; padding: 4px clamp(12px,1.6vw,24px);
+  border-radius: 12px; font-size: clamp(16px,1.45vw,23px); line-height: 1.12;
+}
+.game-immersive .external-frame-wrap { border-radius: 12px; }
+.official-os.game-immersive #s-games .global-actions { margin: 0; padding-top: 6px; border-width: 1px; gap: clamp(48px,5vw,80px); }
+.game-immersive .global-actions .nav-action { height: clamp(52px,7.6dvh,84px); font-size: clamp(18px,1.6vw,26px); }
+.game-immersive #s-games .ring { width: 22px; height: 22px; bottom: 4px; right: 5px; }
+.game-immersive #externalCurtain h2 { margin: 0; font-size: clamp(22px,3vw,42px); }
+.game-immersive #externalCurtain p, .game-immersive .external-loading { font-size: clamp(16px,1.8vw,25px); }
+@media (max-width:650px) {
+  .game-immersive .external-toolbar { flex-wrap: wrap; gap: 4px 8px; }
+  .game-immersive .external-title { flex: 1 0 100%; order: -1; }
+  .game-immersive .external-title small { display: none; }
+  .game-immersive #s-games .external-toolbar .game-button { flex: 1; padding-inline: 4px; }
+  .game-immersive .global-actions .nav-action { min-width: 0; padding-inline: 4px; gap: 6px; font-size: clamp(16px,4.3vw,20px); }
+}
+
 /* ---------- Servicios (toki-apps.js) ---------- */
-#s-apps { padding-bottom: 28px; }
+.official-os #s-apps { padding: 28px 48px; }
+#s-apps .status { position: static; }
 #appsContent { flex: 1; min-height: 0; height: auto; background: none; border: 0; border-radius: 0; }
 #s-apps .toki-apps { padding: 0 !important; gap: 18px; grid-template-rows: minmax(0, 1fr) auto auto; color: var(--txt); }
 /* el foco agranda la tarjeta (como en todo el SO): que no la recorten los contenedores de Servicios */
@@ -127,6 +156,9 @@
 #s-apps .ta-detail-symbol { width: 140px; height: 140px; max-height: none; }
 #s-apps .ta-category { color: var(--blue); font-size: 24px; }
 #s-apps .news-card, #s-apps .news-reading p { font-size: 40px; }
+/* lectura: colores del tema (en modo claro quedaba azul oscuro fijo con letra oscura) */
+#s-apps .news-reading { background: var(--glass); border: 1.5px solid var(--hair); }
+#s-apps .news-reading p { color: var(--txt); }
 /* noticias: titular grande a la izquierda y miniatura 16:9 a la derecha, del alto de la tarjeta */
 #s-apps .news-list { gap: 20px; }
 #s-apps .news-card { flex-direction: column; align-items: stretch; justify-content: center; text-align: left; padding: 20px 40px; }
@@ -150,6 +182,8 @@
 /* ---------- Servicios · comida (Rappi, vistas food-* de toki-apps.js) ----------
    toki-apps.css trae tamaños de tablet (vw/clamp, notas de 16 px, imagen en vh) y colores fijos;
    aquí se llevan al lienzo de 1920: tarjetas ≥ 120 px, texto ≥ 28 px y colores del tema. */
+#s-apps .food-departments { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#s-apps .food-selection:has(> div:only-child) { grid-template-columns:1fr; }
 #s-apps .food-list { gap: 20px; }
 #s-apps .food-list > p { font-size: 32px; color: var(--txt2); align-self: center; text-align: center; }
 #s-apps .food-card { justify-content: flex-start; text-align: left; gap: 28px; padding: 14px 40px; min-height: 120px; }
@@ -160,6 +194,40 @@
 #s-apps .food-card.ta-selected { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 16%, var(--glass)); }
 #s-apps .food-pages { gap: 20px; }
 #s-apps .food-pages > span { min-width: 120px; font-size: 30px; font-weight: 600; color: var(--txt2); }
+/* Separación estable incluso cuando el título o el estado ocupan más de una línea. */
+#s-apps .ta-food-results .food-list {
+  gap: 16px;
+}
+#s-apps .ta-food-results .food-card {
+  min-height: 0;
+  padding: 10px 26px;
+  gap: 20px;
+  border-radius: 20px;
+  transform: none;
+}
+#s-apps .ta-food-results .food-card img {
+  width: 84px;
+  height: 84px;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+#s-apps .ta-food-results .food-card strong {
+  display: block;
+  font-size: 34px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#s-apps .ta-food-results .food-card small { font-size: 25px; margin-top: 4px; }
+#s-apps .ta-food-results :is(.food-pages, .ta-nav) .ta-button {
+  min-height: 88px;
+  padding-block: 10px;
+  border-radius: 20px;
+  font-size: 30px;
+  transform: none;
+}
+#s-apps :is(.ta-food-results, .ta-food-cart) .ta-feedback:empty { display: none; }
+#s-apps .ta-food-results .ta-heading p:empty { display: none; }
 #s-apps .food-actions { gap: 20px; }
 #s-apps .food-note { font-size: 28px; line-height: 1.3; color: var(--txt2); }
 #s-apps .food-selection { gap: 48px; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
@@ -170,6 +238,22 @@
 #s-apps .food-cart-item { min-height: 0; justify-content: space-between; padding: 10px 40px; border-radius: var(--r-md); background: var(--glass); border: 1.5px solid var(--hair); }
 #s-apps .food-cart-item span { font-size: 30px; color: var(--txt2); flex-shrink: 0; }
 #s-apps .food-cart-item strong { -webkit-line-clamp: 1; }
+#s-apps .ta-food-cart .ta-screen { gap: 12px; }
+#s-apps .ta-food-cart .food-list { gap: 12px; }
+#s-apps .ta-food-cart .food-cart-item {
+  flex-direction: row;
+  align-items: center;
+  padding: 4px 24px;
+}
+#s-apps .ta-food-cart .food-cart-item strong { font-size: 28px; }
+#s-apps .ta-food-cart :is(.food-pages, .food-actions, .ta-nav) .ta-button {
+  min-height: 74px;
+  padding: 8px 12px;
+  font-size: 28px;
+  transform: none;
+}
+#s-apps .food-tips { align-items: center; font-size: 28px; color: var(--txt2); }
+
 
 /* ---------- Servicios · videos (YouTube) ----------
    la regla general de botones (display:flex) aplastaba el título contra la miniatura: se recupera la rejilla de la tarjeta */

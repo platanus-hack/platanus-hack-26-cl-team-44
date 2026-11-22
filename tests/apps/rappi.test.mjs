@@ -10,11 +10,11 @@ const product={product_id:123,store_id:456,name:'Pizza de prueba',price:8500,ima
 const search={stores:[{store_id:456,store_name:'Local de prueba',store_type:'restaurant',logo:'logo.png',eta:'20 min',products:[product]}]};
 const options={categories:[{id:1,description:'Masa',min_toppings_for_categories:1,max_toppings_for_categories:1,toppings:[{id:2,description:'Delgada',price:0,is_available:true}]}]};
 const context=()=>({signal:new AbortController().signal,generation:1,evidence:()=>{},connected:()=>{},disconnected:()=>{},report:()=>{}});
-function fixture({connected=false,now=Date.now}={}){
+function fixture({connected=false,now=Date.now,catalog=search}={}){
  let session=connected?{token:'test-only-secret',deviceId:'fixture',connectedAt:'fixture'}:null,cart=[],failed=false;const calls=[];
  const fetcher=async(url,init)=>{
   calls.push({url,init});let data;
-  if(url.includes('unified-search'))data=search;
+  if(url.includes('unified-search'))data=catalog;
   else if(url.endsWith('/guest/passport/'))data={token:'guest-passport-test-only'};
   else if(url.endsWith('/v2/guest'))data={access_token:'guest-test-only'};
   else if(url.endsWith('/ms/application-user/auth'))data={id:1};
@@ -40,11 +40,21 @@ test('Rappi guest exploration is real-shaped, scoped to job/generation and never
  await assert.rejects(adapter.execute('products',{...payload,storeId:456},{...ctx,generation:2}));
  await assert.rejects(adapter.execute('search',{...payload,category:'; shell command'},ctx),/categoría/);
  await assert.rejects(adapter.execute('cart',payload,ctx),/cuenta/);
- await assert.rejects(adapter.execute('order',payload,ctx),/no están habilitados/);
- assert.ok(!adapter.manifest.actions.some(a=>a.id==='order'));assert.ok(adapter.manifest.requiredEvidence.includes('order'));
+ // Pedir exige cuenta conectada y la confirmación de importes (ticket de 'quote'); sin eso, se rechaza.
+ await assert.rejects(adapter.execute('order',payload,ctx),/Falta conectar|Vuelve a revisar/);
+ assert.ok(adapter.manifest.actions.some(a=>a.id==='order'&&a.mutates&&a.requiresAccount));assert.ok(adapter.manifest.requiredEvidence.includes('order'));
  assert.ok(calls.every(c=>new URL(c.url).origin==='https://services.rappi.cl'));
  assert.ok(calls.every(c=>!c.init.headers.authorization||c.init.headers.authorization==='Bearer guest-test-only'));
  assert.equal(selected.groups.length,1);
+});
+test('retail results support string product IDs and cannot enter the restaurant cart',async()=>{
+ const retail={...search.stores[0],store_type:'market',products:[{...product,product_id:'123',name:'Leche'}]};
+ const {adapter,calls}=fixture({connected:true,catalog:{stores:[retail]}}),ctx=context(),jobId='retail';
+ const found=await adapter.execute('search',{jobId,query:'leche'},ctx);assert.equal(found.stores[0].restaurant,false);
+ const detail=await adapter.execute('select',{jobId,storeId:456,productId:123},ctx);
+ assert.equal(detail.catalogOnly,true);assert.equal(detail.canAdd,false);
+ await assert.rejects(adapter.execute('add',{jobId,options:[]},ctx));
+ assert.ok(calls.every(c=>!c.url.includes('toppings')&&c.init.method!=='PUT'));
 });
 test('Rappi requires exact options, ignores client prices, refuses duplicate/replayed cart writes and invalidates session selections',async()=>{
  const f=fixture({connected:true}),ctx=context(),payload={jobId:'one'};

@@ -1,5 +1,6 @@
 import os, termios, threading, time, json, re, argparse, select, asyncio
 from collections import deque
+from http.client import HTTPConnection, HTTPException
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from uuid import uuid4
@@ -27,14 +28,23 @@ gesture_frames=deque(maxlen=128)
 lock=threading.Lock()
 source=None
 toki_dir=Path(__file__).resolve().parent.parent/'toki-os'
+apps_loopback=re.fullmatch(r'http://(?:127\.0\.0\.1|localhost):([0-9]{1,5})/?', os.environ.get('TOKI_APPS_URL',''), re.ASCII)
+webeyetrack_assets={
+    '/web/tracker.js':'text/javascript',
+    '/web/index.js.LICENSE.txt':'text/plain',
+    '/web/model.json':'application/json',
+    '/web/group1-shard1of1.bin':'application/octet-stream',
+}
 toki_assets={
     '/woki-os.html':'text/html',
     **{f'/{name}.js':'text/javascript' for name in (
         'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
         'magnetic-pointer','tablet-keyboard','gaze-calibration','care-wheel',
         'woki-voz','dev-agente',   # voz ElevenLabs (PR #7) y panel dev del agente (PR #4)
+        'toki-sse',               # eventos del puente y del agente con el token en un header
+        'toki-apps',              # Servicios: Rappi, Spotify, noticias (apps-bridge)
     )},
-    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard')},
+    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard','toki-apps')},
 }
 dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
 legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
@@ -117,6 +127,27 @@ class Handler(SimpleHTTPRequestHandler):
             return
         self.send_body(asset.read_bytes(),f'{content_type}; charset=utf-8')
 
+    def send_webeyetrack_asset(self, path):
+        port=int(apps_loopback[1]) if apps_loopback else 0
+        if not 0 < port <= 65535 or port==args.http_port:
+            return self.send_error(404)
+        conn=HTTPConnection('127.0.0.1',port,timeout=18)
+        try:
+            # Only fixed model assets; never forward headers, redirects or stage credentials.
+            conn.request('GET',path)
+            response=conn.getresponse()
+            if response.status!=200:
+                return self.send_error(502)
+            limit=8*1024*1024
+            body=response.read(limit+1)
+            if len(body)>limit:
+                return self.send_error(502)
+        except (OSError,HTTPException):
+            return self.send_error(502)
+        finally:
+            conn.close()
+        self.send_body(body,webeyetrack_assets[path])
+
     def do_GET(self):
         path=self.path.partition('?')[0]
         if self.path in ('/data','/data?seconds=60'):
@@ -137,12 +168,34 @@ class Handler(SimpleHTTPRequestHandler):
                          'age':now-frames[-1][0] if frames and state['connected'] else None,
                          'frames':frames}
             self.send_body(json.dumps(payload).encode(),'application/json')
+        elif path=='/toki-config.js':
+            # Escenario: WhatsApp y agente en la VPS. Sale de variables de entorno (TOKI_REMOTO, TOKI_WA_TOKEN).
+            # Solo para la propia TV: un <script src> de otro sitio no puede leer el token.
+            local=self.headers.get('Host','') in (f'127.0.0.1:{args.http_port}',f'localhost:{args.http_port}')
+            if not local or self.headers.get('Sec-Fetch-Site','same-origin')!='same-origin':
+                return self.send_error(403)
+            cfg={'remoto':os.environ.get('TOKI_REMOTO','').rstrip('/'),'waToken':os.environ.get('TOKI_WA_TOKEN',''),
+                 'apps':os.environ.get('TOKI_APPS_URL','').rstrip('/')}   # apps-bridge local (Rappi, Spotify…)
+            self.send_body(('window.TOKI_ENV='+json.dumps(cfg)+';').encode(),'text/javascript')
         elif path in toki_assets:
             self.send_toki_asset(Path(path[1:]),toki_assets[path])
+        elif path in webeyetrack_assets:
+            self.send_webeyetrack_asset(path)
         elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'text/javascript')
+        elif re.fullmatch(r'/[\w-]+\.(js|css)',path,re.ASCII) and (toki_dir/path[1:]).is_file():
+            # Todo .js/.css de primer nivel de software/toki-os: la TV suma archivos (juegos, servicios) y no deben faltar en escena
+            self.send_toki_asset(Path(path[1:]),'text/javascript' if path.endswith('.js') else 'text/css')
+        elif re.fullmatch(r'/game-covers/[a-z]+\.webp',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'image/webp')
+        elif re.fullmatch(r'/brands/[\w-]+\.svg',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'image/svg+xml')
         elif re.fullmatch(r'/presets/[\w-]+\.json',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'application/json')
+        elif path in ('/myoware','/myoware/'):
+            self.send_response(302)
+            self.send_header('Location','/')
+            self.end_headers()
         elif self.path in ('/', '/index.html'):super().do_GET()
         else:self.send_error(404)
     def log_message(self,*args):pass

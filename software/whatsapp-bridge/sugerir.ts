@@ -11,8 +11,8 @@ const MODEL = process.env.SUGGEST_MODEL ?? "haiku";
 export const sugOn = process.env.SUGGEST !== "off";
 const EMOS = ["seria", "alegre", "carinosa", "ironica", "susurro", "entusiasta"];
 
-const SYSTEM = `Eres el motor de respuestas de WOKI, un comunicador para Marta, una mujer con ELA que no puede hablar ni escribir rápido: elige frases con la mirada.
-Escribes en primera persona como Marta, en español latinoamericano, en femenino, frases cortas (máx. 8 palabras; ideal 3 a 6), naturales, como un mensaje de WhatsApp.
+const SYSTEM = `Eres el motor de respuestas de Myo, un comunicador para Emmy, una mujer con ELA que no puede hablar ni escribir rápido: elige frases con la mirada.
+Escribes en primera persona como Emmy, en español latinoamericano, en femenino, frases cortas (máx. 8 palabras; ideal 3 a 6), naturales, como un mensaje de WhatsApp.
 Respondes SOLO con JSON válido, sin texto extra ni markdown: {"suggestions":[{"text":"...","tone":"2-3 palabras","emo":"seria|alegre|carinosa|ironica|susurro|entusiasta"}]}`;
 
 function runClaude(prompt: string, timeoutMs = 15_000): Promise<string> {
@@ -46,7 +46,7 @@ function parse(raw: string, ini?: string): Sug[] {
 }
 
 function chatBlock(name: string, relation: string, lines: Line[]) {
-  const last = lines.slice(-14).map((l) => `${l.dir === "in" ? name : "Marta"}: ${l.text.replace(/\s+/g, " ").slice(0, 300)}`).join("\n");
+  const last = lines.slice(-14).map((l) => `${l.dir === "in" ? name : "Emmy"}: ${l.text.replace(/\s+/g, " ").slice(0, 300)}`).join("\n");
   return `Conversación de WhatsApp con ${name}${relation ? ` (${relation})` : ""}. Lo último está abajo:\n${last || "(sin mensajes todavía)"}`;
 }
 
@@ -54,7 +54,7 @@ function chatBlock(name: string, relation: string, lines: Line[]) {
 export async function suggestReplies(name: string, relation: string, lines: Line[], extra = ""): Promise<Sug[]> {
   const prompt = `${chatBlock(name, relation, lines)}
 ${extra ? `Contexto adicional del acompañante: ${extra}\n` : ""}
-Propón 6 respuestas distintas que Marta podría mandar ahora mismo a ${name}. Cubre opciones diferentes: aceptar, rechazar o dudar, preguntar algo concreto, y una afectiva. Si el último mensaje es de Marta, propón cómo seguir la conversación.`;
+Propón 6 respuestas distintas que Emmy podría mandar ahora mismo a ${name}. Cubre opciones diferentes: aceptar, rechazar o dudar, preguntar algo concreto, y una afectiva. Si el último mensaje es de Emmy, propón cómo seguir la conversación.`;
   return parse(await runClaude(prompt)).slice(0, 6);
 }
 
@@ -63,7 +63,7 @@ export async function expandInitials(name: string, relation: string, lines: Line
   const L = [...ini].map((c) => c.toUpperCase()).join(" · ");
   const prompt = `${chatBlock(name, relation, lines)}
 
-Marta está escribiendo su respuesta letra por letra: elige solo la PRIMERA letra de cada palabra. Lleva estas iniciales: ${L}
+Emmy está escribiendo su respuesta letra por letra: elige solo la PRIMERA letra de cada palabra. Lleva estas iniciales: ${L}
 Propón 5 frases que encajen con la conversación cuyas palabras empiecen, en orden, EXACTAMENTE por esas letras (${ini.length} palabras; las contracciones cuentan como una palabra). Si con esas letras la frase parece incompleta, puedes añadir hasta 3 palabras más al final; ponlas después de las que sí respetan las letras. Ordena de la más probable a la menos.`;
   return parse(await runClaude(prompt), ini).slice(0, 5);
 }

@@ -38,7 +38,7 @@ Fecha: 21-11-2026. Fuentes: documentación oficial de SunFounder y el PDF de mon
 ### Contradicción en la documentación
 Una respuesta del FAQ dice "elige 1280x800", pero la ficha técnica dice que la resolución nativa es 1024×600. **Usamos 1024×600** para que la imagen salga nítida, y lo confirmaremos con `wlr-randr` en la pantalla real.
 
-## 2. Qué implica para WOKI (cálculos verificables)
+## 2. Qué implica para Myo (cálculos verificables)
 - **Lienzo:** 1920×1080 se reduce a 1024×600 con un factor de 0,533 (lo limita el ancho) y sobran 24 px de franja vertical. Un texto de 32 px en el lienzo queda en unos 17 px físicos. Esto se le pasa a la sesión de diseño.
 - **Ángulo visual de la pantalla** (2·atan(medio ancho / distancia)):
   - a 50 cm: 17,5° × 9,8°

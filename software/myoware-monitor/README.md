@@ -46,7 +46,7 @@ Confirma que ambos selectores físicos estén en ENV. El servidor no configura n
 
 Para distinguir gestos, usa **Prueba de gestos** con A0 en la mandíbula y A3 en la frente. Calibra ambos y observa el último gesto y los contadores: A3 solo cuenta como ceja; A0, aun cuando A3 también se active, cuenta como mandíbula. Esto no activa ni envía acciones.
 
-Con Woki corriendo, usa el [calibrador integrado](http://127.0.0.1:8790/myoware/). El enlace **Abrir Woki OS con esta calibración** abre la interfaz actual. En la bienvenida, elige **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Si ya calibraste en el monitor anterior (`8766`), usa el mismo enlace para transferir la calibración sin repetirla mientras los sensores sigan conectados. Los umbrales manuales del gráfico no se usan para clasificar gestos.
+Selecciona **Abrir Woki OS con esta calibración** en el monitor. En escenario, Woki conserva el origen y su configuración de voz y servicios; el monitor pide los archivos de WebEyeTrack al Apps Bridge local. Si abriste el monitor independiente en `8766` sin configuración de escenario, el enlace transfiere el perfil al Woki de `8790`. En la bienvenida, elige **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
 
 ## Diagnóstico
 

@@ -9,7 +9,12 @@
  */
 (() => {
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
-  const URL_AGENTE = localStorage.getItem('toki.dev.url') || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + '/agente');
+  const REMOTO = (typeof CFG !== 'undefined' && CFG.AGENTE_URL) || '';   // CFG es global léxico (const), no está en window
+  const URL_AGENTE = localStorage.getItem('toki.dev.url') || REMOTO || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + (location.pathname.startsWith('/equipo/') ? '/equipo/agente' : '/agente'));
+  // Solo el escenario manda el token (viene de toki-config.js). En /equipo/ lo agrega Caddy; en local no hace falta.
+  const TOKEN = (typeof CFG !== 'undefined' && CFG.WA_TOKEN) || '';
+  const hdr = (h = {}) => TOKEN ? { ...h, 'X-Woki-Token': TOKEN } : h;
+  const api = (path, opts = {}) => fetch(URL_AGENTE + path, { ...opts, headers: hdr(opts.headers) });
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
   let panel = null, sse = null;
 
@@ -47,9 +52,9 @@
   async function salud() {
     const dot = $('#devDot'), st = $('#devEstado');
     try {
-      const r = await fetch(URL_AGENTE + '/api/salud'); const j = await r.json();
+      const r = await api('/api/salud'); const j = await r.json();
       dot.className = 'dot ok'; st.textContent = `${j.usuaria} · ${j.personas} personas · ${j.modelo}`;
-      const ps = await (await fetch(URL_AGENTE + '/api/personas')).json();
+      const ps = await (await api('/api/personas')).json();
       $('#devPersona').innerHTML = '<option value="">(detectar por nombre)</option>' +
         ps.map((p) => `<option value="${esc(p.id)}">${esc(p.nombre)} · ${esc(p.relacion)} · ${esc(p.tipo_interlocutor)}</option>`).join('');
       await cargarDisparadores();
@@ -61,13 +66,13 @@
 
   let DISP = [];
   async function cargarDisparadores() {
-    DISP = await (await fetch(URL_AGENTE + '/api/disparadores')).json();
+    DISP = await (await api('/api/disparadores')).json();
     $('#devDisp').innerHTML = DISP.length ? DISP.map((d) => `
       <div class="disp"><span>${esc(d.grupo_nombre)} · mención <span class="est ${esc(d.estado)}">${esc(d.estado)}</span></span>
       <button data-did="${esc(d.id)}" data-est="${d.estado === 'activo' ? 'pausado' : 'activo'}">${d.estado === 'activo' ? 'Pausar' : 'Aprobar'}</button></div>`).join('')
       : '<div style="color:#888">Sin disparadores</div>';
     $('#devDisp').querySelectorAll('[data-did]').forEach((b) => b.onclick = async () => {
-      await fetch(URL_AGENTE + '/api/disparadores/estado', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      await api('/api/disparadores/estado', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: b.dataset.did, estado: b.dataset.est }) });
       traza(`disparador ${b.dataset.did} → ${b.dataset.est}`); cargarDisparadores();
     });
@@ -75,10 +80,11 @@
 
   function conectarSSE() {
     if (sse) return;
-    sse = new EventSource(URL_AGENTE + '/api/eventos');
-    sse.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'disparador') cargarDisparadores(); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
-    sse.onerror = () => { $('#devDot').className = 'dot ko'; };
-    sse.onopen = () => { $('#devDot').className = 'dot ok'; };
+    const h = {};   // toki-sse.js: el token va en un header, nunca en la URL
+    h.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'disparador') cargarDisparadores(); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
+    h.onerror = () => { $('#devDot').className = 'dot ko'; };
+    h.onopen = () => { $('#devDot').className = 'dot ok'; };
+    sse = tokiSSE(URL_AGENTE + '/api/eventos', hdr(), h);
   }
 
   function contexto(ev) {
@@ -118,7 +124,7 @@
     $('#devBtn').disabled = true;
     if ($('#devCanal').value === 'grupo') return simularGrupo(texto);
     try {
-      const r = await fetch(URL_AGENTE + '/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await api('/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texto, persona: $('#devPersona').value || null, canal: $('#devCanal').value }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
       traza(`→ enviado ${j.id} · en bandeja ${j.en_bandeja} · TVs ${j.tvs}`);
@@ -132,7 +138,7 @@
     const nombre = sel.value ? sel.options[sel.selectedIndex].text.split(' · ')[0] : 'Alguien';
     pensando({ etiqueta: `${nombre} te mencionó en ${d.grupo_nombre}`, texto });
     try {
-      const r = await fetch(URL_AGENTE + '/api/grupo', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await api('/api/grupo', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: 'dev-' + Date.now(), grupo_jid: d.grupo_jid, grupo_nombre: d.grupo_nombre,
           persona: sel.value || null, autor_nombre: nombre, texto, menciona: true }) });
       const j = await r.json();

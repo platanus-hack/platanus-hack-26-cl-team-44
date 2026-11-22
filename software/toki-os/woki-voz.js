@@ -1,14 +1,18 @@
 /* woki-voz.js · ElevenLabs en la TV (vía woki-bridge; la API key nunca llega al navegador).
    - VOZ.speak(texto, emo): habla con la voz elegida o clonada. Si falla, woki-os.html usa la voz del sistema.
-   - VOZ.prefetch(frases): pide el audio de las 4 tarjetas antes de que Marta elija → suena al instante.
+   - VOZ.prefetch(frases): pide el audio de las 4 tarjetas antes de que Emmy elija → suena al instante.
    - VOZ.emergencia(alarma): llamada telefónica del agente de emergencia + estado en la pantalla de alarma.
-   - VOZ.siguiente(): Marta recorre las voces candidatas desde Ajustes y escucha cada una. */
+   - VOZ.siguiente(): Emmy recorre las voces candidatas desde Ajustes y escucha cada una. */
 (function(){
-  const base = () => (window.CFG && (CFG.VOZ_URL ?? CFG.WA_URL)) || 'http://localhost:8788';
+  // CFG es un const de woki-os.html: no vive en window, por eso typeof. Sin puente (URL pública sin token) → '' y la voz queda apagada.
+  const cfg = () => (typeof CFG !== 'undefined' ? CFG : null);
+  const base = () => { const c = cfg(); return c ? (c.VOZ_URL ?? c.WA_URL) : 'http://localhost:8788'; };
+  const hdr = (h={}) => { const t = cfg() && cfg().WA_TOKEN; return t ? { ...h, 'X-Woki-Token': t } : h; };
   const V = { on:false, llamadaLista:false, actual:null, opciones:[], audio:null, cache:new Map(), PREFETCH:true };
 
   async function api(path, body){
-    const r = await fetch(base()+path, body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : {});
+    if(!base()) throw new Error('sin puente de WhatsApp');
+    const r = await fetch(base()+path, body ? { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify(body) } : { headers:hdr() });
     let j = {}; try { j = await r.json(); } catch(_){}
     if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
     return j;
@@ -41,7 +45,7 @@
   function fetchAudio(text, emo){
     const k = key(text, emo);
     if(V.cache.has(k)) return V.cache.get(k);
-    const p = fetch(base()+'/api/voz/tts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ text, emo }) })
+    const p = (base() ? fetch(base()+'/api/voz/tts', { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify({ text, emo }) }) : Promise.reject(new Error('sin puente')))
       .then(async r => { if(!r.ok) throw new Error('tts HTTP '+r.status); return URL.createObjectURL(await r.blob()); });
     p.catch(()=>V.cache.delete(k));
     V.cache.set(k, p);
@@ -60,7 +64,7 @@
     if(V.audio===a) V.audio = null;
   };
 
-  // ---------- Marta elige su voz desde la TV ----------
+  // ---------- Emmy elige su voz desde la TV ----------
   V.siguiente = async function(){
     if(!V.opciones.length) return false;
     const i = V.opciones.findIndex(o=>o.id===V.actual);
@@ -74,18 +78,32 @@
   V.emergencia = async function(A){
     const sub = document.getElementById('alSub');
     const set = t => { if(S.alarm===A && !A.ack && sub) sub.textContent = t; };
-    if(!V.llamadaLista){ set('Teléfono sin configurar · luz roja · bandera arriba'); return; }
+    if(!V.llamadaLista) return;   // sin llamada configurada (URL pública, sin Twilio): la alarma sigue siendo una simulación y lo dice
+    // Llamada real: la pantalla deja de decir "simulación".
+    A.real = true;
+    const big = document.getElementById('alBig'), cerrar = document.getElementById('alDismiss');
+    if(big) big.textContent = 'Pidiendo ayuda';
+    if(cerrar) cerrar.textContent = 'Cerrar alarma';
+    if(typeof renderStatus==='function') renderStatus();
     set('📞 Llamando al contacto de emergencia…');
     try{
       const j = await api('/api/emergencia/llamar', { alarmId:String(A.t0), motivo:'activó la alarma de emergencia' });
       if(typeof log==='function') log('llamada de emergencia: '+(j.conversationId||'ok'));
+      let esperas = 0;
       const poll = setInterval(async () => {
         if(S.alarm!==A || A.ack){ clearInterval(poll); return; }
         try{
-          const e = await api('/api/emergencia/estado');
-          const txt = { initiated:'📞 Sonando…', 'in-progress':'📞 Contestaron · el asistente está explicando', processing:'📞 Llamada terminada · esperando confirmación', done:'📞 Llamada terminada · falta confirmar con el llavero', failed:'⚠️ La llamada falló' }[e.estado];
-          if(txt) set(txt);
-          if(e.estado==='done' || e.estado==='failed') clearInterval(poll);
+          const e = await api('/api/emergencia/estado'), quien = e.contacto || 'Tu contacto', pl = !!e.varios;   // varios = la frase va en plural
+          if(e.estado==='failed'){ set(pl ? `⚠️ ${quien} no contestaron · las llamadas fallaron` : `⚠️ ${quien} no contestó · la llamada falló`); clearInterval(poll); return; }
+          if(e.estado==='done' && e.viene===true){ clearInterval(poll); confirmada(A, quien, e.respuesta); return; }
+          if(e.estado==='done' && e.viene===false){ clearInterval(poll);
+            set(`⚠️ ${quien} no ${pl?'pueden':'puede'} ir${e.respuesta ? ': '+e.respuesta : ''}`);
+            if(window.island) island('⚠️', `${quien} no ${pl?'pueden':'puede'} ir. La alarma sigue activa.`); return; }
+          set({ initiated:`📤 Llamada enviada a ${quien} · sonando…`,
+                'in-progress':pl ? `📞 ${quien} contestaron · están escuchando el aviso` : `📞 ${quien} contestó · está escuchando el aviso`,
+                processing:'📞 Llamada terminada · confirmando la respuesta…',
+                done:'📞 Llamada terminada · confirmando la respuesta…' }[e.estado] || '');
+          if(e.estado==='done' && ++esperas>8){ set(`📞 ${quien} ${pl?'recibieron':'recibió'} el aviso · falta confirmar con el llavero`); clearInterval(poll); }
         }catch(_){}
       }, 4000);
     }catch(e){
@@ -93,6 +111,25 @@
       if(window.island) island('⚠️','Llamada de emergencia falló: '+e.message);
     }
   };
+
+  // El contacto confirmó por teléfono que viene: misma confirmación que el llavero (pantalla verde).
+  // Un segundo toque del llavero marca la emergencia como resuelta, igual que hoy.
+  function confirmada(A, quien, respuesta){
+    if(S.alarm!==A || A.ack) return;
+    A.ack = performance.now(); const secs = Math.round((A.ack-A.t0)/1000);
+    const $ = s => document.querySelector(s);
+    $('#alarm').classList.add('ack'); $('#alSym').innerHTML = '<svg><use href="#i-check"/></svg>';
+    $('#alBig').textContent = `${quien} viene en camino`;
+    $('#alSub').textContent = respuesta ? `“${respuesta}” · respondió por teléfono en ${secs} s` : `Confirmó por teléfono en ${secs} s`;
+    const tl = $('#alTl'); if(tl) tl.style.display = 'none';   // la línea de tiempo no existe en todas las versiones de la TV
+    $('#alCancel').textContent = 'Toque del llavero = resuelto';
+    if(typeof log==='function') log(`emergencia: ${quien} confirmó por teléfono (${secs} s)`);
+    if(typeof beep==='function'){ beep(660,160,.08); setTimeout(()=>beep(880,220,.08),180); }
+    // Aviso hablado con la voz del sistema (no con la de Emmy: es Myo quien le avisa).
+    try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${quien} viene en camino`); u.lang = 'es-CL'; speechSynthesis.speak(u); }catch(_){}
+    if(typeof renderStatus==='function') renderStatus();
+    if(typeof updateLCD==='function') updateLCD();
+  }
 
   window.VOZ = V;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', V.init); else setTimeout(V.init, 0);

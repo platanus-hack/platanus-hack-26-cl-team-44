@@ -33,7 +33,7 @@ assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emocione
 assert.ok(html.includes('id="restWake"'), "el descanso tiene un objetivo Volver");
 assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(html), "Ajustes permite elegir y conserva la preferencia del iPhone");
 assert.ok(/document\.body\.classList\.add\("iphone-pointer"\)/.test(adapter) && /document\.body\.classList\.remove\("iphone-pointer", "iphone-hold"\)/.test(adapter), "la apariencia del foco queda limitada al modo iPhone");
-assert.ok(/body\.iphone-pointer:not\(\.iphone-hold\).* :is\(\.ring, \.badge, \.rest-wake \.fill, \.rest-dwell-label\) \{ display: none; \}/.test(layoutCss), "el modo Ceja oculta los indicadores de carga");
+assert.ok(/body\.iphone-pointer:not\(\.iphone-hold\).* :is\(\.ring, \.badge, \.rest-actions \.fill, \.rest-dwell-label\) \{ display: none; \}/.test(layoutCss), "el modo Ceja oculta los indicadores de carga");
 const confirmSource = html.match(/^window\.iphoneConfirm = .*$/m)?.[0];
 assert.ok(confirmSource);
 for (const [saved, expected] of [[null, "click"], ["click", "click"], ["dwell", "dwell"]]) {

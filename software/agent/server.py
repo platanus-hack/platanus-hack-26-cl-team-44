@@ -9,15 +9,19 @@ Rutas para el puente (respuesta síncrona, el puente reenvía a la TV por su SSE
 Disparadores (la TV los muestra y la usuaria los aprueba):
   GET  /api/disparadores
   POST /api/disparadores/estado   {id, estado: "activo" | "pausado" | "pendiente"}
+  POST /api/pedido     {para, ocasion, presupuesto?} → qué pedir por Rappi según la memoria (pedido.py)
 
 Modo dev de la TV:
   GET  /api/salud, /api/personas, /api/eventos (SSE)
   POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, resultado por SSE
 
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
+Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Woki-Token.
+Nunca en la URL: la TV lee el SSE con fetch (toki-sse.js). El puente local entra sin token.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import queue
@@ -28,11 +32,13 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
 
 import grupos  # noqa: E402
+import pedido  # noqa: E402
 from agente import MODELO, MODOS, run_agent  # noqa: E402
 from memoria import store  # noqa: E402
 
@@ -64,7 +70,8 @@ class TopeDiario(Exception):
     pass
 
 
-def ejecutar(*a, **k) -> dict:
+def contar() -> None:
+    """Suma una llamada al modelo; pasa el tope diario → TopeDiario."""
     with _uso_lock:
         hoy = time.strftime("%Y-%m-%d")
         if _uso["dia"] != hoy:
@@ -72,6 +79,10 @@ def ejecutar(*a, **k) -> dict:
         if MAX_DIA and _uso["n"] >= MAX_DIA:
             raise TopeDiario(f"se alcanzó el tope de {MAX_DIA} llamadas de hoy")
         _uso["n"] += 1
+
+
+def ejecutar(*a, **k) -> dict:
+    contar()
     with _agente_lock:
         return run_agent(*a, **k)
 
@@ -109,6 +120,17 @@ def trabajador_dev() -> None:
             c.close()
 
 
+TOKEN = os.environ.get("TOKI_TOKEN", "")
+
+
+def autorizado(headers, path: str, token: str = TOKEN) -> bool:
+    """Sin token configurado, o pedido local directo (sin proxy): pasa. Por el proxy: exige el token."""
+    if not token or not headers.get("X-Forwarded-For"):
+        return True
+    dado = headers.get("X-Woki-Token", "")   # solo header: el token nunca va en la URL
+    return hmac.compare_digest(dado.encode(), token.encode())
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -138,10 +160,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self._cors()
         self.send_header("Access-Control-Allow-Methods", "GET, POST")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Woki-Token")
         self.end_headers()
 
     def do_GET(self):
+        if not autorizado(self.headers, self.path):
+            return self._json(401, {"error": "falta el token"})
+        self.path = urlparse(self.path).path
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
@@ -186,6 +211,8 @@ class Handler(BaseHTTPRequestHandler):
                 _clientes.discard(q)
 
     def do_POST(self):
+        if not autorizado(self.headers, self.path):
+            return self._json(401, {"error": "falta el token"})
         o = self.headers.get("Origin")
         if o and o not in ORIGENES:
             return self._json(403, {"error": "origen no permitido"})
@@ -211,6 +238,22 @@ class Handler(BaseHTTPRequestHandler):
                 c.close()
             motivos = ", ".join(d["motivo"] for d in r["descartadas"]) or "ninguna"
             print(f"[sugerir] {modo} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms · descartadas: {motivos}", flush=True)
+            return self._json(200, r)
+
+        if self.path == "/api/pedido":
+            # Pedido proactivo por Rappi: qué buscar según la memoria de la persona (pedido.py)
+            c = store.conectar(DB)
+            try:
+                contar()
+                r = pedido.plan(c, para=str(body.get("para") or "juan")[:40], ocasion=str(body.get("ocasion") or "aniversario"),
+                                presupuesto=int(body["presupuesto"]) if str(body.get("presupuesto") or "").isdigit() else None)
+            except TopeDiario as e:
+                return self._json(429, {"error": str(e)})
+            except ValueError as e:
+                return self._json(400, {"error": str(e)})
+            finally:
+                c.close()
+            print(f"[pedido] {r['para']} · {r['origen']} · {r['meta'].get('ms_total')} ms · fuentes {len(r['fuentes'])}", flush=True)
             return self._json(200, r)
 
         if self.path == "/api/grupo":

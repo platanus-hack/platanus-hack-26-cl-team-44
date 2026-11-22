@@ -1,0 +1,18 @@
+[Unit]
+Description=wapi · webhook-worker (avisa al puente de los mensajes entrantes)
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+Requires=postgresql.service redis-server.service
+
+[Service]
+User=wapi
+WorkingDirectory=/opt/toki/wapi
+EnvironmentFile=/opt/toki/wapi.env
+ExecStart=/usr/local/bin/bun apps/webhook-worker/src/index.ts
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

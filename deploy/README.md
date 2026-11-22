@@ -1,45 +1,94 @@
 # Despliegue y demo
 
-La TV es una sola. Se abre de 2 formas, y el código elige los servicios según desde dónde se abre.
+La TV es una sola. Se abre de 3 formas. El token del puente nunca va en una URL.
 
-| | En escena (con hardware) | URL pública (sin hardware) |
-|---|---|---|
-| Dirección | `http://127.0.0.1:8766/woki-os.html` (la sirve el monitor MyoWare en el Mac) | https://179-66-157-161.sslip.io |
-| MyoWare | Real, por USB o BLE | Teclado: Espacio = ceja, J = mandíbula |
-| Mirada con iPhone | Real, por la red local | Webcam o mouse |
-| WhatsApp | Real (puente de Emmy en el Mac) | Simulado |
-| Agente | En el Mac, con la sesión de Claude Code | En la VPS, con `CLAUDE_CODE_OAUTH_TOKEN` |
+| | Escenario (con hardware) | Equipo (cualquier navegador) | Público (jueces) |
+|---|---|---|---|
+| Dirección | `http://127.0.0.1:8766/woki-os.html` (doble clic en `Toki.command`) | https://179-66-157-161.sslip.io/equipo/ | https://179-66-157-161.sslip.io |
+| Acceso | El monitor entrega el token desde variables de entorno (`/toki-config.js`) | Usuario `equipo` y contraseña (`make clave`); Caddy agrega el token por dentro | Libre |
+| MyoWare | Real, por USB o BLE | Teclado: Espacio = ceja, J = mandíbula | Teclado |
+| WhatsApp | Real (VPS) | Real (VPS) | Simulado |
+| Agente y memoria | De la usuaria (VPS) | De la usuaria (VPS) | Sin acceso (401) |
 
-## URL pública (VPS de Hostinger)
+## Comandos del equipo
 
-- Máquina: `srv2186003.hstgr.cloud`, 179.66.157.161, Ubuntu 26.04. Acceso: `ssh toki-vps`.
-- Caddy sirve la TV en `/` y el agente en `/agente/*`, con HTTPS de Let's Encrypt. HTTP/3 está apagado: con él, el navegador se colgaba.
-- El agente corre como el servicio `toki-agente`, con el usuario `toki` y la semilla de **ejemplo**.
-- Tope de 300 llamadas al agente por día (`TOKI_MAX_DIA` en `/opt/toki/toki.env`).
-- Modo dev para los jueces: https://179-66-157-161.sslip.io/?dev=1
+Con la llave SSH del equipo (`ssh toki-vps`):
 
-Instalar o actualizar:
+| Comando | Qué hace |
+|---|---|
+| `make deploy` (`RAMA=x`) | Actualiza el repo en la VPS y corre `instalar.sh` ya actualizado |
+| `make estado` | Servicios, WhatsApp, agente y commit en una pantalla |
+| `make logs S=toki-puente` | Últimas 50 líneas de un servicio |
+| `make semilla` | Sube `software/agent/data/semilla.json` (memoria real, fuera de git) y la carga |
+| `make rotar-token` | Cambia el token del puente si se filtró y reinicia lo necesario |
+| `make clave` | Copia la contraseña de `/equipo/` al portapapeles |
+| `make escena` | Lo mismo que doble clic en `Toki.command` |
 
-```bash
-ssh toki-vps 'cd /opt/toki/repo && git pull -q && TOKI_DOMINIO=179-66-157-161.sslip.io TOKI_RAMA=<rama> bash deploy/instalar.sh'
-```
+## VPS (Hostinger)
 
-El token de la suscripción va en `/opt/toki/agente.env` (solo root, fuera de git):
+- Máquina: `srv2186003.hstgr.cloud`, 179.66.157.161, Ubuntu 26.04. SSH solo con llave; firewall con 22, 80 y 443.
+- Caddy (HTTPS de Let's Encrypt, HTTP/3 apagado porque colgaba el navegador):
+  - `/`: TV pública.
+  - `/equipo/*`: TV del equipo con `basicauth`. `/equipo/wa/*` y `/equipo/agente/*` llevan el token, que agrega Caddy.
+  - `/wa/api/*` y `/agente/*`: para la TV del escenario, con el header `X-Woki-Token`.
+- Secretos, solo root y fuera de git:
+  - `/opt/toki/puente.env`: wapi, token, ElevenLabs, Twilio.
+  - `/opt/toki/caddy.env`: token y hash de la contraseña.
+  - `/opt/toki/equipo.clave`: contraseña de `/equipo/`.
+  - `/opt/toki/agente.env`: suscripción de Claude.
+  - `/opt/toki/wapi.env`: base y cifrado de wapi.
+- El agente (`toki-agente`) usa `data/semilla.json` si existe y, si no, la semilla de ejemplo. Tope de 300 llamadas por día (`TOKI_MAX_DIA`).
+- Los logs del puente no guardan nombres ni texto de los mensajes.
+
+El token de la suscripción de Claude:
 
 ```bash
 claude setup-token        # en el Mac; copia el token que imprime
 read -s T && ssh toki-vps "umask 077 && printf 'CLAUDE_CODE_OAUTH_TOKEN=%s\n' '$T' > /opt/toki/agente.env && systemctl restart toki-agente" && unset T
 ```
 
-Revisar: `ssh toki-vps 'systemctl status toki-agente caddy --no-pager; journalctl -u toki-agente -n 20 --no-pager'`.
+### WhatsApp real en la VPS (wapi + puente)
 
-## En escena (Mac del demo)
+`instalar.sh` también instala wapi y el puente. Todo escucha en 127.0.0.1; lo único público es `/wa/api/*` y `/equipo/wa/api/*`, con token.
 
-En este orden:
+| Servicio | Qué es | Dónde |
+|---|---|---|
+| `wapi-gateway` | La conexión con WhatsApp (el "dispositivo vinculado") | 127.0.0.1:3102 |
+| `wapi-api` | API HTTP de wapi | 127.0.0.1:3101 |
+| `wapi-worker` | Avisa al puente de los mensajes entrantes | sin puerto |
+| `toki-puente` | `software/whatsapp-bridge` (TV ↔ wapi) | 127.0.0.1:8788, público en `/wa/api/*` |
+| `postgresql`, `redis-server` | Base y colas de wapi | 127.0.0.1:5432 y 6379 |
 
-1. **wapi y el puente de WhatsApp**, como en `docs/product/GUIA-WAPI-SELF-HOST.md`. El puente se arranca con `ALLOWED_ORIGIN=http://127.0.0.1:8766`, porque la TV se abre desde el monitor.
-2. **Agente:** `software/agent/.venv/bin/python software/agent/server.py`. Usa la sesión de Claude Code del Mac y `software/agent/data/semilla.json` con los datos reales.
-3. **Monitor MyoWare** (sirve la TV): `python3 software/myoware-monitor/server.py --serial-port <puerto>` o con `--ble-jaw` y `--ble-brow`.
-4. Abrir **http://127.0.0.1:8766/woki-os.html** en Chrome.
+- wapi está en `/opt/toki/wapi` (commit `4ca20d8`, usuario `wapi`). Sin dashboard y sin Docker.
+- Escucha local: wapi no tiene opción de host; `deploy/wapi/solo-local.mjs` (gateway) y `deploy/wapi/api-local.ts` (api) lo fuerzan a 127.0.0.1.
+- Secretos, solo root, fuera de git: `/opt/toki/wapi.env` (base, `ENCRYPTION_KEY`, `GATEWAY_TOKEN`) y `/opt/toki/puente.env` (`WAPI_PAT`, `WOKI_API_TOKEN`, claves de la sesión). Si cambia `ENCRYPTION_KEY` o se borra la base `wapi`, hay que volver a vincular.
+- Lista blanca: `/opt/toki/puente/profile.json`, copia de `profile.example.json`. Los contactos reales se eligen desde la TV.
+- El puente arranca en `WA_MODE=dry` hasta vincular el celular.
 
-Antes de subir al escenario: aprobar el disparador del grupo (`?dev=1` → Aprobar) y mandar una mención de prueba.
+Vincular el celular (una vez; hace falta el teléfono para escanear el QR):
+
+```bash
+ssh -t toki-vps 'bash /opt/toki/repo/deploy/vincular-whatsapp.sh +569XXXXXXXX'
+```
+
+El QR sale en la terminal (agranda la ventana si se ve cortado). En el celular: WhatsApp → Ajustes → Dispositivos vinculados → Vincular un dispositivo. Al vincular, el script guarda las claves en `puente.env`, registra el webhook en `http://127.0.0.1:8788/webhook/wapi`, pasa a `WA_MODE=live` y reinicia `toki-puente`. No manda mensajes.
+
+Revisar: `ssh toki-vps 'systemctl status wapi-gateway wapi-api wapi-worker toki-puente --no-pager; journalctl -u toki-puente -n 20 --no-pager'`.
+
+## Escenario
+
+1. Conecta el MyoWare por USB al Mac.
+2. Doble clic en `Toki.command`, en la raíz del repo. También sirve `make escena` o `bash deploy/escena.sh --ble-jaw … --ble-brow …`.
+3. El script revisa cada pieza y muestra ✅ o ❌: sensor, token, WhatsApp, agente, monitor y datos del sensor. Después abre Chrome en pantalla completa, con su propio perfil (`~/.toki-chrome`) para que la calibración se guarde.
+
+En otro computador sin `ssh toki-vps`, crea `deploy/escena.env`, que git ignora, con `TOKI_WA_TOKEN=…`.
+
+Antes de subir al escenario: `make estado` y una mención de prueba en el grupo del disparador.
+
+## Rappi (escena del aniversario)
+
+- Corre en el computador del escenario: `Toki.command` arranca apps-bridge en el puerto 8793 con `TOKI_RAPPI_PAIS=co` (Bogotá).
+- Cuenta: `make rappi` abre el login oficial y guarda la sesión en `~/Library/Application Support/Toki/apps/` (token de la API y perfil de Chrome `rappi-chrome`). La primera vez, Rappi pide verificar el celular en la web. Nunca pegar códigos en el chat.
+- Flujo en la TV: Servicios → Rappi → "💡 Sugerencia de Toki" (el agente de la VPS usa la memoria) → restaurante → producto → opciones → carrito → "Revisar importes" → "Hacer el pedido", con dos elecciones separadas.
+- Checkout: `TOKI_RAPPI_CHECKOUT=api` (por defecto) usa solo llamadas a la API, en el orden de la web oficial: `checkout/detail`, `checkout-component`, `recalculate` y `shopping-cart-proxy/checkout` con el carrito recalculado. Probado con cobro real el 22-nov-2026 (pedido 2527563808, cancelado). `web` usa el checkout oficial en Chrome, como respaldo.
+- Protecciones: tope de total, carrito igual al revisado (ticket de 5 min), un solo envío, sin reintentos. Antes del demo, el carrito de Rappi tiene que estar vacío.

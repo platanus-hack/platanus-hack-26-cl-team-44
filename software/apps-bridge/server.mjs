@@ -116,16 +116,16 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
     const port = server.address().port;
     const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
     if (!hosts.includes(req.headers.host)) { res.writeHead(403); res.end(); return; }
-    const allowed = [`http://127.0.0.1:${port}`, `http://localhost:${port}`, 'http://localhost:8000', 'http://127.0.0.1:8000'];
+    const allowed = [`http://127.0.0.1:${port}`, `http://localhost:${port}`, 'http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:8766', 'http://localhost:8766'];   // 8766: TV del escenario (monitor MyoWare)
     const origin = req.headers.origin;
     if (req.url.startsWith('/api/') && ((origin && !allowed.includes(origin)) || (!origin && req.headers['sec-fetch-site'] === 'cross-site'))) { res.writeHead(403); res.end(); return; }
+    if (origin && allowed.includes(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Headers', 'content-type,x-toki-token'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); res.writeHead(204); res.end(); return; }
     const url = new URL(req.url, `http://${req.headers.host}`);
     const send = (data, status = 200) => { res.writeHead(status, {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}); res.end(JSON.stringify(data)); };
     try {
       if (await myoware(req, res, url)) return;
-      if (origin && allowed.includes(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
-      if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Headers', 'content-type,x-toki-token'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); res.writeHead(204); res.end(); return; }
       if (url.pathname.startsWith('/api/')) {
         if (url.pathname === '/api/session' && req.method === 'GET') return send({token});
         if (req.headers['x-toki-token'] !== token) throw fault('Vuelve a abrir Apps para conectar el servicio local.', 401);
@@ -175,8 +175,8 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
       if (req.method !== 'GET' && req.method !== 'HEAD') throw fault('Método no permitido.', 405);
       if (await gazeAsset(req, res, url.pathname)) return;
-      if (url.pathname === '/prototype-lobby.html') {
-        res.writeHead(302, {Location: '/' + url.search, 'Cache-Control': 'no-store'});
+      if ((url.pathname === '/' || url.pathname === '/index.html') && !url.search) {
+        res.writeHead(302, {Location: '/woki-os.html', 'Cache-Control': 'no-store'});
         res.end();
         return;
       }

@@ -1,6 +1,6 @@
 # Toki OS
 
-La pantalla principal tiene cinco tarjetas: **Hablar, Mensajes, Compañía, Servicios y Juegos**. La primera vez pide elegir el control. En las visitas siguientes recuerda la preferencia.
+La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene siete tarjetas e incluye Juegos, Apps y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
 
 Desde la raíz del repositorio, con Node 22 o posterior:
 
@@ -9,9 +9,11 @@ npm ci --prefix software/apps-bridge
 npm start --prefix software/apps-bridge
 ```
 
-[Abrir Toki OS](http://127.0.0.1:8790/) · [Volver a elegir mirada, nariz o mouse](http://127.0.0.1:8790/?acceso=elegir)
+[Abrir Toki OS](http://127.0.0.1:8790/)
 
 **Mirada** usa WebEyeTrack con la webcam si pasa la comprobación de la calibración habitual. Si no está disponible o no pasa, se usa el rastreador anterior si pasó su comprobación. Si ya tenías una calibración, vuelve a elegir **Mirada** para probar WebEyeTrack. El puntero se estabiliza al mirar fijo y responde más rápido al saltar entre tarjetas. Con el imán habilitado (`I` en Woki), también gana alcance en los bordes y esquinas. El procesamiento es local; solo se guardan los parámetros de calibración para esa cámara. La primera carga de sus modelos requiere conexión.
+
+En la instalación por etapas, el monitor Python reenvía solo los archivos fijos del modelo WebEyeTrack al Apps Bridge local indicado por `TOKI_APPS_URL`. La conexión del sensor, el perfil y los tokens de etapa se mantienen en su mismo origen. Si Apps Bridge no está disponible, se usa MediaPipe. La integración en `:8790` y la transferencia sin configuración entre el monitor independiente (`:8766`) y Woki siguen funcionando.
 
 Para usar la calibración ampliada, elige **Calibrar con la mirada** en Woki: sigue 15 puntos, incluidos los bordes y las esquinas, y después 6 puntos distintos de comprobación. Toma unos 45 segundos sin reintentos. Los perfiles anteriores siguen disponibles, pero no incorporan los puntos nuevos hasta que vuelvas a calibrar.
 
@@ -19,9 +21,9 @@ WebEyeTrack usa tres fotogramas estables y separados por punto. Si no hay tres m
 
 | HTML | Uso en el proyecto |
 |---|---|
-| [index.html](index.html) | Entrada principal que sirve `/`. Edita aquí el HTML de inicio. |
-| `prototype-lobby.html` | Redirección para enlaces guardados. |
-| `woki-os.html` | Calibración integrada en el inicio y banco independiente de gestos MyoWare y mirada con iPhone. |
+| [woki-os.html](woki-os.html) | SO oficial. Edita aquí el inicio, la navegación y la calibración. |
+| [index.html](index.html) | Acceso desde la raíz y compatibilidad con enlaces guardados de la tablet. |
+| [prototype-lobby.html](prototype-lobby.html) | Prototipo de tablet de cinco tarjetas, conservado para pruebas y enlaces anteriores. |
 | `prototype-motion.html` | Catálogo que se abre dentro de Juegos y laboratorio de movimiento. |
 | `prototype-ela.html` | Exploración de diseño anterior. |
 
@@ -37,7 +39,7 @@ Si WebEyeTrack no responde, puedes reintentar solo ese modelo sin repetir Toki m
 
 **Ensayar la demo con WebEyeTrack** hace una ronda aparte en las tarjetas reales de Inicio, sin activar ninguna acción. Mira el punto blanco de cada tarjeta indicada: cuenta la primera tarjeta sobre la que el puntero permanece 180 ms dentro de los 2 s de cada intento. La meta para el ensayo es **10 de 12**. El resultado incluye los fallos por tarjeta, el tiempo de procesamiento por fotograma y la dispersión del puntero al mirar fijo. No se cambia el puntero normal de Toki.
 
-**Comparar calibraciones en Woki** prueba los dos métodos de WebEyeTrack (el último fotograma frente a tres muestras estables por punto). Las rondas usan la misma cámara, los mismos 15 puntos y las 10 tarjetas reales de Woki. No hace falta hacer clic ni confirmar con la ceja. Compara aciertos al primer intento, falta de señal, tiempo de adquisición y dispersión p90 al mirar fijo al centro. Mide el modelo sin imán ni suavizado y no reemplaza tu perfil guardado.
+**Comparar calibraciones en Woki** prueba los dos métodos de WebEyeTrack (el último fotograma frente a tres muestras estables por punto). Las rondas usan la misma cámara, los mismos 15 puntos y las tarjetas que tenga el Inicio real de Woki. No hace falta hacer clic ni confirmar con la ceja. Compara aciertos al primer intento, falta de señal, tiempo de adquisición y dispersión p90 al mirar fijo al centro. Mide el modelo sin imán ni suavizado y no reemplaza tu perfil guardado.
 
 ### Demo sin sensor
 
@@ -58,7 +60,7 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. Enfoca 
 
 Con MyoWare, apuntar solo enfoca la opción: no hay barra que llenar ni selección por permanencia. La ceja solo hace clic, al detectarse y sin esperar a que la sueltes. Una contracción de mandíbula hace **Volver** fuera de Inicio, sin apuntar ni añadir una espera. En Inicio abre la **Rueda de cuidados**. Con la webcam, mira hacia arriba, derecha, abajo o izquierda para resaltar un sector sin apuntar justo al botón. Si miras al centro o se pierde la señal, la rueda resalta y lee las opciones por turno. Suelta la mandíbula y usa la ceja para elegir; otra contracción cierra la rueda o vuelve al menú principal. **Cuidados**, en la barra inferior, también abre la rueda con mouse o teclado.
 
-La rueda incluye **Ayuda urgente**, **Avisar a mi cuidador**, **Frases rápidas** y **Volver**. El SOS pide elegir **Iniciar SOS de prueba** y luego se puede cerrar con la ceja. Tanto el SOS como el aviso son simulados: Woki no llama ni envía mensajes. La rueda no sustituye un medio independiente de pedir ayuda.
+La rueda incluye **Ayuda urgente**, **Avisar a mi cuidador**, **Frases rápidas** y **Volver**. Desde esa rueda, **Iniciar SOS de prueba** solo muestra la simulación: no llama ni envía mensajes. La acción SOS normal conserva el intento de llamada al contacto de emergencia cuando está configurado; comprueba la barra de estado antes de usarla. La rueda no sustituye un medio independiente de pedir ayuda.
 
 Si ya calibraste la ceja en este navegador, **Calibrar con la mirada** y **Usar la calibración guardada** también activan MyoWare al terminar la preparación de la webcam, salvo si elegiste **Solo mirada**.
 
@@ -118,13 +120,13 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
-## Juegos y Servicios en Woki OS
+## Juegos y Apps en Myo OS
 
-Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo y los recuadros grandes de Woki. Para probarlo con Servicios funcionando, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
+Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
 
-- **Inicio con 10 tarjetas (5×2):** se agregan **Servicios** (con los logos reales) y **Juegos** sin quitar nada. Las columnas de los bordes son 1,2× más anchas. Con el error medido del iPhone (mediana de 2,2° en el centro y ~2,7° en los bordes), cada tarjeta mide más de 2× el error de su zona: unos 4,9 × 6,5 cm en el centro y 5,9 cm de ancho en los bordes, en un portátil de 13".
-- **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse. Al jugar, el juego ocupa casi toda la pantalla y arriba solo queda una línea: "Primera vez: toca la bandera de España y luego «Crear usuario»" (así es la bienvenida real del sitio). Al salir de Juegos la partida se cierra.
-- **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Inicio.** La primera fila reúne Hablar, Escribir y Mensajes. La segunda contiene Apps, Juegos y Ajustes. **SOS** y **Descansar** comparten una fila al pie de la pantalla. **Descansar** pausa la selección. **Volver** reanuda en el mismo lugar. Para escuchar música, elige **Apps → Spotify**.
+- **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una, la partida se amplía a la ventana y la cámara sigue activa si se usa para apuntar. El botón **← Juegos** vuelve al catálogo. Con la mirada, nariz o iPhone, el servidor de Apps transmite la partida en la misma pantalla y recibe la posición del puntero. Mantenerlo sobre una opción o confirmar con la ceja o Espacio envía el clic. Con mouse, se interactúa directamente con el juego.
+- **Apps:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
 - **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
 
   ```bash
@@ -132,11 +134,11 @@ Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estil
   ```
 
   Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
-- **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
+- **Siempre hay salida:** "‹ Inicio" en la barra, "← Juegos" dentro de una partida y "Volver" dentro de cada app. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
 - **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
-- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
+- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Myo OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
 
 ## Tema y atajos
 
 - **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.
-- **Atajos de desarrollo** (teclas simuladas, cámara, LCD, eventos): ocultos por defecto. La pestaña con flecha (⌃) de abajo a la derecha los muestra u oculta.
+- **Controles** muestra la cámara, la detección de rostro y los grupos de sensores, atajos y diagnóstico. El panel recuerda si lo dejaste abierto o cerrado. **Activar cámara** inicia la vista previa y **Apagar cámara** libera la cámara.
