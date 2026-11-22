@@ -1081,8 +1081,10 @@ function renderStatus(){
   const t=new Date().toTimeString().slice(0,5);
   const sc=$('.screen.on');
   const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
-  const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>SOS de prueba activo'
-    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>SOS de prueba';
+  // Con la llamada configurada en el puente (woki-voz.js) el SOS es real y el estado lo dice; si no, es de prueba.
+  const real = !!(window.VOZ && VOZ.llamadaLista);
+  const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>'+(S.alarm.real?'SOS: pidiendo ayuda':'SOS de prueba activo')
+    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>'+(real?'SOS listo':'SOS de prueba');
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
   const howPick = gazeOnly() ? (CFG.mode==='click' ? 'Ceja (o mirada 3 s)' : `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja`) : mode;
   const sensors = gazeOnly()

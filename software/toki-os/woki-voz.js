@@ -81,6 +81,7 @@
     const big = document.getElementById('alBig'), cerrar = document.getElementById('alDismiss');
     if(big) big.textContent = 'Pidiendo ayuda';
     if(cerrar) cerrar.textContent = 'Cerrar alarma';
+    if(typeof renderStatus==='function') renderStatus();
     set('📞 Llamando al contacto de emergencia…');
     try{
       const j = await api('/api/emergencia/llamar', { alarmId:String(A.t0), motivo:'activó la alarma de emergencia' });
