@@ -84,3 +84,11 @@ Revisar: `ssh toki-vps 'systemctl status wapi-gateway wapi-api wapi-worker toki-
 En otro computador sin `ssh toki-vps`, crea `deploy/escena.env`, que git ignora, con `TOKI_WA_TOKEN=…`.
 
 Antes de subir al escenario: `make estado` y una mención de prueba en el grupo del disparador.
+
+## Rappi (escena del aniversario)
+
+- Corre en el computador del escenario: `Toki.command` arranca apps-bridge en el puerto 8793 con `TOKI_RAPPI_PAIS=co` (Bogotá).
+- Cuenta: `make rappi` abre el login oficial y guarda la sesión en `~/Library/Application Support/Toki/apps/` (token de la API y perfil de Chrome `rappi-chrome`). La primera vez, Rappi pide verificar el celular en la web. Nunca pegar códigos en el chat.
+- Flujo en la TV: Servicios → Rappi → "💡 Sugerencia de Toki" (el agente de la VPS usa la memoria) → restaurante → producto → opciones → carrito → "Revisar importes" → "Hacer el pedido", con dos elecciones separadas.
+- Checkout: `TOKI_RAPPI_CHECKOUT=api` (por defecto) usa solo llamadas a la API, en el orden de la web oficial: `checkout/detail`, `checkout-component`, `recalculate` y `shopping-cart-proxy/checkout` con el carrito recalculado. Probado con cobro real el 22-nov-2026 (pedido 2527563808, cancelado). `web` usa el checkout oficial en Chrome, como respaldo.
+- Protecciones: tope de total, carrito igual al revisado (ticket de 5 min), un solo envío, sin reintentos. Antes del demo, el carrito de Rappi tiene que estar vacío.

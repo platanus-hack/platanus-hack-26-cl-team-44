@@ -98,3 +98,24 @@ class TestSalida(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Pedido(Base):
+    """Pedido proactivo sin modelo: si el agente falla, vuelve a las categorías de siempre."""
+    def test_sin_modelo_devuelve_reglas(self):
+        import pedido
+
+        async def falla(*a, **k):
+            raise RuntimeError("sin red")
+        original = pedido._consultar
+        pedido._consultar = falla
+        try:
+            r = pedido.plan(self.c, para="pedro", ocasion="aniversario")
+        finally:
+            pedido._consultar = original
+        self.assertEqual((r["origen"], r["query"], r["para"]), ("reglas", "", "pedro"))
+
+    def test_persona_desconocida(self):
+        import pedido
+        with self.assertRaises(ValueError):
+            pedido.plan(self.c, para="nadie")

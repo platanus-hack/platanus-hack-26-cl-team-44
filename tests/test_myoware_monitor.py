@@ -106,7 +106,7 @@ class TokiConfigTest(unittest.TestCase):
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]
-        env = {**os.environ, 'TOKI_REMOTO': 'https://vps.example/', 'TOKI_WA_TOKEN': 't0k'}
+        env = {**os.environ, 'TOKI_REMOTO': 'https://vps.example/', 'TOKI_WA_TOKEN': 't0k', 'TOKI_APPS_URL': 'http://127.0.0.1:8793/'}
         process = subprocess.Popen([sys.executable, str(ROOT/'software/myoware-monitor/server.py'),
                                     '--serial-port', os.ttyname(slave), '--http-port', str(port)],
                                    env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -128,7 +128,7 @@ class TokiConfigTest(unittest.TestCase):
                     time.sleep(.05)
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body.removeprefix('window.TOKI_ENV=').rstrip(';')),
-                             {'remoto': 'https://vps.example', 'waToken': 't0k'})
+                             {'remoto': 'https://vps.example', 'waToken': 't0k', 'apps': 'http://127.0.0.1:8793'})
             self.assertEqual(get({'Sec-Fetch-Site': 'cross-site'})[0], 403)
             self.assertEqual(get({'Sec-Fetch-Site': 'same-origin', 'Host': f'evil.example:{port}'})[0], 403)
         finally:
