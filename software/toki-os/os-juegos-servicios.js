@@ -79,11 +79,13 @@ window.addEventListener('load', () => {
 
   const innerGo = go;
   go = function (name, ...rest) {
-    if (name === 'apps' && S.screen !== 'apps') mount();
+    // El bloqueo anti-repetición es de la visita actual: si quedaba de la anterior (p. ej. al salir con
+    // "Inicio"), se tragaba el primer clic con la mirada al volver (fallo esporádico).
+    if (name === 'apps' && S.screen !== 'apps') { latch = null; mount(); }
     innerGo(name, ...rest);
     // Al salir de Juegos se cierra la partida externa (si no, sigue corriendo y sonando oculta).
     if (name !== 'games') $('#externalGame')?.remove();
-    if (name !== 'apps') { app?.destroy(); app = null; }
+    if (name !== 'apps') { app?.destroy(); app = null; latch = null; }
   };
   const innerActivate = activate;
   activate = function (el, calibrate = true) {
