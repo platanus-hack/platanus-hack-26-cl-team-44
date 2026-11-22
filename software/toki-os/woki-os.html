@@ -443,7 +443,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="ctx glass">
       <div class="avatar">S</div><label>Sofía dice</label>
       <input id="ctxIn" placeholder="El acompañante escribe y aprieta Enter" value="¿Vienes a cenar el domingo?">
-      <div class="typing" id="typing"><i></i><i></i><i></i>Marta está escribiendo</div>
+      <div class="typing" id="typing"><i></i><i></i><i></i>Emmy está escribiendo</div>
     </div>
     <div class="talkbody">
       <div class="chat glass" id="chat" aria-live="polite"><div class="chat-h" id="chatH"></div><div class="chat-list" id="chatList"></div></div>
@@ -514,7 +514,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <div class="overlay on" id="calib">
     <div class="cal-card glass" id="calCard">
       <div class="cal-logo">TOKI</div>
-      <div class="cal-title" id="calTitle">Hola, Marta</div>
+      <div class="cal-title" id="calTitle">Hola, Emmy</div>
       <div class="cal-text" id="calText">Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).</div>
       <div class="cal-steps" id="calSteps"><span class="on">Centro</span><span>Esquinas</span><span>Prueba</span><span>Listo</span></div>
       <div class="cal-btns" id="calBtns">
@@ -594,7 +594,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="wap-head">
       <div>
         <h2 id="wapTitle">Contactos principales</h2>
-        <p>Elige hasta 6 personas. Marta solo podrá escribirles a ellas y solo verá en la TV los mensajes que ellas manden. La relación ayuda a que las frases suenen distinto con cada una.</p>
+        <p>Elige hasta 6 personas. Emmy solo podrá escribirles a ellas y solo verá en la TV los mensajes que ellas manden. La relación ayuda a que las frases suenen distinto con cada una.</p>
       </div>
       <button class="wap-x" id="wapClose" aria-label="Cerrar">✕</button>
     </div>
@@ -680,7 +680,7 @@ const EMO = Object.fromEntries(EMOS.map(e=>[e.id,e]));
 // Frases locales (sin internet). Cada tema tiene 4 POSICIONES con una intención fija —el "sí"
 // siempre en el mismo lugar, el "no" siempre en el suyo— y varias formas de decir esa intención.
 // Cada vez que se abre Hablar sale otra forma, sin repetir la de la vez anterior.
-// Así las tarjetas varían pero Marta no tiene que volver a buscar dónde está cada respuesta.
+// Así las tarjetas varían pero Emmy no tiene que volver a buscar dónde está cada respuesta.
 const RULES = [
   {k:/cena|comer|almuerz|domingo|once/i, s:[
     [['¡Obvio! Guárdame del postre de la abuela.','cariñosa','carinosa'],['¡Claro que voy! Me encanta cenar con ustedes.','cariñosa','carinosa'],['¡Sí! Ya me estaba haciendo falta verlos.','cariñosa','alegre']],
@@ -712,7 +712,7 @@ const DEFAULT = [
   [['Cuéntame más.','interés','alegre'],['¿Y qué pasó después?','interés','alegre'],['No te creo, ¿en serio?','interés','entusiasta']],
   [['Dame un segundo, lo estoy pensando.','pausa','seria'],['Espera, que estoy escribiendo.','pausa','seria'],['Déjame pensarlo.','pausa','seria']],
   [['Jajaja, no puedo contigo.','con humor','alegre'],['Te pasaste, jajaja.','con humor','alegre'],['Eres un caso perdido.','con humor','ironica']]];
-// Elige una forma por posición: nunca la misma de la vez anterior, y un poco más seguido las que Marta ya usa (su estilo).
+// Elige una forma por posición: nunca la misma de la vez anterior, y un poco más seguido las que Emmy ya usa (su estilo).
 const LAST_PICK = {};
 function pickVariants(key, slots){
   const usos = t => (MEM.m.phrases||[]).filter(p=>p.t===t).length;
@@ -777,7 +777,7 @@ const WA={ online:false, favs:[], to:null, text:'', idem:null, inKey:null, sendi
 const HINT0='<b>Ceja</b> decir';
 const hhmm=t=>new Date(t).toTimeString().slice(0,5);
 const TICKS={1:'🕓',2:'✓',3:'✓✓',4:'leído'};
-// Chat con el contacto actual: últimos mensajes (lo que llega, lo que Marta envía y lo que se escribe desde el celular).
+// Chat con el contacto actual: últimos mensajes (lo que llega, lo que Emmy envía y lo que se escribe desde el celular).
 function renderChat(){
   const on=!!WA.to; $('#s-talk').classList.toggle('chatmode',on);
   $('#talkHint').innerHTML= on? '<b>Ceja</b> elegir respuesta' : HINT0;
@@ -875,13 +875,13 @@ function markLikelyKeys(){
     el.classList.toggle('likely', ws[i]===top && top>=4); });   // solo el grupo más probable se marca
 }
 
-/* ---- Teclado por iniciales: Marta elige la primera letra de cada palabra y WOKI completa la frase ---- */
+/* ---- Teclado por iniciales: Emmy elige la primera letra de cada palabra y Myo completa la frase ---- */
 const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const initialsOf=t=>(fold(t).match(/[a-zñ0-9]+/g)||[]).map(w=>w[0]).join('');
 function kbIni(){ S.kb={level:1,group:null,text:'',mode:'ini',ini:''}; go('keyboard'); }
 function iniCorpus(){
   const out=[], add=(t,tone,emo,w)=>{ if(t && !out.some(x=>x.text===t)) out.push({text:t,tone,emo,w}); };
-  for(const m of Object.values(WA.hist).flat()) if(m.dir==='out') add(m.text,'ya lo escribiste','seria',3);   // lo que Marta ya mandó
+  for(const m of Object.values(WA.hist).flat()) if(m.dir==='out') add(m.text,'ya lo escribiste','seria',3);   // lo que Emmy ya mandó
   for(const p of MEM.m.phrases) add(p.t,'ya lo dijiste','seria',2);
   for(const r of RULES) for(const s of r.s.flat()) add(s[0],s[1],s[2],1);   // todas las formas de cada posición
   for(const s of [...GENERIC,...DEFAULT.flat()]) add(s[0],s[1],s[2],1);
@@ -961,7 +961,7 @@ function setCtx(label,av,val,ph,bg){
   $('#s-talk .ctx label').textContent=label; const a=$('#s-talk .ctx .avatar'); a.textContent=av; a.style.background=bg||'';
   $('#ctxIn').value=val; $('#ctxIn').placeholder=ph;
 }
-// Empieza un mensaje para un contacto principal (elegido por Marta o porque ese contacto escribió).
+// Empieza un mensaje para un contacto principal (elegido por Emmy o porque ese contacto escribió).
 function waStart(c,{text='',key=null}={}){
   if(!c) return;
   WA.to=c; WA.inKey=key; WA.idem=null;
@@ -1192,7 +1192,7 @@ function renderCards(){
 }
 
 /* ===================== Teclado por grupos ===================== */
-/* memoria local: palabras y frases que Marta ya usó (primer paso del plan de memoria) */
+/* memoria local: palabras y frases que Emmy ya usó (primer paso del plan de memoria) */
 const MEM=(()=>{ let m={words:{},phrases:[]}; try{ m=JSON.parse(localStorage.getItem('woki.mem.v1'))||m; }catch(_){}
   return { m,
     add(text){ for(const w of (text.toLowerCase().match(/[a-záéíóúñü]+/g)||[])) if(w.length>2) m.words[w]=(m.words[w]||0)+1;
@@ -1919,7 +1919,7 @@ function alarmTick(now){
 function rfid(){
   const A=S.alarm; if(!A){ island('🔑','Llavero: no hay alarma activa'); return; }
   const secs=Math.round((performance.now()-A.t0)/1000);
-  if(!A.ack){ A.ack=performance.now(); log('RFID: Camila responde ('+secs+' s)');
+  if(!A.ack){ A.ack=performance.now(); log('RFID: llegó alguien ('+secs+' s)');
     if(A.level==='emergencia'){ const a=$('#alarm'); a.classList.add('ack'); $('#alSym').innerHTML='<svg><use href="#i-check"/></svg>';
       if(A.real){ $('#alBig').textContent='Llegó alguien'; $('#alSub').textContent=`Confirmado con el llavero en ${secs} s`; $('#alCancel').textContent='R o Cerrar alarma'; }
       else { $('#alBig').textContent='Respuesta simulada'; $('#alSub').textContent='No se contactó a nadie.'; $('#alCancel').textContent='R o Cerrar simulación'; } }
@@ -1939,8 +1939,8 @@ const pad=s=>(s+'                ').slice(0,16);
 function updateLCD(){
   const t=new Date().toTimeString().slice(0,5); const A=S.alarm; let l1,l2,led='g';
   if(A && A.level==='emergencia'){ const s=Math.floor((performance.now()-A.t0)/1000);
-    if(A.ack){ l1='CAMILA VIENE'; l2='RESPONDIO '+Math.round((A.ack-A.t0)/1000)+'s'; led='a'; } else { l1='EMERGENCIA '+s+'s'; l2='FALTA CONFIRMAR'; led='r'; } }
-  else if(A){ l1='ATENCION'; l2=A.ack?'CAMILA VIENE':'MARTA LLAMA'; led='a'; }
+    if(A.ack){ l1='AYUDA EN CAMINO'; l2='RESPONDIO '+Math.round((A.ack-A.t0)/1000)+'s'; led='a'; } else { l1='EMERGENCIA '+s+'s'; l2='FALTA CONFIRMAR'; led='r'; } }
+  else if(A){ l1='ATENCION'; l2=A.ack?'AYUDA EN CAMINO':'EMMY LLAMA'; led='a'; }
   else if(S.gazeLost){ l1='OK'.padEnd(11)+t; l2='MIRADA: SIN CARA'; led='a'; }
   else { l1='OK'.padEnd(11)+t; l2='SENSORES OK'; }
   $('#lcd').textContent=pad(l1)+'\n'+pad(l2);
@@ -2367,7 +2367,7 @@ const CAL = {
   close(){ if(trackerOnly) parent.postMessage({type:'toki-control-ready',mode:NOSE.label()},location.origin); $('#calib').classList.remove('on'); $('#calDot').classList.remove('on'); renderStatus(); },
   open(kind){ $('#calib').classList.add('on');
     if(kind==='gaze'){ this.steps(['Puntos','Validación','Listo']); this.ui('Calibrar la mirada','Vas a seguir 9 puntos solo con los ojos y después comprobamos con 4 más. Toma unos 25 segundos.',0,false); }
-    else { this.steps(['Centro','Esquinas','Prueba','Listo']); this.ui('Hola, Marta','Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).',0,false); }
+    else { this.steps(['Centro','Esquinas','Prueba','Listo']); this.ui('Hola, Emmy','Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).',0,false); }
     this.showBtns(); }
 };
 window.CAL=CAL;

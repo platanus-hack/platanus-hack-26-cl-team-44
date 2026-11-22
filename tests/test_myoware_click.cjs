@@ -146,7 +146,7 @@ test('confirmation only accepts available focus on the current layer', () => {
   assert.equal(clicks, 4, 'physical brow may confirm without dwell in iPhone mode');
 });
 
-test('monitor shares persistent calibration and Woki receives fresh edges for both channels', async () => {
+test('monitor shares persistent calibration and Myo receives fresh edges for both channels', async () => {
   const elements = Object.fromEntries(['controls', 'calibrate', 'toggle', 'status', 'result', 'open-woki', 'use-woki'].map(name => [
     `myoware-${name}`, { addEventListener(_, listener) { this.click = listener; }, blur() {} }
   ]));
@@ -196,7 +196,7 @@ test('monitor shares persistent calibration and Woki receives fresh edges for bo
     await sample(jaw ? 140 : 100, brow || jaw ? 504 : 512);
   }
   assert.match(status.textContent, /Calibración lista/);
-  assert.equal(elements['myoware-open-woki'].textContent, 'Abrir Woki OS con esta calibración');
+  assert.equal(elements['myoware-open-woki'].textContent, 'Abrir Myo OS con esta calibración');
   const [savedKey, savedProfile] = storage.entries().next().value;
   assert.equal(tabStorage.size, 0, 'calibration lives beyond this tab');
   assert.equal(browDowns(), 0);
