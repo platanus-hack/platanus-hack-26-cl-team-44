@@ -212,7 +212,7 @@
     // El número no está en el código: se busca por nombre entre los contactos principales del puente.
     async avisarPorWhatsApp(){
       const f=this.food,quien=f.plan?.para_nombre;if(!quien||typeof CFG==='undefined'||!CFG.WA_URL||!f.order?.orderId)return;
-      const h={'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Woki-Token':CFG.WA_TOKEN}:{})};
+      const h={'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Myo-Token':CFG.WA_TOKEN}:{})};
       try{
         const favs=(await (await fetch(CFG.WA_URL+'/api/wa/favorites',{headers:h})).json()).contacts||[];
         const c=favs.find(x=>(x.name||'').toLowerCase().startsWith(quien.toLowerCase()));if(!c)return;
