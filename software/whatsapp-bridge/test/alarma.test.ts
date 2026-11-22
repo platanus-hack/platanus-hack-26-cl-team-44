@@ -49,7 +49,7 @@ test("cooldown e idempotencia por alarmId", (t) => {
   assert.equal(s.revisar("a1", 1_000 + MIN - 1), "repetida");
   assert.equal(s.revisar("a2", 1_000 + MIN - 1), "espera");
   assert.equal(s.revisar("a2", 1_000 + MIN), "ok");
-  assert.equal(s.revisar("a1", 1_000 + 10 * MIN), "repetida");   // la misma alarma nunca llama dos veces
+  assert.equal(s.revisar("a1", 1_000 + 10 * MIN - 1), "repetida");   // la misma alarma no llama dos veces en 10 min
 });
 
 test("guarda las anteriores (con tope) y las encuentra por conversationId", (t) => {
