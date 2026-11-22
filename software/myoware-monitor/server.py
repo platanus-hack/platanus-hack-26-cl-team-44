@@ -33,6 +33,7 @@ toki_assets={
         'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
         'magnetic-pointer','tablet-keyboard',
         'woki-voz','dev-agente',   # voz ElevenLabs (PR #7) y panel dev del agente (PR #4)
+        'toki-sse',               # eventos del puente y del agente con el token en un header
     )},
     **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard')},
 }

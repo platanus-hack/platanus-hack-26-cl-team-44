@@ -10,9 +10,9 @@
 (() => {
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
   const REMOTO = (typeof CFG !== 'undefined' && CFG.AGENTE_URL) || '';   // CFG es global léxico (const), no está en window
-  const URL_AGENTE = localStorage.getItem('toki.dev.url') || REMOTO || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + '/agente');
-  // En la URL pública el agente exige el token (el mismo del puente, ?wa_token= una vez). En local no hace falta.
-  const TOKEN = (LOCAL && !REMOTO) ? '' : ((typeof CFG !== 'undefined' && CFG.WA_TOKEN) || localStorage.getItem('woki_wa_token') || '');
+  const URL_AGENTE = localStorage.getItem('toki.dev.url') || REMOTO || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + (location.pathname.startsWith('/equipo/') ? '/equipo/agente' : '/agente'));
+  // Solo el escenario manda el token (viene de toki-config.js). En /equipo/ lo agrega Caddy; en local no hace falta.
+  const TOKEN = (typeof CFG !== 'undefined' && CFG.WA_TOKEN) || '';
   const hdr = (h = {}) => TOKEN ? { ...h, 'X-Woki-Token': TOKEN } : h;
   const api = (path, opts = {}) => fetch(URL_AGENTE + path, { ...opts, headers: hdr(opts.headers) });
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
@@ -80,10 +80,11 @@
 
   function conectarSSE() {
     if (sse) return;
-    sse = new EventSource(URL_AGENTE + '/api/eventos' + (TOKEN ? '?token=' + encodeURIComponent(TOKEN) : ''));
-    sse.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'disparador') cargarDisparadores(); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
-    sse.onerror = () => { $('#devDot').className = 'dot ko'; };
-    sse.onopen = () => { $('#devDot').className = 'dot ok'; };
+    const h = {};   // toki-sse.js: el token va en un header, nunca en la URL
+    h.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.tipo === 'pensando') pensando(ev); if (ev.tipo === 'opciones') opciones(ev); if (ev.tipo === 'disparador') cargarDisparadores(); if (ev.tipo === 'error') { traza('ERROR ' + ev.error); $('#devBtn').disabled = false; } };
+    h.onerror = () => { $('#devDot').className = 'dot ko'; };
+    h.onopen = () => { $('#devDot').className = 'dot ok'; };
+    sse = tokiSSE(URL_AGENTE + '/api/eventos', hdr(), h);
   }
 
   function contexto(ev) {

@@ -134,8 +134,14 @@ printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-
 chmod 600 "$BASE/toki.env"
 
 cp "$BASE/repo/deploy/toki-agente.service" /etc/systemd/system/toki-agente.service
+# /equipo/: contraseña del equipo (se crea una vez; verla con: cat /opt/toki/equipo.clave) y token para Caddy
+if [ ! -s "$BASE/equipo.clave" ]; then ( umask 077; openssl rand -base64 18 | tr -d '/+=' > "$BASE/equipo.clave" ); fi
+( umask 077; {
+  printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-)"
+  printf 'TOKI_EQUIPO_HASH=%s\n' "$(caddy hash-password --plaintext "$(cat "$BASE/equipo.clave")")"
+} > "$BASE/caddy.env" )
 mkdir -p /etc/systemd/system/caddy.service.d
-printf '[Service]\nEnvironment=TOKI_DOMINIO=%s\n' "$DOMINIO" > /etc/systemd/system/caddy.service.d/toki.conf
+printf '[Service]\nEnvironment=TOKI_DOMINIO=%s\nEnvironmentFile=%s/caddy.env\n' "$DOMINIO" "$BASE" > /etc/systemd/system/caddy.service.d/toki.conf
 cp "$BASE/repo/deploy/Caddyfile" /etc/caddy/Caddyfile
 
 systemctl daemon-reload
@@ -150,6 +156,17 @@ if grep -q '^WAPI_SESSION_ID=' "$PUENTE_ENV"; then
 fi
 systemctl enable -q toki-puente
 systemctl restart toki-puente
+# ---------- cierre de la VPS ----------
+# SSH solo con llave (la del equipo ya está en /root/.ssh/authorized_keys) y firewall: 22, 80 y 443.
+if [ -s /root/.ssh/authorized_keys ]; then
+  printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin prohibit-password\n' > /etc/ssh/sshd_config.d/10-toki.conf
+  sshd -t && systemctl reload ssh
+fi
+if command -v ufw >/dev/null; then
+  ufw allow 22/tcp >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null
+  ufw --force enable >/dev/null
+fi
+
 systemctl enable -q caddy
 systemctl restart caddy
 

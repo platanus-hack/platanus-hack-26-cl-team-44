@@ -5,12 +5,15 @@ import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 
 const XI = process.env.ELEVENLABS_BASE_URL ?? "https://api.elevenlabs.io";
 const KEY = process.env.ELEVENLABS_API_KEY ?? "";
-const TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL ?? "eleven_v3"; // el más natural (elegido al oído); eleven_flash_v2_5 = más rápido
+// eleven_multilingual_v2: el que mejor respeta el acento de una voz clonada (con v3 la voz colombiana de Emmy salía con acento argentino).
+// eleven_v3 = más expresivo (etiquetas de emoción) pero pierde el acento en clones instantáneos; eleven_flash_v2_5 = más rápido.
+const TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL ?? "eleven_multilingual_v2";
 const V3 = TTS_MODEL.startsWith("eleven_v3");
 const AGENT_ID = process.env.ELEVENLABS_AGENT_ID ?? "";
 const PHONE_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID ?? "";
 const EMERGENCY_NUMBER = process.env.EMERGENCY_NUMBER ?? "";       // E.164, p. ej. +569XXXXXXXX (cuidadora/familiar)
 const PERSONA = process.env.WOKI_NOMBRE ?? "Marta";
+const CONTACTO = process.env.EMERGENCY_NAME ?? "Tu contacto";            // nombre de quien recibe la llamada, para la TV ("Camila viene")
 const DIRECCION = process.env.WOKI_DIRECCION ?? "";
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
@@ -100,10 +103,12 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: V3 && e.tag ? `${e.tag} ${t}` : t, model_id: TTS_MODEL, language_code: "es",
+          text: V3 && e.tag ? `${e.tag} ${t}` : t, model_id: TTS_MODEL,
+          // multilingual_v2 no acepta language_code (detecta el idioma del texto)
+          ...(TTS_MODEL === "eleven_multilingual_v2" ? {} : { language_code: "es" }),
           // v3 trabaja mejor con estabilidad 0,5 ("natural"): la emoción la pone la etiqueta.
           voice_settings: V3 ? { stability: 0.5, similarity_boost: 0.8, use_speaker_boost: true }
-                             : { stability: e.stability, similarity_boost: 0.8, style: e.style, use_speaker_boost: true, speed: e.speed },
+                             : { stability: e.stability, similarity_boost: 0.9, style: e.style, use_speaker_boost: true, speed: e.speed },   // 0,9: lo más cerca posible de la voz clonada
         }),
       });
       if (!r.ok || !r.body) { console.error("[voz] tts", r.status, (await r.text()).slice(0, 300)); json(502, { ok: false, reason: "ElevenLabs no devolvió audio" }); return true; }
@@ -211,7 +216,14 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     if (req.method === "GET" && p === "/api/emergencia/estado") {
       if (!lastCall.conversationId) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
       const j = await xiJson(`/v1/convai/conversations/${encodeURIComponent(lastCall.conversationId)}`);
-      json(200, { ok: true, estado: j.status, duracion: j.metadata?.call_duration_secs ?? null });
+      // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
+      const estado = j.status === "initiated" && Date.now() - lastCall.at > 75_000 ? "failed" : j.status;
+      // Al terminar, ElevenLabs extrae de la conversación si viene y qué respondió (data_collection del agente; ver setup-emergencia.ts).
+      // Llega unos segundos después de "done": mientras tanto viene = null.
+      const dc = j.analysis?.data_collection_results ?? {};
+      const viene = typeof dc.viene?.value === "boolean" ? dc.viene.value : null;
+      const respuesta = typeof dc.respuesta?.value === "string" ? clean(dc.respuesta.value, 140) : "";
+      json(200, { ok: true, estado, duracion: j.metadata?.call_duration_secs ?? null, contacto: CONTACTO, viene, respuesta });
       return true;
     }
   } catch (e: any) {

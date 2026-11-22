@@ -15,8 +15,8 @@ Modo dev de la TV:
   POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, resultado por SSE
 
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
-Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Woki-Token
-(o ?token= en /api/eventos, porque EventSource no manda headers). El puente local entra sin token.
+Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Woki-Token.
+Nunca en la URL: la TV lee el SSE con fetch (toki-sse.js). El puente local entra sin token.
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
@@ -120,10 +120,7 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     """Sin token configurado, o pedido local directo (sin proxy): pasa. Por el proxy: exige el token."""
     if not token or not headers.get("X-Forwarded-For"):
         return True
-    dado = headers.get("X-Woki-Token", "")
-    u = urlparse(path)
-    if not dado and u.path == "/api/eventos":
-        dado = (parse_qs(u.query).get("token") or [""])[0]
+    dado = headers.get("X-Woki-Token", "")   # solo header: el token nunca va en la URL
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
