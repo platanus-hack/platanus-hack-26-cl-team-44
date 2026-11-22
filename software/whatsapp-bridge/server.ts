@@ -238,10 +238,8 @@ const server = http.createServer(async (req, res) => {
     if (!PUBLIC_HOST && (h["cf-connecting-ip"] || h["cf-ray"] || h["x-forwarded-for"] || h["x-forwarded-host"] || h["ngrok-trace-id"]))
       return json(res, 403, { ok: false, reason: "api solo local" });
     // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Woki-Token.
-    //    EventSource no puede mandar headers: solo GET /api/wa/events acepta además ?token=.
     if (API_TOKEN) {
-      const qtok = req.method === "GET" && url.pathname === "/api/wa/events" ? url.searchParams.get("token") ?? "" : "";
-      const tok = String(h["x-woki-token"] ?? "") || qtok;
+      const tok = String(h["x-woki-token"] ?? "");   // solo header: el token nunca va en la URL (la TV usa toki-sse.js)
       if (!tok || !safeEqual(tok, API_TOKEN)) return json(res, 401, { ok: false, reason: "token inválido" });
     }
     // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
@@ -266,7 +264,7 @@ const server = http.createServer(async (req, res) => {
     usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
 
     if (MODE === "dry") {
-      console.log(`[dry] → ${c.name}: ${body}`);
+      console.log(`[dry] → ${c.id}: ${body.length} caracteres`);   // sin nombres ni texto en el log
       pushHist(c.id, { id: "dry-" + idemKey, dir: "out", text: body, at: Date.now(), via: "tv" });
       emit({ type: "status", msgId: -1, contactId, status: 2 });
       return json(res, 200, { ok: true, msgId: -1, dry: true });
@@ -274,7 +272,7 @@ const server = http.createServer(async (req, res) => {
     try {
       recentTv.push({ cid: c.id, text: body, at: Date.now() });
       const sent = await wapi!.messages.send({ to: "+" + digits(c.phone), text: body });
-      console.log(`[send] ${c.name} msgId=${sent.msgId}`);
+      console.log(`[send] ${c.id} msgId=${sent.msgId}`);
       pushHist(c.id, { id: "api-" + sent.msgId, dir: "out", text: body, at: Date.now(), via: "tv", msgId: sent.msgId });
       trackStatus(sent.msgId, contactId);
       return json(res, 200, { ok: true, msgId: sent.msgId });
@@ -423,7 +421,7 @@ function handleEvent(raw: string) {
   if (!c) return;                                                             // fuera de la lista: ni se muestra ni se guarda
   const text = textOf(m);
   if (!text) return;                                                          // por ahora solo texto
-  console.log(`[in] ${c.name}: ${text}`);
+  console.log(`[in] ${c.id}: ${text.length} caracteres`);       // el texto puede traer datos privados o secretos
   pushHist(c.id, { id: String(key.id ?? "in-" + Date.now()), dir: "in", text, at: Date.now() });
   emit({ type: "incoming", contactId: c.id, name: c.name, relation: c.relation, tone: c.tone, text, key });
   prefetchSuggest(c.id);                                                     // las respuestas de Claude llegan por SSE ("suggest")
@@ -468,7 +466,7 @@ async function sendGroup(res: http.ServerResponse, jid: string, body: string, id
   const q = quotaOk(); if (q) return json(res, 429, { ok: false, reason: q });
   usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
   if (MODE === "dry") {
-    console.log(`[dry] → grupo: ${body}`);
+    console.log(`[dry] → grupo: ${body.length} caracteres`);
     return json(res, 200, { ok: true, msgId: -1, dry: true });
   }
   try {

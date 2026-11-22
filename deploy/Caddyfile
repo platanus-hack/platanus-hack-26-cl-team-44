@@ -1,4 +1,4 @@
-# URL pública de Toki: la TV (estática) y el agente.
+# URL pública de Toki: la TV pública (jueces), /equipo/ con contraseña, y /wa y /agente con token para el escenario.
 # El dominio sale de TOKI_DOMINIO (por ejemplo 179-66-157-161.sslip.io). Caddy saca el certificado HTTPS solo.
 # Solo HTTP/1.1 y HTTP/2: con HTTP/3 (QUIC por UDP) el navegador se colgaba si el UDP 443 no pasaba.
 {
@@ -17,8 +17,8 @@
 		}
 	}
 
-	# Puente de WhatsApp: /wa/api/... → 127.0.0.1:8788/api/...  Solo /api/*; el puente exige X-Woki-Token
-	# (o ?token= en /api/wa/events, el SSE). /webhook/wapi no se publica: wapi llama a 127.0.0.1 directo.
+	# Puente de WhatsApp para la TV del escenario (127.0.0.1:8766): /wa/api/... → 127.0.0.1:8788/api/...
+	# Solo /api/*; el puente exige el header X-Woki-Token. /webhook/wapi no se publica: wapi llama a 127.0.0.1 directo.
 	handle_path /wa/* {
 		handle /api/* {
 			reverse_proxy 127.0.0.1:8788 {
@@ -30,7 +30,38 @@
 		}
 	}
 
-	# La raíz abre la TV
+	# Equipo: la misma TV con WhatsApp real y la memoria de la usuaria. Usuario y contraseña (TOKI_EQUIPO_HASH)
+	# y Caddy agrega el token por dentro (TOKI_TOKEN), así el navegador nunca lo ve. Variables en /opt/toki/caddy.env.
+	redir /equipo /equipo/ 302
+	handle_path /equipo/* {
+		basicauth {
+			equipo {$TOKI_EQUIPO_HASH}
+		}
+		handle_path /agente/* {
+			reverse_proxy 127.0.0.1:8790 {
+				header_up X-Woki-Token {$TOKI_TOKEN}
+				flush_interval -1
+			}
+		}
+		handle_path /wa/* {
+			handle /api/* {
+				reverse_proxy 127.0.0.1:8788 {
+					header_up X-Woki-Token {$TOKI_TOKEN}
+					flush_interval -1
+				}
+			}
+			handle {
+				respond 404
+			}
+		}
+		redir / /equipo/woki-os.html 302
+		handle {
+			root * /opt/toki/repo/software/toki-os
+			file_server
+		}
+	}
+
+	# La raíz abre la TV pública (jueces): WhatsApp simulado, sin datos de la usuaria
 	redir / /woki-os.html?{query} 302
 
 	handle {

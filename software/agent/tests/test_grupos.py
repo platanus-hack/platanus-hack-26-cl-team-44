@@ -126,6 +126,6 @@ class Token(unittest.TestCase):
         proxy = {"X-Forwarded-For": "1.2.3.4"}
         self.assertFalse(server.autorizado(proxy, "/api/salud", token="t0k"))
         self.assertTrue(server.autorizado({**proxy, "X-Woki-Token": "t0k"}, "/api/salud", token="t0k"))
-        self.assertTrue(server.autorizado(proxy, "/api/eventos?token=t0k", token="t0k"))
+        self.assertFalse(server.autorizado(proxy, "/api/eventos?token=t0k", token="t0k"))   # nunca por la URL
         self.assertFalse(server.autorizado(proxy, "/api/personas?token=t0k", token="t0k"))
         self.assertTrue(server.autorizado(proxy, "/api/salud", token=""))
