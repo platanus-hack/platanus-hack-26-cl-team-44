@@ -27,9 +27,10 @@ async (page,base='http://127.0.0.1:8792')=>{
    const rows=cards.map(el=>el.getBoundingClientRect());
    const pager=document.querySelector('.food-pages').getBoundingClientRect();
    const navigation=document.querySelector('#appsContent .ta-nav').getBoundingClientRect();
-   const footer=document.querySelector('#s-apps .global-actions').getBoundingClientRect();
+   // Sin franja fija abajo: la navegación debe caber dentro de la pantalla.
+   const screen=document.querySelector('#s-apps').getBoundingClientRect();
    return [...rows.slice(1).map((row,i)=>row.top-rows[i].bottom),pager.top-rows.at(-1).bottom,
-     navigation.top-pager.bottom,footer.top-navigation.bottom];
+     navigation.top-pager.bottom,screen.bottom-navigation.bottom];
   });
   check(gaps.every(gap=>gap>1),'Store rows or navigation overlap at '+size.width+': '+gaps.join(', '));
  }

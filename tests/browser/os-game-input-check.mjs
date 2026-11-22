@@ -69,20 +69,18 @@ try {
   await page.waitForTimeout(3300);
   assert.ok(await flag.isVisible(),'tracking loss must cancel dwell');
 
-  // Global actions stay side by side below the player, including during a game.
-  const footer=page.locator('#s-games .global-actions');
-  const sos=footer.locator('.sos-nav');
-  const rest=footer.locator('.rest-nav');
-  const [sosBox,restBox,gameBox]=await Promise.all([sos.boundingBox(),rest.boundingBox(),page.locator('#externalGame').boundingBox()]);
-  assert.ok(sosBox && restBox && gameBox);
+  // Nothing fixed below the player: SOS and Descansar are Inicio tiles, and Home is a slide-up button
+  // hidden under the bottom edge until the gaze reaches it.
+  assert.equal(await page.locator('#s-games .global-actions').count(),0,'no fixed footer under the game');
+  const gameBox=await page.locator('#externalGame').boundingBox();
+  assert.ok(gameBox);
   assert.ok(Math.abs(gameBox.width/gameBox.height - 16/9) < 0.01,'show the complete game at its native proportions');
   assert.ok(gameBox.height > page.viewportSize().height*.72,'the game should fill most of the window');
-  assert.ok(sosBox.x+sosBox.width < restBox.x,'the actions need a gap for gaze selection');
-  assert.ok(Math.abs(sosBox.y-restBox.y)<1,'both actions share a row');
-  assert.ok(gameBox.y+gameBox.height <= sosBox.y+1,'the game stays above the actions');
+  assert.ok(await page.evaluate(()=>!document.querySelector('#homeDock')?.classList.contains('open')),'the slide-up Home button is off or hidden');
 
   // Pause and resume the same player, then select with tracked input.
-  await rest.click();
+  // Descansar es una tarjeta de Inicio: se activa igual que al elegirla.
+  await page.evaluate(()=>activate(document.querySelector('#s-home [data-act="rest"]')));
   assert.ok(await page.evaluate(()=>S.rest && tabletGameInput().blocked));
   assert.ok(await flag.isVisible());
   await page.locator('#restWake').click();

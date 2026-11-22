@@ -30,6 +30,25 @@
   flex: none; width: 1.9em; height: 1.9em; padding: .37em; border-radius: 50%;
   color: var(--action-accent); background: color-mix(in srgb, currentColor 13%, transparent);
 }
+/* Botón Inicio deslizable (homeDock en woki-os.html): escondido bajo el borde, solo asoma una rayita;
+   sube cuando la mirada llega al centro de abajo. No ocupa espacio en ninguna pantalla. */
+.home-dock {
+  position: absolute; left: 50%; bottom: 0; z-index: 40; display: grid; justify-items: center; gap: 10px;
+  transform: translate(-50%, calc(100% - 18px)); transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s;
+  pointer-events: none;
+}
+.home-dock.open { transform: translate(-50%, -28px); pointer-events: auto; }
+.home-dock.off { opacity: 0; transform: translate(-50%, 100%); }
+.home-dock-hint { width: 160px; height: 8px; border-radius: 4px; background: var(--txt2); opacity: .45; transition: opacity .2s; }
+.home-dock.open .home-dock-hint { opacity: 0; }
+.home-dock .home-orb {
+  width: 148px; height: 148px; min-width: 0; padding: 0; border-radius: 50%; font-size: 38px;
+  color: var(--blue); background-color: color-mix(in srgb, var(--blue) 12%, var(--glass-hi));
+  border: 2px solid color-mix(in srgb, var(--blue) 35%, var(--hair));
+  box-shadow: 0 22px 48px -16px rgba(0,0,0,.55); backdrop-filter: blur(18px);
+}
+.home-dock .home-orb .nav-icon { width: 2.3em; height: 2.3em; stroke-width: 2.2; color: var(--blue); }
+@media (prefers-reduced-motion: reduce) { .home-dock, .home-dock-hint { transition: none; } }
 .grid4x2, .grid2x2 { gap: 20px; }
 .grid3x2 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
 .grid5x2 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
@@ -47,7 +66,7 @@
 .official-os #s-home { gap: 28px; }
 .official-os.external-playing #s-games .status { margin: 8px 20px 0; }
 .official-os.external-playing #s-games .global-actions { margin: auto 20px 8px; }
-.official-os #tiles { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 32px; }
+.official-os #tiles { grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: repeat(2,minmax(0,1fr)); gap: 32px; }   /* 8 tarjetas: incluye SOS y Descansar */
 .official-os #tiles > .tile { gap: 22px; padding: 24px; border-radius: 32px; font: inherit; color: var(--txt); cursor: pointer; animation: none; }
 .official-os #tiles .app { width: 152px; height: 152px; border-radius: 38px; box-shadow: none; }
 .official-os #tiles .app svg { width: 80px; height: 80px; }
