@@ -17,11 +17,13 @@ assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos prime
 {
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
+  // SOS y Descansar son tarjetas grandes de Inicio (no una franja fija en todas las pantallas).
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
-    "go:talk", "go:keyboard", "go:contacts",
-    "go:apps", "go:games", "go:settings",
+    "go:talk", "go:keyboard", "go:contacts", "sos",
+    "go:apps", "go:games", "rest", "go:settings",
   ]);
-  assert.match(html, /class="grid3x2" id="tiles"/);
+  assert.equal(Array.from(tiles).find(([action]) => action === "sos")[5], 2000, "SOS pide mirada de 2 s");
+  assert.match(html, /class="grid4x2" id="tiles"/);
   assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 

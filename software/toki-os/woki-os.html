@@ -453,6 +453,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.6 2H4.4z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5"/><path d="M21 3l-6.5 18-4-7.5L3 9.5z"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M6 9.4V20h4.4v-5.6h3.2V20H18V9.4"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
@@ -466,7 +467,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <!-- INICIO -->
   <section class="screen on" id="s-home" data-title="Inicio">
     <div class="status"></div>
-    <div class="grid3x2" id="tiles"></div>
+    <div class="grid4x2" id="tiles"></div>
     <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Mandíbula</b> cuidados</span></div>
   </section>
 
@@ -729,8 +730,10 @@ const TILES = [
   ['go:talk','g-blue','i-chat','Hablar','Respuestas sugeridas'],
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
+  ['sos','g-red','i-alert','SOS','Pedir ayuda ya',2000],   // mirada 2 s: que no se active sin querer
   ['go:apps','g-white','i-apps','Apps','Música, compras y noticias'],
   ['go:games','g-white','i-gamepad','Juegos','Eye Gaze Games'],
+  ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
   ['go:settings','g-gray','i-gear','Ajustes','Tiempo, voz, modo']];
 const EMOS = [
   {id:'ironica',e:'😏',n:'irónica',  rate:.95,pitch:1.05,vol:1},
@@ -1212,7 +1215,9 @@ function initStatus(bar){
   const actions=`<button type="button" class="t nav-action sos-nav" data-t data-act="sos" data-dwell="2000" aria-controls="alarm"><svg class="nav-icon" aria-hidden="true"><use href="#i-alert"/></svg>SOS</button>
     <button type="button" class="t nav-action rest-nav" data-t data-act="rest" aria-controls="rest"><svg class="nav-icon" aria-hidden="true"><use href="#i-moon"/></svg>Descansar</button>`;
   if(document.body.classList.contains('official-os')){
-    screen.insertAdjacentHTML('beforeend',`<div class="global-actions" role="group" aria-label="Acciones globales">${actions}</div>`);
+    // SOS y Descansar son tarjetas grandes de Inicio (TILES). Para volver a Inicio: "‹ Inicio" arriba
+    // (y el botón deslizable homeDock, desactivado por ahora). Nada fijo abajo en ninguna vista.
+    return;
   }else{
     bar.insertAdjacentHTML('beforeend',actions);
   }
@@ -1819,6 +1824,41 @@ function visibleTargets(){
   return [...(targetLayer()?.querySelectorAll('[data-t]') ?? [])].filter(el=>!el.classList.contains('emo'));
 }
 function clearFocus(){ if(S.focus) S.focus.classList.remove('focus','armed'); $$('.blocked').forEach(b=>b.classList.remove('blocked')); S.focus=null; S.blocked=null; S.armed=false; }
+/* Botón Inicio deslizable (DESACTIVADO por ahora: DOCK.enabled): escondido bajo el borde inferior; sube cuando la mirada se acerca al centro
+   de abajo, se elige como cualquier botón y vuelve a esconderse al alejarse. No aparece en Inicio. */
+const DOCK = { enabled: false, band: .08, half: .2, keepPx: 60, closeMs: 700 };   // enabled:true para activarlo
+const homeDock = (()=>{
+  if(!DOCK.enabled) return {set(){}};
+  // Vive dentro de la pantalla activa: la mirada solo elige objetivos de esa capa (targetLayer).
+  const dock=document.createElement('div');
+  dock.className='home-dock'; dock.id='homeDock';
+  dock.innerHTML='<span class="home-dock-hint" aria-hidden="true"></span>'+
+    '<button type="button" class="t nav-action home-orb" data-act="go:home" tabindex="-1" aria-label="Ir al inicio" title="Inicio"><svg class="nav-icon" aria-hidden="true"><use href="#i-home"/></svg></button>';
+  $('#stage').append(dock);
+  const orb=dock.querySelector('.home-orb');
+  let openUntil=0;
+  function set(open){
+    if(dock.classList.contains('open')===open) return;
+    dock.classList.toggle('open',open);
+    if(open){ orb.setAttribute('data-t',''); decorate(dock); }
+    else { orb.removeAttribute('data-t'); if(S.focus===orb) clearFocus(); }
+  }
+  function dockTick(now){
+    const scr=$('.screen.on');
+    if(scr && dock.parentElement!==scr){ set(false); openUntil=0; scr.append(dock); }
+    const st=$('#stage').getBoundingClientRect();
+    const blocked=S.screen==='home' || S.rest || !!S.alarm || document.hidden || $('#calib').classList.contains('on');
+    dock.classList.toggle('off', blocked);
+    const inZone=gz.y > st.bottom - st.height*DOCK.band && Math.abs(gz.x-(st.left+st.width/2)) < st.width*DOCK.half;
+    const r=orb.getBoundingClientRect(), m=DOCK.keepPx;
+    const onOrb=dock.classList.contains('open') && gz.x>r.left-m && gz.x<r.right+m && gz.y>r.top-m && gz.y<r.bottom+m;
+    if(!blocked && (inZone||onOrb)) openUntil=now+DOCK.closeMs;
+    set(!blocked && now<openUntil);
+    requestAnimationFrame(dockTick);
+  }
+  requestAnimationFrame(dockTick);
+  return {set};
+})();
 function setFocus(el){
   if(S.focus===el) return;
   if(S.focus){ S.focus.classList.remove('focus','armed'); if(S.blocked===S.focus){ S.blocked.classList.remove('blocked'); S.blocked=null; } }
