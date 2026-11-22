@@ -18,7 +18,8 @@ Content-Type JSON y un Origin de TOKI_ORIGENES (anti CSRF); con OIDO_TOKEN, adem
 
 Variables: ELEVENLABS_API_KEY · OIDO_PUERTO (8792) · OIDO_MODO (siempre) · OIDO_MICROFONO (nombre o número; vacío =
 el predeterminado) · OIDO_FUENTE=archivo:/ruta.wav (ensayo sin micrófono) · TOKI_AGENTE_URL · TOKI_VOCES_URL ·
-TOKI_ORIGENES · OIDO_TOKEN · MYO_ESCUCHA_SILENCIO (0.6) · OIDO_SILENCIO_S (45, modo voz)
+TOKI_ORIGENES · OIDO_TOKEN · MYO_ESCUCHA_SILENCIO (0.6) · OIDO_SILENCIO_S (45, modo voz) ·
+TOKI_WA_TOKEN (header X-Myo-Token hacia el agente y las huellas cuando están en la VPS)
 """
 from __future__ import annotations
 
@@ -41,16 +42,19 @@ from scribe import token_elevenlabs  # noqa: E402
 
 PUERTO = int(os.environ.get("OIDO_PUERTO", "8792"))
 ORIGENES = {o.strip() for o in os.environ.get(
-    "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8790,http://127.0.0.1:8790").split(",") if o.strip()}
+    "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766,"
+    "http://localhost:8790,http://127.0.0.1:8790").split(",") if o.strip()}
 TOKEN = os.environ.get("OIDO_TOKEN", "")
 AGENTE = os.environ.get("TOKI_AGENTE_URL", "http://127.0.0.1:8790")
 VOCES = os.environ.get("TOKI_VOCES_URL", "http://127.0.0.1:8791")
 MAX_BODY = 4096
+# Token para hablar con el agente y las huellas cuando están en la VPS (escena.sh: TOKI_AGENTE_URL=…/agente).
+SALIDA = {"X-Myo-Token": os.environ["TOKI_WA_TOKEN"]} if os.environ.get("TOKI_WA_TOKEN") else {}
 
 
 # ---------- servicios vecinos (con tope de tiempo; si no responden, se sigue sin ellos) ----------
 def _get(url: str, timeout: float = 2.0) -> dict | list:
-    with urllib.request.urlopen(url, timeout=timeout) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=SALIDA), timeout=timeout) as r:
         return json.loads(r.read() or b"{}")
 
 
@@ -84,7 +88,7 @@ def voces_hay() -> bool:
 def voces_quien(pcm: bytes) -> dict:
     req = urllib.request.Request(VOCES + "/api/voces/quien", method="POST",
                                  data=json.dumps({"audio": base64.b64encode(pcm).decode()}).encode(),
-                                 headers={"Content-Type": "application/json"})
+                                 headers={"Content-Type": "application/json", **SALIDA})
     with urllib.request.urlopen(req, timeout=1.5) as r:
         return json.loads(r.read() or b"{}")
 

@@ -11,6 +11,7 @@
 #   TOKI_WA_TOKEN   token del puente; si falta, se lee de la VPS con 'ssh toki-vps'
 #   TOKI_RAPPI_PAIS co (Bogotá, por defecto) o cl (Santiago), para apps-bridge (Rappi)
 #   TOKI_ESCUCHA    modo de escucha de la sala: siempre (por defecto), voz o manual
+#   TOKI_OIDO       0 = no arrancar el oído local (software/oido); la TV escucha en el navegador
 # El token nunca va en una URL: el monitor se lo entrega a la TV en /toki-config.js.
 # Funciona en macOS y Linux (el monitor usa termios: en Windows, correrlo dentro de WSL).
 set -uo pipefail
@@ -71,6 +72,38 @@ else
   ko "Falta Node: sin Rappi ni servicios"
 fi
 
+# 4b) Oído local (software/oido): el micrófono de la sala lo abre este computador, no la pestaña.
+#     Si no arranca (sin llave, sin uv), la TV escucha en el navegador como antes: nada se rompe.
+#     Llave de ElevenLabs: software/oido/.env, o la del puente en la VPS (solo en memoria, nunca en disco).
+OIDO=""
+OIDO_DIR="$RAIZ/software/oido"
+if [ "${TOKI_OIDO:-1}" != "0" ]; then
+  if [ ! -x "$OIDO_DIR/.venv/bin/python" ] && command -v uv >/dev/null; then
+    uv venv -q --python 3.13 "$OIDO_DIR/.venv" >/dev/null 2>&1 && uv pip install -q --python "$OIDO_DIR/.venv/bin/python" -r "$OIDO_DIR/requirements.txt" >/dev/null 2>&1
+  fi
+  XI_KEY=""
+  [ -f "$OIDO_DIR/.env" ] && XI_KEY="$(grep '^ELEVENLABS_API_KEY=' "$OIDO_DIR/.env" | cut -d= -f2-)"
+  [ -n "$XI_KEY" ] || XI_KEY="$(ssh -o ConnectTimeout=8 toki-vps "grep '^ELEVENLABS_API_KEY=' /opt/toki/puente.env | cut -d= -f2-" 2>/dev/null || true)"
+  if [ ! -x "$OIDO_DIR/.venv/bin/python" ]; then ko "Oído local: falta uv para instalarlo. La TV escucha en el navegador"
+  elif [ -z "$XI_KEY" ]; then ko "Oído local: sin ELEVENLABS_API_KEY (software/oido/.env o la VPS). La TV escucha en el navegador"
+  else
+    ELEVENLABS_API_KEY="$XI_KEY" OIDO_MODO="${TOKI_ESCUCHA:-siempre}" TOKI_WA_TOKEN="$TOKEN" \
+      TOKI_AGENTE_URL="$REMOTO/agente" TOKI_VOCES_URL="$REMOTO/agente" \
+      "$OIDO_DIR/.venv/bin/python" "$OIDO_DIR/server.py" >/tmp/myo-oido.log 2>&1 &
+    OIDO=$!
+    for _ in $(seq 1 20); do curl -s -o /dev/null -H 'Host: 127.0.0.1:8792' http://127.0.0.1:8792/api/oido/estado && break; sleep 0.5; done
+    sleep 2   # da tiempo a abrir la sesión con ElevenLabs: así una llave rechazada se ve aquí y no en la demo
+    est="$(curl -s -m 3 -H 'Host: 127.0.0.1:8792' http://127.0.0.1:8792/api/oido/estado || true)"
+    case "$est" in
+      *'"estado": "reconectando"'*|*'"estado": "sin_conexion"'*) ko "Oído local sin ElevenLabs (¿llave o internet?). Sigue reintentando; log: /tmp/myo-oido.log";;
+      *'"estado": "sin_microfono"'*) ko "Oído local sin micrófono: revisa Ajustes › Privacidad › Micrófono (log: /tmp/myo-oido.log)";;
+      *'"ok": true'*) ok "Oído local en http://127.0.0.1:8792 (micrófono de este computador)";;
+      *) ko "El oído local no arrancó (log: /tmp/myo-oido.log). La TV escucha en el navegador"; OIDO="";;
+    esac
+  fi
+  unset XI_KEY
+fi
+
 # 5) Monitor MyoWare: sirve la TV y los gestos
 # Bluetooth necesita Bleak. Si el python3 del sistema no lo tiene, uv lo trae sin instalar nada global.
 PY=(python3)
@@ -81,7 +114,7 @@ fi
 TOKI_APPS_URL="http://127.0.0.1:$APPS_PUERTO" TOKI_REMOTO="$REMOTO" TOKI_WA_TOKEN="$TOKEN" "${PY[@]}" "$RAIZ/software/myoware-monitor/server.py" --http-port "$PUERTO" "${ARGS[@]}" &
 MONITOR=$!
 unset TOKEN
-trap 'kill $MONITOR $APPS 2>/dev/null' EXIT INT TERM
+trap 'kill $MONITOR $APPS $OIDO 2>/dev/null' EXIT INT TERM
 listo=""
 for _ in $(seq 1 90); do   # la primera vez uv descarga Bleak
   kill -0 $MONITOR 2>/dev/null || break
