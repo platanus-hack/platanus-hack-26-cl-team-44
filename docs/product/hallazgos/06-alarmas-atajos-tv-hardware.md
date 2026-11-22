@@ -60,7 +60,7 @@ Escalamiento de emergencia (el reloj parte en cuanto se confirma el gesto):
 Reglas de diseño:
 
 1. **Nunca se apaga sola.** Solo se apaga con confirmación humana (RFID o botón en el teléfono). Es el patrón de la patente de caídas.
-2. **Cerrar el lazo hacia Marta:** al confirmar, la TV muestra en letra grande "Camila viene". Marta tiene que saber que alguien recibió el aviso.
+2. **Cerrar el lazo hacia Emmy:** al confirmar, la TV muestra en letra grande "Camila viene". Emmy tiene que saber que alguien recibió el aviso.
 3. **Cancelación barata:** ventana de 3 s para cancelar el escalamiento remoto con un solo gesto fácil (mandíbula). La alarma local suena igual desde el segundo 0.
 4. **Pérdida de sensor no es emergencia.** Es un aviso técnico en TV y LCD. Solo se avisa a la cuidadora si dura más de 60 s en modo vigilia (así no se repite el problema de electrodos secos de la Joint Commission).
 5. **De noche:** pantalla en brillo mínimo, sin parpadeo, LED rojo fijo. La emergencia siempre al volumen máximo; la atención con volumen bajo configurable. Un solo tono por nivel, distintos entre sí.
@@ -108,7 +108,7 @@ Principio: lo común y barato va en un gesto; lo raro y peligroso va en secuenci
 | Clic sostenido (mandíbula) | 400 ms para contar como "largo" | Distinguir corto/largo, ya que la ELA puede borrar el contraste reposo/contracción. |
 | Combo de emergencia propuesto | ceja, ceja, mandíbula | Dos canales distintos reducen la coincidencia accidental. |
 | Cancelar | mandíbula sostenida o cualquier clic durante los 3 s de aviso | Un solo gesto, sin menús. |
-| Máximo de combos activos | 3 | Marta tiene que recordarlos y la fatiga cognitiva pesa. |
+| Máximo de combos activos | 3 | Emmy tiene que recordarlos y la fatiga cognitiva pesa. |
 | Retroalimentación por gesto | marca en pantalla a los 100 ms | Que vea que el gesto fue leído. |
 
 Diseño de confirmación durante el combo: mostrar tres puntos en la esquina inferior que se llenan a medida que se completan los gestos, con el color del canal de cada uno. Si pasa la ventana, los puntos se vacían suavemente (sin sonido de error).
@@ -198,7 +198,7 @@ Todos son valores iniciales. Los marcados "Fuente" salen de una guía; los demá
 | Pantalla de alerta | color de alto contraste, sin parpadeo mayor a 3 Hz | WCAG 2.3.1 [Memoria] |
 | Colores | evitar rojo o naranja saturados para texto grande; que el estado no dependa solo del color (forma, ícono, texto) | Fire TV [Leído], WCAG 1.4.1 [Memoria] |
 
-Modo oscuro: es lo adecuado para cuarto con poca luz y fotofobia. Personas con fotofobia por migraña, traumatismo, ojo seco o albinismo suelen preferirlo. [Buscador] https://buttondown.com/access-ability/archive/accessible-color-choices-are-about-so-much-more/ . Pero la fórmula de contraste de WCAG 2 no mide bien texto claro sobre oscuro (APCA lo critica). [Buscador] https://www.github.com/Myndex/SAPC-APCA/discussions/103 . Por eso: probar en la TV real, de noche, con la persona o con alguien de baja visión, antes de dar por buena la combinación. No encontré fuentes sobre halación o astigmatismo. Ofrecer además un modo claro por si Marta prefiere el día.
+Modo oscuro: es lo adecuado para cuarto con poca luz y fotofobia. Personas con fotofobia por migraña, traumatismo, ojo seco o albinismo suelen preferirlo. [Buscador] https://buttondown.com/access-ability/archive/accessible-color-choices-are-about-so-much-more/ . Pero la fórmula de contraste de WCAG 2 no mide bien texto claro sobre oscuro (APCA lo critica). [Buscador] https://www.github.com/Myndex/SAPC-APCA/discussions/103 . Por eso: probar en la TV real, de noche, con la persona o con alguien de baja visión, antes de dar por buena la combinación. No encontré fuentes sobre halación o astigmatismo. Ofrecer además un modo claro por si Emmy prefiere el día.
 
 ---
 
@@ -228,9 +228,9 @@ Una franja de 64 a 80 px de alto en el borde superior, siempre visible, con tres
 | Señal perdida | Mensaje a pantalla completa y calmo: "No te veo. Mírame a la cámara o usa [gesto]". Si persiste más de 60 s en vigilia, aviso a la cuidadora. |
 
 Reglas:
-1. El descanso no se activa solo por la mirada perdida; lo decide Marta (gesto largo) o un temporizador que se confirma. Así una mala pasada de la cámara no la deja "dormida" sin que lo sepa.
+1. El descanso no se activa solo por la mirada perdida; lo decide Emmy (gesto largo) o un temporizador que se confirma. Así una mala pasada de la cámara no la deja "dormida" sin que lo sepa.
 2. Al volver de una pérdida de señal, mostrar 1,5 s de "listo" antes de aceptar clics (evita activaciones al recalibrar).
-3. El canal que acaba de disparar un clic se marca en pantalla: así Marta y la familia entienden qué leyó el sistema.
+3. El canal que acaba de disparar un clic se marca en pantalla: así Emmy y la familia entienden qué leyó el sistema.
 4. Un deshacer visible y permanente: "borrar la última palabra/frase" con un gesto fijo, siempre en el mismo lugar.
 
 ---
@@ -260,11 +260,11 @@ Notas de seguridad para la demo: la demo es un prototipo y no un dispositivo mé
 
 1. **La alarma es un diferenciador real.** No encontré alarma nativa ni integración con nurse call en los CAA que revisé. Es un argumento frente a Apple y Look to Speak.
 2. **Dos niveles y no más (atención y emergencia).** La Joint Commission estima que 85 a 99 % de las alarmas no requieren intervención; más niveles y más ruido fabrican fatiga.
-3. **La alarma no se apaga sola.** Solo con confirmación humana (RFID o teléfono), y la TV le dice a Marta quién viene.
+3. **La alarma no se apaga sola.** Solo con confirmación humana (RFID o teléfono), y la TV le dice a Emmy quién viene.
 4. **Escalar en segundos, no en minutos.** PagerDuty usa 30 minutos por defecto y mínimo 3; eso no sirve acá. Propuesta: 0 s, 30 s, 90 s.
 5. **El combo de emergencia es la excepción a "difícil de activar".** Debe ser fácil y cancelable en 3 s. Ceja, ceja, mandíbula con dos canales distintos reduce la coincidencia accidental.
 6. **No existe precedente de combos de gestos como lenguaje de comandos.** Hay que decirlo con honestidad en la presentación y mostrar el resultado de pruebas propias.
-7. **Con mirada de 3,7° de error a 3 m cabe una sola fila de objetivos.** O se sienta a Marta a 2 a 2,5 m, o se usa una TV de 65 pulgadas o más, o la mirada solo elige zona y el cursor predictivo con el EMG hace el resto.
+7. **Con mirada de 3,7° de error a 3 m cabe una sola fila de objetivos.** O se sienta a Emmy a 2 a 2,5 m, o se usa una TV de 65 pulgadas o más, o la mirada solo elige zona y el cursor predictivo con el EMG hace el resto.
 8. **Máximo 4 frases en 2x2 o en fila, con tarjetas grandes.** Coincide con el diseño de las 4 frases de Claude.
 9. **Franja de estado fija con tres indicadores (mirada, EMG, alarma), con ícono, texto y color**, y el canal que acaba de disparar se marca. Es útil también para la familia.
 10. **El hardware físico hace la demo creíble:** LCD y LEDs como bedside, servo como bandera que queda arriba hasta la confirmación, RFID como "llegué", relé para llevar la alarma a otra habitación. Y el heartbeat Mac-Arduino hace visible la pérdida de la app.
@@ -288,4 +288,4 @@ Notas de seguridad para la demo: la demo es un prototipo y no un dispositivo mé
 | Parpadeo | 3 Hz máximo en cualquier elemento (WCAG 2.3.1 [Memoria]); preferir luz fija |
 | Heartbeat Mac a Arduino | cada 2 s; sin latido por 6 s, "SIN CONEXION" |
 
-Todos los tiempos son puntos de partida para calibrar con los sensores y con alguien que juegue el papel de Marta; ninguno sale de un estudio.
+Todos los tiempos son puntos de partida para calibrar con los sensores y con alguien que juegue el papel de Emmy; ninguno sale de un estudio.

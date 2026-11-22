@@ -14,7 +14,7 @@ async function call(method: string, path: string, body: unknown) {
 
 // Voz del agente: "Camila", chilena, de la biblioteca de ElevenLabs. Tiene que estar en "Mis voces"
 // y sin moderación en vivo (las moderadas no se pueden usar en agentes). Se agrega aquí; si ya está, no pasa nada.
-// Es la voz de WOKI, no la de Marta: quien contesta no debe creer que ella está hablando.
+// Es la voz de WOKI, no la de Emmy: quien contesta no debe creer que ella está hablando.
 const VOICE_ID = process.env.ELEVENLABS_AGENT_VOICE_ID ?? "oJIuRMopN0sojGjwD6rQ";
 const VOICE_OWNER = "159700704465f6fcd0e7a44376d78c7448732a724557040b17e2e9b602610be5";
 if (!process.env.ELEVENLABS_AGENT_VOICE_ID)
@@ -39,7 +39,7 @@ Qué buscas: que la persona confirme que va o que consigue ayuda.
 const agent = await call("POST", "/v1/convai/agents/create", {
   name: "WOKI · emergencia",
   // Al terminar cada llamada, ElevenLabs saca de la conversación si el contacto viene y qué respondió.
-  // El bridge lo lee en /api/emergencia/estado y la TV se lo muestra a Marta ("Camila viene en camino").
+  // El bridge lo lee en /api/emergencia/estado y la TV se lo muestra a Emmy ("Camila viene en camino").
   platform_settings: {
     data_collection: {
       viene: { type: "boolean", description: "true si la persona que contestó confirmó que va a ir donde está la persona con ELA o que va a conseguir ayuda (otro familiar, ambulancia). false si dijo que no puede o no confirmó." },

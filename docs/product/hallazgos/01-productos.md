@@ -183,11 +183,11 @@ Limitación general: las páginas de soporte de Tobii Dynavox, Smartbox y Apple 
 - **Dónde se configura.** Look to Speak requiere tacto para configurar; Apple y Tobii exigen un ayudante. [V]
 - **Calibración.** Apple, cada vez que se enciende; Look to Speak, solo alinear la cara; Hiru, 0 a 16 puntos. [V]
 - **Hardware.** Apple, Look to Speak y Vocable usan la cámara del dispositivo; el resto, seguidores infrarrojos dedicados con precisión mucho mejor (Hiru 0,4°) que una webcam. [V]
-- **Cabeza vs. ojos.** Vocable apunta con la cabeza, igual que Cognixion (inclinación). Es relevante porque Marta mueve ojos y cabeza.
+- **Cabeza vs. ojos.** Vocable apunta con la cabeza, igual que Cognixion (inclinación). Es relevante porque Emmy mueve ojos y cabeza.
 
 ---
 
-## 5. Pensando en una TV a distancia para Marta (ELA media)
+## 5. Pensando en una TV a distancia para Emmy (ELA media)
 
 **Cálculos [I], propios, no de ninguna fuente:**
 - A 2,5 m, 1° equivale a ~4,4 cm. El error de webcam de 1,5–3,7° son **6,5–16 cm de radio** de incertidumbre en la pantalla.
@@ -205,8 +205,8 @@ Limitación general: las páginas de soporte de Tobii Dynavox, Smartbox y Apple 
 5. **Pausa a primera vista y por mirada.** Un botón grande de "Descanso" y mirar fuera de la pantalla/arriba para pausar (Look to Speak, Tobii). Pausar también debe apagar el cursor para que la familia mire la TV sin disparar nada. [V]
 6. **Anti-errores "mirar fuera antes de repetir".** Tobii lo documenta y es barato de implementar. [V] 1.1
 7. **Emergencia no es un producto estándar, es un hueco.** El TD Pilot dice no depender de él; ninguno documenta alarma. Combo EMG "ceja-ceja-mandíbula" + escalamiento sería diferenciador. [V Tobii; NV resto] Lo que sí se puede copiar: hot corners de Apple (acción por esquina) para disparar emergencia con la mirada. [V] 1.5
-8. **Frases rápidas separadas del teclado.** Todos lo hacen. Para el estilo propio de Marta, los atajos deben ser **tuyos** (chistes, "te quiero"), no solo "necesito agua". Recents de Vocable y predicción personal de TD Talk son el antecedente. [V]
-9. **Listening Mode de Vocable es el antecedente directo de "Claude propone 4 frases".** Escucha la pregunta de otra persona, transcribe y propone respuestas; Smart Assist ya usa un GPT. Diferenciar: WOKI sugiere con el contexto de la conversación y con la voz de Marta, no solo sí/no/cuántos. [V] 1.6
+8. **Frases rápidas separadas del teclado.** Todos lo hacen. Para el estilo propio de Emmy, los atajos deben ser **tuyos** (chistes, "te quiero"), no solo "necesito agua". Recents de Vocable y predicción personal de TD Talk son el antecedente. [V]
+9. **Listening Mode de Vocable es el antecedente directo de "Claude propone 4 frases".** Escucha la pregunta de otra persona, transcribe y propone respuestas; Smart Assist ya usa un GPT. Diferenciar: WOKI sugiere con el contexto de la conversación y con la voz de Emmy, no solo sí/no/cuántos. [V] 1.6
 10. **Justificar la superioridad frente a Apple/Look to Speak.** Apple Eye Tracking da control de todo el sistema, pero con puntero fino, calibración cada vez y sin emociones; Look to Speak no tiene teclado; Eye Control tiene teclado solo EN-US. Una TV con zonas grandes + EMG + voz clonada con emoción + agentes no está cubierta por ninguno. [V] 1.4, 1.5, 1.7
 11. **Español es un diferenciador real.** Eye Control solo tiene teclado EN-US; Look to Speak sí tiene español (2021); TD Talk lista español; Vocable lista español. El teclado y la predicción en español chileno/colombiano deben ser demostrables en la demo. [V]
 

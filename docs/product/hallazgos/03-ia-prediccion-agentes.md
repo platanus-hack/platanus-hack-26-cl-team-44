@@ -1,6 +1,6 @@
 # 03. Predicción de texto con IA, sugerencias de LLM y agentes en CAA
 
-Fecha de la investigación: 21-nov-2026. Tema: lo que sabemos sobre sugerencias de LLM, agentes que actúan y cursores que predicen, para WOKI (Marta, ELA media, mirada por webcam de 1,5 a 3,7 grados de error, clic EMG, pantalla grande).
+Fecha de la investigación: 21-nov-2026. Tema: lo que sabemos sobre sugerencias de LLM, agentes que actúan y cursores que predicen, para WOKI (Emmy, ELA media, mirada por webcam de 1,5 a 3,7 grados de error, clic EMG, pantalla grande).
 
 Convención: **[V]** = leí la fuente (texto completo o resumen del artículo). **[P]** = solo vi snippet o resumen de buscador; no la leí entera. **[I]** = inferencia mía, no está en la fuente.
 
@@ -58,7 +58,7 @@ Título real: **"The less I type, the better": How AI Language Models can Enhanc
 - **Privacidad:** querían saber si los datos están cifrados, cómo apagar la escucha continua; sin transparencia "no lo usarían".
 - Recomendación del paper: mostrar predicciones mientras escribe ayuda a decidir cuándo usarlas o teclear.
 
-**Implicación fuerte para WOKI [I]:** Marta usa la IA con la familia, justo el caso donde P8 y P10 dijeron que no la querían. Hay que dejar elegir cuándo se muestran sugerencias y no marcar a la persona como "el aparato lo hizo".
+**Implicación fuerte para WOKI [I]:** Emmy usa la IA con la familia, justo el caso donde P8 y P10 dijeron que no la querían. Hay que dejar elegir cuándo se muestran sugerencias y no marcar a la persona como "el aparato lo hizo".
 
 ## 4. Autoetnografía "I, Robot?" (arXiv 2509.13671, Weinberg, Gonzalez Penuela, Valencia, Roumen)
 
@@ -120,7 +120,7 @@ No encontré información verificable sobre "Talk by Cognixion" como producto se
 - Un blog de DEV citaba cifras que no pude verificar; las ignoro.
 
 **Inferencias para WOKI [I]:**
-- Mostrar el plan como **tarjeta de 1 a 3 pasos en lenguaje de Marta**, con destinatario y texto en grande ("Enviar a Camila por WhatsApp: llego a las 8"), y un único botón grande de aprobar con confirmación EMG; cancelar con otro gesto distinto o con mirar a otra zona.
+- Mostrar el plan como **tarjeta de 1 a 3 pasos en lenguaje de Emmy**, con destinatario y texto en grande ("Enviar a Camila por WhatsApp: llego a las 8"), y un único botón grande de aprobar con confirmación EMG; cancelar con otro gesto distinto o con mirar a otra zona.
 - Clasificar acciones: reversibles (Spotify, luz) se ejecutan con un solo gesto y botón de deshacer; irreversibles (mensajes enviados, llamadas, pagos) piden doble confirmación; emergencia salta el plan y va por combo directo.
 - Lista cerrada de herramientas hace posible mostrar siempre el mismo formato de tarjeta y reduce el riesgo.
 
@@ -140,14 +140,14 @@ No encontré información verificable sobre "Talk by Cognixion" como producto se
 1. **Muestra 4 frases, con un orden fijo y estable.** 4 caben sin scroll (Valencia 2023), 5 es lo que usó SpeakFaster, 3 más "otra" usa SPICA. Con mirada de baja precisión, 4 zonas grandes encajan; la fatiga de elegir entre varias es un hallazgo repetido (SPICA, SpeakFaster, Why So Serious).
 2. **Una casilla fija "ninguna sirve" que abre iniciales.** Es el flujo de SpeakFaster (iniciales, luego Spell/KeywordAE). La persona lo usa como plan B sin salir de la pantalla.
 3. **"Casi correcta" = cambiar una palabra, no reescribir.** Copiar FillMask de SpeakFaster: elegir la palabra rara y ver 3 a 4 alternativas. Valencia mostró que editar sin esto anula el ahorro.
-4. **Sugerencias con variedad deliberada de tono**, por ejemplo 1 cariñosa, 1 neutra, 1 con humor, 1 breve. Valencia: lo abrupto sonó mal a 5 de 12; Marta quiere chiste y "te quiero".
+4. **Sugerencias con variedad deliberada de tono**, por ejemplo 1 cariñosa, 1 neutra, 1 con humor, 1 breve. Valencia: lo abrupto sonó mal a 5 de 12; Emmy quiere chiste y "te quiero".
 5. **Contexto = lo que dijo la otra persona.** Cai 2022: un turno de contexto duplica la precisión. Transcribir al interlocutor es la mejor inversión.
 6. **No marcar "hecho por IA" en la pantalla grande donde mira la familia, pero sí al elegir.** Valencia (P8, P10) y la autoetnografía muestran que la familia o amigos pueden sentirlo como "lo hizo el aparato". Dar un modo "familia/íntimo" con sugerencias apagadas o discretas, que se cambia con un gesto.
-7. **Marca clara para Marta, no para el público:** icono pequeño solo en su vista/indicador de qué frase vino de IA y cuál escribió ella; que pueda ver el origen ("por qué esta frase") ya que P11 lo preguntó.
-8. **Personalizar con historial, con permiso y por contexto.** Estilo propio (jerga chilena/colombiana, chistes) es lo que más pidieron, pero la autoetnografía advierte autocensura y filtración de privados. Perfil corto editable por Marta más ejemplos recientes aprobados por ella, con interruptor "no aprender esto".
+7. **Marca clara para Emmy, no para el público:** icono pequeño solo en su vista/indicador de qué frase vino de IA y cuál escribió ella; que pueda ver el origen ("por qué esta frase") ya que P11 lo preguntó.
+8. **Personalizar con historial, con permiso y por contexto.** Estilo propio (jerga chilena/colombiana, chistes) es lo que más pidieron, pero la autoetnografía advierte autocensura y filtración de privados. Perfil corto editable por Emmy más ejemplos recientes aprobados por ella, con interruptor "no aprender esto".
 9. **Aceptación parcial.** Poder aceptar la frase hasta la palabra N (patrón palabra por palabra, clave de agencia) y completar con iniciales o escribir.
 10. **Agente: tarjeta de plan de 1 a 3 pasos, destinatario y texto visibles, un solo gesto para aprobar,** y confirmación reforzada solo para lo irreversible (mensajes, llamadas). Reversibles con "deshacer".
-11. **Imán de cursor: solo como ayuda, nunca sin cancelar.** Con 4 zonas grandes quizá no haga falta; úsalo en el teclado de iniciales. Medir con Marta si el imán le molesta o la lleva a respuestas "esperables".
+11. **Imán de cursor: solo como ayuda, nunca sin cancelar.** Con 4 zonas grandes quizá no haga falta; úsalo en el teclado de iniciales. Medir con Emmy si el imán le molesta o la lleva a respuestas "esperables".
 12. **Honestidad en la demo:** SpeakFaster logró +29 a 60 % de wpm con 2 usuarios, no 5×. Promete rapidez realista y calidad de voz propia.
 
 ## Recomendaciones de diseño con números

@@ -6,12 +6,12 @@ Todo pasa por el puente (`software/whatsapp-bridge`). La API key solo vive en `s
 
 | Momento | Qué pasa | Archivo |
 |---|---|---|
-| Marta elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). Modelo `eleven_multilingual_v2`: es el que mejor respeta el acento de una voz clonada (con `eleven_v3`, la voz colombiana clonada salía con acento argentino). La emoción de la tarjeta cambia estabilidad, estilo y velocidad. Con `ELEVENLABS_TTS_MODEL=eleven_v3` se usan etiquetas de emoción (`[sarcastically]`, `[whispers]`…), más expresivas pero el acento del clon se pierde. Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `software/toki-os/woki-voz.js` + `speak()` en `woki-os.html` |
+| Emmy elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). Modelo `eleven_multilingual_v2`: es el que mejor respeta el acento de una voz clonada (con `eleven_v3`, la voz colombiana clonada salía con acento argentino). La emoción de la tarjeta cambia estabilidad, estilo y velocidad. Con `ELEVENLABS_TTS_MODEL=eleven_v3` se usan etiquetas de emoción (`[sarcastically]`, `[whispers]`…), más expresivas pero el acento del clon se pierde. Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `software/toki-os/woki-voz.js` + `speak()` en `woki-os.html` |
 | Aparecen las 4 tarjetas, y al iniciar las reacciones | Se pide el audio por adelantado (~0,5–2,5 s por frase según el modelo), así suena al instante cuando elige. Consume créditos: 4 frases por turno (`VOZ.PREFETCH=false` lo apaga) | `renderCards()`, `VOZ.init()` |
 | Alarma de **emergencia** (ceja ×2 → mandíbula) | Pasada la ventana de 3 s para cancelar, un agente de ElevenLabs llama por teléfono al contacto de emergencia, explica qué pasó y pide que vaya. La de **atención** no llama | `alarmTick()` → `VOZ.emergencia(A)` → `POST /api/emergencia/llamar` |
-| La llamada avanza | La pantalla de alarma le muestra a Marta cada etapa: *Llamada enviada a Camila* → *Camila contestó* → **pantalla verde "Camila viene en camino"** con su respuesta, un sonido y un aviso hablado; o *Camila no puede ir: …* (la alarma sigue). Al terminar la llamada, ElevenLabs extrae `viene` y `respuesta` de la conversación (data collection del agente). Si el operador rechaza la llamada, a los 75 s se informa como fallida | `GET /api/emergencia/estado` |
+| La llamada avanza | La pantalla de alarma le muestra a Emmy cada etapa: *Llamada enviada a Camila* → *Camila contestó* → **pantalla verde "Camila viene en camino"** con su respuesta, un sonido y un aviso hablado; o *Camila no puede ir: …* (la alarma sigue). Al terminar la llamada, ElevenLabs extrae `viene` y `respuesta` de la conversación (data collection del agente). Si el operador rechaza la llamada, a los 75 s se informa como fallida | `GET /api/emergencia/estado` |
 | Onboarding de voz (familia, desde el celular) | `voz.html`: (1) clonar su voz subiendo notas de voz de WhatsApp o grabando 1 minuto; (2) escuchar y elegir voces; (3) dejar hasta 6 candidatas | `software/toki-os/voz.html` |
-| Marta elige la que le acomoda | En la TV: **Ajustes → Voz**. Cada ceja pasa a la siguiente candidata y la dice en voz alta | `VOZ.siguiente()` |
+| Emmy elige la que le acomoda | En la TV: **Ajustes → Voz**. Cada ceja pasa a la siguiente candidata y la dice en voz alta | `VOZ.siguiente()` |
 
 ## Configuración (`software/whatsapp-bridge/.env`)
 
@@ -24,7 +24,7 @@ ELEVENLABS_AGENT_ID=...            # lo imprime setup-emergencia.ts
 ELEVENLABS_PHONE_NUMBER_ID=...     # número de Twilio importado en ElevenLabs
 EMERGENCY_NUMBER=+569XXXXXXXX      # celular de la cuidadora o familiar (NO 131/133/911: el bridge lo bloquea)
 EMERGENCY_NAME=Camila              # la TV muestra "Camila viene en camino"; sin esto dice "Tu contacto"
-WOKI_NOMBRE=Marta
+WOKI_NOMBRE=Emmy
 WOKI_DIRECCION=Av. Ejemplo 123, depto 4, Providencia   # con espacios, como se dice en voz alta: el agente la lee tal cual
 ```
 
@@ -49,7 +49,7 @@ Tienen las mismas protecciones que `/api/wa/*`: solo local, Origin exacto y JSON
 | `GET /api/voz/voces` | Voces de la cuenta (prediseñadas + clonadas) |
 | `POST /api/voz/clonar` `{consentimiento:true, audios:[{b64,mime,nombre}]}` | Clonación instantánea. Sin consentimiento no clona |
 | `POST /api/voz/opciones` `{opciones, actual}` | Guarda las candidatas (máx. 6) en `voz.json` |
-| `POST /api/voz/elegir` `{id}` | Marta cambia de voz (solo entre las candidatas) |
+| `POST /api/voz/elegir` `{id}` | Emmy cambia de voz (solo entre las candidatas) |
 | `POST /api/emergencia/llamar` `{alarmId}` | Una llamada por alarma, máximo una por minuto |
 | `GET /api/emergencia/estado` | initiated · in-progress · done · failed |
 
@@ -66,7 +66,7 @@ Tienen las mismas protecciones que `/api/wa/*`: solo local, Origin exacto y JSON
 - **Voz chilena nativa** ("Camila", biblioteca). Las voces con *live moderation* no se pueden usar en agentes.
 - **Nada lo interrumpe:** sin el evento `interruption`, primer mensaje no interrumpible, turno `patient` y detección de voces de fondo. Antes, cada "sí, sí" o el ruido lo cortaban a mitad de frase.
 - **Primer mensaje con todo:** qué pasó, hora, dirección y "¿Puedes ir?". Respuestas de una o dos frases. Puede colgar solo (`end_call`).
-- **Extrae la respuesta** al terminar (`viene`, `respuesta`) para que la TV se la muestre a Marta.
+- **Extrae la respuesta** al terminar (`viene`, `respuesta`) para que la TV se la muestre a Emmy.
 
 **Twilio:** usar un número de EE.UU. (los chilenos y colombianos piden registro regulatorio con documentos). Habilitar en *Voice → Settings → Geo permissions* cada país al que se llama.
 
@@ -78,7 +78,7 @@ Tienen las mismas protecciones que `/api/wa/*`: solo local, Origin exacto y JSON
 
 ## Decisiones
 
-- **El agente no usa la voz de Marta** al llamar: se presenta como "WOKI, el asistente de Marta", para que nadie crea que ella está hablando.
+- **El agente no usa la voz de Emmy** al llamar: se presenta como "WOKI, el asistente de Emmy", para que nadie crea que ella está hablando.
 - **No llama a servicios públicos.** Un robot llamando al SAMU es mala idea, y puede ser ilegal. Llama a una persona, y si esa persona no puede ir, el agente le pide que llame al 131.
 - **Clonar con audio antiguo.** Con ELA, muchas veces la voz actual ya cambió. Las notas de voz de WhatsApp de antes sirven para recuperar su voz real.
 - Los ajustes de emoción (estabilidad y estilo) son un primer cálculo: hay que afinarlos al oído.

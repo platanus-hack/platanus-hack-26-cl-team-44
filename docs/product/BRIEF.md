@@ -3,7 +3,7 @@
 ## Proyecto
 WOKI es un comunicador manos libres para personas con ELA. Equipo finalista de Platanus Hack 26 (Santiago de Chile, 20-22 de noviembre de 2026). La demo es el domingo 22; las funciones se congelan a las 14:00. El plan que sale de esta investigación es **solo para la hackathon**.
 
-## Usuaria principal: "Marta", ELA en etapa media
+## Usuaria principal: "Emmy", ELA en etapa media
 - Mueve los ojos y la cabeza. Ya no tiene habla funcional ni manos útiles.
 - Lo que más necesita es **velocidad** y **conservar su propio estilo y personalidad**: interrumpir, hacer chistes, decir "te quiero" sin planearlo. No solo pedidos básicos.
 - Habla español (Chile o Colombia).

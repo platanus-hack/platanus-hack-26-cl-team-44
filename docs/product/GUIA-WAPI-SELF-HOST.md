@@ -18,7 +18,7 @@ Todo lo que dice aquí sale del código del repositorio (commit `4ca20d8`, 6-oct
 | Actualizaciones | Las hace Crafter Station | Las haces tú (`git pull`), sobre todo si WhatsApp cambia algo y wapi deja de conectar |
 | Costo | No documentado | Gratis |
 
-**Para la hackathon, la versión local es mejor:** cero dependencias de terceros, sin túnel (que era el punto más frágil con el Wi-Fi del evento) y los mensajes de Marta no pasan por servidores de otros.
+**Para la hackathon, la versión local es mejor:** cero dependencias de terceros, sin túnel (que era el punto más frágil con el Wi-Fi del evento) y los mensajes de Emmy no pasan por servidores de otros.
 
 ## 2. Qué se instala y qué no
 

@@ -1,8 +1,8 @@
 /* woki-voz.js · ElevenLabs en la TV (vía woki-bridge; la API key nunca llega al navegador).
    - VOZ.speak(texto, emo): habla con la voz elegida o clonada. Si falla, woki-os.html usa la voz del sistema.
-   - VOZ.prefetch(frases): pide el audio de las 4 tarjetas antes de que Marta elija → suena al instante.
+   - VOZ.prefetch(frases): pide el audio de las 4 tarjetas antes de que Emmy elija → suena al instante.
    - VOZ.emergencia(alarma): llamada telefónica del agente de emergencia + estado en la pantalla de alarma.
-   - VOZ.siguiente(): Marta recorre las voces candidatas desde Ajustes y escucha cada una. */
+   - VOZ.siguiente(): Emmy recorre las voces candidatas desde Ajustes y escucha cada una. */
 (function(){
   // CFG es un const de woki-os.html: no vive en window, por eso typeof. Sin puente (URL pública sin token) → '' y la voz queda apagada.
   const cfg = () => (typeof CFG !== 'undefined' ? CFG : null);
@@ -64,7 +64,7 @@
     if(V.audio===a) V.audio = null;
   };
 
-  // ---------- Marta elige su voz desde la TV ----------
+  // ---------- Emmy elige su voz desde la TV ----------
   V.siguiente = async function(){
     if(!V.opciones.length) return false;
     const i = V.opciones.findIndex(o=>o.id===V.actual);
@@ -125,7 +125,7 @@
     $('#alCancel').textContent = 'Toque del llavero = resuelto';
     if(typeof log==='function') log(`emergencia: ${quien} confirmó por teléfono (${secs} s)`);
     if(typeof beep==='function'){ beep(660,160,.08); setTimeout(()=>beep(880,220,.08),180); }
-    // Aviso hablado con la voz del sistema (no con la de Marta: es WOKI quien le avisa).
+    // Aviso hablado con la voz del sistema (no con la de Emmy: es WOKI quien le avisa).
     try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${quien} viene en camino`); u.lang = 'es-CL'; speechSynthesis.speak(u); }catch(_){}
     if(typeof renderStatus==='function') renderStatus();
     if(typeof updateLCD==='function') updateLCD();

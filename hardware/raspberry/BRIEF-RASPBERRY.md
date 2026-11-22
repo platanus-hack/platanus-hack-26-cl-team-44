@@ -3,7 +3,7 @@
 Esta sesión se dedica **solo al sistema operativo y al montaje sobre Raspberry Pi**. El diseño de la interfaz, el eye tracking y el seguimiento de la nariz siguen en otra sesión: no los rediseñes aquí, intégralos.
 
 ## Qué es WOKI
-Es un comunicador manos libres para personas con ELA (usuaria de diseño: "Marta", ELA media, mueve ojos y cabeza). Equipo finalista de Platanus Hack 26 (Santiago, 20–22 de noviembre de 2026). La demo de la hackathon se hace con un Mac. **Esta sesión diseña el aparato dedicado para después de la hackathon.**
+Es un comunicador manos libres para personas con ELA (usuaria de diseño: "Emmy", ELA media, mueve ojos y cabeza). Equipo finalista de Platanus Hack 26 (Santiago, 20–22 de noviembre de 2026). La demo de la hackathon se hace con un Mac. **Esta sesión diseña el aparato dedicado para después de la hackathon.**
 
 ## Lo que ya existe (no lo rehagas)
 - **Prototipo web:** `/Users/emmypardo/Documents/Repositorios/woki-ux-research/software/toki-os/woki-os.html`. Es un solo archivo HTML.

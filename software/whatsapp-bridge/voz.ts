@@ -1,4 +1,4 @@
-// woki-bridge/voz.ts · ElevenLabs: voz de Marta (TTS), clonación/elección de voz y llamada de emergencia.
+// woki-bridge/voz.ts · ElevenLabs: voz de Emmy (TTS), clonación/elección de voz y llamada de emergencia.
 // La API key vive SOLO aquí (en .env). La TV y la página de onboarding hablan con el bridge, nunca con ElevenLabs.
 import type http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
@@ -12,14 +12,14 @@ const V3 = TTS_MODEL.startsWith("eleven_v3");
 const AGENT_ID = process.env.ELEVENLABS_AGENT_ID ?? "";
 const PHONE_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID ?? "";
 const EMERGENCY_NUMBER = process.env.EMERGENCY_NUMBER ?? "";       // E.164, p. ej. +569XXXXXXXX (cuidadora/familiar)
-const PERSONA = process.env.WOKI_NOMBRE ?? "Marta";
+const PERSONA = process.env.WOKI_NOMBRE ?? "Emmy";
 const CONTACTO = process.env.EMERGENCY_NAME ?? "Tu contacto";            // nombre de quien recibe la llamada, para la TV ("Camila viene")
 const DIRECCION = process.env.WOKI_DIRECCION ?? "";
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
 const CALL_COOLDOWN_MS = 60_000;
 
-// ---------- estado persistente: qué voz usa WOKI y cuáles se le ofrecen a Marta ----------
+// ---------- estado persistente: qué voz usa WOKI y cuáles se le ofrecen a Emmy ----------
 type Voz = { id: string; name: string; kind: "clonada" | "biblioteca"; preview?: string };
 type VozState = { actual: string | null; opciones: Voz[] };
 const stateUrl = new URL("voz.json", import.meta.url);
@@ -132,7 +132,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
-    // Clonar la voz de Marta (clonación instantánea). Llega en JSON con los audios en base64:
+    // Clonar la voz de Emmy (clonación instantánea). Llega en JSON con los audios en base64:
     // { nombre, consentimiento: true, audios: [{ b64, mime, nombre }] }
     if (req.method === "POST" && p === "/api/voz/clonar") {
       const body = JSON.parse((await readBody(req, MAX_AUDIO_B64 + 10_000)) || "{}");
@@ -174,7 +174,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
-    // Marta elige la voz desde la TV (solo entre las candidatas).
+    // Emmy elige la voz desde la TV (solo entre las candidatas).
     if (req.method === "POST" && p === "/api/voz/elegir") {
       const { id } = JSON.parse((await readBody(req, 2_000)) || "{}");
       if (!st.opciones.some((o) => o.id === id)) { json(400, { ok: false, reason: "Esa voz no está entre las opciones" }); return true; }

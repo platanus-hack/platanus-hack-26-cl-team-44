@@ -717,7 +717,7 @@ npx tsx --env-file=.env --env-file=.env.sandbox fake-inbound.ts "¿vienes el dom
 
 ## Paso 9 · Que la TV muestre el mensaje y deje responder
 
-**Para qué:** el momento de la demo. Llega un mensaje, la TV salta a Hablar con las 4 frases, Marta elige y responde.
+**Para qué:** el momento de la demo. Llega un mensaje, la TV salta a Hablar con las 4 frases, Emmy elige y responde.
 
 Agrega al final del script de `woki-os.html`:
 
@@ -746,7 +746,7 @@ function waIncoming(ev){
 }
 ```
 
-**Para responder:** cuando Marta elige una frase en Hablar, queda guardada en `WA.text` (Paso 6.3). Falta un camino de Hablar a Mensajes con esa frase: conecta un botón "Responder por WhatsApp", o el gesto que ya abre Mensajes, a:
+**Para responder:** cuando Emmy elige una frase en Hablar, queda guardada en `WA.text` (Paso 6.3). Falta un camino de Hablar a Mensajes con esa frase: conecta un botón "Responder por WhatsApp", o el gesto que ya abre Mensajes, a:
 
 ```js
 openAgent(WA.contactId, WA.name, WA.relation, WA.text)
@@ -843,7 +843,7 @@ En modo real, cada envío espera unos 5 s por account protection. Es normal.
 | Una ceja y esperar | "No se envió: faltó la segunda ceja" |
 | Alguien fuera de la lista le escribe al número | No aparece en la TV |
 | Apagar el puente | La TV muestra "WhatsApp sin conexión" y sigue funcionando |
-| Ciclo completo: Sofía escribe → Marta responde | Menos de 20 s |
+| Ciclo completo: Sofía escribe → Emmy responde | Menos de 20 s |
 
 ## Checklist antes de subir al escenario
 

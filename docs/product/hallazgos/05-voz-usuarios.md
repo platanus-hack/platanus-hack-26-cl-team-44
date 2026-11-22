@@ -211,7 +211,7 @@ Fuente principal: Valencia et al., CHI 2023, 12 usuarios de CAA (**no solo ELA**
 ## Insights (12)
 
 1. **El dolor número uno es el ritmo, no el tipo de letra.** "Pacing" fue la queja más frecuente en las 7 entrevistas con ELA (Kane et al.). El turno se pierde porque el tema cambia mientras escribes. [V] https://microsoft.com/en-us/research/wp-content/uploads/2016/10/aacselfexpression-1.pdf
-2. **El humor y el sarcasmo son el segundo reclamo.** "speed is the number one factor. And the ability to express sarcasm is number two." (A6). Marta quiere interrumpir y bromear: hay respaldo directo. [V]
+2. **El humor y el sarcasmo son el segundo reclamo.** "speed is the number one factor. And the ability to express sarcasm is number two." (A6). Emmy quiere interrumpir y bromear: hay respaldo directo. [V]
 3. **Un usuario ya se inventó el "pedir la palabra"** (decir "but" o "also") y otro agrega la emoción en la primera frase. WOKI puede automatizar ambos hacks. [V + I]
 4. **Las emociones fuertes rompen el eye tracking** ("tears confuse eyegaze technology and anger prevents focus"). Esto es un argumento a favor de una segunda vía (EMG, cabeza) que no depende de los ojos, precisamente en los momentos que importan. [V + I]
 5. **El eye tracking falla por lo que cambia con la enfermedad** (párpados, ojos secos, lentes, sol) y la familia no sabe diagnosticarlo. WOKI necesita un "por qué no te veo" en pantalla y un modo degradado a zonas grandes. [V + I]
@@ -221,7 +221,7 @@ Fuente principal: Valencia et al., CHI 2023, 12 usuarios de CAA (**no solo ELA**
 9. **La noche es el punto ciego.** El aparato de CAA suele estar apagado o fuera de alcance de noche, y desde 2007 la gente pide un switch por gesto facial. Un combo EMG de emergencia que funcione sin pantalla es la función con más historia de demanda. [V + I] https://www.alsforums.com/community/threads/help-on-in-home-alert-communication-device.12946/
 10. **Los cuidadores quieren ayudar a predecir y a veces ser innecesarios** ("You are making me obsolete, which I would love to be"). Un modo cuidador que ofrezca ayuda opcional, y un modo privado, cubren ambos. [V + I]
 11. **La IA que sugiere frases es bienvenida solo si suena a la persona.** El miedo central es "all AAC users... talk the same way". Entrena con su historial y deja editar. [V]
-12. **No hay evidencia en ELA sobre "IA que habla por mí".** Presentarlo como hipótesis a validar con Marta y su familia es más honesto y más fuerte frente a un jurado. [V (vacío) + I]
+12. **No hay evidencia en ELA sobre "IA que habla por mí".** Presentarlo como hipótesis a validar con Emmy y su familia es más honesto y más fuerte frente a un jurado. [V (vacío) + I]
 
 ---
 
@@ -254,13 +254,13 @@ Precaución: las citas de pacientes salen de estudios con consentimiento o de pr
 
 ## Insights accionables para WOKI
 
-1. **Mostrar en la TV un indicador "Marta está componiendo"** (puntos animados o barra de progreso visible a 3 m). Evita que los demás cambien de tema y que la gente saque el celular. [V + I]
+1. **Mostrar en la TV un indicador "Emmy está componiendo"** (puntos animados o barra de progreso visible a 3 m). Evita que los demás cambien de tema y que la gente saque el celular. [V + I]
 2. **Botón "pedir la palabra" de un solo gesto** (un clic EMG corto): emite un sonido o una palabra corta ("a ver…") antes de hablar. Es el hack de A6 hecho función.
 3. **Etiqueta de emoción al inicio de la frase, automática y confirmable**, porque los usuarios la escriben a mano ("I just say emotions in the first sentence").
 4. **Fallback cuando el rastreo falla** (llanto, ojos secos, párpados): una pantalla que explique "no te veo: luz / ojos / posición" y pase a selección por clic EMG con zonas grandes.
 5. **Emergencia sin pantalla**: combo EMG que dispare alarma sonora y notificación aunque el comunicador esté en reposo. La noche es el escenario más pedido desde 2007.
-6. **Sugerencias de IA visibles solo para Marta**, con ella como único canal para hablar. En grupo, nada se dice sin confirmación.
-7. **Modo cuidadora opcional**: ella puede proponer una palabra (como Jessica en AACrobat) pero no envía; Marta acepta o ignora.
+6. **Sugerencias de IA visibles solo para Emmy**, con ella como único canal para hablar. En grupo, nada se dice sin confirmación.
+7. **Modo cuidadora opcional**: ella puede proponer una palabra (como Jessica en AACrobat) pero no envía; Emmy acepta o ignora.
 8. **Frases rápidas con "estampillas"** (risa, voz de personaje, música) para humor. A7 y A3 las pedían.
 9. **Personalización del orden y de los atajos** (las familias arman su propia tabla). Permite editar el vocabulario antes de la demo.
 10. **Decir en la demo qué no sabemos**: no hay estudio que mida la aceptación de la IA que "habla por" una persona con ELA. Eso refuerza la credibilidad.
