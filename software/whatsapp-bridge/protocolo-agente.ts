@@ -54,20 +54,21 @@ const PROMPT = `Eres Myo, el asistente de comunicación de {{persona}}. {{person
 Protocolo:
 1. Ya saludaste. Apenas la persona responda (aunque solo diga "aló" o "sí"), llama a la herramienta protocolo_emergencia y di su campo "mensaje" tal cual, sin volver a saludar.
 2. Si la herramienta falla, di: "{{persona}} activó su alarma de emergencia a las {{hora}}, en {{direccion}}. Necesita ayuda ahora. ¿Puedes ir?"
-3. Si confirma que va o que consigue ayuda: llama a confirmar_ayuda con viene="si", repite la dirección una vez ({{direccion}}), di "Gracias, le aviso a {{persona}}" y termina la llamada.
-4. Si no puede ir: llama a confirmar_ayuda con viene="no", pídele que llame a otro familiar o a {{emergencias}}, repite la dirección y termina la llamada.
-5. Si pregunta qué le pasa: no lo sabes; {{persona}} solo pudo activar la alarma con un gesto.
+3. Si confirma que va o que consigue ayuda: llama a confirmar_ayuda con viene="si", di la dirección una vez ({{direccion}}), di "Gracias, le aviso a {{persona}}" y termina la llamada de inmediato.
+4. Si dice que no puede ayudar: llama a confirmar_ayuda con viene="no", di solo "Entendido, estamos llamando a otras personas. Gracias." y termina la llamada de inmediato. No insistas, no pidas nada más, no repitas la dirección.
+5. Si pregunta qué le pasa: no lo sabes; {{persona}} solo pudo activar la alarma con un gesto. Luego pregunta otra vez si puede ir.
 6. Si contesta un buzón de voz: deja el aviso completo con la hora y la dirección y corta.
 
-Cómo hablas: español latinoamericano, tono calmado y firme, frases muy cortas (una o dos por turno). Nunca digas que eres {{persona}}. No inventes datos médicos. Si no te entienden, repite solo lo esencial.`;
+La llamada debe durar lo mínimo: solo necesitas saber si puede ir. Español latinoamericano, tono calmado y firme, una o dos frases cortas por turno. Nunca digas que eres {{persona}}. No inventes datos médicos. Si no te entienden, repite solo lo esencial.`;
+const END_CALL = { end_call: { name: "end_call", description: "Cuelga apenas la persona confirmó que va (después de decir la dirección y agradecer), apenas dijo que no puede ayudar (después de decir que estamos llamando a otras personas), o después de dejar el aviso en un buzón de voz.", params: { system_tool_type: "end_call" } } };
 
 const ag: any = await call("GET", `/v1/convai/agents/${AGENT}`);
 const viejas = (ag.conversation_config?.agent?.prompt?.tool_ids ?? []).filter((id: string) => id !== protocolo.id && id !== confirmar.id);
 await call("PATCH", `/v1/convai/agents/${AGENT}`, { conversation_config: { agent: {
   first_message: "Hola, te llamo de Myo, el asistente de {{persona}}. ¿Me escuchas?",
   disable_first_message_interruptions: true,
-  prompt: { prompt: PROMPT, tool_ids: [...viejas, protocolo.id, confirmar.id] },
-} } });
+  prompt: { prompt: PROMPT, tool_ids: [...viejas, protocolo.id, confirmar.id], built_in_tools: END_CALL },
+}, conversation: { max_duration_seconds: 120 } } });   // tope: ninguna llamada pasa de 2 minutos
 console.log(`✓ Protocolo configurado en el agente ${AGENT}: herramientas ${protocolo.id} y ${confirmar.id} → ${BASE}`);
 
 export {};

@@ -21,20 +21,16 @@ if (!process.env.ELEVENLABS_AGENT_VOICE_ID)
   await call("POST", `/v1/voices/add/${VOICE_OWNER}/${VOICE_ID}`, { new_name: "Camila (chilena)" }).catch(() => {});
 
 // Variables que el bridge manda en cada llamada: {{persona}}, {{direccion}}, {{hora}}, {{motivo}}
-const PROMPT = `Eres Myo, el asistente de comunicación de {{persona}}. {{persona}} tiene ELA y no puede hablar. Llamas a su contacto de emergencia porque {{persona}} {{motivo}} a las {{hora}} en {{direccion}}.
+const PROMPT = `Eres Myo, el asistente de comunicación de {{persona}}. {{persona}} tiene ELA y no puede hablar. Llamas a sus contactos de emergencia porque {{persona}} {{motivo}} a las {{hora}} en {{direccion}}. Llamaste a varias personas al mismo tiempo.
 
-Cómo hablas:
-- Español de Chile, tono calmado y firme. Frases muy cortas: una o dos por turno.
-- Nunca digas que eres {{persona}}. Nunca saludes de nuevo ni agradezcas por contestar.
-- Si no te entienden o hay ruido, repite lo esencial en una sola frase: "{{persona}} activó su alarma de emergencia, está en {{direccion}}. ¿Puedes ir?"
-- Dicta la dirección lento y por partes si te la piden.
+La llamada debe durar lo mínimo. Solo necesitas saber si la persona puede ir.
+- Si confirma que va o que consigue ayuda: di la dirección una vez ({{direccion}}), di "Gracias, le aviso a {{persona}}" y termina la llamada de inmediato.
+- Si dice que no puede ayudar: di solo "Entendido, estamos llamando a otras personas. Gracias." y termina la llamada de inmediato. No insistas, no pidas nada más, no repitas la dirección.
+- Si pregunta qué le pasa: no lo sabes; {{persona}} solo pudo activar la alarma con un gesto. Luego pregunta otra vez si puede ir.
+- Si no te entienden o hay ruido, repite solo lo esencial en una frase: "{{persona}} activó su alarma de emergencia, está en {{direccion}}. ¿Puedes ir?"
+- Si contesta un buzón de voz: deja el aviso completo con la hora y la dirección y corta.
 
-Qué buscas: que la persona confirme que va o que consigue ayuda.
-- Si confirma que va: repite la dirección una vez, di "Gracias, le aviso a {{persona}}" y termina la llamada.
-- Si no puede ir: pídele que llame a otro familiar o al SAMU, ciento treinta y uno, repite la dirección y termina la llamada.
-- Si pregunta qué le pasa: no lo sabes; {{persona}} solo pudo activar la alarma con un gesto.
-- Si contesta un buzón de voz: deja el mensaje completo con la hora y la dirección y corta.
-- No inventes datos médicos.`;
+Cómo hablas: español latinoamericano, tono calmado y firme, una o dos frases cortas por turno. Nunca digas que eres {{persona}}. Nunca saludes de nuevo ni agradezcas por contestar. No inventes datos médicos.`;
 
 const agent = await call("POST", "/v1/convai/agents/create", {
   name: "Myo · emergencia",
@@ -54,14 +50,14 @@ const agent = await call("POST", "/v1/convai/agents/create", {
       first_message: "Hola, te llamo de Myo, el asistente de {{persona}}. {{persona}} activó su alarma de emergencia a las {{hora}}, en {{direccion}}. Necesita ayuda ahora. ¿Puedes ir?",
       prompt: {
         prompt: PROMPT,
-        built_in_tools: { end_call: { name: "end_call", description: "Cuelga cuando la persona confirmó que va o que conseguirá ayuda, o después de dejar el mensaje en un buzón de voz.", params: { system_tool_type: "end_call" } } },
+        built_in_tools: { end_call: { name: "end_call", description: "Cuelga apenas la persona confirmó que va (después de decir la dirección y agradecer), apenas dijo que no puede ayudar (después de decir que estamos llamando a otras personas), o después de dejar el aviso en un buzón de voz.", params: { system_tool_type: "end_call" } } },
       },
     },
     tts: { voice_id: VOICE_ID, model_id: "eleven_flash_v2_5", stability: 0.6, speed: 0.95, similarity_boost: 0.8 },
     turn: { turn_eagerness: "patient", turn_timeout: 8 },
     vad: { background_voice_detection: true },
     // Sin "interruption": el agente siempre termina su frase.
-    conversation: { client_events: ["audio", "agent_response", "user_transcript", "agent_response_correction", "agent_tool_response"] },
+    conversation: { client_events: ["audio", "agent_response", "user_transcript", "agent_response_correction", "agent_tool_response"], max_duration_seconds: 120 },   // tope de 2 minutos
   },
 });
 console.log(`ELEVENLABS_AGENT_ID=${agent.agent_id}`);
