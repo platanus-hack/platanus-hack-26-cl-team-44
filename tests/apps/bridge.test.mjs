@@ -29,19 +29,19 @@ async function setup(t, extra={}) {
 }
 async function settled(api,id){for(let i=0;i<80;i++){const job=(await api('jobs')).data.jobs.find(j=>j.id===id);if(job.status!=='preparing')return job;await new Promise(r=>setTimeout(r,10));}throw Error('Job did not settle');}
 
-test('the OS opens at the root and old lobby bookmarks keep their launch options', async t => {
+test('the default entry opens Woki OS and the tablet keeps its own bookmark', async t => {
   const {base} = await setup(t);
-  const home = await fetch(base + '/');
-  assert.equal(home.status, 200);
-  const document = await home.text();
-  assert.match(document, /id="access-chooser"/);
-  assert.match(document, /src="prototype-lobby\.js/);
-  assert.equal(await (await fetch(base + '/index.html')).text(), document);
+  for (const path of ['/', '/index.html']) {
+    const home = await fetch(base + path);
+    assert.equal(home.status, 200);
+    assert.equal(home.url, base + '/woki-os.html');
+    assert.match(await home.text(), /src="os-juegos-servicios\.js/);
+  }
 
   const query = '?start=games&v=27&acceso=elegir';
-  const bookmark = await fetch(base + '/prototype-lobby.html' + query, {redirect: 'manual'});
-  assert.equal(bookmark.status, 302);
-  assert.equal(bookmark.headers.get('location'), '/' + query);
+  const bookmark = await fetch(base + '/prototype-lobby.html' + query);
+  assert.equal(bookmark.url, base + '/prototype-lobby.html' + query);
+  assert.match(await bookmark.text(), /id="access-chooser"/);
 });
 
 test('the lobby server serves the bundled iPhone calibration presets', async t => {
