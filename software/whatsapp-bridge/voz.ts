@@ -2,6 +2,8 @@
 // La API key vive SOLO aquí (en .env). La TV y la página de onboarding hablan con el bridge, nunca con ElevenLabs.
 import type http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { EstadoAlarma, estadoLlamada, type Alarma, type Contacto, type Llamada } from "./alarma.ts";
 
 const XI = process.env.ELEVENLABS_BASE_URL ?? "https://api.elevenlabs.io";
 const KEY = process.env.ELEVENLABS_API_KEY ?? "";
@@ -65,7 +67,6 @@ const EMO: Record<string, { tag: string; stability: number; style: number; speed
 //   EMERGENCY_CONTACTS=Jhomar:+51XXXXXXXXX,Juan:+57XXXXXXXXXX,Paolo:+569XXXXXXXX   (máx. 5)
 // Si no está, se usa un solo contacto: EMERGENCY_NAME + EMERGENCY_NUMBER (como antes).
 // Números cortos (131, 133, 911, 123…) quedan fuera: un robot no debe llamar a la ambulancia.
-type Contacto = { nombre: string; numero: string };
 const esServicioPublico = (n: string) => digits(n).length < 8;
 const CONTACTOS: Contacto[] = (() => {
   const lista = process.env.EMERGENCY_CONTACTS
@@ -75,17 +76,17 @@ const CONTACTOS: Contacto[] = (() => {
   if (ok.length < lista.length) console.warn(`[emergencia] ${lista.length - ok.length} contacto(s) descartado(s): sin nombre, número de servicio público o mal escrito`);
   return ok;
 })();
-// contestoAt: cuándo esta persona contestó y el agente pidió el protocolo · confirmo: lo que dijo en la llamada (herramienta del agente)
-type Llamada = Contacto & { conversationId: string; error: string; contestoAt: number; confirmo: boolean | null };
-let lastCall: { at: number; alarmId: string; hora: string; direccion: string; llamadas: Llamada[] } = { at: 0, alarmId: "", hora: "", direccion: "", llamadas: [] };
+// Última alarma y las anteriores, en disco (emergencia.json junto a history.json, fuera de git): un reinicio no
+// pierde el cooldown, la idempotencia por alarmId ni las llamadas que el agente busca por conversationId.
+const alarmas = new EstadoAlarma(process.env.EMERGENCY_STATE_FILE || fileURLToPath(new URL("emergencia.json", import.meta.url)), CALL_COOLDOWN_MS);
 
 // Protocolo de la llamada: el PRIMERO que contesta recibe el aviso completo; los que contestan después
 // saben que alguien ya respondió (o ya va) y se les pide igual que ayuden si pueden.
-function protocolo(l: Llamada) {
-  const hora = lastCall.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const dir = lastCall.direccion || DIRECCION || "la casa";
+function protocolo(a: Alarma, l: Llamada) {
+  const hora = a.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const dir = a.direccion || DIRECCION || "la casa";
   if (!l.contestoAt) l.contestoAt = Date.now();
-  const otras = lastCall.llamadas.filter((x) => x !== l);
+  const otras = a.llamadas.filter((x) => x !== l);
   const van = otras.filter((x) => x.confirmo === true).map((x) => x.nombre);
   const antes = otras.filter((x) => x.contestoAt && x.contestoAt < l.contestoAt).sort((a, b) => a.contestoAt - b.contestoAt).map((x) => x.nombre);
   if (van.length) return { rol: "ya_viene", quien: juntar(van), mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}. ${juntar(van)} ya ${van.length > 1 ? "van" : "va"} en camino. Igual, si puedes brindar ayuda, acércate a ${dir}. ¿Puedes ir?` };
@@ -234,10 +235,11 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       if (!AGENT_ID || !PHONE_ID || !CONTACTOS.length) { json(503, { ok: false, reason: "Llamada no configurada (agente, número o contactos)" }); return true; }
       const id = clean(alarmId, 64);
       if (!id) { json(400, { ok: false, reason: "Falta alarmId" }); return true; }
-      if (id === lastCall.alarmId) { json(200, { ok: true, repetida: true }); return true; }
-      if (Date.now() - lastCall.at < CALL_COOLDOWN_MS) { json(429, { ok: false, reason: "Ya se llamó hace menos de un minuto" }); return true; }
+      const rev = alarmas.revisar(id);
+      if (rev === "repetida") { json(200, { ok: true, repetida: true }); return true; }
+      if (rev === "espera") { json(429, { ok: false, reason: "Ya se llamó hace menos de un minuto" }); return true; }
       const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
-      lastCall = { at: Date.now(), alarmId: id, hora, direccion: DIRECCION || "la casa", llamadas: [] };
+      const alarma = alarmas.iniciar(id, hora, DIRECCION || "la casa");   // queda en disco antes de marcar
       const vars = { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia" };
       const res2 = await Promise.allSettled(destinos.map((c) => xiJson("/v1/convai/twilio/outbound-call", {
         method: "POST",
@@ -248,15 +250,16 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
           telephony_call_config: { ringing_timeout_secs: 45 },
         }),
       })));
-      lastCall.llamadas = destinos.map((c, n) => {
+      alarma.llamadas = destinos.map((c, n) => {
         const r = res2[n];
         const j: any = r.status === "fulfilled" ? r.value : null;
         const error = !j ? String((r as PromiseRejectedResult).reason?.message ?? "error") : j.success ? "" : String(j.message ?? "no se pudo llamar");
         console.log(`[emergencia] ${c.nombre} …${digits(c.numero).slice(-4)} → ${error || "ok"}${j?.conversation_id ? " conv=" + j.conversation_id : ""}`);
         return { ...c, conversationId: j?.conversation_id ?? "", error, contestoAt: 0, confirmo: null };
       });
-      const ok = lastCall.llamadas.filter((l) => !l.error);
-      json(ok.length ? 200 : 502, { ok: !!ok.length, llamadas: lastCall.llamadas.map((l) => ({ nombre: l.nombre, ok: !l.error, reason: l.error || undefined })) });
+      alarmas.guardar();
+      const ok = alarma.llamadas.filter((l) => !l.error);
+      json(ok.length ? 200 : 502, { ok: !!ok.length, llamadas: alarma.llamadas.map((l) => ({ nombre: l.nombre, ok: !l.error, reason: l.error || undefined })) });
       return true;
     }
 
@@ -265,21 +268,23 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     // protocolo: qué decirle a quien contestó · confirmar: si viene o no (la TV se entera al instante)
     if (req.method === "GET" && p === "/api/emergencia/protocolo") {
       const conv = clean(url.searchParams.get("conv"), 80);
-      const l = lastCall.llamadas.find((x) => x.conversationId && x.conversationId === conv);
-      // Sin una llamada activa no se entrega nada (dirección, quién contestó): falla cerrado. El agente, si la
+      const hit = alarmas.buscar(conv);
+      // Sin una llamada conocida no se entrega nada (dirección, quién contestó): falla cerrado. El agente, si la
       // herramienta falla, da el aviso completo con las variables que recibió al marcar.
-      if (!l) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
-      const r = protocolo(l);
+      if (!hit) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
+      const l = hit.llamada, r = protocolo(hit.alarma, l);
+      alarmas.guardar();
       console.log(`[emergencia] protocolo ${l.nombre} → ${r.rol}`);
       json(200, { ok: true, ...r });
       return true;
     }
     if (req.method === "GET" && p === "/api/emergencia/confirmar") {
       const conv = clean(url.searchParams.get("conv"), 80);
-      const l = lastCall.llamadas.find((x) => x.conversationId && x.conversationId === conv);
+      const l = alarmas.buscar(conv)?.llamada;
       if (!l) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
       const v = String(url.searchParams.get("viene") ?? "").toLowerCase();
       l.confirmo = v === "si" || v === "sí" || v === "true";
+      alarmas.guardar();
       console.log(`[emergencia] ${l.nombre} ${l.confirmo ? "VIENE" : "no puede ir"}`);
       json(200, { ok: true, registrado: l.confirmo ? "viene" : "no_viene" });
       return true;
@@ -287,13 +292,14 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
 
     // Estado de las llamadas, resumido para la TV: quién suena, quién contestó y quién viene.
     if (req.method === "GET" && p === "/api/emergencia/estado") {
-      if (!lastCall.llamadas.length) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
-      const ls = await Promise.all(lastCall.llamadas.map(async (l) => {
+      const ultima = alarmas.ultima;
+      if (!ultima.llamadas.length) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
+      const ls = await Promise.all(ultima.llamadas.map(async (l) => {
         if (l.error || !l.conversationId) return { nombre: l.nombre, estado: "failed", viene: null as boolean | null, respuesta: "" };
         try {
           const j = await xiJson(`/v1/convai/conversations/${encodeURIComponent(l.conversationId)}`);
-          // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
-          const estado = j.status === "initiated" && Date.now() - lastCall.at > 75_000 ? "failed" : String(j.status);
+          // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasados 75 s es un fallo (alarma.ts).
+          const estado = estadoLlamada(j.status, ultima.at);
           // Al terminar, ElevenLabs extrae si viene y qué respondió (data_collection del agente; ver setup-emergencia.ts). Llega segundos después de "done".
           const dc = j.analysis?.data_collection_results ?? {};
           // Lo que el agente avisó durante la llamada (confirmar) vale al instante; el análisis de ElevenLabs llega al terminar.

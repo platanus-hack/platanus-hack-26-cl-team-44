@@ -26,7 +26,11 @@ La configuración `.env` y los perfiles locales deben vivir en esta carpeta. Si 
 
 La TV usa `software/toki-os/woki-voz.js` para hablar por el puente y, si falla o no hay red, vuelve a la voz del sistema. `software/toki-os/voz.html` es el onboarding de voz para la familia. Guía completa: [GUIA-ELEVENLABS.md](../../docs/product/GUIA-ELEVENLABS.md).
 
-`voz.json` (voz elegida), `history.json` y `qr.html` son estado local y están en `.gitignore`.
+`voz.json` (voz elegida), `history.json`, `emergencia.json` (última alarma y las 20 anteriores, con nombres y teléfonos; otra ruta con `EMERGENCY_STATE_FILE`) y `qr.html` son estado local y están en `.gitignore`.
+
+El webhook de wapi solo se acepta con `X-Webhook-Signature` = HMAC-SHA256 del cuerpo en hex (wapi con `webhook_hmac = true`). La deduplicación de reintentos y de envíos dura 24 h, con 5.000 ids como máximo (`WA_DEDUPE_TTL_MS`, `WA_DEDUPE_MAX`).
+
+Pruebas: `npm test` (ElevenLabs y wapi simulados, sin red).
 
 ## Agente con memoria
 
