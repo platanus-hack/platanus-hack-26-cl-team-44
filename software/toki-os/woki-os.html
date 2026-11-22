@@ -1480,7 +1480,10 @@ function activate(el, calibrateGaze=true){
         S.agentPending=0; sendBtn(false);
         if(CFG.WA_URL) waSend(); else { island('✓','Enviado (simulado)'); go('home'); } }
       else { S.agentPending=performance.now(); sendBtn(true);
-        if(gazeOnly()) setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; S.fStart=performance.now(); } },300);
+        // Sin alejar la mirada: el botón se vuelve a habilitar y el conteo de permanencia empieza de nuevo (antes solo en «solo mirada»).
+        // menuPointer guarda la última elección e ignora ese objetivo hasta que la mirada se aleja: para confirmar se limpia.
+        setTimeout(()=>menuPointer.reset(),0);   // justo después de que activate() la registra: el foco no se pierde
+        setTimeout(()=>{ if(S.blocked===el){ el.classList.remove('blocked'); S.blocked=null; } S.fStart=performance.now(); menuDwell.reset(); },350);
         setTimeout(()=>{ if(S.agentPending && performance.now()-S.agentPending>=3000 && S.screen==='agent'){ S.agentPending=0; sendBtn(false); island('⏱','No se envió: faltó la segunda ceja'); } },3100); }
       S.agentIdle=performance.now(); break;
     case 'look':
@@ -1845,7 +1848,8 @@ function tick(now){
         const automatic = !S.quick && (!!forced || CFG.mode === 'dwell' || cejaFirst);
         const insideDwell = automatic && !gazeOnly();
         const elapsed = insideDwell ? Math.max(0, dwellElapsed) : Math.max(0, now-S.fStart);
-        const target = automatic ? (forced || (cejaFirst ? Math.max(CEJA_FALLBACK_MS, CFG.dwellMs*2.5) : CFG.dwellMs)) : CFG.settleMs;
+        const confirmando = f.id==='btnSend' && !!S.agentPending;   // 2.ª elección de Enviar: el tiempo de mirada normal, para caber en los 3 s
+        const target = automatic ? (confirmando ? CFG.dwellMs : (forced || (cejaFirst ? Math.max(CEJA_FALLBACK_MS, CFG.dwellMs*2.5) : CFG.dwellMs))) : CFG.settleMs;
         const tabletProgress = window.frameElement && window.parent.TokiAccess?.dwellProgress;
         const p = insideDwell && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);
