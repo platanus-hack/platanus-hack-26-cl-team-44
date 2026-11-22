@@ -1919,7 +1919,7 @@ function alarmTick(now){
 function rfid(){
   const A=S.alarm; if(!A){ island('🔑','Llavero: no hay alarma activa'); return; }
   const secs=Math.round((performance.now()-A.t0)/1000);
-  if(!A.ack){ A.ack=performance.now(); log('RFID: Camila responde ('+secs+' s)');
+  if(!A.ack){ A.ack=performance.now(); log('RFID: llegó alguien ('+secs+' s)');
     if(A.level==='emergencia'){ const a=$('#alarm'); a.classList.add('ack'); $('#alSym').innerHTML='<svg><use href="#i-check"/></svg>';
       if(A.real){ $('#alBig').textContent='Llegó alguien'; $('#alSub').textContent=`Confirmado con el llavero en ${secs} s`; $('#alCancel').textContent='R o Cerrar alarma'; }
       else { $('#alBig').textContent='Respuesta simulada'; $('#alSub').textContent='No se contactó a nadie.'; $('#alCancel').textContent='R o Cerrar simulación'; } }
@@ -1939,8 +1939,8 @@ const pad=s=>(s+'                ').slice(0,16);
 function updateLCD(){
   const t=new Date().toTimeString().slice(0,5); const A=S.alarm; let l1,l2,led='g';
   if(A && A.level==='emergencia'){ const s=Math.floor((performance.now()-A.t0)/1000);
-    if(A.ack){ l1='CAMILA VIENE'; l2='RESPONDIO '+Math.round((A.ack-A.t0)/1000)+'s'; led='a'; } else { l1='EMERGENCIA '+s+'s'; l2='FALTA CONFIRMAR'; led='r'; } }
-  else if(A){ l1='ATENCION'; l2=A.ack?'CAMILA VIENE':'MARTA LLAMA'; led='a'; }
+    if(A.ack){ l1='AYUDA EN CAMINO'; l2='RESPONDIO '+Math.round((A.ack-A.t0)/1000)+'s'; led='a'; } else { l1='EMERGENCIA '+s+'s'; l2='FALTA CONFIRMAR'; led='r'; } }
+  else if(A){ l1='ATENCION'; l2=A.ack?'AYUDA EN CAMINO':'EMMY LLAMA'; led='a'; }
   else if(S.gazeLost){ l1='OK'.padEnd(11)+t; l2='MIRADA: SIN CARA'; led='a'; }
   else { l1='OK'.padEnd(11)+t; l2='SENSORES OK'; }
   $('#lcd').textContent=pad(l1)+'\n'+pad(l2);
