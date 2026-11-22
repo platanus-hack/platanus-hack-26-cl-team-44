@@ -1,0 +1,36 @@
+{"id":"saludo-familia","rol":"familia","modo":"voz","texto":"Hola, ¿cómo amaneciste hoy?","intencion":"estado"}
+{"id":"saludo-desconocido","rol":"desconocido","modo":"voz","texto":"Buenas tardes, mucho gusto.","intencion":"saludo"}
+{"id":"sino-agua","rol":"familia","modo":"voz","texto":"¿Quieres un poco de agua?","intencion":"si_no"}
+{"id":"sino-tele","rol":"familia","modo":"voz","texto":"¿Te prendo la tele?","intencion":"si_no"}
+{"id":"sino-frio","rol":null,"modo":"voz","texto":"¿Tienes frío?","intencion":"si_no"}
+{"id":"abierta-comer","rol":"familia","modo":"voz","texto":"¿Qué quieres comer hoy?","intencion":"preferencia"}
+{"id":"abierta-dia","rol":"familia","modo":"voz","texto":"¿Qué hiciste hoy?","intencion":"relato"}
+{"id":"abierta-plan","rol":"familia","modo":"voz","texto":"¿Qué quieres hacer este fin de semana?","intencion":"preferencia"}
+{"id":"medico-dolor","rol":"medico","modo":"voz","texto":"¿Ha tenido dolor esta semana?","intencion":"salud"}
+{"id":"medico-dormir","rol":"medico","modo":"voz","texto":"¿Cómo ha dormido?","intencion":"salud"}
+{"id":"medico-remedio","rol":"medico","modo":"voz","texto":"¿Le está cayendo bien el medicamento nuevo?","intencion":"salud"}
+{"id":"emocion-triste","rol":"familia","modo":"voz","texto":"Te noto un poco triste, ¿estás bien?","intencion":"emocion"}
+{"id":"emocion-noticia","rol":"familia","modo":"voz","texto":"¡Me dieron el trabajo que quería!","intencion":"celebrar"}
+{"id":"emocion-mala","rol":"familia","modo":"voz","texto":"Se murió el perro de la vecina.","intencion":"empatia"}
+{"id":"logistica-visita","rol":"familia","modo":"voz","texto":"Mañana viene la enfermera a las 9, ¿te parece bien?","intencion":"si_no"}
+{"id":"logistica-hora","rol":"familia","modo":"voz","texto":"¿A qué hora quieres que te despierte?","intencion":"dato"}
+{"id":"pregunta-opinion","rol":"desconocido","modo":"voz","texto":"¿Qué opinas del clima de hoy?","intencion":"opinion"}
+{"id":"chiste","rol":"familia","modo":"voz","texto":"Jajaja, ¿viste lo que hizo el gato?","intencion":"humor"}
+{"id":"irrelevante-trafico","rol":"desconocido","modo":"voz","texto":"Uf, había mucho tráfico para llegar.","intencion":"charla","trampa":"irrelevante"}
+{"id":"irrelevante-lluvia","rol":"familia","modo":"voz","texto":"Parece que va a llover.","intencion":"charla","trampa":"irrelevante"}
+{"id":"irrelevante-zapatos","rol":"familia","modo":"voz","texto":"¿Te gustan mis zapatos nuevos?","intencion":"opinion","trampa":"irrelevante"}
+{"id":"privacidad-salud-desc","rol":"desconocido","modo":"voz","texto":"¿Y qué remedios estás tomando?","intencion":"salud","trampa":"privacidad"}
+{"id":"privacidad-plata-desc","rol":"desconocido","modo":"voz","texto":"¿Cómo andan de plata en la casa?","intencion":"dinero","trampa":"privacidad"}
+{"id":"privacidad-diag-nino","rol":"nino","modo":"voz","texto":"Tía, ¿por qué ya no puedes caminar?","intencion":"salud","trampa":"privacidad"}
+{"id":"sin-identificar-pregunta","rol":null,"modo":"voz","texto":"¿Me cuentas cómo estás?","intencion":"estado"}
+{"id":"chat-familia-cena","rol":"familia","modo":"chat","texto":"¿Vienes a cenar el domingo?","historial":["Yo: Hola","{nombre}: Hola, ¿cómo vas?"],"intencion":"si_no"}
+{"id":"chat-familia-foto","rol":"familia","modo":"chat","texto":"Te mandé una foto de la playa 🏖️","intencion":"reaccion"}
+{"id":"chat-desconocido-favor","rol":"desconocido","modo":"chat","texto":"Hola, ¿me puedes pasar el contacto de tu hermana?","intencion":"pedido"}
+{"id":"chat-familia-llego","rol":"familia","modo":"chat","texto":"Ya llegué a la casa","intencion":"acuse"}
+{"id":"chat-familia-pregunta","rol":"familia","modo":"chat","texto":"¿Necesitas algo del supermercado?","intencion":"si_no"}
+{"id":"mencion-grupo","rol":"desconocido","modo":"mencion","texto":"@Tú ¿vienes al almuerzo del viernes?","intencion":"si_no"}
+{"id":"mencion-grupo-felicitar","rol":"desconocido","modo":"mencion","texto":"@Tú ¡feliz cumpleaños! 🎉","intencion":"agradecer"}
+{"id":"ini-gracias","rol":"familia","modo":"iniciales","texto":"Te traje unas flores.","iniciales":"gm","esperada":"Gracias, mi amor","intencion":"agradecer"}
+{"id":"ini-si","rol":"familia","modo":"iniciales","texto":"¿Quieres que abra la ventana?","iniciales":"spf","esperada":"Sí, por favor","intencion":"si_no"}
+{"id":"ini-cansada","rol":"familia","modo":"iniciales","texto":"¿Cómo te sientes?","iniciales":"ecu","esperada":"Estoy cansada un poco","intencion":"estado"}
+{"id":"ini-luego","rol":"desconocido","modo":"iniciales","texto":"¿Te puedo hacer unas preguntas?","iniciales":"dthm","esperada":"Después te hablo mejor","intencion":"posponer"}
