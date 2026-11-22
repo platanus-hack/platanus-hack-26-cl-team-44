@@ -61,7 +61,9 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 2. En la pantalla de inicio elige **Mirada con iPhone (Face ID)** (o tecla `I`), escribe la dirección que muestra el iPhone (por ejemplo `192.168.1.23:8788`) y **Conectar y calibrar**.
 3. Sigue 13 puntos con los ojos y luego 5 de comprobación (~45 s). `Esc` cancela.
 
-- **Cómo se elige:** manteniendo la mirada sobre el objetivo hasta que se llena (1,2 s por defecto; Ajustes › Tiempo de mirada: 0,8 · 1 · 1,2 · 1,5 s, se recuerda). No hace falta ceja ni EMG. Al cambiar de puntero vuelve el modo anterior.
+- **Cómo se elige (Ajustes › Confirmar con, se recuerda):**
+  - **Mirada** (por defecto): mantener la mirada hasta que se llena (1,2 s; Ajustes › Tiempo de mirada: 0,8 · 1 · 1,2 · 1,5 s), o una ceja. No hace falta ceja ni EMG.
+  - **Ceja:** la ceja elige lo enfocado al instante y mirar solo enfoca, para no elegir sin querer al mirar. De respaldo, mantener la mirada **3 s** también elige, así nadie queda sin forma de elegir si la ceja o el sensor fallan. Al cambiar de puntero vuelve el modo anterior.
 - **Dónde va el iPhone:** abajo, centrado bajo la pantalla, acostado (horizontal), a 40–60 cm de la cara, en un soporte (no sobre las teclas).
 - **Cambiar de puntero:** Ajustes › Puntero recorre Mouse → Nariz → Mirada → iPhone. La calibración queda guardada y se reusa con **Usar la calibración guardada**.
 - **Si se pierde la cara o la señal 1,5 s,** el SO pasa a escaneo con EMG, igual que con la nariz.
@@ -75,7 +77,7 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una **ceja corta** sobre la opción enfocada. En la rueda de atajos, mantener la mirada no elige automáticamente.
 
 - **Siempre hay salida:** Hablar (Escribir · Volver), Escribir (Volver en ambos niveles, palabra sugerida como tecla), Reacciones (Más · Volver), selector de emociones (Volver), Descanso (mirar "Volver" 2 s), Mensajes (Cancelar). Enviar se confirma siguiendo con la mirada en el botón.
-- **Ajustes no deja atrapada a la persona:** "Confirmar con" y "Puntero" quedan fijos; "Calibrar" recalibra con la mirada y vuelve solo.
+- **Ajustes no deja atrapada a la persona:** "Puntero" queda fijo; "Confirmar con" cambia entre Mirada y Ceja (con el respaldo de 3 s); "Calibrar" recalibra con la mirada y vuelve solo.
 - **Sin cara o sin señal:** escaneo con la ceja, igual que con la nariz.
 - **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
 - **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.

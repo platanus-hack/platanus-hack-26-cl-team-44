@@ -10,7 +10,7 @@ const adapter = readFileSync(`${OS}/iphone-gaze.js`, "utf8");
 assert.ok(html.includes('<script type="module" src="iphone-gaze.js"></script>'), "woki-os.html carga iphone-gaze.js");
 assert.ok(html.includes('data-c="iphone"'), "botón 'Mirada con iPhone' en la pantalla de inicio");
 assert.ok(html.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhone");
-assert.ok(/W\.CFG\.mode = "dwell"/.test(adapter), "con el iPhone se elige manteniendo la mirada (dwell)");
+assert.ok(/W\.CFG\.mode = window\.iphoneConfirm\?\.\(\) === "click" \? "click" : "dwell";/.test(adapter), "con el iPhone se elige manteniendo la mirada (dwell) salvo que se elija Ceja en Ajustes");
 assert.ok(html.includes('id="themeToggle"') && html.includes('id="legendToggle"'), "interruptor de tema y pestaña de atajos");
 assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa .ring (el OS la oculta con opacity:0)");
 assert.ok(/!Number\.isFinite\(validation\.meanPx\)/.test(adapter), "una calibración sin precisión medible (NaN) se rechaza");
@@ -31,7 +31,10 @@ assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emocione
 assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");
 assert.ok(!/function pressSrc\(src\)\{ if\(gazeOnly\(\)/.test(html) && !/gesto ignorado/.test(html), "ceja y mandíbula funcionan también con el iPhone");
 assert.ok(/const cejaYa = gazeOnly\(\) && S\.blocked!==f;/.test(fn("confirmFocus")), "con el iPhone la ceja elige al instante (además de mantener la mirada)");
-assert.ok(/gazeOnly\(\) && \(arg==='mode' \|\| arg==='pointer'/.test(html), "Ajustes no permite dejar a la persona sin forma de elegir");
+assert.ok(/gazeOnly\(\) && \(arg==='pointer' \|\| arg==='faceclick'\)/.test(html), "Ajustes no permite cambiar el puntero con la mirada (no deja a la persona sin forma de elegir)");
+// "Confirmar con" sí se cambia con el iPhone: Ceja elige al instante y, de respaldo, mirar 3 s también elige.
+assert.ok(/const cejaFirst = gazeOnly\(\) && CFG\.mode === 'click' && !forced;/.test(html) && /CEJA_FALLBACK_MS = 3000/.test(html), "modo Ceja con respaldo de mirada larga");
+assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(html), "la elección se recuerda para el iPhone");
 assert.ok(/document\.body\.classList\.add\("gaze-only"\)/.test(adapter) && /document\.body\.classList\.remove\("gaze-only"\)/.test(adapter), "el iPhone activa y desactiva el modo solo mirada");
 
 // 2. Motor compartido con la demo (un solo código, no una copia que se desincronice).

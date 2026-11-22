@@ -717,6 +717,10 @@ const MAGNET = .35;   // el cursor se acerca al centro de la tarjeta enfocada (c
 // Tras elegir algo, nada empieza a cargarse durante este tiempo: si aparece otra pantalla o capa,
 // la tarjeta que queda bajo la mirada no se elige "en cadena" (la demo usaba 500 ms).
 const LOCKOUT_MS = 700;
+// iPhone + "Confirmar con: Ceja": la ceja elige al instante; mirar fijo CEJA_FALLBACK_MS también elige
+// (respaldo: si la ceja o el sensor fallan, la persona nunca queda sin forma de elegir).
+const CEJA_FALLBACK_MS = 3000;
+window.iphoneConfirm = () => { try{ return localStorage.getItem('woki.iphone.confirm')==='click' ? 'click' : 'dwell'; }catch(_){ return 'dwell'; } };
 
 /* ===================== Tema y panel de atajos (desarrollo) ===================== */
 const store={ get:k=>{ try{ return localStorage.getItem(k); }catch(_){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} } };
@@ -1080,7 +1084,7 @@ function renderStatus(){
   const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>SOS de prueba activo'
     : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>SOS de prueba';
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
-  const howPick = gazeOnly() ? `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja` : mode;
+  const howPick = gazeOnly() ? (CFG.mode==='click' ? 'Ceja (o mirada 3 s)' : `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja`) : mode;
   const sensors = gazeOnly()
     ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
     : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
@@ -1331,7 +1335,7 @@ function renderSettings(){
   const v=S.voices[S.voiceIdx], N=window.NOSE||{};
   const items=[
     ['Tiempo de mirada', CFG.dwellMs+' ms', 'set:dwell','toca para cambiar'],
-    ['Confirmar con', CFG.mode==='click'?'Ceja':'Solo mirada','set:mode',''],
+    ['Confirmar con', CFG.mode==='click'?'Ceja':(gazeOnly()?'Mirada':'Solo mirada'),'set:mode', gazeOnly()? (CFG.mode==='click'?'o mirada 3 s':'o ceja') : ''],
     window.VOZ && VOZ.opciones.length
       ? ['Voz', (VOZ.nombre()||'ElevenLabs').slice(0,14), 'set:voice', `${VOZ.opciones.length} opciones · suena al cambiar`]
       : ['Voz', v? v.name.slice(0,14):'Del sistema','set:voice','suena al cambiar'],
@@ -1454,8 +1458,8 @@ function activate(el, calibrateGaze=true){
       setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break;
     case 'set':
       // Solo mirada: nada en Ajustes puede dejar a la persona sin forma de elegir.
-      if(gazeOnly() && (arg==='mode' || arg==='pointer' || arg==='faceclick')){
-        island('🔒', arg==='mode'? 'Con el iPhone se elige manteniendo la mirada' : 'El puntero lo cambia el acompañante (barra inferior o teclado)');
+      if(gazeOnly() && (arg==='pointer' || arg==='faceclick')){
+        island('🔒', 'El puntero lo cambia el acompañante (barra inferior o teclado)');
         setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); break; }
       if(gazeOnly() && arg==='calib'){ IPHONE.recalibrate(); break; }
       if(arg==='sugmode'){ CFG.sugMode=CFG.sugMode==='fila'?'lista':'fila'; try{ localStorage.setItem('woki.sugmode',CFG.sugMode); }catch(_){}
@@ -1463,7 +1467,9 @@ function activate(el, calibrateGaze=true){
       if(arg==='theme'){ S.setPage='look'; renderSettings(); break; }
       if(arg==='dwell'){ CFG.dwellMs=DWELL_OPTIONS[(DWELL_OPTIONS.indexOf(CFG.dwellMs)+1)%DWELL_OPTIONS.length]; CFG.emoDwellMs=CFG.dwellMs;
         try{ localStorage.setItem('woki.dwell',String(CFG.dwellMs)); }catch(_){} if(S.cards.length) renderCards(); }
-      if(arg==='mode') CFG.mode=CFG.mode==='click'?'dwell':'click';
+      if(arg==='mode'){ CFG.mode=CFG.mode==='click'?'dwell':'click';
+        if(gazeOnly()){ try{ localStorage.setItem('woki.iphone.confirm',CFG.mode); }catch(_){}
+          island(CFG.mode==='click'?'🤨':'👁', CFG.mode==='click'?'Ceja: elige al instante · mirar 3 s también elige':'Mantener la mirada para elegir (o ceja)'); } }
       if(arg==='voice'){
         if(window.VOZ && VOZ.opciones.length) VOZ.siguiente().then(()=>{ speak('Hola, esta es mi voz.','alegre'); if(S.screen==='settings') renderSettings(); });
         else { S.voiceIdx=(S.voiceIdx+1)%Math.max(1,S.voices.length); speak('Hola, esta es mi voz.','alegre'); } }
@@ -1803,10 +1809,11 @@ function tick(now){
         const f=S.focus, r=f.getBoundingClientRect();
         f.style.setProperty('--mx',((gz.x-r.left)/r.width*100)+'%'); f.style.setProperty('--my',((gz.y-r.top)/r.height*100)+'%');
         const forced=f.dataset.dwell? +f.dataset.dwell : null;
-        const automatic = !S.quick && (!!forced || CFG.mode === 'dwell');
+        const cejaFirst = gazeOnly() && CFG.mode === 'click' && !forced;
+        const automatic = !S.quick && (!!forced || CFG.mode === 'dwell' || cejaFirst);
         const insideDwell = automatic && !gazeOnly();
         const elapsed = insideDwell ? Math.max(0, dwellElapsed) : Math.max(0, now-S.fStart);
-        const target = automatic ? (forced || CFG.dwellMs) : CFG.settleMs;
+        const target = automatic ? (forced || (cejaFirst ? Math.max(CEJA_FALLBACK_MS, CFG.dwellMs*2.5) : CFG.dwellMs)) : CFG.settleMs;
         const tabletProgress = window.frameElement && window.parent.TokiAccess?.dwellProgress;
         const p = insideDwell && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);

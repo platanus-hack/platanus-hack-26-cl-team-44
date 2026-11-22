@@ -140,7 +140,8 @@ const IPHONE = {
     // Clic manteniendo la mirada (dwell, como en la demo): el anillo se llena y se elige. No hace
     // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.
     if (this.prevMode === null) this.prevMode = W.CFG.mode;
-    W.CFG.mode = "dwell";
+    // Por defecto "dwell". En Ajustes › Confirmar con se puede pasar a "Ceja" (window.iphoneConfirm, se recuerda).
+    W.CFG.mode = window.iphoneConfirm?.() === "click" ? "click" : "dwell";
     // Modo mirada con iPhone: mantener la mirada O ceja (al instante); mandíbula y escaneo como siempre;
     // imán, huecos y relleno de progreso en las tarjetas (ver gazeOnly() en woki-os.html y layout.css).
     document.body.classList.add("gaze-only");
