@@ -1,0 +1,92 @@
+{
+  "_nota": "Modo ilustrativo de Servicios (toki-apps.js) cuando no hay apps-bridge, por ejemplo en la URL pública. Todo es de ejemplo: restaurantes, canciones, videos y noticias son inventados. No hay datos de cuentas reales ni llamadas a esos servicios.",
+  "etiqueta": "Ilustrativo: así se vería una app nativa en Myo OS",
+  "catalogo": [
+    {"id": "spotify", "name": "Spotify", "category": "Música", "intent": "Escuchar música", "tasks": "Elegir música, reproducir y pausar.", "description": "Elegir música, escuchar y pausar."},
+    {"id": "youtube", "name": "YouTube", "category": "Videos", "intent": "Ver videos", "tasks": "Elegir videos, reproducir y pausar.", "description": "Elegir videos, reproducir y pausar."},
+    {"id": "noticias", "name": "Diario de ejemplo", "category": "Noticias", "intent": "Leer noticias", "tasks": "Elegir titulares y leer la noticia por partes.", "description": "Elegir titulares y leer la noticia por partes."},
+    {"id": "rappi", "name": "Rappi", "category": "Restaurantes", "intent": "Pedir comida", "tasks": "Elegir un restaurante, armar el carrito y revisar el total.", "description": "Elegir un restaurante, armar el carrito y revisar el total."}
+  ],
+  "musica": {
+    "opciones": [["Para relajarme", "relajante"], ["Algo alegre", "alegre"], ["Boleros", "boleros"], ["Clásicos", "clasicos"]],
+    "canciones": [
+      {"uri": "ilustrativo:1", "name": "Mañana de domingo", "artists": "Trío del Parque", "album": "Boleros de la casa", "duration_ms": 201000, "tags": ["relajante", "boleros"]},
+      {"uri": "ilustrativo:2", "name": "Café con lluvia", "artists": "Lucía Prado", "album": "Tardes tranquilas", "duration_ms": 185000, "tags": ["relajante"]},
+      {"uri": "ilustrativo:3", "name": "Bailando en la cocina", "artists": "Banda La Ribera", "album": "Fiesta en casa", "duration_ms": 178000, "tags": ["alegre"]},
+      {"uri": "ilustrativo:4", "name": "Luna de papel", "artists": "Trío del Parque", "album": "Boleros de la casa", "duration_ms": 220000, "tags": ["boleros", "clasicos"]},
+      {"uri": "ilustrativo:5", "name": "Camino al mar", "artists": "Orquesta del Sur", "album": "Grandes clásicos", "duration_ms": 242000, "tags": ["clasicos", "relajante"]},
+      {"uri": "ilustrativo:6", "name": "Sol de las cinco", "artists": "Banda La Ribera", "album": "Fiesta en casa", "duration_ms": 192000, "tags": ["alegre"]},
+      {"uri": "ilustrativo:7", "name": "Carta a mi madre", "artists": "Lucía Prado", "album": "Tardes tranquilas", "duration_ms": 207000, "tags": ["boleros"]}
+    ]
+  },
+  "videos": {
+    "subtitulo": "Videos de ejemplo",
+    "items": [
+      {"id": "ilustrativo-v1", "label": "Paseo por la costa al atardecer", "color": "#1f5f7a", "emoji": "🌊"},
+      {"id": "ilustrativo-v2", "label": "Receta fácil de pan casero", "color": "#7a5a1f", "emoji": "🍞"},
+      {"id": "ilustrativo-v3", "label": "Jardín botánico en primavera", "color": "#3f6f2f", "emoji": "🌻"},
+      {"id": "ilustrativo-v4", "label": "Concierto de guitarra en el parque", "color": "#5a2f6f", "emoji": "🎸"},
+      {"id": "ilustrativo-v5", "label": "Aves del humedal", "color": "#2f4f6f", "emoji": "🐦"},
+      {"id": "ilustrativo-v6", "label": "Mercado de frutas por la mañana", "color": "#6f2f3f", "emoji": "🍉"}
+    ]
+  },
+  "noticias": {
+    "fuente": "Diario de ejemplo",
+    "items": [
+      {"id": "ilustrativo-n1", "horas": 1, "title": "Un equipo universitario prueba un teclado que se maneja con la mirada",
+       "pages": ["Un grupo de estudiantes probó durante un mes un teclado que se controla con los ojos y una cámara común.", "Las personas que lo usaron escribieron frases cortas en menos de un minuto. El equipo quiere probarlo ahora en casas, con la familia."]},
+      {"id": "ilustrativo-n2", "horas": 3, "title": "La biblioteca del barrio abre también los domingos",
+       "pages": ["Desde este mes, la biblioteca abre los domingos de 10 a 14 horas.", "Habrá lectura en voz alta para niños y un club de libros para adultos mayores."]},
+      {"id": "ilustrativo-n3", "horas": 5, "title": "Vecinos convierten un terreno vacío en una huerta comunitaria",
+       "pages": ["Veinte familias limpiaron el terreno y sembraron tomates, lechugas y hierbas.", "La huerta recibe visitas los sábados en la mañana. Cualquier persona puede ayudar a regar."]},
+      {"id": "ilustrativo-n4", "horas": 8, "title": "El festival de música del parque anuncia su programa",
+       "pages": ["El festival tendrá tres días de conciertos gratuitos al aire libre.", "Habrá boleros, música tropical y una orquesta juvenil. La entrada tiene rampas y zonas para sillas de ruedas."]},
+      {"id": "ilustrativo-n5", "horas": 12, "title": "Llega la temporada de lluvias: consejos para cuidar las plantas",
+       "pages": ["Los jardineros recomiendan revisar que las macetas drenen bien el agua.", "También conviene mover a la sombra las plantas que no toleran mucha humedad."]},
+      {"id": "ilustrativo-n6", "horas": 20, "title": "La feria de libros usados recibe a más de 3.000 visitantes",
+       "pages": ["La feria reunió a 40 puestos de libros usados en la plaza central.", "Los organizadores repetirán la feria el primer sábado de cada mes."]}
+    ]
+  },
+  "rappi": {
+    "ubicacion": "Calle de Ejemplo 123",
+    "locale": "es-CO",
+    "moneda": "COP",
+    "envio": 5000,
+    "servicio": 2000,
+    "aviso_final": "Ilustrativo: aquí terminaría el pedido. En esta demo no se paga nada.",
+    "nota_pago": "En la app real, la persona confirma el pago dos veces y paga con su cuenta. En esta demo el pago está desactivado.",
+    "categorias": [
+      {"id": "pizza", "name": "Pizza"},
+      {"id": "hamburguesa", "name": "Hamburguesas"},
+      {"id": "sushi", "name": "Sushi"},
+      {"id": "postres", "name": "Postres", "icon": "🍰"}
+    ],
+    "tiendas": [
+      {"id": 1, "name": "Pizzería La Esquina", "eta": "25-35 min", "categorias": ["pizza"], "productos": [
+        {"id": 101, "name": "🍕 Pizza margarita", "price": 32000, "grupos": [
+          {"name": "Tamaño", "min": 1, "max": 1, "items": [{"id": 1001, "name": "Mediana", "price": 0}, {"id": 1002, "name": "Familiar", "price": 14000}]},
+          {"name": "Ingredientes extra", "min": 0, "max": 2, "items": [{"id": 1003, "name": "Champiñones", "price": 4000}, {"id": 1004, "name": "Aceitunas", "price": 3000}, {"id": 1005, "name": "Queso extra", "price": 5000}]}
+        ]},
+        {"id": 102, "name": "🍕 Pizza de champiñones", "price": 36000},
+        {"id": 103, "name": "🥤 Limonada natural", "price": 7000}
+      ]},
+      {"id": 2, "name": "Horno de Barrio", "eta": "30-40 min", "categorias": ["pizza"], "productos": [
+        {"id": 201, "name": "🍕 Pizza napolitana", "price": 34000},
+        {"id": 202, "name": "🧄 Pan de ajo", "price": 9000}
+      ]},
+      {"id": 3, "name": "Hamburguesas del Parque", "eta": "20-30 min", "categorias": ["hamburguesa"], "productos": [
+        {"id": 301, "name": "🍔 Hamburguesa clásica", "price": 24000},
+        {"id": 302, "name": "🍔 Hamburguesa vegetariana", "price": 26000},
+        {"id": 303, "name": "🍟 Papas a la francesa", "price": 8000}
+      ]},
+      {"id": 4, "name": "Sushi Nami", "eta": "35-45 min", "categorias": ["sushi"], "productos": [
+        {"id": 401, "name": "🍣 Combo de 20 piezas", "price": 48000},
+        {"id": 402, "name": "🍣 Roll de salmón", "price": 29000}
+      ]},
+      {"id": 5, "name": "Dulce Tarde", "eta": "25-35 min", "categorias": ["postres"], "productos": [
+        {"id": 501, "name": "🍮 Flan de coco", "price": 12000},
+        {"id": 502, "name": "🍰 Torta de chocolate", "price": 11000}
+      ]}
+    ]
+  }
+}

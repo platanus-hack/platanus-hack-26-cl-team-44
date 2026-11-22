@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="194" height="194" viewBox="0 0 194 194">
+	<!-- Ícono genérico de noticias (sin marca) para el modo ilustrativo de Servicios -->
+	<rect width="194" height="194" fill="#2b4a63"/>
+	<rect x="42" y="48" width="110" height="98" rx="10" fill="none" stroke="#ffffff" stroke-width="9"/>
+	<rect x="58" y="66" width="34" height="28" rx="3" fill="#ffffff"/>
+	<path d="M102 70h34M102 86h34M58 108h78M58 124h78" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg>

@@ -27,6 +27,11 @@ Modo dev de la TV:
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
 Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Myo-Token.
 Nunca en la URL: la TV lee el SSE con fetch (toki-sse.js). El puente local entra sin token.
+
+Otra instancia con el mismo código (por ejemplo, la TV pública con memoria ficticia):
+  TOKI_AGENTE_PORT  puerto (8790 por defecto)
+  TOKI_DATA         carpeta de la memoria y sus archivos (software/agent/data por defecto)
+  TOKI_DEMO=1       modo demo: rechaza con 403 las rutas de RUTAS_FUERA_DE_DEMO. Exige un TOKI_DATA propio.
 """
 from __future__ import annotations
 
@@ -56,8 +61,19 @@ from memoria.filtros import VISIBLE  # noqa: E402
 import hablantes  # noqa: E402
 
 PORT = int(os.environ.get("TOKI_AGENTE_PORT", "8790"))
-DATA = AGENT / "data"
+DATA_REAL = AGENT / "data"
+DATA = Path(os.environ.get("TOKI_DATA") or DATA_REAL)
 DB = DATA / "memoria.db"
+DEMO = os.environ.get("TOKI_DEMO", "") == "1"
+# Modo demo: rutas que escriben en disco, usan las huellas de voz (el servicio de voces es uno solo y guarda
+# voces reales) o vienen del puente de WhatsApp. Las que solo leen la memoria y sugieren siguen igual.
+RUTAS_FUERA_DE_DEMO = (
+    "/api/voces/",                # registrar, borrar, quién habla: huellas de voz reales (lista responde vacía)
+    "/api/tarjetas/uso",          # escribe tarjetas_uso.jsonl (aprende el orden)
+    "/api/seleccion",             # escribe selecciones.jsonl
+    "/api/disparadores/estado",   # escribe disparadores.json y avisa a todas las TV
+    "/api/grupo",                 # la llama el puente de WhatsApp; guarda el contexto del grupo
+)
 DISPARADORES = grupos.Disparadores(DATA / "disparadores.json")
 ORIGENES = {o.strip() for o in os.environ.get(
     "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766").split(",")}
@@ -144,6 +160,12 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
+def fuera_de_demo(path: str, demo: bool = DEMO) -> bool:
+    """En modo demo, True si la ruta está en RUTAS_FUERA_DE_DEMO (una que termina en / cubre todo lo de abajo)."""
+    path = urlparse(path).path
+    return demo and any(path.startswith(r) if r.endswith("/") else path == r for r in RUTAS_FUERA_DE_DEMO)
+
+
 VOCES_URL = os.environ.get("TOKI_VOCES_URL", "http://127.0.0.1:8791")
 
 
@@ -198,12 +220,16 @@ class Handler(BaseHTTPRequestHandler):
         if not autorizado(self.headers, self.path):
             return self._json(401, {"error": "falta el token"})
         self.path = urlparse(self.path).path
+        if fuera_de_demo(self.path):
+            if self.path == "/api/voces/lista":   # la demo no tiene voces registradas; no le pregunta al servicio de voces
+                return self._json(200, {"ok": True, "personas": []})
+            return self._json(403, {"ok": False, "error": "no disponible en la demo pública"})
         if self.path.startswith("/api/voces/"):
             return self._json(*a_voces("GET", self.path))
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "genero": store.meta(c, "genero", ""), "personas": len(store.personas(c)), "modelo": MODELO,
-                    "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None,
+                    "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None, "demo": DEMO,
                     "modos": list(MODOS), "disparadores": [{k: d.get(k) for k in ("id", "grupo_nombre", "estado")}
                                                           for d in DISPARADORES.listar()]}
             c.close()
@@ -249,6 +275,8 @@ class Handler(BaseHTTPRequestHandler):
         o = self.headers.get("Origin")
         if o and o not in ORIGENES:
             return self._json(403, {"error": "origen no permitido"})
+        if fuera_de_demo(self.path):
+            return self._json(403, {"ok": False, "error": "no disponible en la demo pública"})
         if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
             return self._json(415, {"error": "solo application/json"})
         body = self._body()
@@ -392,11 +420,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if DEMO and DATA.resolve() == DATA_REAL.resolve():
+        sys.exit("TOKI_DEMO=1 necesita su propia carpeta TOKI_DATA: la demo nunca usa la memoria de software/agent/data")
     if not DB.exists():
-        sys.exit("Falta la base. Corre primero: python3 software/agent/scripts/semilla.py --ejemplo")
-    if not DISPARADORES.path.exists():
+        sys.exit(f"Falta la base {DB}. Corre primero: python3 software/agent/scripts/semilla.py --ejemplo"
+                 " (con TOKI_DATA si usas otra carpeta)")
+    if not DEMO and not DISPARADORES.path.exists():   # la demo no tiene disparadores: no hay grupos de WhatsApp
         shutil.copy(AGENT / "ejemplos" / "disparadores.example.json", DISPARADORES.path)
-        print(f"Copié el disparador de ejemplo a {DISPARADORES.path.relative_to(AGENT)} (estado pendiente)")
+        print(f"Copié el disparador de ejemplo a {DISPARADORES.path} (estado pendiente)")
     threading.Thread(target=trabajador_dev, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     srv.daemon_threads = True
@@ -404,8 +435,8 @@ def main() -> None:
         modo_llm = llm.backend()
     except llm.ErrorLLM as e:
         modo_llm = str(e)
-    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · llm {modo_llm} · orígenes {', '.join(sorted(ORIGENES))}",
-          flush=True)
+    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · llm {modo_llm} · datos {DATA}{' · DEMO' if DEMO else ''}"
+          f" · tope {MAX_DIA or 'sin tope'} · orígenes {', '.join(sorted(ORIGENES))}", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
