@@ -226,8 +226,11 @@ class MotorBase(unittest.TestCase):
         self.fuente = FuenteCola()
         self.tokens = 0
         self.voces = {"hay": False, "persona": None}
+        self.puerta = threading.Event()   # la prueba la cierra para retener una reconexión
+        self.puerta.set()
 
         def token():
+            self.puerta.wait(5)
             self.tokens += 1
             return f"tok{self.tokens}"
 
@@ -294,6 +297,20 @@ class MotorTest(MotorBase):
         t = self.ev.esperar("turno", 2)[-1]
         self.assertEqual((t["hablante"], t["persona"]), ("S2", None))
         self.assertEqual(self.oido.hablantes, {"S1": "sofia"})
+
+    def test_lo_dicho_mientras_reconecta_no_se_pierde(self):
+        self.oido.iniciar()
+        self.conectado()
+        self.puerta.clear()   # la reconexión queda esperando el token
+        self.scribe.cortar()
+        self.assertTrue(esperar(lambda: not self.oido.cliente.conectado, 2))
+        antes = self.oido.anillo.total
+        self.hablar(3)   # se dice algo justo durante el corte
+        self.assertTrue(esperar(lambda: self.oido.anillo.total >= antes + 3 * BLOQUE))   # ya se procesó, sin sesión
+        self.puerta.set()
+        self.conectado(2)
+        self.assertTrue(esperar(lambda: len(self.scribe.audio[1]) >= 3))
+        self.assertTrue(any(np.frombuffer(c, dtype="<i2").any() for c in self.scribe.audio[1][:5]))
 
     def test_persona_asignada_viaja_en_el_turno(self):
         self.oido.iniciar()

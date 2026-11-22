@@ -230,7 +230,9 @@ class Oido:
                     self.cliente.abrir()
             elif self.cliente.conectado and ahora - self._ultima_voz > self.silencio_s:
                 self.cliente.cerrar()
-        if not self.cliente.enviar(pcm) and self.modo == "voz":
+        if not self.cliente.enviar(pcm):
+            # Sin sesión (conectando, reconectando o esperando voz): se guardan los últimos 1,5 s y se mandan al abrir.
+            # Así un corte de Scribe no se come el comienzo de la frase que se dijo mientras reconectaba.
             with self._lock:
                 self._previo.append(pcm)
 
