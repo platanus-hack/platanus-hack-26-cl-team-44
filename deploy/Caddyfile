@@ -17,6 +17,19 @@
 		}
 	}
 
+	# Puente de WhatsApp: /wa/api/... → 127.0.0.1:8788/api/...  Solo /api/*; el puente exige X-Woki-Token
+	# (o ?token= en /api/wa/events, el SSE). /webhook/wapi no se publica: wapi llama a 127.0.0.1 directo.
+	handle_path /wa/* {
+		handle /api/* {
+			reverse_proxy 127.0.0.1:8788 {
+				flush_interval -1
+			}
+		}
+		handle {
+			respond 404
+		}
+	}
+
 	# La raíz abre la TV
 	redir / /woki-os.html?{query} 302
 

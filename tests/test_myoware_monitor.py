@@ -97,3 +97,40 @@ class MonitorTest(unittest.TestCase):
             os.close(slave)
 
 if __name__=='__main__':unittest.main()
+
+
+class TokiConfigTest(unittest.TestCase):
+    """/toki-config.js entrega TOKI_REMOTO y TOKI_WA_TOKEN solo a la propia TV."""
+    def test_config_from_env_only_same_origin(self):
+        master, slave = pty.openpty()
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        env = {**os.environ, 'TOKI_REMOTO': 'https://vps.example/', 'TOKI_WA_TOKEN': 't0k'}
+        process = subprocess.Popen([sys.executable, str(ROOT/'software/myoware-monitor/server.py'),
+                                    '--serial-port', os.ttyname(slave), '--http-port', str(port)],
+                                   env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        def get(headers):
+            req = urllib.request.Request(f'http://127.0.0.1:{port}/toki-config.js', headers=headers)
+            try:
+                with urllib.request.urlopen(req, timeout=1) as r:
+                    return r.status, r.read().decode()
+            except urllib.error.HTTPError as e:
+                return e.code, ''
+        try:
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    status, body = get({'Sec-Fetch-Site': 'same-origin'})
+                    break
+                except (OSError, urllib.error.URLError):
+                    if time.monotonic() > deadline: self.fail('Server did not start')
+                    time.sleep(.05)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body.removeprefix('window.TOKI_ENV=').rstrip(';')),
+                             {'remoto': 'https://vps.example', 'waToken': 't0k'})
+            self.assertEqual(get({'Sec-Fetch-Site': 'cross-site'})[0], 403)
+            self.assertEqual(get({'Sec-Fetch-Site': 'same-origin', 'Host': f'evil.example:{port}'})[0], 403)
+        finally:
+            process.terminate(); process.wait(timeout=5)
+            os.close(master); os.close(slave)

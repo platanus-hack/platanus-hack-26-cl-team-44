@@ -28,7 +28,8 @@ chown -R toki:toki "$BASE/repo"
 [ -d "$BASE/venv" ] || python3 -m venv "$BASE/venv"
 "$BASE/venv/bin/pip" install -q -r "$BASE/repo/software/agent/requirements.txt"
 
-# Memoria con la semilla de EJEMPLO (persona ficticia). Nunca la de la usuaria real.
+# Memoria: la de EJEMPLO si no hay base. La real (data/semilla.json) se copia a mano y no se pisa:
+#   scp software/agent/data/semilla.json toki-vps:/opt/toki/repo/software/agent/data/ y correr semilla.py como toki.
 if [ ! -f "$BASE/repo/software/agent/data/memoria.db" ]; then
   sudo -u toki "$BASE/venv/bin/python" "$BASE/repo/software/agent/scripts/semilla.py" --ejemplo
 fi
@@ -45,6 +46,93 @@ if [ ! -f "$BASE/agente.env" ]; then
 fi
 chmod 600 "$BASE/agente.env"
 
+# ---------- wapi (WhatsApp) · gateway 3102, api 3101 y webhook-worker, todo en 127.0.0.1 ----------
+WAPI_COMMIT="${WAPI_COMMIT:-4ca20d8}"
+dpkg -s postgresql >/dev/null 2>&1 || apt-get install -y -qq postgresql
+dpkg -s redis-server >/dev/null 2>&1 || apt-get install -y -qq redis-server
+command -v bun >/dev/null || npm install -g --silent bun@1.4.2
+systemctl enable -q --now postgresql redis-server
+id wapi >/dev/null 2>&1 || useradd -r -m -d "$BASE/wapi-home" -s /usr/sbin/nologin wapi
+
+git config --system --get-all safe.directory 2>/dev/null | grep -qx "$BASE/wapi" || git config --system --add safe.directory "$BASE/wapi"
+[ -d "$BASE/wapi/.git" ] || git clone -q https://github.com/crafter-station/wapi.git "$BASE/wapi"
+if [ "$(git -C "$BASE/wapi" rev-parse --short=7 HEAD)" != "${WAPI_COMMIT:0:7}" ]; then
+  git -C "$BASE/wapi" fetch -q origin
+  git -C "$BASE/wapi" checkout -q "$WAPI_COMMIT"
+fi
+chown -R wapi:wapi "$BASE/wapi"
+runuser -u wapi -- bash -c "cd '$BASE/wapi' && bun install --frozen-lockfile --silent"
+
+# Secretos de wapi: se crean una sola vez. Si cambia ENCRYPTION_KEY o se borra la base, hay que volver a vincular el celular.
+if [ ! -s "$BASE/wapi.env" ]; then
+  PW=$(openssl rand -hex 24)
+  ( umask 077; cat > "$BASE/wapi.env" <<EOF
+DATABASE_URL=postgres://wapi:$PW@127.0.0.1:5432/wapi
+REDIS_URL=redis://127.0.0.1:6379
+ENCRYPTION_KEY=$(openssl rand -hex 32)
+GATEWAY_TOKEN=$(openssl rand -hex 24)
+GATEWAY_URL=http://127.0.0.1:3102
+PUBLIC_URL=http://127.0.0.1:3101
+AUDIT_BODIES=off
+EOF
+  )
+  if (cd /tmp && runuser -u postgres -- psql -qAt -c "select 1 from pg_roles where rolname='wapi'") | grep -q 1; then
+    (cd /tmp && runuser -u postgres -- psql -q -c "alter role wapi login password '$PW'") >/dev/null
+  else
+    (cd /tmp && runuser -u postgres -- psql -q -c "create role wapi login password '$PW'") >/dev/null
+  fi
+  unset PW
+fi
+chown root:root "$BASE/wapi.env"; chmod 600 "$BASE/wapi.env"
+(cd /tmp && runuser -u postgres -- psql -qAt -c "select 1 from pg_database where datname='wapi'") | grep -q 1 \
+  || (cd /tmp && runuser -u postgres -- createdb -O wapi wapi)
+
+# Comando de una vez como el usuario wapi, con los secretos de wapi.env (sin pasarlos por la línea de comandos)
+como_wapi() {
+  systemd-run --quiet --wait --pipe --uid=wapi --gid=wapi -p WorkingDirectory="$BASE/wapi" \
+    -p EnvironmentFile="$BASE/wapi.env" -E PATH=/usr/local/bin:/usr/bin:/bin "$@"
+}
+como_wapi bun run --cwd packages/db migrate >/dev/null
+
+# Arranques solo-local de wapi (ver deploy/wapi/)
+mkdir -p "$BASE/wapi-local"
+cp "$BASE/repo/deploy/wapi/solo-local.mjs" "$BASE/repo/deploy/wapi/api-local.ts" "$BASE/wapi-local/"
+chmod 644 "$BASE/wapi-local/"*
+for u in wapi-gateway wapi-api wapi-worker; do cp "$BASE/repo/deploy/$u.service" "/etc/systemd/system/$u.service"; done
+
+# ---------- puente de WhatsApp (toki-puente, 127.0.0.1:8788) ----------
+PUENTE_ENV="$BASE/puente.env"
+( umask 077; touch "$PUENTE_ENV" )
+chown root:root "$PUENTE_ENV"; chmod 600 "$PUENTE_ENV"
+# Agrega la variable solo si falta: nunca pisa lo que ya está (claves de la sesión, WA_MODE=live).
+pon_si_falta() { grep -q "^$1=" "$PUENTE_ENV" || printf '%s=%s\n' "$1" "$2" >> "$PUENTE_ENV"; }
+pon_si_falta WA_MODE dry                      # pasa a live con deploy/vincular-whatsapp.sh, al vincular el celular
+pon_si_falta PORT 8788
+pon_si_falta ALLOWED_ORIGIN "https://$DOMINIO"
+# El monitor MyoWare del escenario (TV en http://127.0.0.1:8766) también usa este puente: se agrega si falta.
+grep -q '^ALLOWED_ORIGIN=.*127.0.0.1:8766' "$PUENTE_ENV" || sed -i 's#^ALLOWED_ORIGIN=\(.*\)#ALLOWED_ORIGIN=\1,http://127.0.0.1:8766#' "$PUENTE_ENV"
+pon_si_falta PUBLIC_HOST "$DOMINIO"
+pon_si_falta WAPI_BASE_URL http://127.0.0.1:3101
+pon_si_falta AGENT_URL http://127.0.0.1:8790
+pon_si_falta PROFILE "$BASE/puente/profile.json"
+pon_si_falta WOKI_API_TOKEN "$(openssl rand -hex 24)"
+pon_si_falta WAPI_WEBHOOK_SECRET "$(openssl rand -hex 32)"   # vincular.ts lo reemplaza por el secreto de la sesión
+if ! grep -q '^WAPI_PAT=' "$PUENTE_ENV"; then
+  PAT=$(como_wapi bun ops/seed-ci.ts | tail -n 1)
+  [ -n "$PAT" ] && printf 'WAPI_PAT=%s\n' "$PAT" >> "$PUENTE_ENV"
+  unset PAT
+fi
+
+# Lista blanca: la de EJEMPLO. Los contactos reales se eligen desde la TV (no están en git).
+install -d -o toki -g toki -m 700 "$BASE/puente"
+[ -f "$BASE/puente/profile.json" ] || install -o toki -g toki -m 600 "$BASE/repo/software/whatsapp-bridge/profile.example.json" "$BASE/puente/profile.json"
+runuser -u toki -- bash -c "cd '$BASE/repo/software/whatsapp-bridge' && npm ci --silent --no-audit --no-fund"
+cp "$BASE/repo/deploy/toki-puente.service" /etc/systemd/system/toki-puente.service
+
+# El agente público exige el mismo token del puente (TOKI_TOKEN); el puente lo llama directo, sin token.
+printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-)" >> "$BASE/toki.env"
+chmod 600 "$BASE/toki.env"
+
 cp "$BASE/repo/deploy/toki-agente.service" /etc/systemd/system/toki-agente.service
 mkdir -p /etc/systemd/system/caddy.service.d
 printf '[Service]\nEnvironment=TOKI_DOMINIO=%s\n' "$DOMINIO" > /etc/systemd/system/caddy.service.d/toki.conf
@@ -53,9 +141,19 @@ cp "$BASE/repo/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable -q --now toki-agente
 systemctl restart toki-agente
+for u in wapi-gateway wapi-api wapi-worker; do systemctl enable -q "$u"; systemctl restart "$u"; done
+# Si la sesión ya está vinculada, el webhook queda apuntando al puente local (idempotente)
+if grep -q '^WAPI_SESSION_ID=' "$PUENTE_ENV"; then
+  sleep 5
+  ( cd "$BASE/repo/software/whatsapp-bridge" && set -a && . "$PUENTE_ENV" && set +a \
+    && ./node_modules/.bin/tsx setup-webhook.ts "http://127.0.0.1:8788" >/dev/null ) || echo "No se pudo registrar el webhook de wapi"
+fi
+systemctl enable -q toki-puente
+systemctl restart toki-puente
 systemctl enable -q caddy
 systemctl restart caddy
 
 sleep 3
 echo "agente: $(systemctl is-active toki-agente) · caddy: $(systemctl is-active caddy)"
+echo "wapi: gateway $(systemctl is-active wapi-gateway) · api $(systemctl is-active wapi-api) · worker $(systemctl is-active wapi-worker) · puente: $(systemctl is-active toki-puente) ($(grep '^WA_MODE=' "$PUENTE_ENV" | cut -d= -f2))"
 echo "URL: https://$DOMINIO"

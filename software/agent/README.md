@@ -81,3 +81,23 @@ Variables opcionales:
 | El nieto pregunta si está enferma (tema `diagnostico` bloqueado) | 7,2 s | 5,9 s |
 
 La diferencia es el arranque del proceso de Claude Code en cada llamada.
+
+## Importar la memoria desde un chat de WhatsApp
+
+`scripts/importar_whatsapp.py` lee un chat exportado (`.zip` o `_chat.txt`, formato iOS o Android) y propone memorias de la usuaria. El texto del chat no entra al repo: la salida va a `data/`, que git ignora.
+
+```bash
+A=software/agent; PY=$A/.venv/bin/python
+$PY $A/scripts/importar_whatsapp.py chat.zip --autores                     # nombres y conteo, sin mensajes
+$PY $A/scripts/importar_whatsapp.py chat.zip --yo "Emms" --nombre Emmy --persona juan --otra Juan --resumir 120
+```
+
+| Parte | Cómo | Sale como |
+|---|---|---|
+| Léxico | Palabras que ella usa más que la otra persona, en 5 días distintos o más; su risa y sus emojis | `lexico`, `publico` |
+| Estilo | Frases reales de 3 a 10 palabras, sin números, links, correos ni código | `estilo`, `familia` |
+| Perfil, episodios, rutinas, personas | `--resumir N`: los últimos N días van a Claude (suscripción) en trozos de 60.000 caracteres | `perfil` / `episodio` / `rutina` |
+
+Todo queda en `propuesta`: el agente no lo usa hasta que la usuaria o su cuidadora lo aprueba (`"estado": "aprobada"`). `--aprobar` las deja aprobadas, solo para pruebas. Para cargar un archivo importado, ponlo en la semilla (`"importar": ["importado-juan.json"]`) y corre `scripts/semilla.py`.
+
+Revisa a mano lo de salud, pareja y terceros antes de aprobarlo: en la demo, lo aprobado puede salir en pantalla.

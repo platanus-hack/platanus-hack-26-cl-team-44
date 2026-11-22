@@ -4,12 +4,15 @@
    - VOZ.emergencia(alarma): llamada telefónica del agente de emergencia + estado en la pantalla de alarma.
    - VOZ.siguiente(): Marta recorre las voces candidatas desde Ajustes y escucha cada una. */
 (function(){
-  // CFG es un const de woki-os.html: no cuelga de window, se lee por nombre.
-  const base = () => (typeof CFG!=='undefined' && (CFG.VOZ_URL ?? CFG.WA_URL)) || 'http://localhost:8788';
+  // CFG es un const de woki-os.html: no vive en window, por eso typeof. Sin puente (URL pública sin token) → '' y la voz queda apagada.
+  const cfg = () => (typeof CFG !== 'undefined' ? CFG : null);
+  const base = () => { const c = cfg(); return c ? (c.VOZ_URL ?? c.WA_URL) : 'http://localhost:8788'; };
+  const hdr = (h={}) => { const t = cfg() && cfg().WA_TOKEN; return t ? { ...h, 'X-Woki-Token': t } : h; };
   const V = { on:false, llamadaLista:false, actual:null, opciones:[], audio:null, cache:new Map(), PREFETCH:true };
 
   async function api(path, body){
-    const r = await fetch(base()+path, body ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) } : {});
+    if(!base()) throw new Error('sin puente de WhatsApp');
+    const r = await fetch(base()+path, body ? { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify(body) } : { headers:hdr() });
     let j = {}; try { j = await r.json(); } catch(_){}
     if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
     return j;
@@ -42,7 +45,7 @@
   function fetchAudio(text, emo){
     const k = key(text, emo);
     if(V.cache.has(k)) return V.cache.get(k);
-    const p = fetch(base()+'/api/voz/tts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ text, emo }) })
+    const p = (base() ? fetch(base()+'/api/voz/tts', { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify({ text, emo }) }) : Promise.reject(new Error('sin puente')))
       .then(async r => { if(!r.ok) throw new Error('tts HTTP '+r.status); return URL.createObjectURL(await r.blob()); });
     p.catch(()=>V.cache.delete(k));
     V.cache.set(k, p);

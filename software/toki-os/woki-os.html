@@ -115,6 +115,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 .g-indigo{background:linear-gradient(160deg,#8583FF,#4340C9)}
 .g-yellow{background:linear-gradient(160deg,#FFE066,#FF9F0A)}
 .g-orange{background:linear-gradient(160deg,#FFB340,#F2680A)}
+.g-red{background:linear-gradient(160deg,#FF6B5E,#D70015)}
 .g-green{background:linear-gradient(160deg,#5BE584,#1FA348)}
 .g-pink{background:linear-gradient(160deg,#FF6B8B,#E0244B)}
 .g-purple{background:linear-gradient(160deg,#D68BFF,#8E3AD6)}
@@ -395,6 +396,7 @@ body.panel #gaze{opacity:0}
 <link rel="stylesheet" href="os-juegos-servicios.css">
 <link rel="stylesheet" href="os-colores.css">
 <!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
+<script src="toki-config.js"></script>
 <script>try{ if(localStorage.getItem('woki.theme')==='light') document.documentElement.dataset.theme='light';
   const p=localStorage.getItem('woki.palette'); if(['bosque','oceano','atardecer','lavanda'].includes(p)) document.documentElement.dataset.palette=p; }catch(_){}</script>
 <link rel="stylesheet" href="magnetic-pointer.css?v=24">
@@ -432,7 +434,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <section class="screen on" id="s-home" data-title="Inicio">
     <div class="status"></div>
     <div class="grid4x2" id="tiles"></div>
-    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span><span><b>Ceja 3 s</b> SOS de prueba</span></div>
+    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span><span><b>Ceja 3 s</b> SOS</span></div>
   </section>
 
   <!-- HABLAR -->
@@ -623,6 +625,29 @@ const DWELL_OPTIONS = [800,1000,1200,1500];
 // En el equipo del demo (localhost o el monitor MyoWare en 127.0.0.1:8766) se usan los servicios locales.
 // Desde la URL pública: WhatsApp y EMG simulados; el agente se sirve en /agente del mismo sitio.
 const LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
+// WhatsApp real en la URL pública: se abre una vez con ?wa_token=<WOKI_API_TOKEN> y queda en este navegador.
+// ?wa_token= (vacío) lo borra. Sin token, la URL pública sigue con WhatsApp simulado (la vista de los jueces).
+const WA_TOKEN = (()=>{ try{
+  const q=new URLSearchParams(location.search);
+  if(q.has('wa_token')){
+    const t=(q.get('wa_token')||'').trim();
+    if(t) localStorage.setItem('woki_wa_token', t); else localStorage.removeItem('woki_wa_token');
+    const u=new URL(location.href); u.searchParams.delete('wa_token'); history.replaceState(null,'',u);   // el token no queda en la barra
+  }
+  return (window.TOKI_ENV||{}).waToken || localStorage.getItem('woki_wa_token') || '';
+}catch(_){ return ''; } })();
+// Escenario: la TV la sirve el monitor MyoWare (127.0.0.1:8766) y WhatsApp + agente están en la VPS.
+// Lo normal: el monitor lee TOKI_REMOTO y TOKI_WA_TOKEN del entorno y los entrega en toki-config.js (window.TOKI_ENV).
+// Sin monitor configurado: ?remoto=https://<dominio>&wa_token=<token> una vez; queda en el navegador.
+const REMOTO = (()=>{ try{
+  const q=new URLSearchParams(location.search);
+  if(q.has('remoto')){
+    const r=(q.get('remoto')||'').trim().replace(/\/+$/,'');
+    if(/^https:\/\//.test(r)) localStorage.setItem('woki_remoto', r); else localStorage.removeItem('woki_remoto');
+    const u=new URL(location.href); u.searchParams.delete('remoto'); history.replaceState(null,'',u);
+  }
+  return LOCAL ? ((window.TOKI_ENV||{}).remoto || localStorage.getItem('woki_remoto') || '') : '';
+}catch(_){ return ''; } })();
 const CFG = {
   // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
   // la elección en Ajustes se recuerda en el navegador
@@ -635,7 +660,9 @@ const CFG = {
   doubleMs: 500, tapMs: 900, holdMs: 3000,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
-  WA_URL: LOCAL ? 'http://localhost:8788' : '', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  WA_URL: REMOTO ? REMOTO+'/wa' : LOCAL ? 'http://localhost:8788' : (WA_TOKEN ? location.origin+'/wa' : ''), // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  AGENTE_URL: REMOTO ? REMOTO+'/agente' : '',   // modo dev: agente de la VPS en vez del local
+  WA_TOKEN,              // header X-Woki-Token hacia el puente (también lo usa woki-voz.js)
   EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
   WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)
   magnet: true,          // imán: si la mirada cae en un hueco, el foco va al objetivo más probable cercano (tecla I)
@@ -652,7 +679,7 @@ const TILES = [
   ['go:talk','g-blue','i-chat','Hablar','Respuestas sugeridas'],
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
   ['go:reactions','g-yellow','i-smile','Reacciones','Sin esperar'],
-  ['attention','g-orange','i-bell','Llamar a Camila','Atención, no urgencia'],
+  ['sos','g-red','i-alert','SOS','Pedir ayuda urgente',2000],   // 2 s de mirada antes de aceptar: no se dispara al pasar
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
   ['music','g-pink','i-music','Música','Lo de siempre'],
   ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
@@ -911,7 +938,7 @@ function waMention(ev){
 const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
 
 async function waApi(path,opts={}){
-  const r=await fetch(CFG.WA_URL+path,{...opts, headers: opts.body? {'Content-Type':'application/json'} : {}});
+  const r=await fetch(CFG.WA_URL+path,{...opts, headers: { ...(opts.body? {'Content-Type':'application/json'} : {}), ...(CFG.WA_TOKEN? {'X-Woki-Token':CFG.WA_TOKEN} : {}) }});
   let j={}; try{ j=await r.json(); }catch(_){}
   if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
   return j;
@@ -979,7 +1006,7 @@ function waIncoming(ev){
 }
 function waListen(){
   if(!CFG.WA_URL || !window.EventSource) return;
-  const es=new EventSource(CFG.WA_URL+'/api/wa/events');
+  const es=new EventSource(CFG.WA_URL+'/api/wa/events'+(CFG.WA_TOKEN? '?token='+encodeURIComponent(CFG.WA_TOKEN) : ''));   // EventSource no manda headers
   es.onopen=()=>{ WA.online=true; renderStatus(); waLoadFavs(); log('WhatsApp conectado'); };
   es.onerror=()=>{ if(WA.online) log('WhatsApp sin conexión'); WA.online=false; renderStatus(); };   // EventSource reintenta solo
   es.onmessage=m=>{ let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
@@ -1068,8 +1095,8 @@ const RING = '<svg class="ring" viewBox="0 0 64 64"><circle class="bg" cx="32" c
 function decorate(root){ (root||document).querySelectorAll('[data-t]').forEach(el=>{
   if(!el.querySelector(':scope > .ring')) el.insertAdjacentHTML('beforeend', RING + (el.classList.contains('emo')?'':'<div class="badge">Listo · ceja o clic</div>')); }); }
 function stagger(container){ [...container.children].forEach((c,i)=>{ c.classList.add('stag'); c.style.setProperty('--i',i); }); }
-function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb])=>
-  `<div class="t tile" data-t data-act="${act}"><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
+function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb,dw])=>
+  `<div class="t tile" data-t data-act="${act}"${dw?` data-dwell="${dw}"`:''}><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
   const go=gazeOnly();
@@ -1441,6 +1468,7 @@ function activate(el, calibrateGaze=true){
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
     case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
     case 'attention': startAlarm('atencion'); break;
+    case 'sos': startAlarm('emergencia'); break;   // la tarjeta SOS = el mismo SOS que ceja 3 s
     case 'quick': chooseQuick(arg); break;
     case 'music': island('🎵','Reproduciendo “Lo de siempre” (simulado)'); break;
     case 'rest': setRest(true); break;
@@ -1575,7 +1603,7 @@ function showHoldProgress(){
   const active=src && (S.quick? $('#quickDialog .gesture-hold') : $('#gestureHold'));
   $$('.gesture-hold').forEach(el=>{ el.hidden=el!==active; });
   if(active){
-    const label=src==='ceja'?'SOS de prueba · suelta para cancelar':'Abriendo atajos · suelta para cancelar';
+    const label=src==='ceja'?'SOS · suelta para cancelar':'Abriendo atajos · suelta para cancelar';
     if(active.firstElementChild.textContent!==label) active.firstElementChild.textContent=label;
     active.lastElementChild.value=G.down[src].progress;
   }
