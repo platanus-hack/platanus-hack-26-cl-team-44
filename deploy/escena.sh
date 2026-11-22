@@ -71,12 +71,18 @@ else
 fi
 
 # 5) Monitor MyoWare: sirve la TV y los gestos
-TOKI_APPS_URL="http://127.0.0.1:$APPS_PUERTO" TOKI_REMOTO="$REMOTO" TOKI_WA_TOKEN="$TOKEN" python3 "$RAIZ/software/myoware-monitor/server.py" --http-port "$PUERTO" "${ARGS[@]}" &
+# Bluetooth necesita Bleak. Si el python3 del sistema no lo tiene, uv lo trae sin instalar nada global.
+PY=(python3)
+if [[ " ${ARGS[*]} " == *" --ble-"* ]] && ! python3 -c "import bleak" 2>/dev/null; then
+  if command -v uv >/dev/null; then PY=(uv run --no-project --quiet --with bleak python); ok "Bleak vía uv (MyoWare por Bluetooth)"
+  else ko "Falta Bleak para el MyoWare por Bluetooth: python3 -m pip install --user bleak (o instala uv)"; fi
+fi
+TOKI_APPS_URL="http://127.0.0.1:$APPS_PUERTO" TOKI_REMOTO="$REMOTO" TOKI_WA_TOKEN="$TOKEN" "${PY[@]}" "$RAIZ/software/myoware-monitor/server.py" --http-port "$PUERTO" "${ARGS[@]}" &
 MONITOR=$!
 unset TOKEN
 trap 'kill $MONITOR $APPS 2>/dev/null' EXIT INT TERM
 listo=""
-for _ in $(seq 1 30); do
+for _ in $(seq 1 90); do   # la primera vez uv descarga Bleak
   kill -0 $MONITOR 2>/dev/null || break
   curl -s -o /dev/null "http://127.0.0.1:$PUERTO/woki-os.html" && { listo=1; break; }
   sleep 0.5

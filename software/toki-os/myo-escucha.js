@@ -32,7 +32,7 @@
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
   const MAX_TURNOS = 8;
 
-  const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0 };
+  const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0, usuaria: '' };
   try { E.hablantes = JSON.parse(sessionStorage.getItem('myo.hablantes') || '{}'); } catch (_) {}
 
   // ---------- interfaz: botón y barra de voces (para el acompañante) ----------
@@ -233,7 +233,7 @@
     const q = new URLSearchParams({ token: d.token });
     for (const [k, v] of Object.entries(d.params)) q.set(k, v);
     const vistos = new Set();
-    for (const n of [W.S.usuaria, ...E.personas.map((p) => p.nombre)]) if (n && !vistos.has(n.toLowerCase()) && vistos.size < 50) { vistos.add(n.toLowerCase()); q.append('keyterms', n); }
+    for (const n of [E.usuaria, ...E.personas.map((p) => p.nombre)])   // el nombre de la usuaria primero (sin él, «Emmy» salía «Emi») if (n && !vistos.has(n.toLowerCase()) && vistos.size < 50) { vistos.add(n.toLowerCase()); q.append('keyterms', n); }
     sesion += 1;
     ws = new WebSocket(WS_URL + '?' + q);
     ws.onmessage = (ev) => { try { mensaje(JSON.parse(ev.data)); } catch (_) {} };
@@ -265,6 +265,7 @@
     E.on = true; btn.classList.add('on'); btn.textContent = '● Escuchando';
     try {
       if (!E.personas.length) E.personas = await getJ(URL_AGENTE, '/api/personas').catch(() => []);
+      if (!E.usuaria) E.usuaria = (await getJ(URL_AGENTE, '/api/salud').catch(() => ({}))).usuaria || '';
       await abrirMic(); await conectar();
     } catch (e) { say('no se pudo escuchar: ' + e.message); apagar(); }
   }
