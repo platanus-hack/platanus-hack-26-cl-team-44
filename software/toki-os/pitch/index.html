@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Myo · Pitch</title>
+<link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=block" rel="stylesheet">
+<style>
+  :root { --tinta: #000; --papel: #fff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--tinta); color: var(--papel); overflow: hidden;
+    font-family: 'Outfit', system-ui, sans-serif; cursor: none; }
+  body.cursor { cursor: default; }
+
+  /* Escenario de 1920x1080 que se escala a la ventana */
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; }
+  .s { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 160px;
+    opacity: 0; transition: opacity .45s ease; pointer-events: none; }
+  .s.on { opacity: 1; pointer-events: auto; }
+  .s video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .frase { font-size: 168px; font-weight: 600; line-height: 1.04; letter-spacing: -0.035em; max-width: 1600px; text-wrap: balance; }
+  .larga { font-size: 150px; white-space: nowrap; max-width: none; }
+  .grande { white-space: nowrap; font-size: 340px; font-weight: 700; line-height: .9; letter-spacing: -0.05em; }
+  .bajo { font-size: 120px; font-weight: 500; letter-spacing: -0.03em; margin-top: 40px; }
+  /* Precio de una unidad: aparece sobre el último cuadro del onboarding */
+  .precio { position: absolute; right: 160px; top: 132px; text-align: right; opacity: 0; transform: translateY(20px);
+    transition: opacity .6s ease, transform .6s ease; }
+  .precio.on { opacity: 1; transform: none; }
+  .precio .que { font-size: 40px; font-weight: 500; color: #9a9a9a; }
+  .precio .cuanto { font-size: 120px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin: 10px 0 14px; }
+  .precio .detalle { font-size: 34px; font-weight: 500; color: #9a9a9a; }
+  .icono { width: 260px; margin-bottom: 72px; filter: invert(1); }
+
+  /* Onboarding: cuatro pasos */
+  .titulo { font-size: 120px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin-bottom: 80px; }
+  .pasos { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 64px 96px; }
+  .pasos li { display: flex; gap: 36px; align-items: flex-start; }
+  .pasos .n { flex: none; width: 96px; height: 96px; border-radius: 50%; background: var(--papel); color: var(--tinta);
+    display: grid; place-items: center; font-size: 52px; font-weight: 700; }
+  .pasos h3 { font-size: 60px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; margin-bottom: 14px; }
+  .pasos p { font-size: 38px; font-weight: 500; line-height: 1.25; color: #9a9a9a; }
+  .despues { font-size: 40px; font-weight: 500; color: #9a9a9a; margin-top: 80px; }
+  .despues b { color: var(--papel); font-weight: 600; }
+
+  /* Progreso discreto: solo aparece al mover el mouse */
+  #prog { position: fixed; left: 0; bottom: 0; height: 3px; background: #333; transition: width .3s, opacity .3s; opacity: 0; }
+  body.cursor #prog { opacity: 1; }
+
+  /* Anexos: más texto, mismo sistema */
+  .anexo { justify-content: flex-start; padding-top: 110px; }
+  .anexo h2 { font-size: 96px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin-bottom: 64px; }
+  .grilla { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 56px 64px; }
+  .grilla h3 { font-size: 40px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 14px; border-top: 3px solid #fff; padding-top: 22px; }
+  .grilla p { font-size: 30px; font-weight: 500; line-height: 1.3; color: #9a9a9a; }
+  .grilla p b { color: #fff; font-weight: 600; }
+  .citas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 64px 72px; }
+  .citas blockquote { font-size: 46px; font-weight: 600; line-height: 1.12; letter-spacing: -0.02em; }
+  .citas cite { display: block; margin-top: 18px; font-size: 26px; font-weight: 500; font-style: normal; color: #8a8a8a; letter-spacing: 0; }
+  .pie { position: absolute; left: 160px; bottom: 70px; font-size: 26px; font-weight: 500; color: #6a6a6a; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <section class="s"><video src="myo-logo.mp4" autoplay muted loop playsinline preload="auto"></video></section>
+
+  <section class="s"><p class="frase">¿Cuántas decisiones tomaste hoy sin consultar a nadie?</p></section>
+  <section class="s"><p class="frase">Qué decir.<br>Qué comprar.<br>Qué ver.</p></section>
+  <section class="s"><p class="grande">9 de 10</p><p class="bajo">personas con ELA terminan perdiendo el habla.</p></section>
+  <section class="s"><p class="frase larga">Lo que existe hoy<br>solo sirve para hablar.<br>No para hacer ni decidir.</p></section>
+  <!-- En sus palabras: va tras "Lo que existe hoy" -->
+  <section class="s anexo"><h2>En sus palabras.</h2><div class="citas">
+    <div><blockquote>"Lo único que soy es una carga."</blockquote><cite>Persona con ELA · Reddit r/ALS</cite></div>
+    <div><blockquote>"No puedo pedir ayuda si no es con el Tobii."</blockquote><cite>Persona con ELA y traqueostomía · Reddit r/ALS</cite></div>
+    <div><blockquote>"Cuando hay más de una persona en la sala, ya no te hablan a ti."</blockquote><cite>Persona con ELA · I AM ALS</cite></div>
+    <div><blockquote>"Tenía miedo de perder mi independencia y de convertirme en una carga."</blockquote><cite>Persona con ELA, Argentina · Clarín</cite></div>
+    <div><blockquote>"Ya no puede mirar sus redes ni jugar en su teléfono."</blockquote><cite>Esposa de una persona con ELA · Reddit r/CaregiverSupport</cite></div>
+    <div><blockquote>"Estoy viviendo la vida de otro."</blockquote><cite>Cuidadora, Argentina · Cavalo et al., 2025</cite></div>
+  </div><p class="pie">Citas en inglés traducidas al español. Fuentes en la investigación del equipo.</p></section>
+  <section class="s"><p class="frase">Lo que más duele es sentirse una carga.</p></section>
+  <section class="s"><img class="icono" src="icon.svg" alt=""><p class="frase">Myo: hablar, hacer y decidir. Solo con los ojos.</p></section>
+
+  <section class="s"><p class="frase larga">Myo no devuelve<br>la movilidad.<br>Devuelve las decisiones.</p></section>
+
+  <section class="s"><video src="myo-logo.mp4" autoplay muted loop playsinline preload="auto"></video></section>
+  <!-- Onboarding animado: fuente en ../onboarding-video.html (render-onboarding.cjs). En loop: hace zoom out y vuelve a empezar. -->
+  <section class="s"><video src="onboarding.mp4" muted loop playsinline preload="auto"></video>
+    <div class="precio"><p class="que">Una unidad completa</p><p class="cuanto">US$ 158</p><p class="detalle">≈ $158.000 CLP · sensor, placa, batería y brazalete</p></div></section>
+
+  <!-- Anexo 1: por si preguntan por el hardware -->
+  <section class="s anexo"><h2>Cómo está hecho.</h2><div class="grilla">
+    <div><h3>La mirada</h3><p>Webcam con MediaPipe, error de <b>1,5 a 3,7°</b>. O iPhone con ARKit, <b>~2,9°</b>. La nariz queda de respaldo.</p></div>
+    <div><h3>El clic muscular</h3><p><b>MyoWare 2.0</b> en la ceja y el masetero. Envolvente de la señal a un <b>ESP32 por Bluetooth</b>, 100 lecturas por segundo.</p></div>
+    <div><h3>Los electrodos</h3><p>Tres por canal: dos sobre el músculo, en la dirección de las fibras, y la referencia sobre hueso. Desechables, de 24 mm.</p></div>
+    <div><h3>La seguridad</h3><p>Nada pegado al cuerpo va a un equipo enchufado. Sensor <b>inalámbrico</b>, batería de 40 mAh. Tragar no cuenta: la mandíbula pide doble apretón.</p></div>
+    <div><h3>La consola</h3><p><b>Raspberry Pi 4</b> con pantalla táctil de 7" y batería de respaldo, para que la alarma siga si se corta la luz.</p></div>
+    <div><h3>El SOS</h3><p>ElevenLabs + Twilio: <b>hasta 5 llamadas en paralelo</b>. El primero que confirma va; los demás saben quién.</p></div>
+  </div><p class="pie">Clic EMG simulado: 83 % de detección, latencia mediana 118 ms. Prototipo sin certificación médica, probado solo con el equipo.</p></section>
+
+</div>
+<div id="prog"></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.s')];
+  const stage = document.getElementById('stage');
+  const prog = document.getElementById('prog');
+  let i = 0;
+
+  function fit() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `translate(-50%, -50%) scale(${k})`;
+  }
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, j) => s.classList.toggle('on', j === i));
+    const v = slides[i].querySelector('video');
+    if (v) { v.currentTime = 0; v.play().catch(() => {}); }
+    document.querySelectorAll('.precio').forEach(p => p.classList.remove('on'));
+    prog.style.width = ((i + 1) / slides.length * 100) + '%';
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+  addEventListener('click', e => show(e.clientX < innerWidth / 3 ? i - 1 : i + 1));
+
+  let t;
+  addEventListener('mousemove', () => {
+    document.body.classList.add('cursor');
+    clearTimeout(t); t = setTimeout(() => document.body.classList.remove('cursor'), 1500);
+  });
+
+  // El precio se ve mientras el onboarding muestra la vista completa (el video está en loop:
+  // los últimos 1,4 s vuelven al inicio, así que se oculta antes y reaparece en la vuelta siguiente)
+  document.querySelectorAll('.precio').forEach(p => {
+    const v = p.parentElement.querySelector('video');
+    v.addEventListener('timeupdate', () => {
+      const t = v.currentTime, d = v.duration;
+      p.classList.toggle('on', !!d && t > d - 4.3 && t < d - 1.4);
+    });
+  });
+
+  addEventListener('resize', fit);
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>
