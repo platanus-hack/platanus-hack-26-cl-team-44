@@ -186,11 +186,10 @@
     "fruta",
     "galleta",
     "hambre",
-    "once",
     "pastel",
     "plato",
     "postre",
-    "queque",
+    "ponque",
     "sopa",
     "torta",
     "hamburguesa",
@@ -214,7 +213,9 @@
     "helado",
     "dulce",
     "cocinar",
-    "receta"
+    "receta",
+    "merienda",
+    "onces"
    ],
    "tarjetas": [
     {
@@ -256,15 +257,18 @@
     "agua",
     "beber",
     "bebida",
-    "bombilla",
+    "pitillo",
     "cafe",
     "jugo",
     "leche",
     "sed",
-    "tecito",
+    "aromatica",
     "tomar",
     "un te",
-    "vaso"
+    "vaso",
+    "pajita",
+    "te",
+    "infusion"
    ],
    "tarjetas": [
     {
@@ -284,7 +288,7 @@
     },
     {
      "id": "bebida-4",
-     "texto": "Con bombilla, por favor",
+     "texto": "Con pitillo, por favor",
      "privacidad": "publico"
     },
     {
@@ -416,7 +420,7 @@
     "endocrin",
     "enfermera",
     "examen",
-    "kine",
+    "fisioterapia",
     "kinesiologo",
     "maquina",
     "mascara",
@@ -428,7 +432,8 @@
     "respiracion",
     "respirar",
     "terapia",
-    "tratamiento"
+    "tratamiento",
+    "fisio"
    ],
    "tarjetas": [
     {
