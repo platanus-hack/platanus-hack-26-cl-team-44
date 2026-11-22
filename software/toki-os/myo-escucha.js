@@ -45,6 +45,8 @@
   // Teclas del acompañante: O enciende o apaga · Mayús+O cambia de modo. También se cambia en el indicador.
   const MODOS = ['siempre', 'voz', 'manual'];
   const NOMBRE_MODO = { siempre: 'siempre encendida', voz: 'se activa con la voz', manual: 'manual' };
+  // ?escucha=voz|siempre|manual en la URL elige el modo y queda guardado (escena.sh lo pasa con TOKI_ESCUCHA).
+  try { const q = new URLSearchParams(location.search).get('escucha'); if (MODOS.includes(q)) localStorage.setItem('myo.escucha.modo', q); } catch (_) {}
   let modo = (() => { try { const m = localStorage.getItem('myo.escucha.modo'); return MODOS.includes(m) ? m : 'siempre'; } catch (_) { return 'siempre'; } })();
   const SILENCIO_MS = 45000, PREVIO_CHUNKS = 15;   // 15 × 100 ms = 1,5 s de audio previo
   const ST = { sesiones: 0, msConectado: 0, desde: 0 };   // para comparar el gasto de los modos
@@ -61,6 +63,7 @@
   #escuchaBar .priv{opacity:.75}
   #escuchaInd{position:fixed;top:14px;right:18px;z-index:60;display:flex;gap:8px;align-items:center;padding:6px 12px;border-radius:999px;
     background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font:600 14px/1 system-ui;cursor:pointer;opacity:.8}
+  #escuchaInd.en-barra{position:static;opacity:1;min-height:44px;padding:0 14px}
   #escuchaInd i{width:9px;height:9px;border-radius:50%;background:#8e8e93;display:inline-block}
   #escuchaInd.oye i{background:#ff9f0a}
   #escuchaInd.vivo i{background:#ff453a;box-shadow:0 0 0 0 rgba(255,69,58,.6);animation:escPulso 1.6s infinite}
@@ -72,7 +75,9 @@
   // Indicador fijo en todas las pantallas: la sala sabe cuándo Myo escucha. Clic = encender o apagar; Mayús+clic = modo.
   const ind = Object.assign(document.createElement('div'), { id: 'escuchaInd', title: 'Escucha de la sala (O enciende o apaga · Mayús+O cambia de modo)' });
   ind.append(document.createElement('i'), document.createElement('span'));
-  document.body.appendChild(ind);
+  // En la barra de abajo, junto a «Cuidados»: arriba a la derecha tapaba el reloj y la esquina de la pantalla.
+  const devbar = document.getElementById('devbar');
+  if (devbar) { ind.classList.add('dbtn', 'en-barra'); devbar.prepend(ind); } else document.body.appendChild(ind);
   function pintarInd() {
     const vivo = !!(ws && ws.readyState === 1);
     ind.classList.toggle('vivo', E.on && vivo);

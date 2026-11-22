@@ -10,6 +10,7 @@
 #   TOKI_REMOTO     URL de la VPS (por defecto https://179-66-157-161.sslip.io)
 #   TOKI_WA_TOKEN   token del puente; si falta, se lee de la VPS con 'ssh toki-vps'
 #   TOKI_RAPPI_PAIS co (Bogotá, por defecto) o cl (Santiago), para apps-bridge (Rappi)
+#   TOKI_ESCUCHA    modo de escucha de la sala: siempre (por defecto), voz o manual
 # El token nunca va en una URL: el monitor se lo entrega a la TV en /toki-config.js.
 # Funciona en macOS y Linux (el monitor usa termios: en Windows, correrlo dentro de WSL).
 set -uo pipefail
@@ -92,7 +93,7 @@ sleep 1
 case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected": true'*|*'"connected":true'*) ok "Sensor enviando datos";; *) ko "El sensor no manda datos: sin MyoWare, usa Espacio = ceja y J = mandíbula (si es Bluetooth, revisa Ajustes › Privacidad › Bluetooth)";; esac
 
 # 6) Chrome con su propio perfil (guarda la calibración entre ensayos) y en pantalla completa
-URL="http://127.0.0.1:$PUERTO/woki-os.html"
+URL="http://127.0.0.1:$PUERTO/woki-os.html${TOKI_ESCUCHA:+?escucha=$TOKI_ESCUCHA}"   # TOKI_ESCUCHA=voz|siempre|manual
 PERFIL="$HOME/.toki-chrome"
 # Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
 # Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.

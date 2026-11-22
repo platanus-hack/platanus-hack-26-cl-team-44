@@ -25,6 +25,8 @@ import unicodedata
 from collections import Counter
 from pathlib import Path
 
+from memoria import salida
+
 AGENT = Path(__file__).resolve().parent
 CATALOGO = AGENT / "catalogo" / "temas.json"
 USUARIA = AGENT / "data" / "tarjetas.json"
@@ -142,7 +144,7 @@ def ordenar(turns: list[dict], partner: str, visible: set, path_usuario: Path, l
         if total.get(c["id"]):
             s += math.log1p(total[c["id"]])
         if s > 0:
-            out.append({"id": c["id"], "texto": c["texto"], "tema": c["tema"], "origen": c["origen"],
+            out.append({"id": c["id"], "texto": salida.limpiar(c["texto"]), "tema": c["tema"], "origen": c["origen"],
                         "score": round(s, 2), "motivo": ", ".join(motivos)})
     out.sort(key=lambda x: (-x["score"], x["id"]))
     principal = detectados[0][0] if detectados else None
