@@ -18,7 +18,7 @@ assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos prime
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
-    "go:talk", "go:keyboard", "attention", "go:contacts",
+    "go:talk", "go:keyboard", "sos", "go:contacts",
     "go:apps", "go:games", "rest", "go:settings",
   ]);
   assert.match(html, /class="grid4x2" id="tiles"/);

@@ -115,6 +115,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 .g-indigo{background:linear-gradient(160deg,#8583FF,#4340C9)}
 .g-yellow{background:linear-gradient(160deg,#FFE066,#FF9F0A)}
 .g-orange{background:linear-gradient(160deg,#FFB340,#F2680A)}
+.g-red{background:linear-gradient(160deg,#FF6B5E,#D70015)}
 .g-green{background:linear-gradient(160deg,#5BE584,#1FA348)}
 .g-pink{background:linear-gradient(160deg,#FF6B8B,#E0244B)}
 .g-purple{background:linear-gradient(160deg,#D68BFF,#8E3AD6)}
@@ -433,7 +434,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <section class="screen on" id="s-home" data-title="Inicio">
     <div class="status"></div>
     <div class="grid4x2" id="tiles"></div>
-    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span><span><b>Ceja 3 s</b> SOS de prueba</span></div>
+    <div class="hint"><span><b>Ceja</b> elegir</span><span><b>Ceja ×2</b> atrás</span><span><b>Mandíbula 3 s</b> atajos</span><span><b>Ceja 3 s</b> SOS</span></div>
   </section>
 
   <!-- HABLAR -->
@@ -662,7 +663,7 @@ CFG.sugMode=(()=>{ try{ return localStorage.getItem('woki.sugmode')==='lista'? '
 const TILES = [
   ['go:talk','g-blue','i-chat','Hablar','Respuestas sugeridas'],
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
-  ['attention','g-orange','i-bell','Llamar a Camila','Atención, no urgencia'],
+  ['sos','g-red','i-alert','SOS','Pedir ayuda urgente',2000],   // 2 s de mirada antes de aceptar: no se dispara al pasar
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
   ['go:apps','g-white','i-apps','Servicios','Música, videos, noticias'],
   ['go:games','g-teal','i-gamepad','Juegos','A tu ritmo'],
@@ -676,37 +677,52 @@ const EMOS = [
   {id:'seria',  e:'😐',n:'seria',    rate:.95,pitch:.9, vol:1},
   {id:'entusiasta',e:'🤩',n:'entusiasta',rate:1.18,pitch:1.3,vol:1}];
 const EMO = Object.fromEntries(EMOS.map(e=>[e.id,e]));
+// Frases locales (sin internet). Cada tema tiene 4 POSICIONES con una intención fija —el "sí"
+// siempre en el mismo lugar, el "no" siempre en el suyo— y varias formas de decir esa intención.
+// Cada vez que se abre Hablar sale otra forma, sin repetir la de la vez anterior.
+// Así las tarjetas varían pero Marta no tiene que volver a buscar dónde está cada respuesta.
 const RULES = [
   {k:/cena|comer|almuerz|domingo|once/i, s:[
-    ['¡Obvio! Guárdame del postre de la abuela.','cariñosa','carinosa'],
-    ['Sí, llego a las 8.','breve','seria'],
-    ['Si cocina tu papá, lo pienso.','con humor','ironica'],
-    ['Este domingo no puedo, ¿el próximo?','neutra','seria']]},
+    [['¡Obvio! Guárdame del postre de la abuela.','cariñosa','carinosa'],['¡Claro que voy! Me encanta cenar con ustedes.','cariñosa','carinosa'],['¡Sí! Ya me estaba haciendo falta verlos.','cariñosa','alegre']],
+    [['Sí, llego a las 8.','breve','seria'],['Dale, ahí estaré.','breve','alegre'],['Cuenta conmigo.','breve','seria']],
+    [['Si cocina tu papá, lo pienso.','con humor','ironica'],['Voy, pero yo no lavo los platos.','con humor','ironica'],['¿Hay postre? Entonces sí.','con humor','alegre']],
+    [['Este domingo no puedo, ¿el próximo?','neutra','seria'],['Hoy estoy cansada, ¿lo dejamos para otro día?','honesta','seria'],['Mejor vengan ustedes a la casa.','propuesta','carinosa']]]},
   {k:/c[oó]mo est[aá]s|c[oó]mo te sientes|qu[eé] tal/i, s:[
-    ['Bien, con ganas de verte.','cariñosa','carinosa'],
-    ['Cansada, pero contenta de que vinieras.','honesta','seria'],
-    ['Mejor que tu equipo de fútbol.','con humor','ironica'],
-    ['Un poco adolorida hoy.','breve','seria']]},
+    [['Bien, con ganas de verte.','cariñosa','carinosa'],['Feliz de que estés aquí.','cariñosa','carinosa'],['Mejor ahora que llegaste.','cariñosa','carinosa']],
+    [['Cansada, pero contenta de que vinieras.','honesta','seria'],['Más o menos, hoy fue un día largo.','honesta','seria'],['Tranquila, sin novedad.','breve','seria']],
+    [['Mejor que tu equipo de fútbol.','con humor','ironica'],['Divina, como siempre.','con humor','ironica'],['Lista para una maratón… de series.','con humor','alegre']],
+    [['Un poco adolorida hoy.','breve','seria'],['Me duele la espalda, pero bien.','honesta','seria'],['Con sueño, dormí mal.','breve','seria']]]},
   {k:/duele|dolor|molest/i, s:[
-    ['Sí, me duele la espalda.','directa','seria'],
-    ['Un poco, ¿me cambias de posición?','pedido','seria'],
-    ['No, estoy bien, tranquila.','calma','carinosa'],
-    ['Me duele la cabeza, ¿me das algo?','pedido','seria']]},
+    [['Sí, me duele la espalda.','directa','seria'],['Sí, me duelen las piernas.','directa','seria'],['Sí, me duele el cuello.','directa','seria']],
+    [['Un poco, ¿me cambias de posición?','pedido','seria'],['¿Me acomodas la almohada?','pedido','seria'],['¿Me subes un poco la cama?','pedido','seria']],
+    [['No, estoy bien, tranquila.','calma','carinosa'],['Ya se me pasó, gracias.','calma','carinosa'],['Nada grave, no te preocupes.','calma','carinosa']],
+    [['Me duele la cabeza, ¿me das algo?','pedido','seria'],['¿Me toca el remedio?','pedido','seria'],['Llama a la enfermera, porfa.','pedido','seria']]]},
   {k:/fr[ií]o|calor|tapo|ventana/i, s:[
-    ['Tengo frío, ¿me tapas?','pedido','carinosa'],
-    ['Abre la ventana, porfa.','pedido','seria'],
-    ['Estoy perfecta así.','breve','alegre'],
-    ['Hace un calor de infierno.','con humor','ironica']]},
+    [['Tengo frío, ¿me tapas?','pedido','carinosa'],['¿Me pasas la manta?','pedido','carinosa'],['Tengo los pies helados.','pedido','seria']],
+    [['Abre la ventana, porfa.','pedido','seria'],['¿Me prendes el ventilador?','pedido','seria'],['Sácame una frazada, porfa.','pedido','seria']],
+    [['Estoy perfecta así.','breve','alegre'],['Así está bien, gracias.','breve','seria'],['No cambies nada, estoy cómoda.','breve','alegre']],
+    [['Hace un calor de infierno.','con humor','ironica'],['Parece que vivo en el Polo Norte.','con humor','ironica'],['¿Quién apagó el sol?','con humor','ironica']]]},
   {k:/agua|sed|tomar|caf[eé]/i, s:[
-    ['Sí, agua por favor.','breve','seria'],
-    ['Un café, si hay.','pedido','alegre'],
-    ['No, gracias.','breve','seria'],
-    ['Una cerveza, pero no le digas al doctor.','con humor','ironica']]}];
+    [['Sí, agua por favor.','breve','seria'],['Agua fresca, porfa.','breve','seria'],['Un vaso de agua, gracias.','breve','seria']],
+    [['Un café, si hay.','pedido','alegre'],['Un té con limón.','pedido','alegre'],['Un jugo, porfa.','pedido','alegre']],
+    [['No, gracias.','breve','seria'],['Ahora no, después.','breve','seria'],['Estoy bien así.','breve','seria']],
+    [['Una cerveza, pero no le digas al doctor.','con humor','ironica'],['Un pisco sour, por si cuela.','con humor','ironica'],['Champaña, que hoy celebramos.','con humor','alegre']]]}];
 const DEFAULT = [
-  ['Sí, claro.','breve','seria'],
-  ['Cuéntame más.','interés','alegre'],
-  ['Dame un segundo, lo estoy pensando.','pausa','seria'],
-  ['Jajaja, no puedo contigo.','con humor','alegre']];
+  [['Sí, claro.','breve','seria'],['Obvio.','breve','alegre'],['Me parece bien.','breve','seria']],
+  [['Cuéntame más.','interés','alegre'],['¿Y qué pasó después?','interés','alegre'],['No te creo, ¿en serio?','interés','entusiasta']],
+  [['Dame un segundo, lo estoy pensando.','pausa','seria'],['Espera, que estoy escribiendo.','pausa','seria'],['Déjame pensarlo.','pausa','seria']],
+  [['Jajaja, no puedo contigo.','con humor','alegre'],['Te pasaste, jajaja.','con humor','alegre'],['Eres un caso perdido.','con humor','ironica']]];
+// Elige una forma por posición: nunca la misma de la vez anterior, y un poco más seguido las que Marta ya usa (su estilo).
+const LAST_PICK = {};
+function pickVariants(key, slots){
+  const usos = t => (MEM.m.phrases||[]).filter(p=>p.t===t).length;
+  return slots.map((vars,i)=>{
+    const k=key+':'+i, pool = vars.length>1 ? vars.filter(v=>v[0]!==LAST_PICK[k]) : vars;
+    const pesos = pool.map(v=>1+Math.min(2,usos(v[0])));
+    let r = Math.random()*pesos.reduce((a,b)=>a+b,0), elegida = pool[0];
+    for(let n=0;n<pool.length;n++){ r-=pesos[n]; if(r<=0){ elegida=pool[n]; break; } }
+    LAST_PICK[k]=elegida[0]; return elegida; });
+}
 const REACTS = [
   ['😂','jajaja','alegre'],['😱','¡no!','entusiasta'],['🤔','mmm…','seria'],['❤️','te quiero','carinosa'],
   ['🙄','¿en serio?','ironica'],['✋','espera','seria'],['😋','¡qué rico!','alegre'],['👍','dale','alegre']];
@@ -793,7 +809,7 @@ function waHelper(){   // el acompañante: un contacto principal con relación d
 }
 function waSetPool(cards,generic){
   const seen=new Set(), pool=[];
-  for(const c of [...(generic? GENERIC.map(toCard):[]), ...cards, ...(generic?[]:GENERIC.map(toCard)), ...DEFAULT.map(toCard)])
+  for(const c of [...(generic? GENERIC.map(toCard):[]), ...cards, ...(generic?[]:GENERIC.map(toCard)), ...pickVariants('wa-default',DEFAULT).map(toCard)])
     if(!seen.has(c.text)){ seen.add(c.text); pool.push(c); }
   S.pool=pool; S.poolPage=0; waPage();
 }
@@ -867,8 +883,8 @@ function iniCorpus(){
   const out=[], add=(t,tone,emo,w)=>{ if(t && !out.some(x=>x.text===t)) out.push({text:t,tone,emo,w}); };
   for(const m of Object.values(WA.hist).flat()) if(m.dir==='out') add(m.text,'ya lo escribiste','seria',3);   // lo que Marta ya mandó
   for(const p of MEM.m.phrases) add(p.t,'ya lo dijiste','seria',2);
-  for(const r of RULES) for(const s of r.s) add(s[0],s[1],s[2],1);
-  for(const s of [...GENERIC,...DEFAULT]) add(s[0],s[1],s[2],1);
+  for(const r of RULES) for(const s of r.s.flat()) add(s[0],s[1],s[2],1);   // todas las formas de cada posición
+  for(const s of [...GENERIC,...DEFAULT.flat()]) add(s[0],s[1],s[2],1);
   for(const r of REACTS) add(r[1][0].toUpperCase()+r[1].slice(1),'reacción',r[2],0);
   return out;
 }
@@ -1080,8 +1096,8 @@ const RING = '<svg class="ring" viewBox="0 0 64 64"><circle class="bg" cx="32" c
 function decorate(root){ (root||document).querySelectorAll('[data-t]').forEach(el=>{
   if(!el.querySelector(':scope > .ring')) el.insertAdjacentHTML('beforeend', RING + (el.classList.contains('emo')?'':'<div class="badge">Listo · ceja o clic</div>')); }); }
 function stagger(container){ [...container.children].forEach((c,i)=>{ c.classList.add('stag'); c.style.setProperty('--i',i); }); }
-function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb])=>
-  `<div class="t tile" data-t data-act="${act}"><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
+function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb,dw])=>
+  `<div class="t tile" data-t data-act="${act}"${dw?` data-dwell="${dw}"`:''}><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
   const go=gazeOnly();
@@ -1093,8 +1109,10 @@ function renderStatus(){
   const t=new Date().toTimeString().slice(0,5);
   const sc=$('.screen.on');
   const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
-  const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>SOS de prueba activo'
-    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>SOS de prueba';
+  // Con la llamada configurada en el puente (woki-voz.js) el SOS es real y el estado lo dice; si no, es de prueba.
+  const real = !!(window.VOZ && VOZ.llamadaLista);
+  const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>'+(S.alarm.real?'SOS: pidiendo ayuda':'SOS de prueba activo')
+    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>'+(real?'SOS listo':'SOS de prueba');
   const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
   const howPick = gazeOnly() ? (CFG.mode==='click' ? 'Ceja (o mirada 3 s)' : `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja`) : mode;
   const sensors = gazeOnly()
@@ -1129,7 +1147,7 @@ function go(name, writeHistory=true){
   clearFocus();
   if(name==='home'){ waReset(); renderTiles(); }
   if(name==='contacts'){ renderPeople(); waLoadFavs(); }
-  if(name==='talk'){ if(!S.cards.length) genSuggestions(); else renderCards(); }
+  if(name==='talk'){ if(!S.cards.length || !WA.to) genSuggestions(); else renderCards(); }   // fuera de un chat, cada vez que se abre salen otras formas
   if(name==='keyboard'){ S.kb.level=1; renderKeys(); }
   if(name==='reactions'){ S.reactPage=0; renderReacts(); }
   if(name==='settings'){ S.setPage='main'; renderSettings(); }
@@ -1147,7 +1165,7 @@ async function genSuggestions(){
       const r=await fetch(CFG.SUGGEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({context:ctx}),signal:ctl.signal});
       const j=await r.json(); out=j.suggestions.slice(0,4).map(x=>[x.text,x.tone,x.emo]); }catch(e){ log('Claude no respondió, uso sugerencias locales'); } }
   let generic=false;
-  if(!out){ await new Promise(r=>setTimeout(r,220)); const r=RULES.find(r=>r.k.test(ctx)); out=(r?r.s:DEFAULT); generic=!r; }
+  if(!out){ await new Promise(r=>setTimeout(r,220)); const r=RULES.find(r=>r.k.test(ctx)); out=pickVariants(r?String(r.k):'default', r?r.s:DEFAULT); generic=!r; }
   const cards=out.map(([text,tone,emo])=>({text,tone,emo:EMO[emo]?emo:'seria'}));
   if(WA.to){ S.poolAi=null; waSetPool(cards,generic); } else S.cards=cards;   // en un chat: 2 contextuales + «Pregúntele a…» + «Otro»
   $('#cards').classList.remove('loading'); renderCards();
@@ -1191,7 +1209,7 @@ const SUG_ROW = 3;
 const SUG_MORE = 7;
 const PRED = window.TokiPredict.createPredictor({
   base: (window.TOKI_LEXICON || WORDS.map((w,i)=>[w, 1000/(i+1)])),
-  corpus: [...RULES.flatMap(r=>r.s.map(x=>x[0])), ...DEFAULT.map(x=>x[0]), ...REACTS.map(r=>r[1])],
+  corpus: [...RULES.flatMap(r=>r.s.flat().map(x=>x[0])), ...DEFAULT.flat().map(x=>x[0]), ...REACTS.map(r=>r[1])],
   storage: (()=>{ try{ return localStorage; }catch(_){ return null; } })(),
 });
 // lo que ya se había dicho antes de este motor también enseña (una sola vez)
@@ -1451,6 +1469,7 @@ function activate(el, calibrateGaze=true){
     case 'react': { const r=REACTS[+arg]; speak(r[1],r[2]); break; }
     case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
     case 'attention': startAlarm('atencion'); break;
+    case 'sos': startAlarm('emergencia'); break;   // la tarjeta SOS = el mismo SOS que ceja 3 s
     case 'quick': chooseQuick(arg); break;
     case 'rest': setRest(true); break;
     case 'wake': setRest(false); break;
@@ -1584,7 +1603,7 @@ function showHoldProgress(){
   const active=src && (S.quick? $('#quickDialog .gesture-hold') : $('#gestureHold'));
   $$('.gesture-hold').forEach(el=>{ el.hidden=el!==active; });
   if(active){
-    const label=src==='ceja'?'SOS de prueba · suelta para cancelar':'Abriendo atajos · suelta para cancelar';
+    const label=src==='ceja'?'SOS · suelta para cancelar':'Abriendo atajos · suelta para cancelar';
     if(active.firstElementChild.textContent!==label) active.firstElementChild.textContent=label;
     active.lastElementChild.value=G.down[src].progress;
   }
@@ -1891,7 +1910,8 @@ function startAlarm(level){
 function alarmTick(now){
   const A=S.alarm; if(!A) return; const s=(now-A.t0)/1000;
   if(A.level==='emergencia' && !A.ack){
-    $('#alCancel').textContent = `Sin respuesta simulada · ${Math.floor(s)} s · R para simular recepción`;
+    if(!A.called){ A.called=true; if(window.VOZ) VOZ.emergencia(A); }   // llamada telefónica real si el puente la tiene configurada (woki-voz.js); si no, sigue la simulación
+    $('#alCancel').textContent = A.real ? `Llamada de emergencia · ${Math.floor(s)} s · R = llegó alguien (llavero)` : `Sin respuesta simulada · ${Math.floor(s)} s · R para simular recepción`;
     const every = s>=30? 600 : 1000; if(now-A.lastBeep>every){ beep(s>=30?990:880, 260, s>=30?.14:.09); A.lastBeep=now; }
   }
   if(A.level==='atencion' && !A.ack && now-A.lastBeep>20000){ beep(660,300,.05); A.lastBeep=now; }
@@ -1901,17 +1921,18 @@ function rfid(){
   const secs=Math.round((performance.now()-A.t0)/1000);
   if(!A.ack){ A.ack=performance.now(); log('RFID: Camila responde ('+secs+' s)');
     if(A.level==='emergencia'){ const a=$('#alarm'); a.classList.add('ack'); $('#alSym').innerHTML='<svg><use href="#i-check"/></svg>';
-      $('#alBig').textContent='Respuesta simulada'; $('#alSub').textContent='No se contactó a nadie.'; $('#alCancel').textContent='R o Cerrar simulación'; }
+      if(A.real){ $('#alBig').textContent='Llegó alguien'; $('#alSub').textContent=`Confirmado con el llavero en ${secs} s`; $('#alCancel').textContent='R o Cerrar alarma'; }
+      else { $('#alBig').textContent='Respuesta simulada'; $('#alSub').textContent='No se contactó a nadie.'; $('#alCancel').textContent='R o Cerrar simulación'; } }
     else { island('✅',`Respuesta simulada en ${secs} s`); setTimeout(()=>{ if(S.alarm===A) stopAlarm(); },4000); }
   } else stopAlarm('Resuelto');
   updateLCD();
 }
 function stopAlarm(msg){
-  S.alarm=null; $('#alarm').classList.remove('on','ack'); $('#alDismiss').blur();
+  S.alarm=null; $('#alarm').classList.remove('on','ack'); $('#alDismiss').blur(); $('#alDismiss').textContent='Cerrar simulación';
   $$('#stage > .screen, #emoRing, #rest, #calib').forEach(el=>{ el.inert=false; });
   if(msg) island('✓',msg); log('alarma cerrada'); renderStatus(); updateLCD();
 }
-$('#alDismiss').addEventListener('click',()=>stopAlarm('Simulación cerrada'));
+$('#alDismiss').addEventListener('click',()=>stopAlarm(S.alarm&&S.alarm.real?'Alarma cerrada':'Simulación cerrada'));
 
 /* ===================== LCD + LEDs (Uno) ===================== */
 const pad=s=>(s+'                ').slice(0,16);
