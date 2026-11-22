@@ -111,7 +111,7 @@ class TestModoChat(unittest.TestCase):
         self.assertEqual(fuera[0]["motivo"], "más de 8 palabras")
 
     def test_meta_variante_y_genero(self):
-        self.assertEqual(store.meta(self.c, "variante"), "español de Chile, con tuteo")
+        self.assertEqual(store.meta(self.c, "variante"), "español latino neutro, con tuteo")
         self.assertEqual(store.meta(self.c, "genero"), "femenino")
 
 
