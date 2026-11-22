@@ -52,6 +52,12 @@ case "$wa" in *'"session":"connected"'*) ok "WhatsApp conectado en la VPS";; *) 
 ag=$(curl -s -m 8 -H "X-Woki-Token: $TOKEN" "$REMOTO/agente/api/salud" || true)
 case "$ag" in *'"ok": true'*) ok "Agente con memoria en la VPS";; *) ko "El agente no responde en $REMOTO";; esac
 
+# Spotify: macOS pide permiso de Automatización la primera vez. El aviso solo sale desde una terminal en primer plano.
+if [ -d /Applications/Spotify.app ]; then
+  if osascript -e 'tell application "Spotify" to player state' >/dev/null 2>&1; then ok "Spotify: permiso para controlarlo"
+  else ko "Spotify: falta permiso. Acepta el aviso de macOS, o Ajustes › Privacidad y seguridad › Automatización › Terminal › Spotify"; fi
+fi
+
 # 4) apps-bridge local: Rappi (arma el carrito con la cuenta conectada; no paga) y los demás servicios
 APPS=""
 if command -v node >/dev/null; then
