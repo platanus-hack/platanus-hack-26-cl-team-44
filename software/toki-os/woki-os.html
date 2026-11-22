@@ -217,7 +217,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 .cal-card.mini .cal-logo,.cal-card.mini .cal-btns,.cal-card.mini .cal-foot{display:none}
 .cal-card.mini .cal-title{font-size:48px}
 .cal-logo{font-size:30px;font-weight:800;letter-spacing:.3em;color:var(--txt2);margin-bottom:18px}
-.cal-title{font-size:84px;font-weight:750;letter-spacing:-.04em;line-height:1.05}
+.cal-title{margin:0;font-size:84px;font-weight:750;letter-spacing:-.04em;line-height:1.05}
 .cal-text{font-size:34px;color:var(--txt2);margin:18px auto 0;max-width:860px;line-height:1.35}
 .cal-steps{display:flex;justify-content:center;gap:12px;margin:36px 0 0}
 .cal-steps span{font-size:24px;font-weight:650;padding:10px 22px;border-radius:24px;background:rgba(255,255,255,.06);color:var(--txt3);transition:background-color 200ms ease,color 200ms ease}
@@ -369,11 +369,33 @@ body.panel #gaze{opacity:0}
 #wapMsg.err{color:var(--red)}
 @media (max-width:760px){.wap-body{grid-template-columns:1fr;grid-template-rows:1.2fr 1fr}.wap-col + .wap-col{border-left:0;border-top:1px solid var(--hair)}}
 
-/* panel de ayuda (fuera de la TV) */
-#legend{position:fixed;left:0;right:0;bottom:0;height:150px;background:#0a0a0c;border-top:1px solid #1c1c1f;display:flex;gap:26px;padding:12px 20px;font-size:13px;color:#a1a1a6;align-items:flex-start;overflow-x:auto}
-#legend h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#e5e5ea}
-#legend kbd{background:#1c1c1f;border:1px solid #3a3a3c;border-radius:5px;padding:1px 6px;color:#f2f2f7;font-family:inherit}
-#legend .col{min-width:220px;line-height:1.7}
+/* Controles del acompañante, fuera del área de selección del puntero. */
+:root{--panel-height:clamp(172px,24vh,210px)}
+#legend{position:fixed;inset:auto 0 0;height:var(--panel-height);padding:12px clamp(12px,3vw,48px);background:#101014;border-top:1px solid var(--hair);color:var(--txt2);font-size:14px;overflow:auto}
+.legend-inner{max-width:1120px;margin:auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(18px,4vw,56px);align-items:start}
+.camera-panel{display:flex;align-items:center;gap:clamp(12px,2vw,28px);min-width:0}
+.camera-preview{position:relative;flex:none;width:clamp(120px,18vw,208px);aspect-ratio:4/3;max-height:calc(var(--panel-height) - 28px);border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:#181b20;display:grid;place-items:center}
+.camera-preview video,.camera-preview canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.camera-preview video{transform:scaleX(-1)}
+.camera-preview svg{width:32px;height:32px;stroke:#9099a5;fill:none;stroke-width:1.5}
+.camera-preview.live svg{visibility:hidden}
+#legend h3{margin:0 0 5px;font-size:18px;color:var(--txt)}
+#cameraStatus{margin:0 0 10px;line-height:1.3}
+#cameraStatus[data-state="found"]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--green)}
+#legend kbd{background:#1c1c1f;border:1px solid #3a3a3c;border-radius:5px;padding:1px 5px;color:#f2f2f7;font:inherit}
+.panel-tools{min-width:0}
+.panel-tools details{border-bottom:1px solid var(--hair)}
+.panel-tools summary{padding:10px 2px;cursor:pointer;color:var(--txt);font-weight:600}
+.panel-tools summary:focus-visible,#legend button:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tool-content{padding:0 2px 12px;line-height:1.6;overflow-wrap:anywhere}
+.tool-content p{margin:4px 0}
+.tool-content a{color:var(--blue)}
+#legend #evlog{white-space:pre-wrap;max-height:none;color:var(--txt2)}
+@media(max-width:650px){
+  :root{--panel-height:min(40vh,270px)}
+  .legend-inner{grid-template-columns:1fr;gap:8px}
+  .camera-preview{width:118px}
+}
 .lcd{background:#1a3cff;border:6px solid #0b4d2b;border-radius:4px;padding:6px 10px;font-family:"SF Mono",Menlo,monospace;font-size:15px;color:#e8f0ff;white-space:pre;letter-spacing:1px;line-height:1.3;min-width:200px}
 .leds{display:flex;gap:8px;margin-top:8px}
 .led{width:14px;height:14px;border-radius:50%;opacity:.18;transition:opacity 160ms ease}
@@ -509,21 +531,31 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando · dos cejas rápidas para volver</div>
     <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small>Mirada 2 s · ceja · clic</small></button></div>
   <!-- CALIBRACIÓN (al inicio) -->
-  <div class="overlay on" id="calib">
-    <div class="cal-card glass" id="calCard">
-      <div class="cal-logo">TOKI</div>
-      <div class="cal-title" id="calTitle">Hola, Marta</div>
-      <div class="cal-text" id="calText">Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).</div>
-      <div class="cal-steps" id="calSteps"><span class="on">Centro</span><span>Esquinas</span><span>Prueba</span><span>Listo</span></div>
+  <div class="overlay on" id="calib" aria-labelledby="calTitle" role="dialog">
+    <div class="cal-card glass choose-control" id="calCard">
+      <h1 class="cal-title" id="calTitle" tabindex="-1">Elige tu control</h1>
+      <div class="cal-text" id="calText"></div>
+      <div class="cal-steps" id="calSteps"></div>
       <div class="cal-btns" id="calBtns">
-        <button class="cbtn pri" data-c="start">Calibrar con la nariz</button>
-        <button class="cbtn pri" data-c="gaze" style="background:var(--indigo)">Calibrar con la mirada</button>
-        <button class="cbtn pri" data-c="iphone" style="background:var(--purple)">Mirada con iPhone (Face ID)</button>
-        <button class="cbtn" data-c="saved" id="calSaved" hidden>Usar la calibración guardada</button>
-        <button type="button" class="cbtn pri" id="myoware-use-woki" hidden>Usar mouse + gestos MyoWare</button>
-        <button class="cbtn" data-c="mouse">Usar mouse (demo)</button>
+        <button type="button" class="cbtn control-option" data-c="start">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21v-4a8 8 0 1 1 13-6l2 4-3 1v2a2 2 0 0 1-2 2h-3v2"/><path d="M14 10h2"/></svg>
+          <span><strong>Nariz</strong><small>Mueve la cabeza</small></span>
+        </button>
+        <button type="button" class="cbtn control-option" data-c="gaze">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span><strong>Mirada</strong><small>Con la cámara del equipo</small></span>
+        </button>
+        <button type="button" class="cbtn control-option" data-c="iphone">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/></svg>
+          <span><strong>iPhone</strong><small>Mirada con Face ID</small></span>
+        </button>
+        <button type="button" class="cbtn control-option" data-c="mouse">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 2v7m-7 1h14"/></svg>
+          <span><strong>Mouse</strong><small>Sin cámara</small></span>
+        </button>
+        <button type="button" class="cbtn resume-control" data-c="saved" id="calSaved" hidden>Usar calibración guardada</button>
+        <button type="button" class="cbtn resume-control" id="myoware-use-woki" hidden>Usar mouse + gestos MyoWare</button>
       </div>
-      <div class="cal-foot">Lo inicia el acompañante · <kbd>Enter</kbd> nariz · <kbd>E</kbd> mirada · <kbd>I</kbd> iPhone</div>
     </div>
     <div class="cal-dot" id="calDot"><svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="28"/><circle class="fg" cx="32" cy="32" r="28"/></svg><i></i></div>
     <div class="cal-target" id="calTarget"></div>
@@ -561,30 +593,54 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
 <!-- controles de desarrollo: tema claro/oscuro y mostrar/ocultar atajos -->
 <div id="devbar">
   <button id="themeToggle" class="dbtn" role="switch" aria-checked="false" title="Tema claro / oscuro (T)"><span class="track"><span>☾</span><span>☀︎</span><span class="knob"></span></span></button>
-  <button id="legendToggle" class="dbtn" aria-expanded="false" aria-controls="legend" title="Mostrar u ocultar atajos (desarrollo)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+  <button id="legendToggle" class="dbtn" aria-expanded="false" aria-controls="legend" title="Mostrar controles"><span>Controles</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
 </div>
 
-<div id="legend">
-  <div class="col" style="min-width:330px;display:flex;gap:12px">
-    <div><h3>Puntero</h3><button id="noseBtn" class="nbtn">Activar cámara</button><br><kbd>N</kbd> nariz/mouse · <kbd>E</kbd> mirada · <kbd>C</kbd>/<kbd>V</kbd> recentrar<br><kbd>G</kbd> cara perdida · <kbd>W</kbd> temblor · <kbd>T</kbd> tema<div id="gazeInfo" style="color:#BF5AF2"></div><div id="noseInfo" style="color:#64D2FF"></div></div>
-    <div style="position:relative;width:128px;height:96px;border-radius:10px;overflow:hidden;background:#111;flex:none">
-      <video id="cam" playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
-      <canvas id="camDot" width="128" height="96" style="position:absolute;inset:0"></canvas>
+<aside id="legend" aria-label="Controles del acompañante">
+  <div class="legend-inner">
+    <section class="camera-panel" aria-labelledby="cameraTitle">
+      <div class="camera-preview" id="cameraPreview">
+        <video id="cam" playsinline muted aria-label="Vista de la cámara"></video>
+        <canvas id="camDot" width="128" height="96" aria-hidden="true"></canvas>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-4v12l-6-4"/></svg>
+      </div>
+      <div><h3 id="cameraTitle">Cámara</h3>
+        <p id="cameraStatus" role="status">Cámara apagada</p>
+        <button id="noseBtn" class="nbtn" type="button">Activar cámara</button>
+      </div>
+    </section>
+    <div class="panel-tools">
+      <details name="panel-tools" id="myoware-controls" hidden>
+        <summary>Sensores MyoWare</summary>
+        <div class="tool-content">
+          <p>Ceja en A3 · Mandíbula en A0</p>
+          <button type="button" class="nbtn" id="myoware-calibrate">Calibrar gestos</button>
+          <button type="button" class="nbtn" id="myoware-toggle" hidden>Activar gestos</button>
+          <div id="myoware-status" role="status">Gestos desactivados. Confirma que ambos sensores estén en modo ENV.</div>
+          <div id="myoware-result" role="status">Último gesto: —</div>
+          <a href="/">Volver al monitor MyoWare</a>
+        </div>
+      </details>
+      <details name="panel-tools"><summary>Atajos de teclado</summary>
+        <div class="tool-content">
+          <p><strong>Al iniciar</strong> · <kbd>Enter</kbd> nariz · <kbd>E</kbd> mirada · <kbd>I</kbd> iPhone</p>
+          <p><strong>Puntero</strong> · <kbd>N</kbd> nariz o mouse · <kbd>E</kbd> mirada · <kbd>C</kbd> centrar nariz · <kbd>V</kbd> centrar mirada</p>
+          <p><strong>Gestos simulados</strong> · <kbd>Espacio</kbd> elegir, dos veces para volver, mantener 3 s para el SOS de prueba · <kbd>J</kbd> 3 s para abrir atajos · <kbd>Esc</kbd> cerrar</p>
+          <p><strong>Acompañante</strong> · <kbd>K</kbd> contactos de WhatsApp · <kbd>R</kbd> simular el llavero RFID · <kbd>M</kbd> silenciar la alarma · <kbd>Esc</kbd> salir del campo de texto</p>
+          <p><strong>Pruebas y pantalla</strong> · <kbd>G</kbd> simular pérdida del rostro · <kbd>W</kbd> simular temblor · <kbd>T</kbd> cambiar tema</p>
+        </div>
+      </details>
+      <details name="panel-tools"><summary>Diagnóstico</summary>
+        <div class="tool-content">
+          <div id="gazeInfo"></div><div id="noseInfo"></div>
+          <p><strong>Pantalla junto a la cama (UNO)</strong></p>
+          <div class="lcd" id="lcd"></div><div class="leds"><div class="led" id="ledG" style="background:#30D158;color:#30D158"></div><div class="led" id="ledA" style="background:#FF9F0A;color:#FF9F0A"></div><div class="led" id="ledR" style="background:#FF453A;color:#FF453A"></div></div>
+          <p><strong>Últimos eventos</strong></p><div id="evlog"></div>
+        </div>
+      </details>
     </div>
   </div>
-  <div class="col"><h3>Gestos EMG (simulados)</h3><kbd>Espacio</kbd> elegir · ×2 atrás · 3 s SOS de prueba<br><kbd>J</kbd> 3 s para abrir atajos · <kbd>Esc</kbd> cerrar</div>
-  <div class="col" id="myoware-controls" hidden>
-    <h3>MyoWare · A3 ceja / A0 mandíbula</h3>
-    <button type="button" class="nbtn" id="myoware-calibrate">Calibrar gestos</button>
-    <button type="button" class="nbtn" id="myoware-toggle" hidden>Activar gestos</button>
-    <div id="myoware-status" role="status">Gestos desactivados. Confirma que ambos sensores estén en modo ENV.</div>
-    <div id="myoware-result" role="status">Último gesto: —</div>
-    <a href="/" style="color:#64D2FF">Volver al monitor MyoWare</a>
-  </div>
-  <div class="col"><h3>Cuidadora</h3><kbd>K</kbd> contactos de WhatsApp<br><kbd>R</kbd> acercar el llavero RFID<br><kbd>M</kbd> silenciar sonidos de alarma<br><kbd>Esc</kbd> salir del campo de texto</div>
-  <div class="col"><h3>Junto a la cama (Uno)</h3><div class="lcd" id="lcd"></div><div class="leds"><div class="led" id="ledG" style="background:#30D158;color:#30D158"></div><div class="led" id="ledA" style="background:#FF9F0A;color:#FF9F0A"></div><div class="led" id="ledR" style="background:#FF453A;color:#FF453A"></div></div></div>
-  <div class="col"><h3>Eventos</h3><div id="evlog"></div></div>
-</div>
+</aside>
 
 <!-- Panel del acompañante: elegir contactos principales de WhatsApp (mouse y teclado) -->
 <div class="wap" id="waPanel" role="dialog" aria-modal="true" aria-labelledby="wapTitle">
@@ -678,8 +734,8 @@ const TILES = [
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
   ['attention','g-orange','i-bell','Llamar a Camila','Atención, no urgencia'],
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
-  ['go:apps','g-white','i-apps','Servicios','Música, videos, noticias'],
-  ['go:games','g-teal','i-gamepad','Juegos','A tu ritmo'],
+  ['go:apps','g-white','i-apps','Apps','Música, comida y noticias'],
+  ['go:games','g-white','i-gamepad','Juegos','Eye Gaze Games'],
   ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
   ['go:settings','g-gray','i-gear','Ajustes','Tiempo, voz, modo']];
 const EMOS = [
@@ -749,13 +805,14 @@ window.iphoneConfirm = () => { try{ return localStorage.getItem('woki.iphone.con
 
 /* ===================== Tema y panel de atajos (desarrollo) ===================== */
 const store={ get:k=>{ try{ return localStorage.getItem(k); }catch(_){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(_){} } };
-// Atajos ocultos por defecto (son de desarrollo); se recuerda si se abrieron.
-document.body.classList.toggle('legend-off', store.get('woki.legend')!=='on');
+// El panel recuerda la preferencia del acompañante en el SO oficial.
+document.body.classList.toggle('official-os', !tabletComposer && !trackerOnly);
+document.body.classList.toggle('legend-off', tabletComposer || trackerOnly || store.get('woki.legend')==='off');
 function syncDevbar(){
   const light=document.documentElement.dataset.theme==='light', open=!document.body.classList.contains('legend-off');
   $('#themeToggle').setAttribute('aria-checked',String(light));
   $('#legendToggle').setAttribute('aria-expanded',String(open));
-  $('#legendToggle').title=open?'Ocultar atajos':'Mostrar atajos (desarrollo)';
+  $('#legendToggle').title=open?'Ocultar controles':'Mostrar controles';
 }
 function setTheme(light){ if(light) document.documentElement.dataset.theme='light'; else delete document.documentElement.dataset.theme;
   store.set('woki.theme',light?'light':'dark'); syncDevbar(); }
@@ -1083,7 +1140,7 @@ $('#wapSave').onclick=async()=>{
 
 /* ===================== Escalado de la TV ===================== */
 // Con los atajos visibles se reserva su altura; ocultos, solo una franja para la barra de desarrollo.
-function fit(){ const reserve=tabletComposer ? 16 : document.body.classList.contains('legend-off')? 60 : 170;
+function fit(){ const reserve=tabletComposer ? 16 : document.body.classList.contains('legend-off')? 60 : $('#legend').offsetHeight + 48;
   const s=Math.min((innerWidth-16)/1920,(innerHeight-reserve)/1080); S.scale=s;
   const w=$('#wrap'); w.style.transform=`scale(${s})`; w.style.left=((innerWidth-1920*s)/2)+'px'; }
 addEventListener('resize',fit); fit();
@@ -1501,7 +1558,7 @@ function activate(el, calibrateGaze=true){
         if(nx==='iphone' && window.IPHONE) IPHONE.select(); else { if(window.IPHONE) IPHONE.deactivate(); NOSE.setMode(nx==='iphone'?'mouse':nx); } }
       if(arg==='sens' && window.NOSE){ NOSE.sensIdx=(NOSE.sensIdx+1)%3; island('🎯','Sensibilidad '+['baja','media','alta'][NOSE.sensIdx]); }
       if(arg==='calib' && window.IPHONE && IPHONE.active){ $('#calib').classList.add('on'); IPHONE.openPanel(); }
-      else if(arg==='calib' && window.CAL) CAL.open(window.NOSE && NOSE.on && NOSE.mode==='gaze' ? 'gaze' : undefined);
+      else if(arg==='calib' && window.CAL) CAL.open();
       if(arg==='faceclick' && window.NOSE){ NOSE.faceClick=!NOSE.faceClick; island('🙂',NOSE.faceClick?'Clic con cara: cejas = ceja · boca = mandíbula':'Clic con cara apagado'); }
       setTimeout(()=>{ if(S.screen==='settings') renderSettings(); },150); renderStatus(); break;
   }
@@ -1683,6 +1740,7 @@ addEventListener('keydown',e=>{
     if(e.key==='Enter' && document.activeElement.id==='ctxIn'){ S.cards=[]; genSuggestions(); document.activeElement.blur(); }
     if(e.key==='Escape') document.activeElement.blur(); return; }
   if(e.repeat) return;
+  if(e.code==='Space' && e.target.closest?.('#legend, #devbar, #calib button')) return;
   if(e.code==='Space' && !(S.quick && document.activeElement?.tagName==='BUTTON')){
     e.preventDefault(); pressSrc('ceja','keyboard',performance.now());
   }
@@ -1698,7 +1756,7 @@ addEventListener('keydown',e=>{
   if(e.key==='m'||e.key==='M'){ S.muted=!S.muted; island(S.muted?'🔕':'🔔', S.muted?'Alarma en silencio':'Sonido de alarma activo'); }
 });
 addEventListener('keyup',e=>{
-  if(e.code==='Space') releaseSrc('ceja','keyboard',performance.now());
+  if(e.code==='Space' && !e.target.closest?.('#legend, #devbar, #calib button')) releaseSrc('ceja','keyboard',performance.now());
   if(e.code==='KeyJ') releaseSrc('mandibula','keyboard',performance.now());
 });
 addEventListener('blur',()=>cancelGestures());
@@ -1958,7 +2016,7 @@ log('Toki OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');
   import { setupMyoWareGestures } from './myoware-click.js';
   setupMyoWareGestures(receiveMyoWare, () => {
     window.IPHONE?.deactivate();
-    if(window.NOSE?.on) NOSE.stop();
+    if(window.NOSE?.on || window.NOSE?.starting) NOSE.stop();
     CFG.mode='click';
     $('#calib').classList.remove('on');
     renderStatus();
@@ -2062,49 +2120,93 @@ const NOSE = window.NOSE = {
   on:false, ready:false, sensIdx:1, faceClick:false, neutral:null, raw:null,
   lastFace:0, fx:new OneEuro(), fy:new OneEuro(), lm:null, stream:null,
   gains:[2.4,3.4,4.6],
-  async start(){
+  session:0, starting:null, frameId:0,
+  showCamera(state, message){
+    const status=$('#cameraStatus');
+    if(status.dataset.state===state && status.textContent===message) return;
+    status.dataset.state=state; status.textContent=message;
+    const active=state==='found' || state==='searching';
+    $('#noseBtn').textContent=active?'Apagar cámara':state==='starting'?'Cancelar':'Activar cámara';
+    $('#noseBtn').classList.toggle('on',active);
+    $('#cameraPreview').classList.toggle('live',!!$('#cam').srcObject);
+  },
+  start(){
+    if(this.on) return;
+    if(!this.starting){
+      const session=++this.session;
+      this.starting=this.openCamera(session).finally(()=>{ if(this.session===session) this.starting=null; });
+    }
+    return this.starting;
+  },
+  async openCamera(session){
+    let stream, model;
+    const video=$('#cam');
     try{
-      island('📷','Activando cámara…');
-      if(!this.stream){
-        this.stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'},audio:false});
-        if(tabletComposer){
-          const cameras = await navigator.mediaDevices.enumerateDevices();
-          const laptop = cameras.find(d=>d.kind==='videoinput' && /facetime|built.?in|integrada|integrated/i.test(d.label) && !/iphone|continuity/i.test(d.label));
-          if(laptop && laptop.deviceId !== this.stream.getVideoTracks()[0]?.getSettings().deviceId){
-            this.stream.getTracks().forEach(t=>t.stop());
-            this.stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:laptop.deviceId},width:640,height:480},audio:false});
-          }
-          if(/iphone|continuity/i.test(this.stream.getVideoTracks()[0]?.label||'')) throw Error('Elige la cámara integrada en los permisos de cámara del navegador.');
+      this.showCamera('starting','Esperando permiso de cámara…');
+      await Promise.resolve();
+      if(session!==this.session) return;
+      stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'},audio:false});
+      if(session!==this.session) return;
+      this.stream=stream;
+      if(tabletComposer){
+        const cameras=await navigator.mediaDevices.enumerateDevices();
+        if(session!==this.session) return;
+        const laptop=cameras.find(d=>d.kind==='videoinput' && /facetime|built.?in|integrada|integrated/i.test(d.label) && !/iphone|continuity/i.test(d.label));
+        if(laptop && laptop.deviceId!==stream.getVideoTracks()[0]?.getSettings().deviceId){
+          stream.getTracks().forEach(t=>t.stop());
+          stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:laptop.deviceId},width:640,height:480},audio:false});
+          if(session!==this.session) return;
+          this.stream=stream;
         }
-        const v=$('#cam'); v.srcObject=this.stream; await v.play();
+        if(/iphone|continuity/i.test(stream.getVideoTracks()[0]?.label||'')) throw Error('Elige la cámara integrada en los permisos del navegador.');
       }
-      if(!this.lm){
-        island('🧠','Cargando modelo de la cara…');
-        const {FaceLandmarker,FilesetResolver}=await import(MP+'/vision_bundle.mjs');
-        const files=await FilesetResolver.forVisionTasks(MP+'/wasm');
-        const opts=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
-        try{ this.lm=await FaceLandmarker.createFromOptions(files,opts('GPU')); }
-        catch(_){ this.lm=await FaceLandmarker.createFromOptions(files,opts('CPU')); }
-      }
-      this.on=true; this.neutral=null; this.raw=null; this.lastFace=performance.now();
-      $('#noseBtn').textContent='Cámara activa'; $('#noseBtn').classList.add('on');
+      video.srcObject=stream;
+      this.showCamera('starting','Preparando la detección…');
+      stream.getVideoTracks()[0].addEventListener('ended',()=>{
+        if(this.session===session){ this.stop(); this.showCamera('error','Se desconectó la cámara'); }
+      },{once:true});
+      await video.play();
+      if(session!==this.session) return;
+      const {FaceLandmarker,FilesetResolver}=await import(MP+'/vision_bundle.mjs');
+      const files=await FilesetResolver.forVisionTasks(MP+'/wasm');
+      if(session!==this.session) return;
+      const opts=delegate=>({baseOptions:{modelAssetPath:MODEL,delegate},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
+      try{ model=await FaceLandmarker.createFromOptions(files,opts('GPU')); }
+      catch(e){ if(session!==this.session) return; model=await FaceLandmarker.createFromOptions(files,opts('CPU')); }
+      if(session!==this.session) return;
+      this.lm=model; model=null; this.on=true; this.neutral=null; this.raw=null; this.lastFace=performance.now(); this.videoTime=-1;
+      this.showCamera('searching','Buscando rostro…');
       log('cámara activa · modo '+this.mode); this.loop();
-    }catch(e){ this.on=false;this.stream?.getTracks().forEach(t=>t.stop());this.stream=null;console.warn(e); island('⚠️','No se pudo activar la cámara: '+(e.name||e.message),true,4000); log('cámara: '+(e.message||e)); }
+    }catch(e){
+      if(session!==this.session) return;
+      this.stop();
+      const message=e.name==='NotAllowedError'?'Permite el acceso a la cámara en el navegador.':e.name==='NotFoundError'?'No se encontró una cámara.':'No se pudo iniciar la cámara o la detección.';
+      this.showCamera('error',message); island('⚠️',message,true,4000); log('cámara: '+(e.message||e));
+    }finally{
+      if(stream && stream!==this.stream) stream.getTracks().forEach(t=>t.stop());
+      model?.close();
+    }
     if(W.S.screen==='settings') renderSettings();
   },
-  stop(){ this.on=false; this.resetFaceEdges();
-    if (tabletComposer) { this.stream?.getTracks().forEach(track=>track.stop()); this.stream=null; $('#cam').srcObject=null; }
-    $('#noseBtn').textContent='Activar cámara'; $('#noseBtn').classList.remove('on');
+  stop(){
+    ++this.session; this.starting=null; this.on=false; this.resetFaceEdges(); this._back=null; this.raw=null;
+    cancelAnimationFrame(this.frameId);
+    this.stream?.getTracks().forEach(track=>track.stop()); this.stream=null; $('#cam').srcObject=null;
+    this.lm?.close(); this.lm=null;
+    const canvas=$('#camDot'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+    $('#gazeInfo').textContent=''; $('#noseInfo').textContent='';
+    this.showCamera('off','Cámara apagada');
     if(W.S.gazeLost) setGazeLost(false); island('🖱️','Puntero con mouse'); log('puntero con mouse');
-    if(W.S.screen==='settings') renderSettings(); },
-  toggle(){ this.on? this.stop() : this.setMode('nose'); },
+    if(W.S.screen==='settings') renderSettings();
+  },
+  toggle(){ this.on || this.starting ? this.stop() : this.setMode('nose'); },
   async setMode(m){
     if(window.IPHONE && IPHONE.active) IPHONE.deactivate();
-    if(m==='mouse'){ if(this.on) this.stop(); return; }
+    if(m==='mouse'){ if(this.on || this.starting) this.stop(); return; }
     this.mode=m; try{ localStorage.setItem('woki.ptr',m); }catch(_){}
     if(!this.on) await this.start();
     if(!this.on) return;
-    if(m==='gaze'){ if(!GAZE.model && !GAZE.loadSaved()) CAL.open('gaze'); else island('👁','Puntero con la mirada · V recentra'); }
+    if(m==='gaze'){ if(!GAZE.model && !GAZE.loadSaved()) CAL.open(); else island('👁','Puntero con la mirada · V recentra'); }
     else island('👃','Puntero con la nariz · C recentra');
     if(W.S.screen==='settings') renderSettings();
   },
@@ -2115,10 +2217,14 @@ const NOSE = window.NOSE = {
   loop(){
     if(!this.on) return;
     const v=$('#cam'), now=performance.now();
-    if(v.readyState>=2 && this.lm){
-      const r=this.lm.detectForVideo(v,now);
+    if(v.readyState>=2 && this.lm && this.videoTime!==v.currentTime){
+      this.videoTime=v.currentTime;
+      let r;
+      try{ r=this.lm.detectForVideo(v,now); }
+      catch(e){ this.stop(); this.showCamera('error','Se interrumpió la detección. Activa la cámara para reintentar.'); log('detección: '+e.message); return; }
       const f=r.faceLandmarks && r.faceLandmarks[0];
       if(f){
+        this.showCamera('found','Rostro detectado');
         this.lastFace=now;
         if(W.S.gazeLost && !this._back){ this._back=now; }
         if(this._back && now-this._back>1500){ setGazeLost(false); this._back=null; }  // espera 1,5 s antes de aceptar clics (guía)
@@ -2165,10 +2271,11 @@ const NOSE = window.NOSE = {
         this.resetFaceEdges();
         this._back=null;
         if(now-this.lastFace>1500 && !W.S.gazeLost) setGazeLost(true);   // sin cara 1,5 s → escaneo con EMG
-        const c=$('#camDot').getContext('2d'); c.clearRect(0,0,128,96);
+        if(!this.raw || now-this.lastFace>400) this.showCamera('searching','Buscando rostro…');
+        const canvas=$('#camDot'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
       }
-    } else this.resetFaceEdges();
-    requestAnimationFrame(()=>this.loop());
+    } else if(v.readyState<2) this.resetFaceEdges();
+    this.frameId=requestAnimationFrame(()=>this.loop());
   },
   fc:{ ceja:{base:null,delta:.18,up:false}, mandibula:{base:null,delta:.22,up:false} },
   fcLast:0,
@@ -2186,8 +2293,13 @@ const NOSE = window.NOSE = {
     else if(s.up && v<lo){ s.up=false; this.fcLast=now; releaseSrc(src,'face',now); }
     else if(s.up && src==='mandibula') updateHold(src,'face',now);
   },
-  draw(f){ const c=$('#camDot').getContext('2d'); c.clearRect(0,0,128,96); c.fillStyle='#30D158';
-    for(const i of [1,234,454,10,152]){ const p=f[i]; c.beginPath(); c.arc((1-p.x)*128,p.y*96,i===1?4:2,0,7); c.fill(); } }
+  draw(f){
+    const canvas=$('#camDot'), video=$('#cam');
+    if(canvas.width!==video.videoWidth || canvas.height!==video.videoHeight){ canvas.width=video.videoWidth; canvas.height=video.videoHeight; }
+    const c=canvas.getContext('2d'), w=canvas.width, h=canvas.height;
+    c.clearRect(0,0,w,h); c.fillStyle='#30D158';
+    for(const i of [1,234,454,10,152]){ const p=f[i]; c.beginPath(); c.arc((1-p.x)*w,p.y*h,w*(i===1?.024:.012),0,2*Math.PI); c.fill(); }
+  }
 };
 /* ===================== Sesión de calibración ===================== */
 const CAL_KEY='woki.cal.v1';
@@ -2195,7 +2307,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const stageXY=(fx,fy)=>({left:(fx*100)+'%',top:(fy*100)+'%'});
 const CAL = {
   running:false,
-  ui(title,text,step,mini=true){ $('#calTitle').textContent=title; $('#calText').textContent=text; $('#calCard').classList.toggle('mini',mini);
+  ui(title,text,step,mini=true){ $('#calCard').classList.remove('choose-control'); $('#calTitle').textContent=title; $('#calText').textContent=text; $('#calCard').classList.toggle('mini',mini);
     [...$('#calSteps').children].forEach((s,i)=>{ s.classList.toggle('on',i===step); s.classList.toggle('done',i<step); }); },
   dot(fx,fy,on=true){ const d=$('#calDot'); Object.assign(d.style,stageXY(fx,fy)); d.classList.toggle('on',on); d.style.setProperty('--p',0); },
   async collect(ms){ // promedia la posición de la cabeza mientras se llena el anillo
@@ -2213,15 +2325,15 @@ const CAL = {
       if (tabletComposer) {
         document.body.classList.add('nose-calibration');
         $('#noseTracking').hidden = false;
-        this.ui('Preparando la cámara','Colócate frente a la pantalla.',0);
       }
+      this.ui('Preparando la cámara','Colócate frente a la pantalla.',0);
       NOSE.mode='nose'; try{ localStorage.setItem('woki.ptr','nose'); }catch(_){}
       this.steps(['Centro','Esquinas','Prueba','Listo']);
       if(!NOSE.on) await NOSE.start();
       if(!NOSE.on) throw new Error('sin cámara');
       NOSE.cal=null;
       // 1 · centro
-      this.ui('Mira al centro','Quédate quieta mientras se llena el círculo.',0); this.dot(.5,.42); await sleep(900);
+      this.ui('Mira al centro','Mantén la cabeza quieta hasta que se llene el círculo.',0); this.dot(.5,.42); await sleep(900);
       let n=await this.collect(1600); if(!n) throw new Error('no veo la cara: revisa la luz y la posición');
       NOSE.neutral = {...n};
       // 2 · esquinas
@@ -2270,9 +2382,9 @@ const CAL = {
     try{
       NOSE.mode='gaze'; try{ localStorage.setItem('woki.ptr','gaze'); }catch(_){}
       this.steps(['Puntos','Validación','Listo']);
-      if (guidedSetup) this.ui('Preparando la cámara','Permite el acceso a la cámara para seguir los puntos.',0);
+      this.ui('Preparando la cámara','Permite el acceso para seguir los puntos.',0);
       if(!NOSE.on) await NOSE.start(); if(!NOSE.on) throw new Error('sin cámara');
-      if(GAZE.irisPx && GAZE.irisPx<12){ this.ui('Acércate a la cámara',`El iris mide ${GAZE.irisPx.toFixed(0)} px y necesita 12 px o más. Acerca la cámara a la cara (50–80 cm) o la cara a la cámara.`,0,false); await sleep(3500); }
+      if(GAZE.irisPx && GAZE.irisPx<12){ this.ui('Acércate a la cámara','Colócala a unos 50–80 cm de tu cara.',0); await sleep(3500); }
       this.ui('Sigue el punto con los ojos','Deja la cabeza quieta y mueve solo los ojos. Son 9 puntos.',0);
       await sleep(1200);
       const P=[[.12,.15],[.5,.15],[.88,.15],[.88,.5],[.5,.5],[.12,.5],[.12,.85],[.5,.85],[.88,.85]];   // recorrido en serpiente
@@ -2328,6 +2440,7 @@ const CAL = {
       parent.postMessage({type:'toki-control-error', message},location.origin);
       return;
     }
+    if(!tabletComposer && !trackerOnly && !$('#calIphone:not([hidden])')) $('#calCard').classList.add('choose-control');
     try { $('#calSaved').hidden = !(this.saved() || localStorage.getItem(GAZE_KEY) || (!guidedSetup && window.IPHONE && IPHONE.hasSaved())); } catch {}
   },
   saved(){ try{ return JSON.parse(localStorage.getItem(CAL_KEY)); }catch(_){ return null; } },
@@ -2346,9 +2459,11 @@ const CAL = {
     const useGaze = gaze && (last === 'gaze' || !nose);
     if (!useGaze && !nose) return;
     NOSE.mode = useGaze ? 'gaze' : 'nose';
-    if (guidedSetup) this.ui('Recuperando tu control','Preparando la cámara con tu calibración guardada.',0);
+    this.ui('Recuperando tu control','Preparando la cámara con tu calibración guardada.',0);
     await NOSE.start();
     if (!NOSE.on) {
+      this.ui('No se pudo abrir la cámara','Revisa el permiso del navegador o elige otro control.',0,false);
+      this.showBtns();
       if (guidedSetup) parent.postMessage({type:'toki-control-error', message:'No pudimos abrir la cámara con tu calibración guardada. Revisa el permiso o elige otro control.'},location.origin);
       return;
     }
@@ -2357,23 +2472,34 @@ const CAL = {
     island(useGaze ? '👁' : '🎯','Calibración guardada');
   },
   close(){ if(trackerOnly) parent.postMessage({type:'toki-control-ready',mode:NOSE.label()},location.origin); $('#calib').classList.remove('on'); $('#calDot').classList.remove('on'); renderStatus(); },
-  open(kind){ $('#calib').classList.add('on');
-    if(kind==='gaze'){ this.steps(['Puntos','Validación','Listo']); this.ui('Calibrar la mirada','Vas a seguir 9 puntos solo con los ojos y después comprobamos con 4 más. Toma unos 25 segundos.',0,false); }
-    else { this.steps(['Centro','Esquinas','Prueba','Listo']); this.ui('Hola, Marta','Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).',0,false); }
-    this.showBtns(); }
+  open(){ $('#calib').classList.add('on');
+    this.steps([]); this.ui('Elige tu control','',-1,false);
+    this.showBtns();
+    $('#calTitle').focus({preventScroll:true}); }
 };
 window.CAL=CAL;
 $('#calBtns').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; b.blur();
-  if(b.dataset.c==='start') CAL.run(); if(b.dataset.c==='gaze') CAL.runGaze(); if(b.dataset.c==='saved') CAL.useSaved(); if(b.dataset.c==='iphone' && window.IPHONE) IPHONE.openPanel(); if(b.dataset.c==='mouse'){ if(tabletComposer && NOSE.on) NOSE.stop(); CAL.close(); island('🖱️','Modo demo: el mouse es la mirada'); } });
-addEventListener('keydown',e=>{ if(!$('#calib').classList.contains('on') || CAL.running) return;
-  if(guidedSetup || (window.IPHONE && IPHONE.calibrating)) return;
-  if(e.key==='Enter'){ e.preventDefault(); CAL.run(); } if(e.key==='e'||e.key==='E'){ e.preventDefault(); CAL.runGaze(); } if((e.key==='i'||e.key==='I') && window.IPHONE){ e.preventDefault(); IPHONE.openPanel(); } if(e.key==='Escape'){ CAL.close(); } });
+  if(b.dataset.c==='start') CAL.run(); if(b.dataset.c==='gaze') CAL.runGaze(); if(b.dataset.c==='saved') CAL.useSaved(); if(b.dataset.c==='iphone' && window.IPHONE) IPHONE.openPanel(); if(b.dataset.c==='mouse'){ if(NOSE.on || NOSE.starting) NOSE.stop(); CAL.close(); island('🖱️','Modo demo: el mouse es la mirada'); } });
+addEventListener('keydown',e=>{
+  if(!$('#calib').classList.contains('on') || CAL.running || guidedSetup || window.IPHONE?.calibrating) return;
+  if(e.key==='Escape'){
+    if($('#calIphone:not([hidden])')) IPHONE.closePanel();
+    else CAL.close();
+    return;
+  }
+  if(!$('#calCard').classList.contains('choose-control') || e.target.closest?.('input, #legend, #devbar')) return;
+  if(e.key==='Enter' && !e.target.closest?.('button')){ e.preventDefault(); CAL.run(); }
+  if(e.key.toLowerCase()==='e'){ e.preventDefault(); CAL.runGaze(); }
+  if(e.key.toLowerCase()==='i' && window.IPHONE){ e.preventDefault(); IPHONE.openPanel(); }
+});
 addEventListener('keydown',e=>{ if(document.activeElement && document.activeElement.tagName==='INPUT') return; if($('#calib').classList.contains('on')) return;
   if(e.key==='v'||e.key==='V'){ if(NOSE.mode==='gaze' && NOSE.on) CAL.recenterGaze(); }
   if(e.key==='e'||e.key==='E'){ NOSE.setMode('gaze'); } });
 CAL.showBtns();
+if(document.body.classList.contains('official-os') && $('#calib').classList.contains('on')) $('#calTitle').focus({preventScroll:true});
 
 $('#noseBtn').addEventListener('click',e=>{ e.currentTarget.blur(); NOSE.toggle(); });  // blur: que Espacio (= ceja) no vuelva a apretar el botón
+addEventListener('pagehide',()=>{ if(NOSE.on || NOSE.starting) NOSE.stop(); });
 if (guidedSetup) {
   if (new URLSearchParams(location.search).has('reanudar')) CAL.useSaved(requestedMethod);
   else if (requestedMethod === 'gaze') CAL.runGaze();

@@ -135,7 +135,7 @@ const IPHONE = {
   /* ---------- activar / desactivar el puntero ---------- */
   activate() {
     if (!this.model || !this.source) return;
-    if (window.NOSE?.on) NOSE.stop();
+    if (window.NOSE?.on || window.NOSE?.starting) NOSE.stop();
     this.active = true;
     // Clic manteniendo la mirada (dwell, como en la demo): el anillo se llena y se elige. No hace
     // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.

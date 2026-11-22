@@ -8,6 +8,7 @@ window.addEventListener('load',()=>{
   {id:'solitaire',name:'Solitario',image:'solitaire',tag:'CARTAS',desc:'Una partida individual de cartas.',route:'game'},
   {id:'sudoku',name:'Sudoku',image:'sudoku',tag:'LÓGICA',desc:'Resuelve el tablero a tu ritmo.',route:'game'}
  ];
+ const cover = game => 'game-covers/' + game.image + '.webp';
  const params=new URLSearchParams(location.hash.slice(1));
  if(params.has('tokiBridge')){sessionStorage.setItem('toki.bridge.token',params.get('tokiBridge'));sessionStorage.setItem('toki.bridge.port',params.get('bridgePort'));history.replaceState(null,'',location.pathname+location.search);}
  const token=sessionStorage.getItem('toki.bridge.token'),port=sessionStorage.getItem('toki.bridge.port');
@@ -52,7 +53,7 @@ window.addEventListener('load',()=>{
  function catalog(){
   stopSurface();
   frame=null;paused=true;pointerInGame=false;lastPoint=null;document.body.classList.remove('external-playing');
-  render(`<div class="game-heading"><div><p class="game-eyebrow">SPECIALEFFECT · EYE GAZE GAMES</p><h1>Elige tu próxima partida.</h1></div>${b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${root}/images/game-tiles/${g.image}.png" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div><div class="game-footer">${window.TOKI_OS_SHELL?b('toki','← Juegos'):''}${b('all','Todos los juegos')}${b('setup','Configurar Eye Gaze Games')}<p>Juegos originales de SpecialEffect. Sus ajustes y progreso se gestionan en su servicio.</p></div>`);
+  render(`<div class="game-heading"><h1>Eye Gaze Games</h1>${b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${cover(g)}" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div><div class="game-footer">${b('all','Todos los juegos')}${b('setup','Configurar Eye Gaze Games')}<p>Juegos originales de SpecialEffect. Sus ajustes y progreso se gestionan en su servicio.</p></div>`);
   check();
  }
  function help(){if(tabletAccess){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Entra en «Configurar Eye Gaze Games»: elige español y crea tu perfil del servicio.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
@@ -92,12 +93,11 @@ window.addEventListener('load',()=>{
   pointerInGame=false;
  }
  function pause(value){if(value)leaveSurface();paused=value;anchor=null;document.querySelector('#externalCurtain')?.toggleAttribute('hidden',!paused);const e=document.querySelector('[data-act="external:pause"]');if(e)e.firstChild.textContent=paused?'Continuar control':'Pausar control';}
- go=function(name){if(S.screen==='games'){stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');}oldGo(name);if(name==='games'&&!window.TOKI_OS_SHELL)catalog();};
+ go=function(name,...args){if(S.screen==='games'){stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');}oldGo(name,...args);if(name==='games')catalog();};
  activate=function(el,calibrate=true){
   if(!el?.dataset.act?.startsWith('external:'))return oldActivate(el,calibrate);
   const [,act,arg]=el.dataset.act.split(':');
   if(act==='catalog')return catalog();
-  if(act==='toki')return window.TOKI_GAMES?.lobby();
   if(act==='play'){const g=games[Number(arg)];if(g)return open(g.id);}
   if(act==='all'||act==='setup')return open(act);
   if(act==='retry')return open(lastGame);
@@ -167,5 +167,5 @@ window.addEventListener('load',()=>{
    void sendInput('click',surface?point.x:point.topX,surface?point.y:point.topY).catch(()=>{connected=false;pause(true);updateStatus();});
   } else activate(target);
  }
- window.TOKI_EXTERNAL={check,open,catalog,switchTarget,confirmSwitch,get connected(){return connected;}};
+ window.TOKI_EXTERNAL={covers:games.map(cover),check,open,catalog,switchTarget,confirmSwitch,get connected(){return connected;}};
 });

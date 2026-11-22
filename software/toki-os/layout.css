@@ -164,3 +164,41 @@ body.gaze-only .badge { display: none; }
 .grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
 /* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
 .key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+
+/* Elección inicial de control. La calibración conserva su espacio para los puntos. */
+.official-os .cal-card.choose-control {
+  width: 1032px; padding: 48px; border-radius: 36px; text-align: left; transition: none;
+  background: var(--panel, #181c24);
+}
+:root[data-theme="light"] .official-os .cal-card.choose-control { background: #f7f8fb; }
+.official-os .choose-control .cal-title { font-size: 50px; line-height: 1.1; letter-spacing: -.035em; }
+.official-os .choose-control .cal-steps, .official-os .cal-text:empty { display: none; }
+.official-os .choose-control .cal-text { margin: 16px 0 0; font-size: 27px; }
+.official-os .choose-control .cal-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 32px; align-items: stretch; }
+.official-os .control-option {
+  min-width: 0; height: auto; min-height: 124px; padding: 22px 24px; border-radius: 22px;
+  display: flex; align-items: center; gap: 20px; text-align: left; background: var(--glass); color: var(--txt);
+}
+.official-os .control-option strong, .official-os .control-option small { display: block; }
+.official-os .control-option strong { font-size: 34px; line-height: 1.1; letter-spacing: -.02em; }
+.official-os .control-option small { font-size: 23px; font-weight: 450; line-height: 1.25; color: var(--txt2); margin-top: 6px; }
+.official-os .control-option svg { flex: none; width: 56px; height: 56px; padding: 10px; border-radius: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; background: color-mix(in srgb, currentColor 12%, transparent); }
+.official-os .control-option[data-c="start"] svg { color: var(--green); }
+.official-os .control-option[data-c="gaze"] svg { color: var(--blue); }
+.official-os .control-option[data-c="iphone"] svg { color: var(--purple); }
+.official-os .control-option[data-c="mouse"] svg { color: var(--txt2); }
+.official-os .choose-control .resume-control { grid-column: 1/-1; border-radius: 16px; min-width: 0; height: 76px; font-size: 28px; }
+.official-os .choose-control .cbtn:hover, .official-os .choose-control .cbtn:focus-visible { border-color: var(--blue); outline: 3px solid var(--blue); outline-offset: 2px; }
+@media (max-width:700px), (max-height:500px) {
+  body.official-os:has(#calib.on .choose-control) #wrap { inset: 0 !important; transform: none !important; z-index: 125; }
+  body.official-os:has(#calib.on .choose-control) #stage { width: 100%; height: 100%; }
+  .official-os #calib.on:has(.choose-control) { display: flex; padding: 12px; overflow: auto; }
+  .official-os .cal-card.choose-control { position: static; margin: auto; transform: none; width: min(100%,440px); padding: 18px; border-radius: 20px; }
+  .official-os .choose-control .cal-title { font-size: 27px; }
+  .official-os .choose-control .cal-text { font-size: 16px; }
+  .official-os .choose-control .cal-btns { margin-top: 18px; gap: 10px; }
+  .official-os .control-option { min-height: 108px; gap: 7px; padding: 12px; flex-direction: column; align-items: flex-start; border-radius: 14px; }
+  .official-os .control-option svg { width: 30px; height: 30px; padding: 4px; border-radius: 7px; }
+  .official-os .control-option strong { font-size: 18px; } .official-os .control-option small { font-size: 13px; margin-top: 3px; }
+  .official-os .choose-control .resume-control { height: 48px; font-size: 16px; }
+}

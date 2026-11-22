@@ -1,6 +1,6 @@
 # Toki OS
 
-La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene ocho tarjetas e incluye Juegos, Servicios y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
+La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene ocho tarjetas e incluye Juegos, Apps y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
 
 Desde la raíz del repositorio, con Node 22 o posterior:
 
@@ -104,13 +104,13 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
-## Juegos y Servicios en Woki OS
+## Juegos y Apps en Woki OS
 
-Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo y los recuadros grandes de Woki. Para probarlo con Servicios funcionando, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
+Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
 
-- **Inicio.** Las ocho tarjetas se distribuyen en dos filas de cuatro. Las columnas de los bordes son un 20 % más anchas. Para escuchar música, elige **Servicios → Spotify**.
-- **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse. Al jugar, el juego ocupa casi toda la pantalla y arriba solo queda una línea: "Primera vez: toca la bandera de España y luego «Crear usuario»" (así es la bienvenida real del sitio). Al salir de Juegos la partida se cierra.
-- **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Inicio.** Las ocho tarjetas se distribuyen en dos filas de cuatro. Las columnas de los bordes son un 20 % más anchas. Para escuchar música, elige **Apps → Spotify**.
+- **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una se abre la partida dentro del SO. El botón **← Juegos** vuelve al catálogo. Para usar el puntero de cámara dentro de la partida necesitas el puente del navegador (`software/browser-bridge`).
+- **Apps:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
 - **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
 
   ```bash
@@ -118,11 +118,11 @@ Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estil
   ```
 
   Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
-- **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
+- **Siempre hay salida:** "‹ Inicio" en la barra, "← Juegos" dentro de una partida e "Inicio"/"Volver" en Apps. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
 - **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
 - **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
 
 ## Tema y atajos
 
 - **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.
-- **Atajos de desarrollo** (teclas simuladas, cámara, LCD, eventos): ocultos por defecto. La pestaña con flecha (⌃) de abajo a la derecha los muestra u oculta.
+- **Controles** muestra la cámara, la detección de rostro y los grupos de sensores, atajos y diagnóstico. El panel recuerda si lo dejaste abierto o cerrado. **Activar cámara** inicia la vista previa y **Apagar cámara** libera la cámara.

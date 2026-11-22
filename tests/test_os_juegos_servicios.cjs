@@ -25,12 +25,11 @@ assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos prime
   assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 
-// 3. Siempre hay salida grande: "‹ Inicio" en la barra, "← Inicio" en Juegos y "← Juegos" en el catálogo externo.
+// 3. Juegos abre el catálogo externo directamente. La partida permite volver al catálogo.
 assert.match(glue, /home-nav" data-t data-act="go:home"/);
-assert.match(games, /window\.TOKI_OS_SHELL\?button\('home','← Inicio'\)/);
-assert.match(games, /if\(act==='home'\) return go\('home'\);/);
-assert.match(external, /window\.TOKI_OS_SHELL\?b\('toki','← Juegos'\)/);
-assert.match(external, /if\(act==='toki'\)return window\.TOKI_GAMES\?\.lobby\(\);/);
+assert.match(external, /if\(name==='games'\)catalog\(\)/);
+assert.match(external, /b\('catalog','← Juegos'\)/);
+assert.doesNotMatch(external, /external:toki|b\('toki'/);
 
 // 4. Dentro del SO el puntero se elige en Ajustes (no hay botones Nariz/Mirada/Mouse que apaguen el iPhone).
 assert.match(games, /if \(window\.TOKI_OS_SHELL\) return `<p class="game-note">/);
@@ -39,9 +38,11 @@ assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 // 5. Con el iPhone nada se elige en cadena en Juegos y Servicios (mismo bloqueo que el resto del SO).
 assert.match(glue, /if \(gazeOnly\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
 
-// 5b. Juegos de Toki con íconos de app del SO; partida externa grande con aviso de una línea; al salir se cierra.
-assert.match(games, /window\.TOKI_GAME_ART\?\.\[kind\]/);
-assert.match(glue, /window\.TOKI_GAME_ART = \{ stars: .*memory: .*external: /);
+// 5b. Miniaturas del inicio y navegación en la partida.
+assert.match(glue, /SERVICE_LOGOS = \['spotify', 'rappi', 'biobio', 'mercadolibre'\]/);
+for (const [, cover] of external.matchAll(/image:'([^']+)'/g)) {
+  assert.ok(fs.existsSync(dir + 'game-covers/' + cover + '.webp'), cover);
+}
 assert.match(external, /Primera vez: toca la bandera de España y luego «Crear usuario»\./);
 assert.ok(!/if\(window\.TOKI_OS_SHELL\)\{[^]*?Si aparece la bienvenida[^]*?return;\n  \}/.test(external), "dentro del SO no aparece el aviso largo");
 assert.match(glue, /if \(name !== 'games'\) \$\('#externalGame'\)\?\.remove\(\);/);

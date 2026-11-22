@@ -208,6 +208,7 @@
       const services = this.admin ? catalog : catalog.filter(service => service.id !== 'whatsapp');
       return [...services,...[...extra.values()].map(a=>({...a,category:'Noticias',intent:'Leer titulares',tasks:'Elegir titulares y leer extractos RSS por páginas.',description:'Elegir titulares y leer sus extractos por partes.'}))];
     }
+    get catalogLabel(){ return window.TOKI_OS_SHELL ? 'Apps' : 'servicios'; }
     get preset(){return this.catalog.find(a=>a.id===this.selected)||this.catalog.find(a=>a.name===this.job?.name)||catalog[0];}
     existing(a){return this.jobs.find(j=>j.name===a.name&&!['cancelled'].includes(j.status));}
     btn(action,label,o={}){
@@ -217,21 +218,21 @@
     }
     header(title,sub){return `<div class="ta-heading"><h1>${title}</h1><p>${sub}</p></div>`;}
     nav(){
-      if(this.view.startsWith('food'))return `<nav class="ta-nav" aria-label="Navegación de comida">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver servicios')}</nav>`;
-      if(this.view==='video-player')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('back','← Videos')}${this.btn('store','Ver servicios')}</nav>`;
-      if(this.view==='videos')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('store','← Volver a servicios')}</nav>`;
-      if(this.view==='news')return `<nav class="ta-nav spotify-nav" aria-label="Navegación de noticias">${this.btn('store','← Volver a servicios')}</nav>`;
+      if(this.view.startsWith('food'))return `<nav class="ta-nav" aria-label="Navegación de comida">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
+      if(this.view==='video-player')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('back','← Videos')}${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
+      if(this.view==='videos')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
+      if(this.view==='news')return `<nav class="ta-nav spotify-nav" aria-label="Navegación de noticias">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
       if (this.view === 'store') {
         const home = this.options.shellHome ? '' : this.btn('home', 'Inicio');
         const pages = Math.ceil(this.catalog.length / servicesPerPage);
         if (pages <= 1) return home ? `<nav class="ta-nav" aria-label="Navegación">${home}</nav>` : '';
         const previous = this.catalogPage > 0 ? this.btn('catalog-prev','← Anterior') : '';
         const next = this.catalogPage + 1 < pages ? this.btn('catalog-next','Siguiente →') : '';
-        return `<nav class="ta-nav ta-pagination" aria-label="Páginas de servicios">${home}${previous}<span>Página ${this.catalogPage+1} de ${pages}</span>${next}</nav>`;
+        return `<nav class="ta-nav ta-pagination" aria-label="Páginas de ${this.catalogLabel}">${home}${previous}<span>Página ${this.catalogPage+1} de ${pages}</span>${next}</nav>`;
       }
       if (this.view === 'player' && !this.admin && (this.options.shellHome || this.spotifyBlocked())) return '';
-      if (this.view === 'player' && !this.admin) return `<nav class="ta-nav spotify-nav" aria-label="Navegación de servicios">${this.btn('store','← Volver a servicios')}</nav>`;
-      return `<nav class="ta-nav" aria-label="Navegación de servicios">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver servicios')}</nav>`;
+      if (this.view === 'player' && !this.admin) return `<nav class="ta-nav spotify-nav" aria-label="Navegación de ${this.catalogLabel}">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
+      return `<nav class="ta-nav" aria-label="Navegación de ${this.catalogLabel}">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
     }
     back(){
       if(this.view==='store'){
@@ -263,7 +264,7 @@
           <strong>${esc(app.intent)}</strong><span class="ta-brand">${esc(app.name)}</span><small>${esc(status)}</small>`,
           {value:app.id, className:`ta-app-card ta-${esc(app.id)}`});
       });
-      return `<div class="ta-catalog" role="group" aria-label="Servicios">${cards.join('')}</div>`;
+      return `<div class="ta-catalog" role="group" aria-label="Catálogo de ${this.catalogLabel}">${cards.join('')}</div>`;
     }
     detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':a.id==='rappi'?'Explora comida real en Santiago. Para preparar el carrito, conecta tu cuenta y dirección. La compra todavía está pendiente.':a.id==='youtube'?'Elige entre videos de Chile Travel y controla reproducción y pausa. La disponibilidad depende de YouTube.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
     progress(){
@@ -288,7 +289,7 @@
       return `<section class="sp-unavailable" aria-label="Spotify">
         <div class="sp-brand">${brandLogo('spotify')}<strong>Spotify</strong></div>
         <p class="sp-problem" role="status">${problem?esc(problem):'Preparando Spotify…'}</p>
-        <div class="ta-actions">${problem?this.btn('spotify-retry','Reintentar',{className:'ta-primary'}):''}${this.btn('store','Ver servicios')}</div>
+        <div class="ta-actions">${problem?this.btn('spotify-retry','Reintentar',{className:'ta-primary'}):''}${this.btn('store','Ver '+this.catalogLabel)}</div>
       </section>`;
     }
     async retrySpotify(){
