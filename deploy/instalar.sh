@@ -35,8 +35,9 @@ if [ ! -f "$BASE/repo/software/agent/data/memoria.db" ]; then
 fi
 
 # Configuración no secreta del agente
+ORIGENES="https://$DOMINIO,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766"
 cat > "$BASE/toki.env" <<EOF
-TOKI_ORIGENES=https://$DOMINIO,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766
+TOKI_ORIGENES=$ORIGENES
 TOKI_MAX_DIA=${TOKI_MAX_DIA:-300}
 EOF
 
@@ -45,6 +46,27 @@ if [ ! -f "$BASE/agente.env" ]; then
   touch "$BASE/agente.env"
 fi
 chmod 600 "$BASE/agente.env"
+
+# ---------- agente demo (TV pública, 127.0.0.1:8792) · mismo código y credenciales, memoria ficticia ----------
+# Token propio: se crea una vez y queda en caddy.env (Caddy lo agrega en /agente/ cuando no viene el del escenario).
+TOKEN_DEMO=$(grep -s '^TOKI_TOKEN_DEMO=' "$BASE/caddy.env" | cut -d= -f2- || true)
+[ -n "$TOKEN_DEMO" ] || TOKEN_DEMO=$(openssl rand -hex 24)
+# Mismos orígenes que el agente real: el preflight CORS de la TV del escenario no trae el token y llega al demo.
+( umask 077; cat > "$BASE/toki-demo.env" <<EOF
+TOKI_DEMO=1
+TOKI_AGENTE_PORT=8792
+TOKI_DATA=$BASE/demo-data
+TOKI_ORIGENES=$ORIGENES
+TOKI_MAX_DIA=${TOKI_MAX_DIA_DEMO:-150}
+TOKI_TOKEN=$TOKEN_DEMO
+EOF
+)
+chown root:root "$BASE/toki-demo.env"; chmod 600 "$BASE/toki-demo.env"
+# Memoria ficticia: se recarga en cada deploy (la misma semilla deja la misma base). La demo no escribe en esa carpeta.
+install -d -o toki -g toki -m 700 "$BASE/demo-data"
+runuser -u toki -- env TOKI_DATA="$BASE/demo-data" "$BASE/venv/bin/python" "$BASE/repo/software/agent/scripts/semilla.py" \
+  --semilla "$BASE/repo/software/agent/ejemplos/semilla.demo.json" >/dev/null
+cp "$BASE/repo/deploy/toki-agente-demo.service" /etc/systemd/system/toki-agente-demo.service
 
 # ---------- wapi (WhatsApp) · gateway 3102, api 3101 y webhook-worker, todo en 127.0.0.1 ----------
 WAPI_COMMIT="${WAPI_COMMIT:-4ca20d8}"
@@ -152,14 +174,19 @@ if [ ! -s "$BASE/equipo.clave" ]; then ( umask 077; openssl rand -base64 18 | tr
 ( umask 077; {
   printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-)"
   printf 'TOKI_EQUIPO_HASH=%s\n' "$(caddy hash-password --plaintext "$(cat "$BASE/equipo.clave")")"
+  printf 'TOKI_TOKEN_DEMO=%s\n' "$TOKEN_DEMO"
 } > "$BASE/caddy.env" )
 mkdir -p /etc/systemd/system/caddy.service.d
 printf '[Service]\nEnvironment=TOKI_DOMINIO=%s\nEnvironmentFile=%s/caddy.env\n' "$DOMINIO" "$BASE" > /etc/systemd/system/caddy.service.d/toki.conf
+# Se guarda el Caddyfile anterior: si el nuevo no es válido, Caddy sigue con ese (ver el cierre).
+[ -f /etc/caddy/Caddyfile ] && cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.anterior
 cp "$BASE/repo/deploy/Caddyfile" /etc/caddy/Caddyfile
 
 systemctl daemon-reload
 systemctl enable -q --now toki-agente
 systemctl restart toki-agente
+systemctl enable -q toki-agente-demo
+systemctl restart toki-agente-demo
 systemctl enable -q toki-voces
 systemctl restart toki-voces
 # wapi solo se reinicia si está apagado o con TOKI_REINICIAR_WAPI=1: reiniciar el gateway corta WhatsApp unos segundos
@@ -188,9 +215,16 @@ if command -v ufw >/dev/null; then
 fi
 
 systemctl enable -q caddy
-systemctl restart caddy
+# Valida el Caddyfile con las mismas variables que usa el servicio (caddy.env). Si falla, vuelve el anterior.
+if systemd-run --quiet --wait --pipe -p EnvironmentFile="$BASE/caddy.env" -E TOKI_DOMINIO="$DOMINIO" -E HOME=/root \
+     "$(command -v caddy)" validate --config /etc/caddy/Caddyfile --adapter caddyfile > /tmp/caddy-validar.log 2>&1; then
+  systemctl restart caddy
+else
+  echo "El Caddyfile nuevo no es válido (ver /tmp/caddy-validar.log). Caddy sigue con el anterior."
+  if [ -f /etc/caddy/Caddyfile.anterior ]; then cp /etc/caddy/Caddyfile.anterior /etc/caddy/Caddyfile; fi
+fi
 
 sleep 3
-echo "agente: $(systemctl is-active toki-agente) · voces: $(systemctl is-active toki-voces) · caddy: $(systemctl is-active caddy)"
+echo "agente: $(systemctl is-active toki-agente) · agente demo: $(systemctl is-active toki-agente-demo) · voces: $(systemctl is-active toki-voces) · caddy: $(systemctl is-active caddy)"
 echo "wapi: gateway $(systemctl is-active wapi-gateway) · api $(systemctl is-active wapi-api) · worker $(systemctl is-active wapi-worker) · puente: $(systemctl is-active toki-puente) ($(grep '^WA_MODE=' "$PUENTE_ENV" | cut -d= -f2))"
 echo "URL: https://$DOMINIO"

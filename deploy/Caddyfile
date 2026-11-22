@@ -1,4 +1,4 @@
-# URL pública de Myo: la TV pública (jueces), /equipo/ con contraseña, y /wa y /agente con token para el escenario.
+# URL pública de Myo: la TV pública (jueces) con el agente demo, /equipo/ con contraseña, y /wa y /agente con token para el escenario.
 # El dominio sale de TOKI_DOMINIO (por ejemplo 179-66-157-161.sslip.io). Caddy saca el certificado HTTPS solo.
 # Solo HTTP/1.1 y HTTP/2: con HTTP/3 (QUIC por UDP) el navegador se colgaba si el UDP 443 no pasaba.
 {
@@ -10,10 +10,23 @@
 {$TOKI_DOMINIO} {
 	encode gzip
 
-	# Agente: /agente/api/... → 127.0.0.1:8790/api/...  (flush_interval -1 para que el SSE llegue al instante)
+	# Agente: /agente/api/... → /api/...  (flush_interval -1 para que el SSE llegue al instante)
+	# · Con el token del escenario (X-Myo-Token = TOKI_TOKEN): el agente con la memoria real, 127.0.0.1:8790.
+	#   Lo usa la TV del escenario (deploy/escena.sh). El agente vuelve a revisar el token.
+	# · Sin ese token (la TV pública): el agente demo con memoria ficticia, 127.0.0.1:8792. Caddy le agrega
+	#   su token (TOKI_TOKEN_DEMO), así el navegador nunca lo ve. Esta rama nunca llega al 8790.
 	handle_path /agente/* {
-		reverse_proxy 127.0.0.1:8790 {
-			flush_interval -1
+		@escenario header X-Myo-Token {$TOKI_TOKEN}
+		handle @escenario {
+			reverse_proxy 127.0.0.1:8790 {
+				flush_interval -1
+			}
+		}
+		handle {
+			reverse_proxy 127.0.0.1:8792 {
+				header_up X-Myo-Token {$TOKI_TOKEN_DEMO}
+				flush_interval -1
+			}
 		}
 	}
 

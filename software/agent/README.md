@@ -70,6 +70,16 @@ Variables opcionales:
 |---|---|---|
 | `TOKI_MODELO` | `claude-sonnet-5-5` | Modelo del agente |
 | `TOKI_AGENTE_TOPE_S` | `20` | Segundos antes de usar las opciones de reglas |
+| `TOKI_AGENTE_PORT` | `8790` | Puerto del servidor |
+| `TOKI_DATA` | `software/agent/data` | Carpeta de la memoria y sus archivos (otra instancia usa otra carpeta) |
+| `TOKI_DEMO` | vacío | Con `1`, modo demo: 403 en las rutas que escriben, las de voces y `/api/grupo`; exige un `TOKI_DATA` propio |
+
+Instancia demo local, con la memoria ficticia de la TV pública:
+
+```bash
+TOKI_DATA=/tmp/myo-demo python3 software/agent/scripts/semilla.py --semilla software/agent/ejemplos/semilla.demo.json
+TOKI_DEMO=1 TOKI_DATA=/tmp/myo-demo TOKI_AGENTE_PORT=8792 python3 software/agent/server.py
+```
 
 ## Cómo funciona
 
