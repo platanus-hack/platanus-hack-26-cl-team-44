@@ -72,7 +72,7 @@ Vincular el celular (una vez; hace falta el teléfono para escanear el QR):
 ssh -t toki-vps 'bash /opt/toki/repo/deploy/vincular-whatsapp.sh +569XXXXXXXX'
 ```
 
-El QR sale en la terminal (agranda la ventana si se ve cortado). En el celular: WhatsApp → Ajustes → Dispositivos vinculados → Vincular un dispositivo. Al vincular, el script guarda las claves en `puente.env`, registra el webhook en `http://127.0.0.1:8788/webhook/wapi`, pasa a `WA_MODE=live` y reinicia `toki-puente`. No manda mensajes.
+El QR sale en la terminal (agranda la ventana si se ve cortado). En el celular: WhatsApp → Ajustes → Dispositivos vinculados → Vincular un dispositivo. Al vincular, el script guarda las claves en `puente.env`, activa la firma HMAC del webhook (`webhook_hmac` en la base de wapi), registra el webhook en `http://127.0.0.1:8788/webhook/wapi`, pasa a `WA_MODE=live` y reinicia `toki-puente`. No manda mensajes.
 
 Revisar: `ssh toki-vps 'systemctl status wapi-gateway wapi-api wapi-worker toki-puente --no-pager; journalctl -u toki-puente -n 20 --no-pager'`.
 

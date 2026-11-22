@@ -93,6 +93,10 @@ como_wapi() {
     -p EnvironmentFile="$BASE/wapi.env" -E PATH=/usr/local/bin:/usr/bin:/bin "$@"
 }
 como_wapi bun run --cwd packages/db migrate >/dev/null
+# Firma de los webhooks: wapi manda el secreto en texto plano salvo que la sesión tenga webhook_hmac; el puente solo
+# acepta HMAC-SHA256 del cuerpo. La API de wapi no expone esa opción: se activa en la base. Idempotente.
+(cd /tmp && runuser -u postgres -- psql -q -d wapi -c "update whatsapp_sessions set webhook_hmac = true where webhook_hmac = false;") >/dev/null \
+  || { echo "No se pudo activar webhook_hmac en wapi: el puente rechazaría los webhooks"; exit 1; }
 
 # Arranques solo-local de wapi (ver deploy/wapi/)
 mkdir -p "$BASE/wapi-local"

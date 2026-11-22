@@ -3,7 +3,8 @@
 #   ssh -t toki-vps 'bash /opt/toki/repo/deploy/vincular-whatsapp.sh +569XXXXXXXX'
 # 1) vincular.ts dibuja el QR en esta terminal (y en /opt/toki/puente/qr.html) y espera 3 min al escaneo.
 # 2) Guarda WAPI_SESSION_ID, WAPI_API_KEY y WAPI_WEBHOOK_SECRET en /opt/toki/puente.env (sin mostrarlos).
-# 3) Registra el webhook en http://127.0.0.1:8788/webhook/wapi, pasa a WA_MODE=live y reinicia toki-puente.
+# 3) Activa la firma HMAC del webhook (webhook_hmac en la base de wapi: el puente no acepta el secreto en texto plano).
+# 4) Registra el webhook en http://127.0.0.1:8788/webhook/wapi, pasa a WA_MODE=live y reinicia toki-puente.
 # No manda ningún mensaje. Se puede repetir: reutiliza la sesión del mismo número.
 set -euo pipefail
 
@@ -16,6 +17,9 @@ systemctl is-active -q wapi-api wapi-gateway || { echo "wapi no está corriendo:
 cd "$PUENTE"
 set -a; . "$ENV_FILE"; set +a
 ENV_FILE="$ENV_FILE" QR_FILE=/opt/toki/puente/qr.html ./node_modules/.bin/tsx vincular.ts "$TEL"
+
+# Una sesión nueva nace con webhook_hmac = false. Idempotente (mismo paso que deploy/instalar.sh).
+(cd /tmp && runuser -u postgres -- psql -q -d wapi -c "update whatsapp_sessions set webhook_hmac = true where webhook_hmac = false;") >/dev/null
 
 set -a; . "$ENV_FILE"; set +a
 ./node_modules/.bin/tsx setup-webhook.ts "http://127.0.0.1:${PORT:-8788}"
