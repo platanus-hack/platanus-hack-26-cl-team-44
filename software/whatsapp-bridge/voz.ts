@@ -82,13 +82,13 @@ let lastCall: { at: number; alarmId: string; hora: string; direccion: string; ll
 
 // Protocolo de la llamada: el PRIMERO que contesta recibe el aviso completo; los que contestan después
 // saben que alguien ya respondió (o ya va) y se les pide igual que ayuden si pueden.
-function protocolo(l: Llamada | undefined) {
+function protocolo(l: Llamada) {
   const hora = lastCall.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
   const dir = lastCall.direccion || DIRECCION || "la casa";
-  if (l && !l.contestoAt) l.contestoAt = Date.now();
+  if (!l.contestoAt) l.contestoAt = Date.now();
   const otras = lastCall.llamadas.filter((x) => x !== l);
   const van = otras.filter((x) => x.confirmo === true).map((x) => x.nombre);
-  const antes = otras.filter((x) => x.contestoAt && (!l || x.contestoAt < l.contestoAt)).sort((a, b) => a.contestoAt - b.contestoAt).map((x) => x.nombre);
+  const antes = otras.filter((x) => x.contestoAt && x.contestoAt < l.contestoAt).sort((a, b) => a.contestoAt - b.contestoAt).map((x) => x.nombre);
   if (van.length) return { rol: "ya_viene", quien: juntar(van), mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}. ${juntar(van)} ya ${van.length > 1 ? "van" : "va"} en camino. Igual, si puedes brindar ayuda, acércate a ${dir}. ¿Puedes ir?` };
   if (antes.length) return { rol: "ya_contesto", quien: antes[0], mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}. ${antes[0]} ya contestó el aviso. Igual, si puedes brindar ayuda, acércate a ${dir}. ¿Puedes ir?` };
   return { rol: "primero", quien: "", mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}, en ${dir}. Necesita ayuda ahora. ¿Puedes ir?` };
@@ -250,8 +250,11 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     if (req.method === "GET" && p === "/api/emergencia/protocolo") {
       const conv = clean(url.searchParams.get("conv"), 80);
       const l = lastCall.llamadas.find((x) => x.conversationId && x.conversationId === conv);
+      // Sin una llamada activa no se entrega nada (dirección, quién contestó): falla cerrado. El agente, si la
+      // herramienta falla, da el aviso completo con las variables que recibió al marcar.
+      if (!l) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
       const r = protocolo(l);
-      console.log(`[emergencia] protocolo ${l ? l.nombre : "(llamada de otro puente)"} → ${r.rol}`);
+      console.log(`[emergencia] protocolo ${l.nombre} → ${r.rol}`);
       json(200, { ok: true, ...r });
       return true;
     }
