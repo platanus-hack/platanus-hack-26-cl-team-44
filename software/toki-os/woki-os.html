@@ -638,7 +638,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
           <p><strong>Puntero</strong> · <kbd>N</kbd> nariz o mouse · <kbd>E</kbd> mirada · <kbd>C</kbd> centrar nariz · <kbd>V</kbd> centrar mirada</p>
           <p><strong>Gestos con teclado</strong> · <kbd>Espacio</kbd> elegir · <kbd>Esc</kbd> cerrar Cuidados</p>
           <p><strong>Acompañante</strong> · <kbd>K</kbd> contactos de WhatsApp · <kbd>R</kbd> simular el llavero RFID · <kbd>M</kbd> silenciar la alarma · <kbd>Esc</kbd> salir del campo de texto</p>
-          <p><strong>Pruebas y pantalla</strong> · <kbd>G</kbd> simular pérdida del rostro · <kbd>W</kbd> simular temblor · <kbd>T</kbd> cambiar tema</p>
+          <p><strong>Pruebas y pantalla</strong> · <kbd>G</kbd> simular pérdida del rostro · <kbd>W</kbd> simular temblor · <kbd>T</kbd> cambiar tema · <kbd>F</kbd> pantalla completa</p>
         </div>
       </details>
       <details name="panel-tools" id="diagnostics"><summary>Diagnóstico</summary>
@@ -1874,6 +1874,10 @@ addEventListener('keydown',e=>{
   if(e.key==='t'||e.key==='T') setTheme(document.documentElement.dataset.theme!=='light');
   if((e.key==='i'||e.key==='I') && !$('#calib').classList.contains('on')){ CFG.magnet=!CFG.magnet; island('🧲', CFG.magnet?'Imán activado: el foco va al objetivo más cercano':'Imán desactivado'); }
   if(e.key==='m'||e.key==='M'){ S.muted=!S.muted; island(S.muted?'🔕':'🔔', S.muted?'Alarma en silencio':'Sonido de alarma activo'); }
+  if((e.key==='f'||e.key==='F') && !e.metaKey && !e.ctrlKey && !e.altKey){
+    const pedir = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+    Promise.resolve(pedir).catch(()=>island('⛶','Usa la opción de pantalla completa del navegador'));
+  }
 });
 addEventListener('keyup',e=>{
   if(e.code==='Space') releaseSrc('ceja','keyboard',performance.now());
