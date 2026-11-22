@@ -15,7 +15,7 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes exp
 
 ## Probarlo
 
-**Toki OS** es la interfaz oficial. Su inicio reúne ocho tarjetas, entre ellas Juegos y Apps. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
+**Toki OS** es la interfaz oficial. Su inicio reúne siete tarjetas, entre ellas Juegos y Apps. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
 
 ```bash
 npm ci --prefix software/apps-bridge

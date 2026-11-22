@@ -10,6 +10,7 @@
 /* ---------- más espacio para las tarjetas en todas las pantallas ---------- */
 .screen { padding: 28px 48px; gap: 20px; }
 .status { height: 60px; }
+.official-os .status { height: 84px; }
 .grid4x2, .grid2x2 { gap: 20px; }
 .grid3x2 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
 .grid5x2 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
@@ -19,6 +20,41 @@
 .app svg { width: 92px; height: 92px; }
 .tile .lb { font-size: 58px; }
 .tile .sb { font-size: 30px; }
+
+.official-os { --card-focus: #71b7ff; --card-ready: #73d596; }
+:root[data-theme="light"] .official-os { --card-focus: #005eb8; --card-ready: #167943; }
+
+/* Inicio oficial: cuatro acciones de comunicación y tres destinos en la segunda fila. */
+.official-os #s-home { gap: 28px; }
+.official-os.external-playing #s-games .status { margin: 8px 20px 0; }
+.official-os #tiles { grid-template-columns: repeat(12,minmax(0,1fr)); gap: 32px; }
+.official-os #tiles > .tile { grid-column: span 3; gap: 22px; padding: 24px; border-radius: 32px; font: inherit; color: var(--txt); cursor: pointer; animation: none; }
+.official-os #tiles > .tile:nth-child(n+5) { grid-column: span 4; }
+.official-os #tiles .app { width: 152px; height: 152px; border-radius: 38px; box-shadow: none; }
+.official-os #tiles .app svg { width: 80px; height: 80px; }
+.official-os #tiles .home-mosaic img { box-shadow: none; }
+.official-os #tiles .lb { font-size: 54px; line-height: 1.08; }
+.official-os #tiles .sb { margin-top: -10px; font-size: 28px; line-height: 1.22; }
+.official-os #s-home .hint span { padding: 4px 12px; background: none; border: 0; }
+.official-os :is(#tiles .tile,.status .nav-action) {
+  box-shadow: none; transform: none;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.official-os :is(#tiles .tile,.status .nav-action)::before,
+.official-os.gaze-only :is(#tiles .tile,.status .nav-action)::after { display: none; }
+.official-os :is(#tiles .tile,.status .nav-action).focus { border-color: var(--card-focus); background-color: var(--glass-hi); }
+.official-os :is(#tiles .tile,.status .nav-action).armed { border-color: var(--card-ready); }
+.official-os :is(#tiles .tile,.status .nav-action).pressed { background-color: color-mix(in srgb,var(--blue) 16%,var(--glass-hi)); }
+.official-os :is(#tiles .tile,.status .nav-action):focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.official-os :is(#tiles,.status) .dwell-outline > rect:last-child { stroke: var(--card-focus); }
+.official-os :is(#tiles,.status) .armed .dwell-outline > rect:last-child { stroke: var(--card-ready); }
+.official-os #tiles .badge { top: 18px; right: 20px; left: auto; bottom: auto; transform: none; font-size: 20px; padding: 5px 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .official-os :is(#tiles .tile,.status .nav-action) { transition: none !important; }
+}
+@media (forced-colors: active) {
+  .official-os :is(#tiles,.status) .dwell-outline > rect:last-child { stroke: Highlight; }
+}
 
 /* hablar: 4 frases grandes + columna con Escribir y Volver */
 .talkgrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr 400px; grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }

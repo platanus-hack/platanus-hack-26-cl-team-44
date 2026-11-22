@@ -15,6 +15,6 @@ Toki OS:
 - `node tests/test_predict.mjs` — predicción de palabras.
 - `node tests/test_iphone_presets.mjs` — presets de calibración.
 - `node tests/test_os_delete.cjs` — borrar que acelera.
-- `node tests/test_os_juegos_servicios.cjs` — Juegos, Servicios y colores en Woki OS: módulos del equipo, 8 tarjetas en 4×2, salidas grandes y fondos en claro y oscuro.
+- `node tests/test_os_juegos_servicios.cjs` — Juegos, Servicios y colores en Woki OS: módulos del equipo, 7 tarjetas y descanso global, salidas grandes y fondos en claro y oscuro.
 
 Eye-tracking (motor y demo): `cd software/eye-tracking/web && npm test`.

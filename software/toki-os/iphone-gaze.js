@@ -51,7 +51,7 @@ function writeStore(data) {
 }
 
 const IPHONE = {
-  source: null, host: null, latest: null, lastFrameAt: 0,
+  source: null, host: null, latest: null, lastFrameAt: 0, pointAt: null,
   model: null, viewport: null, filter: null,
   active: false, calibrating: false, abort: null, prevMode: null,
   lastFaceAt: 0, backSince: null,
@@ -110,6 +110,7 @@ const IPHONE = {
   onFrame(f) {
     this.latest = f;
     this.lastFrameAt = performance.now();
+    this.pointAt = null;
     for (const cb of listeners) cb(f);
     if (!this.active || !this.model) return;
     const now = this.lastFrameAt;
@@ -127,6 +128,7 @@ const IPHONE = {
     }
     const p = predict(this.model, f);
     if (!p) return; // parpadeo: el puntero se queda donde estaba
+    this.pointAt = now;
     const g = this.filter(p, f.t);
     W.mouse.x = clamp(g.x, 0, innerWidth);
     W.mouse.y = clamp(g.y, 0, innerHeight);

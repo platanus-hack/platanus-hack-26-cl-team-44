@@ -12,7 +12,20 @@
 window.TOKI_OS_SHELL = true;
 // Los módulos de juegos los esperan; en la tablet los define prototype-motion.html.
 const tabletAccess = null;
-function tabletGameInput() { return null; }
+function tabletGameInput() {
+  const now = performance.now();
+  const iphone = window.IPHONE?.active;
+  const camera = Boolean(iphone || NOSE.on);
+  const blocked = document.hidden || !document.hasFocus() || S.gazeLost || S.rest || S.alarm || S.quick ||
+    document.body.classList.contains('panel') || $('#calib').classList.contains('on');
+  const tracked = iphone ? IPHONE.pointAt != null && now - IPHONE.pointAt < 250 :
+    NOSE.on && NOSE.raw && now - NOSE.lastFace < 250 && (NOSE.mode !== 'gaze' || (GAZE.cur && !GAZE.cur.blink));
+  return {
+    mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
+    point: tracked && !blocked ? gz : null,
+    dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
+  };
+}
 
 window.addEventListener('load', () => {
   'use strict';
@@ -70,12 +83,6 @@ window.addEventListener('load', () => {
   }
 
   /* ---------- navegación y elección ---------- */
-  // Barra superior como en las demás pantallas: "‹ Inicio" grande + estado.
-  for (const el of $$('#s-games .status, #s-apps .status')) {
-    el.innerHTML = '<button type="button" class="t pill glass home-nav" data-t data-act="go:home">‹ Inicio</button><div class="status-info"></div>';
-  }
-  renderStatus();
-
   const innerGo = go;
   go = function (name, ...rest) {
     if (name === 'apps' && S.screen !== 'apps') mount();

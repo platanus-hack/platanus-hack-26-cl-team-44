@@ -57,17 +57,27 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 .screen.on .stag{animation:rise 360ms var(--ease-out) backwards;animation-delay:calc(var(--i,0)*35ms)}
 
 /* ---------- barra de estado ---------- */
-.status{display:flex;align-items:center;gap:16px;height:68px;flex:none;font-size:27px;font-weight:600;color:var(--txt2)}
-.status-info{display:contents}
-.home-nav{color:var(--txt);font:inherit;cursor:pointer;white-space:nowrap}
-.pill{display:flex;align-items:center;gap:12px;height:56px;padding:0 24px;border-radius:30px;
-  transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms var(--ease-out)}
-.pill.flash{background:rgba(10,132,255,.28);border-color:rgba(10,132,255,.7);color:var(--txt);transform:scale(1.04)}
-.dot{width:14px;height:14px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(48,209,88,.6)}
-.dot.warn{background:var(--orange);box-shadow:0 0 12px rgba(255,159,10,.6)}
-.dot.al{background:var(--red);box-shadow:0 0 12px rgba(255,69,58,.7)}
-.status .title{margin-left:auto;color:var(--txt);font-size:34px;letter-spacing:-.02em}
-.status .clock{min-width:100px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt)}
+.status{display:flex;align-items:center;gap:24px;flex:none;color:var(--txt);white-space:nowrap}
+.status .screen-name{font-size:40px;font-weight:700;letter-spacing:-.035em}
+.status-info{display:flex;align-items:center;justify-content:center;gap:32px;min-width:0;flex:1}
+.status-group{display:grid;gap:5px;line-height:1.1;min-width:0}
+.status-key{font-size:21px;color:var(--txt2);font-weight:550}
+.status-reading{display:flex;align-items:center;gap:11px;font-size:27px;font-weight:620}
+.status-signal{display:inline-flex;align-items:center;gap:8px}
+.status-signal::before{content:"";width:11px;height:11px;flex:none;border-radius:50%;border:2px solid var(--txt2);box-sizing:border-box}
+.status-signal[data-state="on"]::before{background:var(--green);border-color:var(--green)}
+.status-signal[data-state="wait"]::before{background:var(--orange);border-color:var(--orange)}
+.status-signal[data-state="alert"]::before{background:var(--red);border-color:var(--red)}
+.status-signal.flash{text-decoration:underline;text-underline-offset:5px}
+.status-signal.flash::before{background:var(--blue);border-color:var(--blue)}
+.status-mention{max-width:180px;text-overflow:ellipsis;overflow:hidden}
+.status .clock{font-size:26px;font-weight:550;font-variant-numeric:tabular-nums;color:var(--txt2)}
+.status .nav-action{height:78px;min-width:152px;display:inline-flex;align-items:center;justify-content:center;gap:13px;padding:0 26px;border-radius:22px;
+  flex:none;color:var(--txt);font:inherit;font-size:29px;font-weight:650;cursor:pointer}
+.status .rest-nav{min-width:215px}
+.nav-action .nav-icon{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rest-nav .nav-icon{color:var(--purple)}
+.status .nav-action:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
 
 /* ---------- objetivos de mirada ---------- */
 /* Sin backdrop-filter en los objetivos: al agrandarse con el foco, Chrome difumina toda la zona de la
@@ -293,10 +303,6 @@ body.panel #gaze{opacity:0}
 #s-talk.chatmode .card{padding:30px 136px 30px 38px}
 #s-talk.chatmode .card .ph{font-size:46px}
 #s-talk.chatmode .emo{width:96px;height:96px;font-size:54px;top:20px;right:20px}
-.status .pill{white-space:nowrap;flex:none}
-.pill.mention{color:#FFE27A;border-color:rgba(255,214,10,.45);max-width:360px;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;display:block;line-height:56px}
-.status:has(.pill.mention) .pill.mode{display:none}   /* con una mención visible, el modo de confirmación cede su lugar */
-
 /* ---------- Distribución del chat: chat | 4 respuestas + teclado de iniciales ---------- */
 #s-talk.chatmode #cards{grid-template-rows:1fr 1fr 1.3fr;gap:24px}
 #s-talk.chatmode .card{padding:24px 116px 24px 34px}
@@ -327,7 +333,6 @@ body.panel #gaze{opacity:0}
 .person.tool .face{background:rgba(255,255,255,.08);border:1.5px dashed var(--hair-hi);font-size:60px;color:var(--txt2)}
 .empty-favs{grid-column:1 / span 2;grid-row:1 / span 2;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:40px;font-size:46px;font-weight:700;letter-spacing:-.02em}
 .empty-favs small{font-size:30px;font-weight:550;color:var(--txt2);letter-spacing:0}
-.pill .dot.wa{background:var(--green)} .pill .dot.wa.off{background:var(--orange)}
 
 /* ---------- Panel del acompañante (mouse y teclado, no mirada) ---------- */
 .wap{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(0,0,0,.62);
@@ -530,8 +535,8 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="cancel" id="alCancel"></div>
     <button type="button" class="cbtn" id="alDismiss">Cerrar simulación</button>
   </div>
-  <div class="overlay" id="rest"><div class="big" id="restClock">21:14</div><div class="sub">Descansando · dos cejas rápidas para volver</div>
-    <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small>Mirada 2 s · ceja · clic</small></button></div>
+  <div class="overlay" id="rest" role="dialog" aria-modal="true" aria-labelledby="restTitle"><div class="big" id="restClock"></div><div class="sub" id="restTitle">En descanso</div>
+    <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><span class="fill"></span>Volver<small>Mira aquí 2 s, haz clic o usa dos cejas rápidas</small></button></div>
   <!-- CALIBRACIÓN (al inicio) -->
   <div class="overlay on" id="calib" aria-labelledby="calTitle" role="dialog">
     <div class="cal-card glass choose-control" id="calCard">
@@ -723,7 +728,6 @@ const TILES = [
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
   ['go:apps','g-white','i-apps','Apps','Música, comida y noticias'],
   ['go:games','g-white','i-gamepad','Juegos','Eye Gaze Games'],
-  ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
   ['go:settings','g-gray','i-gear','Ajustes','Tiempo, voz, modo']];
 const EMOS = [
   {id:'ironica',e:'😏',n:'irónica',  rate:.95,pitch:1.05,vol:1},
@@ -830,7 +834,7 @@ const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
 const FACE=['linear-gradient(160deg,#5BE584,#1FA348)','linear-gradient(160deg,#64D2FF,#0A84FF)','linear-gradient(160deg,#FF9F0A,#FF375F)',
   'linear-gradient(160deg,#BF5AF2,#5E5CE6)','linear-gradient(160deg,#FFD60A,#FF9F0A)','linear-gradient(160deg,#FF6482,#BF5AF2)'];
 const faceOf=c=>FACE[Math.abs([...digitsOf(c&&c.phone)||String(c&&c.name)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))|0,7))%FACE.length];
-const WA={ online:false, favs:[], to:null, text:'', idem:null, inKey:null, sending:false, lastMsg:null, hist:{}, mention:null, sug:{} };
+const WA={ online:false, session:null, favs:[], to:null, text:'', idem:null, inKey:null, sending:false, lastMsg:null, hist:{}, mention:null, sug:{} };
 const HINT0='<b>Ceja</b> decir';
 const hhmm=t=>new Date(t).toTimeString().slice(0,5);
 const TICKS={1:'🕓',2:'✓',3:'✓✓',4:'leído'};
@@ -1064,8 +1068,15 @@ function waIncoming(ev){
 function waListen(){
   if(!CFG.WA_URL || !window.tokiSSE) return;
   const es={};   // toki-sse.js: fetch con el token en un header (EventSource solo podría mandarlo en la URL)
-  es.onopen=()=>{ WA.online=true; renderStatus(); waLoadFavs(); log('WhatsApp conectado'); };
-  es.onerror=()=>{ if(WA.online) log('WhatsApp sin conexión'); WA.online=false; renderStatus(); };   // reconecta solo a los 3 s
+  let revision=0;
+  es.onopen=()=>{
+    const current=++revision;
+    WA.online=true; WA.session=null; renderStatus(); waLoadFavs();
+    waApi('/api/wa/health').then(health=>{
+      if(revision===current){ WA.session=health.session; renderStatus(); }
+    }).catch(()=>{});
+  };
+  es.onerror=()=>{ ++revision; WA.session=null; if(WA.online) log('WhatsApp sin conexión'); WA.online=false; renderStatus(); };   // reconecta solo a los 3 s
   es.onmessage=m=>{ let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
     if(ev.type==='chat' && ev.msg) waAddMsg(ev.contactId, ev.msg);
     if(ev.type==='mention') waMention(ev);
@@ -1076,7 +1087,10 @@ function waListen(){
     if(ev.type==='status' && WA.lastMsg && ev.msgId===WA.lastMsg.id){
       if(ev.status===4) island('✓✓',`${WA.lastMsg.name} lo leyó`);
       if(ev.status===0) island('⚠️','WhatsApp no pudo entregar el mensaje',true,4000); }
-    if(ev.type==='session' && ev.status && ev.status!=='connected') island('⚠️','WhatsApp se desconectó',true,5000);
+    if(ev.type==='session' && ev.status){
+      ++revision; WA.session=ev.status; renderStatus();
+      if(ev.status!=='connected') island('⚠️','WhatsApp se desconectó',true,5000);
+    }
   };
   tokiSSE(CFG.WA_URL+'/api/wa/events', CFG.WA_TOKEN? {'X-Woki-Token':CFG.WA_TOKEN} : {}, es);
 }
@@ -1151,10 +1165,10 @@ addEventListener('resize',fit); fit();
 /* ===================== Plantillas ===================== */
 const RING = '<svg class="ring" viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="25"/><circle class="fg" cx="32" cy="32" r="25"/></svg>';
 function decorate(root){ (root||document).querySelectorAll('[data-t]').forEach(el=>{
-  if(!el.querySelector(':scope > .ring')) el.insertAdjacentHTML('beforeend', RING + (el.classList.contains('emo')?'':'<div class="badge">Listo · ceja o clic</div>')); }); }
+  if(!el.querySelector(':scope > .ring')) el.insertAdjacentHTML('beforeend', RING + (el.classList.contains('emo')?'':'<span class="badge" aria-hidden="true">'+(el.classList.contains('tile')?'Listo':'Listo · ceja o clic')+'</span>')); }); }
 function stagger(container){ [...container.children].forEach((c,i)=>{ c.classList.add('stag'); c.style.setProperty('--i',i); }); }
 function renderTiles(){ $('#tiles').innerHTML=TILES.map(([act,g,ic,lb,sb,dw])=>
-  `<div class="t tile" data-t data-act="${act}"${dw?` data-dwell="${dw}"`:''}><div class="app ${g}"><svg><use href="#${ic}"/></svg></div><div class="lb">${lb}</div><div class="sb">${sb}</div></div>`).join('');
+  `<button type="button" class="t tile" data-t data-act="${act}"${dw?` data-dwell="${dw}"`:''}><span class="app ${g}" aria-hidden="true"><svg><use href="#${ic}"/></svg></span><span class="lb">${lb}</span><span class="sb">${sb}</span></button>`).join('');
   stagger($('#tiles')); decorate($('#tiles')); }
 function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
   const go=gazeOnly();
@@ -1162,27 +1176,66 @@ function sendBtn(pending){ $('#btnSend').classList.toggle('pending',!!pending);
   decorate($('#btnSend').parentElement); }
 
 /* ===================== Barra de estado ===================== */
-function renderStatus(){
-  const t=new Date().toTimeString().slice(0,5);
-  const sc=$('.screen.on');
-  const mir = S.gazeLost ? '<span class="dot warn"></span>Sin cara · escaneo' : '<span class="dot"></span>Mirada';
-  // Con la llamada configurada en el puente (woki-voz.js) el SOS es real y el estado lo dice; si no, es de prueba.
-  const real = !!(window.VOZ && VOZ.llamadaLista);
-  const al = S.alarm?.level==='emergencia' ? '<span class="dot al"></span>'+(S.alarm.real?'SOS: pidiendo ayuda':'SOS de prueba activo')
-    : S.alarm ? '<span class="dot warn"></span>Aviso no urgente de prueba' : '<span class="dot"></span>'+(real?'SOS listo':'SOS de prueba');
-  const mode = CFG.mode==='click'?'Mirada + ceja':'Solo mirada';
-  const howPick = gazeOnly() ? (CFG.mode==='click' ? 'Ceja (o mirada 3 s)' : `Mirada ${(CFG.dwellMs/1000).toLocaleString('es')} s o ceja`) : mode;
-  const sensors = gazeOnly()
-    ? `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt2)">${howPick}</div>`
-    : `<div class="pill glass" data-p="ceja"><span class="dot"></span>Ceja</div><div class="pill glass" data-p="mandibula"><span class="dot"></span>Mandíbula</div><div class="pill glass">${al}</div><div class="pill glass" style="color:var(--txt3)">${mode}</div>`;
-  const mn = WA.mention && Date.now()-WA.mention.at < 15*60e3 ? WA.mention : null;   // la última mención queda visible 15 min
-  const wa = (CFG.WA_URL ? `<div class="pill glass"><span class="dot wa${WA.online?'':' off'}"></span>${WA.online?'WhatsApp':'WhatsApp sin conexión'}</div>` : '')
-    + (mn ? `<div class="pill glass mention" title="${esc(mn.from)} te mencionó en ${esc(mn.group)} a las ${hhmm(mn.at)}">@ ${esc(mn.from)} · ${esc(mn.group)}</div>` : '');
-  $$('.status-info').forEach(el=>el.innerHTML=
-   `<div class="pill glass">${mir}</div>${sensors}${wa}<div class="title">${sc?sc.dataset.title:''}</div><div class="clock">${t}</div>`);
-  $('#restClock').textContent=t;
+function initStatus(bar){
+  const screen=bar.closest('.screen');
+  const home=screen.id==='s-home' ? '' : '<button type="button" class="t nav-action home-nav" data-t data-act="go:home">‹ Inicio</button>';
+  bar.innerHTML=home+`<span class="screen-name">${esc(screen.dataset.title)}</span>
+    <div class="status-info" role="group" aria-label="Estado del sistema"></div>
+    <time class="clock"></time>
+    <button type="button" class="t nav-action rest-nav" data-t data-act="rest" aria-controls="rest"><svg class="nav-icon" aria-hidden="true"><use href="#i-moon"/></svg>Descansar</button>`;
 }
-function flashPill(src){ $$(`.pill[data-p="${src}"]`).forEach(p=>{p.classList.add('flash');setTimeout(()=>p.classList.remove('flash'),200)}); }
+const emgChannels=new Set();
+function statusGroup(label,value,hint=''){
+  return `<div class="status-group"${hint?` title="${esc(hint)}"`:''}><span class="status-key">${label}</span><span class="status-reading">${value}</span></div>`;
+}
+function statusSignal(label,state){
+  return `<span class="status-signal" data-state="${state}">${label}</span>`;
+}
+function renderStatus(){
+  const time=new Date().toTimeString().slice(0,5);
+  const bar=$('.screen.on .status');
+  if(!bar) return;
+  if(!bar.firstElementChild) initStatus(bar);
+  const nose=window.NOSE, phone=window.IPHONE, state=$('#cameraStatus').dataset.state;
+  const device=pointerLabel();
+  const tracking=phone?.active ? phone.latest?.tracked && performance.now()-phone.lastFaceAt<400 : nose?.on && state==='found';
+  let pointer=device, signal=tracking?'on':'off';
+  if(S.gazeLost){ pointer='Escaneo'; signal='wait'; }
+  else if(state==='starting' && !phone?.active){ pointer='Activando cámara'; signal='wait'; }
+  else if((phone?.active || nose?.on) && !tracking){ pointer='Buscando rostro'; signal='wait'; }
+  const selection=CFG.mode==='click' ? 'Confirmar con la ceja' : 'Mantener el puntero '+(CFG.dwellMs/1000).toLocaleString('es')+' s para elegir';
+  const cameraLabel=tracking ? 'Rostro detectado' : state==='error' && !phone?.active ? 'Cámara no disponible' : !nose?.on && !phone?.active && state!=='starting' ? 'Cámara apagada' : 'Puntero';
+  const cameraGestures=nose?.on && nose.faceClick && state==='found';
+  const gestures=G.watchdog || emgChannels.size ? 'EMG' : cameraGestures ? 'Cámara' : 'Teclado';
+  function channel(id,label){
+    const active=G.watchdog || cameraGestures || emgChannels.has(id);
+    return `<span class="status-signal" data-p="${id}" data-state="${active?'on':'off'}">${label}</span>`;
+  }
+  let sos=window.VOZ?.llamadaLista ? statusSignal('Listo','on') : statusSignal('De prueba','off');
+  if(S.alarm?.level==='emergencia') sos=S.alarm.real?statusSignal('Alerta activa','alert'):statusSignal('Prueba activa','wait');
+  else if(S.alarm) sos=statusSignal('Aviso de prueba','wait');
+  let wa='';
+  if(CFG.WA_URL){
+    let value=statusSignal('Sin conexión','off');
+    if(WA.online && WA.session==='connected') value=statusSignal('Conectado','on');
+    else if(WA.online && WA.session==='dry') value=statusSignal('De prueba','off');
+    else if(WA.online && !WA.session) value=statusSignal('Conectando','wait');
+    const mn=WA.mention;
+    if(mn && Date.now()-mn.at<15*60e3) value+=`<span class="status-mention" title="${esc(mn.from)} te mencionó en ${esc(mn.group)}">@${esc(mn.from)}</span>`;
+    wa=statusGroup('WhatsApp',value);
+  }
+  const readings=statusGroup(cameraLabel,statusSignal(pointer,signal),selection)+
+    statusGroup('Gestos · '+gestures,channel('ceja','Ceja')+channel('mandibula','Mandíbula'))+statusGroup('SOS',sos)+wa;
+  const info=bar.querySelector('.status-info');
+  if(info._readings!==readings){ info.innerHTML=readings; info._readings=readings; }
+  const clock=bar.querySelector('.clock');
+  if(clock.textContent!==time) clock.textContent=time;
+  if($('#restClock').textContent!==time) $('#restClock').textContent=time;
+}
+function flashGesture(src){
+  const indicator=$(`.screen.on .status [data-p="${src}"]`);
+  if(indicator){ indicator.classList.add('flash'); setTimeout(()=>indicator.classList.remove('flash'),200); }
+}
 setInterval(()=>{renderStatus();updateLCD()},1000);
 
 /* ===================== Navegación ===================== */
@@ -1669,8 +1722,9 @@ function pressSrc(src,origin,time){
   if(!['ceja','mandibula'].includes(src) || G.down[src] || gestureBlocked()) return;
   const second=src==='ceja' && G.tap?.origin===origin && time-G.tap.time>=0 && time-G.tap.time<=CFG.doubleMs;
   if(src==='ceja') cancelBrowTap();
-  G.down[src]={origin,time,since:time,second,progress:0,focus:S.focus};
-  flashPill(src);
+  const gamePoint=src==='ceja' && globalThis.TOKI_EXTERNAL?.capturePoint();
+  G.down[src]={origin,time,since:time,second,progress:0,focus:S.focus,gamePoint};
+  flashGesture(src);
 }
 function updateHold(src,origin,time){
   const h=G.down[src];
@@ -1696,7 +1750,9 @@ function releaseSrc(src,origin,time){
   if(h.second){ goBack(); return; }
   const timer=setTimeout(()=>{
     G.tap=null;
-    if(!gestureBlocked() && h.focus===S.focus) confirmFocus();
+    if(gestureBlocked()) return;
+    if(h.gamePoint) TOKI_EXTERNAL.confirmPoint(h.gamePoint);
+    else if(h.focus===S.focus) confirmFocus();
   },CFG.doubleMs);
   G.tap={timer,origin,time};
 }
@@ -1772,12 +1828,13 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) cancelGes
 (function(){ if(trackerOnly) return; try{ const ws=new WebSocket(CFG.EMG_WS);
   ws.onopen=()=>log('EMG real conectado');
   ws.onmessage=m=>{ try{ const d=JSON.parse(m.data), now=performance.now();
+    if((d.src==='ceja' || d.src==='mandibula') && (d.edge==='down' || d.edge==='up')) emgChannels.add(d.src);
     if(d.edge==='down') pressSrc(d.src,'ws',now);
     else if(d.edge==='up') releaseSrc(d.src,'ws',now);
-    else if(d.edge==='cancel') cancelGestures('ws');
+    else if(d.edge==='cancel'){ emgChannels.clear(); cancelGestures('ws'); }
     if(d.gaze && Number.isFinite(d.gaze.x) && Number.isFinite(d.gaze.y)) setGaze(d.gaze.x,d.gaze.y);
   }catch(_){} };
-  ws.onclose=()=>cancelGestures('ws');
+  ws.onclose=()=>{ emgChannels.clear(); cancelGestures('ws'); };
   ws.onerror=()=>{}; }catch(_){} })();
 
 /* ===================== Mirada ===================== */
@@ -1887,9 +1944,10 @@ function tick(now){
         else composerLock = null;
       }
       if (!onSuggestion || el !== S.focus) suggestionExitAt = null;
+      if(hit?.id==='externalGame' && !S.quick) el=null;
       const inside = !!el && hit?.closest('[data-t]') === el;
       const dwellElapsed = S.quick ? 0 : menuDwell.sample(el, now, inside);
-      if (!el || el !== S.focus || dwellElapsed < 0) menuOutline.clear();
+      if (!el || el !== S.focus) menuOutline.clear();
       setFocus(el);
       // pausa breve tras elegir: el foco se mantiene (y su bloqueo anti-repetición), la carga empieza después
       if(S.focus && gazeOnly() && S.fStart<(S.lockUntil||0)) S.fStart=S.lockUntil;
@@ -1905,7 +1963,9 @@ function tick(now){
         const tabletProgress = window.frameElement && window.parent.TokiAccess?.dwellProgress;
         const p = insideDwell && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);
-        menuOutline.paint(insideDwell && dwellElapsed >= 0 ? f : null, p);
+        const cardEdge=f.matches('#tiles .tile,.status .nav-action');
+        const showEdge=insideDwell ? dwellElapsed>=0 : cardEdge;
+        menuOutline.paint(showEdge ? f : null, p);
         if(p>=1 && S.blocked!==f && (!insideDwell || inside)){
           if(automatic){ S.blocked=f; f.classList.add('blocked'); activate(f); }
           else if(!S.armed){ S.armed=true; f.classList.add('armed'); }
@@ -1914,7 +1974,7 @@ function tick(now){
     }
   }
   $('#typing').classList.toggle('on', !S.quick && S.screen==='talk' && !!S.focus && !$('#speaking').classList.contains('on'));
-  if(!S.quick && S.alarm?.level!=='emergencia' && S.screen==='agent' && !S.agentPending && now-S.agentIdle>10000){ island('⏱','Cancelado: 10 s sin respuesta'); go('home'); }
+  if(!S.rest && !S.quick && S.alarm?.level!=='emergencia' && S.screen==='agent' && !S.agentPending && now-S.agentIdle>10000){ island('⏱','Cancelado: 10 s sin respuesta'); go('home'); }
   alarmTick(now);
   requestAnimationFrame(tick);
 }
@@ -1930,7 +1990,19 @@ function nearestTarget(x,y,maxDist){
 }
 
 /* ===================== Descanso ===================== */
-function setRest(on){ cancelBrowTap(); S.rest=on; $('#rest').classList.toggle('on',on); clearFocus(); restWake.since=0; $('#restWake').style.setProperty('--p',0); log(on?'descanso':'despierta'); }
+function setRest(on){
+  if(S.rest===on) return;
+  cancelBrowTap(); clearFocus();
+  S.rest=on; restWake.since=0;
+  const screen=$('.screen.on'), wake=$('#restWake');
+  screen.inert=on;
+  $('#rest').classList.toggle('on',on);
+  wake.style.setProperty('--p',0);
+  if(S.screen==='agent'){ S.agentPending=0; S.agentIdle=performance.now(); sendBtn(false); }
+  const next=on ? wake : screen.querySelector('.rest-nav');
+  next?.focus({preventScroll:true});
+  log(on?'descanso':'despierta');
+}
 /* salir del descanso sin gestos: mantener la mirada 2 s en "Volver" (o clic) */
 const restWake={since:0};
 function restWakeTick(now){
@@ -1988,6 +2060,7 @@ function rfid(){
 function stopAlarm(msg){
   S.alarm=null; $('#alarm').classList.remove('on','ack'); $('#alDismiss').blur(); $('#alDismiss').textContent='Cerrar simulación';
   $$('#stage > .screen, #emoRing, #rest, #calib').forEach(el=>{ el.inert=false; });
+  if(S.rest){ $('.screen.on').inert=true; $('#restWake').focus(); }
   if(msg) island('✓',msg); log('alarma cerrada'); renderStatus(); updateLCD();
 }
 $('#alDismiss').addEventListener('click',()=>stopAlarm(S.alarm&&S.alarm.real?'Alarma cerrada':'Simulación cerrada'));
@@ -2011,9 +2084,6 @@ let islT; function island(ic,txt,warn=false,ms=2200){ const el=$('#island'); $('
 const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+'  '+m); LOG.length=Math.min(LOG.length,8); $('#evlog').textContent=LOG.join('\n'); }
 
 /* inicio */
-$$('.status').forEach(el=>{
-  el.innerHTML=(el.closest('.screen').id==='s-home' ? '' : '<button type="button" class="t pill glass home-nav" data-t data-act="go:home">‹ Inicio</button>')+'<div class="status-info"></div>';
-});
 renderTiles(); renderStatus(); updateLCD(); waListen();
 if(screenFromUrl()!=='home') go(screenFromUrl(),false);
 window.WOKI={S,CFG,mouse,gz};
@@ -2520,6 +2590,7 @@ if (guidedSetup) {
 <!-- Juegos y Servicios (módulos del equipo) conectados al SO por os-juegos-servicios.js -->
 <script src="toki-apps.js"></script>
 <script src="prototype-games.js"></script>
+<script src="toki-game-surface.js"></script>
 <script src="prototype-external-games.js"></script>
 <script src="os-juegos-servicios.js"></script>
 <!-- Mirada con iPhone (Face ID): motor compartido con software/eye-tracking (ver iphone-gaze.js) -->

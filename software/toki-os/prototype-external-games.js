@@ -15,7 +15,7 @@ window.addEventListener('load',()=>{
  let connected=false,inFlight=false,frame=null,paused=true,lastSend=0,anchor=null,didClick=false,autoClick=false,lastTracking=null;
  let surface=null, launching=false, lastGame=null, lastPoint=null, pointerInGame=false, bridgeError=false;
  const managed=Boolean(token && /^\d+$/.test(port||''));
- if (tabletAccess) autoClick=true;
+ if (tabletAccess || window.TOKI_OS_SHELL) autoClick=true;
  const b=(a,t)=>`<button class="t game-button" data-t data-dwell="1200" data-act="external:${a}">${t}</button>`;
  const oldGo=go,oldActivate=activate;
  async function request(path,data={}){
@@ -32,7 +32,7 @@ window.addEventListener('load',()=>{
  }
  function controls(){if(tabletAccess||window.TOKI_OS_SHELL)return '<div class="external-controls"><span id="externalStatus" role="status"></span></div>';return `<div class="external-controls">${b('nose','Nariz')}${b('gaze','Mirada')}${b('calibrate','Calibrar')}${b('mouse','Mouse')}<span id="externalStatus"></span></div>`;}
  function updateStatus(){const e=document.querySelector('#externalStatus');if(!e)return;
-  if(tabletAccess){const mode=tabletGameInput()?.mode || 'Mouse';e.textContent=launching?'Abriendo la partida…':frame && (surface || managed) && !connected?(bridgeError?'Control desconectado. Elige Reintentar.':'Conectando el control del juego…'):'Control de Toki · '+mode;return;}
+  if(tabletAccess||window.TOKI_OS_SHELL){const mode=tabletGameInput()?.mode || 'Mouse';e.textContent=launching?'Abriendo la partida…':frame && (surface || managed) && !connected?(bridgeError?'Control desconectado. Elige Reintentar.':'Conectando el control del juego…'):'Control de Toki · '+mode;return;}
   e.textContent=connected?`Puente conectado · ${NOSE.label()}`:'Mouse disponible · Cámara: abrir sesión Toki';}
  addEventListener('toki-tablet-control',()=>{
   updateStatus();
@@ -42,12 +42,12 @@ window.addEventListener('load',()=>{
  function render(html){clearFocus();document.querySelector('#gameContent').innerHTML=html;decorate(document.querySelector('#gameContent'));updateStatus();}
  function stopSurface(){
   surface?.stop();surface=null;launching=false;pointerInGame=false;lastPoint=null;anchor=null;
-  if(tabletAccess)connected=false;
+  if(tabletAccess || window.TOKI_OS_SHELL)connected=false;
  }
  function showFailure(message){
   stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');
   render(`<div class="game-heading"><h1>No se pudo abrir la partida</h1></div><p class="game-instruction" role="status"></p><div class="game-inputs">${b('retry','Reintentar')}${b('catalog','Elegir otro juego')}</div>`);
-  document.querySelector('.game-instruction').textContent=message;
+  document.querySelector('#gameContent .game-instruction').textContent=message;
  }
  addEventListener('pagehide',stopSurface);
  function catalog(){
@@ -56,7 +56,7 @@ window.addEventListener('load',()=>{
   render(`<div class="game-heading"><h1>Eye Gaze Games</h1>${b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${cover(g)}" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div><div class="game-footer">${b('all','Todos los juegos')}${b('setup','Configurar Eye Gaze Games')}<p>Juegos originales de SpecialEffect. Sus ajustes y progreso se gestionan en su servicio.</p></div>`);
   check();
  }
- function help(){if(tabletAccess){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Entra en «Configurar Eye Gaze Games»: elige español y crea tu perfil del servicio.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
+ function help(){if(tabletAccess||window.TOKI_OS_SHELL){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Entra en «Configurar Eye Gaze Games»: elige español y crea tu perfil del servicio.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
  function open(game) {
   const g=games.find(item=>item.id===game);
   if (!g && !['setup','all'].includes(game)) return;
@@ -67,15 +67,17 @@ window.addEventListener('load',()=>{
  }
  function play(url,title){
   document.body.classList.add('external-playing');paused=false;anchor=null;didClick=false;lastPoint=null;lastTracking=null;pointerInGame=false;
-  if(window.TOKI_OS_SHELL){
-   // Prioridad: el juego. Barra de una fila; pausar y clic extra solo existen con el puente de control.
-   render(`<div class="external-toolbar">${b('catalog','← Juegos')}<div class="external-title"><strong>${title}</strong><small>Primera vez: toca la bandera de España y luego «Crear usuario».</small></div>${b('reload','Reintentar')}${managed?b('pause','Pausar control')+b('clicks',`Clic extra: ${autoClick?'sí':'no'}`):''}</div><div class="external-frame-wrap"><iframe id="externalGame" title="${title} · SpecialEffect" src="${url}" allow="autoplay; fullscreen; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div>`);
-   frame=document.querySelector('#externalGame');check();return;
-  }
-  const streamed=Boolean(tabletGameInput()?.camera);
+  const input=tabletGameInput();
+  const streamed=Boolean(input?.camera);
   const media=streamed ? `<img id="externalGame" alt="Partida de ${title}" draggable="false">` :
     `<iframe id="externalGame" title="${title} · SpecialEffect" src="${url}" allow="autoplay; fullscreen; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-  render(`<div class="external-toolbar">${b('catalog','← Juegos')}<strong>${title}</strong>${b('pause','Pausar control')}${b('clicks',`Clic extra: ${autoClick?'sí':'no'}`)}${b('help','Ayuda')}</div>${controls()}<div class="external-frame-wrap">${media}<div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div><p class="game-note">Si aparece la bienvenida, configura tu perfil y luego elige el juego. Si no carga, ${b('reload','Reintentar')} ${b('all','Abrir catálogo')}</p>`);
+  const player=`<div class="external-frame-wrap">${media}<div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div>`;
+  if(window.TOKI_OS_SHELL){
+   const hint=streamed ? `Mantén el puntero ${(input.dwellMs/1000).toLocaleString('es')} s para elegir o confirma con la ceja.` : 'Primera vez: toca la bandera de España y luego «Crear usuario».';
+   render(`<div class="external-toolbar">${b('catalog','← Juegos')}<div class="external-title"><strong>${title}</strong><small>${hint}</small></div>${streamed?b('pause','Pausar control'):''}${b('reload','Reintentar')}</div>${player}`);
+  } else {
+   render(`<div class="external-toolbar">${b('catalog','← Juegos')}<strong>${title}</strong>${b('pause','Pausar control')}${b('clicks',`Clic extra: ${autoClick?'sí':'no'}`)}${b('help','Ayuda')}</div>${controls()}${player}<p class="game-note">Si aparece la bienvenida, configura tu perfil y luego elige el juego. Si no carga, ${b('reload','Reintentar')} ${b('all','Abrir catálogo')}</p>`);
+  }
   frame=document.querySelector('#externalGame');
   if (streamed) {
    launching=true;updateStatus();
@@ -83,7 +85,7 @@ window.addEventListener('load',()=>{
     launching=false;connected=true;bridgeError=false;updateStatus();
    },showFailure);
    frame.addEventListener('click',e=>{
-    if(connected && !paused && !tabletGameInput()?.blocked) void sendInput('click',e.clientX,e.clientY).catch(()=>showFailure('Se interrumpió el control de la partida.'));
+    if(connected && !paused && !tabletGameInput()?.blocked) clickGame(e.clientX,e.clientY);
    });
   } else check();
  }
@@ -109,7 +111,7 @@ window.addEventListener('load',()=>{
   if(act==='calibrate'){pause(true);CAL.open(NOSE.mode==='gaze'?'gaze':undefined);return;}
   if(['nose','gaze','mouse'].includes(act)){NOSE.setMode(act).then(updateStatus);return;}
  };
- document.addEventListener('visibilitychange',()=>{if(document.hidden&&frame)pause(true);});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&frame&&(surface||managed))pause(true);});
  function sendInput(type,x,y){
   if(surface){
    if(type==='leave')return surface.input('leave');
@@ -118,19 +120,35 @@ window.addEventListener('load',()=>{
   }
   return request('input',{x,y,type:type==='leave'?'move':type});
  }
+ function clickGame(x,y){
+  const target=frame;
+  anchor={x,y,t:performance.now()};didClick=true;
+  void sendInput('click',x,y).catch(()=>{if(frame===target)showFailure('Se interrumpió el control de la partida.');});
+ }
+ function capturePoint(){
+  const point=tabletGameInput()?.point;
+  if(!surface || !connected || paused || !point || document.elementFromPoint(point.x,point.y)!==frame) return null;
+  return {frame,x:point.x,y:point.y};
+ }
+ function confirmPoint(start){
+  const point=capturePoint();
+  if(point && point.frame===start.frame && Math.hypot(point.x-start.x,point.y-start.y)<=28) clickGame(point.x,point.y);
+ }
  async function tickExternal(now){
   requestAnimationFrame(tickExternal);
   if(!frame||S.screen!=='games')return;
   const shared=tabletGameInput();
+  if(window.TOKI_OS_SHELL && Boolean(surface)!==shared.camera){ open(lastGame);return; }
   const tracking=shared ? shared.camera && !shared.blocked && Boolean(shared.point) :
     NOSE.on && !S.gazeLost && NOSE.raw && now-NOSE.lastFace<240 && (NOSE.mode!=='gaze' || (GAZE.cur && !GAZE.cur.blink));
   const cameraPresent=NOSE.on && !S.gazeLost;
   if(!shared && lastTracking===true && !cameraPresent) pause(true);
   lastTracking=cameraPresent;
-  if(S.rest||S.alarm||document.querySelector('#calib').classList.contains('on')) pause(true);
+  const suspendControl=S.alarm || document.querySelector('#calib').classList.contains('on') || (S.rest && !window.TOKI_OS_SHELL);
+  if(suspendControl && !paused && (surface || managed)) pause(true);
   if(!connected || inFlight || now-lastSend<40) return;
   const r=frame.getBoundingClientRect(), point=shared?.point || gz;
-  const inside=tracking && !paused && !document.hidden && point.x>=r.left && point.x<r.right && point.y>=r.top && point.y<r.bottom;
+  const inside=tracking && !paused && !document.hidden && point.x>=r.left && point.x<r.right && point.y>=r.top && point.y<r.bottom && (!window.TOKI_OS_SHELL || document.elementFromPoint(point.x,point.y)===frame);
   let x=surface?point.x:(point.topX ?? point.x), y=surface?point.y:(point.topY ?? point.y);
   let type='move';
   if (!inside) {
@@ -148,7 +166,7 @@ window.addEventListener('load',()=>{
   }
   inFlight=true;lastSend=now;
   const sentFrame=frame;
-  try{await sendInput(type,x,y);}catch{if(frame===sentFrame){connected=false;bridgeError=true;pause(true);updateStatus();}}finally{inFlight=false;}
+  try{await sendInput(type,x,y);}catch{if(frame===sentFrame){if(surface)showFailure('Se interrumpió el control de la partida.');else{connected=false;bridgeError=true;pause(true);updateStatus();}}}finally{inFlight=false;}
  }
  requestAnimationFrame(tickExternal);
  function switchTarget() {
@@ -167,5 +185,5 @@ window.addEventListener('load',()=>{
    void sendInput('click',surface?point.x:point.topX,surface?point.y:point.topY).catch(()=>{connected=false;pause(true);updateStatus();});
   } else activate(target);
  }
- window.TOKI_EXTERNAL={covers:games.map(cover),check,open,catalog,switchTarget,confirmSwitch,get connected(){return connected;}};
+ window.TOKI_EXTERNAL={covers:games.map(cover),check,open,catalog,switchTarget,confirmSwitch,capturePoint,confirmPoint,get connected(){return connected;}};
 });

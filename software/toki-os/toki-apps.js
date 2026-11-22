@@ -223,7 +223,7 @@
       if(this.view==='videos')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
       if(this.view==='news')return `<nav class="ta-nav spotify-nav" aria-label="Navegación de noticias">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
       if (this.view === 'store') {
-        const home = this.options.shellHome ? '' : this.btn('home', 'Inicio');
+        const home = (this.options.shellHome || window.TOKI_OS_SHELL) ? '' : this.btn('home', 'Inicio');
         const pages = Math.ceil(this.catalog.length / servicesPerPage);
         if (pages <= 1) return home ? `<nav class="ta-nav" aria-label="Navegación">${home}</nav>` : '';
         const previous = this.catalogPage > 0 ? this.btn('catalog-prev','← Anterior') : '';

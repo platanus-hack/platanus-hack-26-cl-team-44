@@ -13,20 +13,21 @@ const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.j
 assert.ok(order.every((i) => i > 0), "Woki OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
-// 2. El SO declara las ocho tarjetas en su orden de lectura y usa la rejilla de cuatro columnas.
+// 2. El SO declara las siete tarjetas en su orden de lectura y usa la rejilla de cuatro columnas.
 {
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
     "go:talk", "go:keyboard", "sos", "go:contacts",
-    "go:apps", "go:games", "rest", "go:settings",
+    "go:apps", "go:games", "go:settings",
   ]);
   assert.match(html, /class="grid4x2" id="tiles"/);
   assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 
 // 3. Juegos abre el catálogo externo directamente. La partida permite volver al catálogo.
-assert.match(glue, /home-nav" data-t data-act="go:home"/);
+assert.match(html, /home-nav" data-t data-act="go:home"/);
+assert.match(html, /rest-nav" data-t data-act="rest"/);
 assert.match(external, /if\(name==='games'\)catalog\(\)/);
 assert.match(external, /b\('catalog','← Juegos'\)/);
 assert.doesNotMatch(external, /external:toki|b\('toki'/);
@@ -70,4 +71,4 @@ assert.match(html, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océan
 assert.match(html, /localStorage\.getItem\('woki\.palette'\)/, "el color se aplica antes de pintar");
 assert.match(html, /case 'look':/);
 
-console.log("Juegos y Servicios en Toki OS: módulos del equipo, 8 tarjetas en 4×2, salidas grandes, sin elección en cadena y colores.");
+console.log("Juegos y Servicios en Toki OS: módulos del equipo, 7 tarjetas y descanso global, salidas grandes, sin elección en cadena y colores.");
