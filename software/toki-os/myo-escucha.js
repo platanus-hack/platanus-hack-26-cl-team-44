@@ -146,7 +146,8 @@
       if (id !== E.req) return;
       pintarBarra(r);
       tarjetas = (r.tarjetas || []).map((c) => ({ text: c.texto, tone: 'Tarjeta · ' + (r.tema ? r.tema.nombre : 'tema'), emo: 'seria',
-        tarjeta: { id: c.id, tema: c.tema, persona: r.persona || null } }));
+        tarjeta: { id: c.id, tema: c.tema, persona: r.persona || null },
+        traza: { origen: 'tarjeta', tarjeta: c.id, tema: r.tema ? r.tema.nombre : c.tema, de: c.origen, fuente: c.fuente || '', motivo: c.motivo || '' } }));
       if (tarjetas.length) ponerPool(tarjetas);
     } catch (e) { say('tarjetas: ' + e.message); }
     // 2) Opciones del agente (con memoria) primero; las tarjetas del tema quedan detrás, en «Más».
@@ -163,7 +164,9 @@
   // ---------- Tres formas de comunicarse en la sala ----------
   // Plantillas con contexto (3 a la vez + «Más»), primera letra de cada palabra (con contexto) y letra por letra.
   const enSala = () => !enChat() && E.turnos.length > 0 && Date.now() - E.ultimoTurno < SALA_MS;
-  const aCartas = (ops) => (ops || []).map((o) => ({ text: o.text, tone: o.tone || o.origen || 'sugerida', emo: EMOS.includes(o.emo) ? o.emo : 'seria', ai: true }));
+  const aCartas = (ops) => (ops || []).map((o) => ({ text: o.text, tone: o.tone || o.origen || 'sugerida', emo: EMOS.includes(o.emo) ? o.emo : 'seria', ai: true,
+    traza: o.traza || { origen: o.origen || 'agente' } }));
+  const DEV = () => document.body.classList.contains('myo-dev');   // modo dev (Shift+D): el agente devuelve de dónde sale cada opción
   const MAS = { text: 'Más', tone: 'otras respuestas', emo: 'seria', plain: true, mas: true };
 
   function ponerPool(cartas) {
@@ -185,7 +188,7 @@
     document.getElementById('cards')?.classList.add('loading');
     try {   // se acabaron: el agente propone otras, sin repetir las que ya vio
       const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
-      const r = await post(URL_AGENTE, '/api/sugerir', { ...cuerpo(t), modo: 'voz', historial: hist, excluir: E.pool.map((c) => c.text) });
+      const r = await post(URL_AGENTE, '/api/sugerir', { ...cuerpo(t), modo: 'voz', historial: hist, excluir: E.pool.map((c) => c.text), traza: DEV() });
       const nuevas = aCartas(r.opciones).filter((c) => !E.pool.some((x) => x.text.toLowerCase() === c.text.toLowerCase()));
       // las nuevas al final, y la página termina en ellas: siempre se ven 3 (las nuevas + las anteriores)
       if (nuevas.length) { E.pool.push(...nuevas); E.inicio = Math.max(0, E.pool.length - 3); } else E.inicio = 0;
@@ -231,8 +234,9 @@
     const t = E.turnos[E.turnos.length - 1] || { texto: '' };
     const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
     const e = E.ini = { ini, list: null, p: null };
-    e.p = post(URL_AGENTE, '/api/iniciales', { ...cuerpo(t), iniciales: ini, historial: hist })
-      .then((r) => { e.list = (r.suggestions || []).map((x) => ({ text: x.text, tone: x.tone || 'por iniciales', emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: true })); return e.list; })
+    e.p = post(URL_AGENTE, '/api/iniciales', { ...cuerpo(t), iniciales: ini, historial: hist, traza: DEV() })
+      .then((r) => { e.list = (r.suggestions || []).map((x) => ({ text: x.text, tone: x.tone || 'por iniciales', emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: true,
+        traza: x.traza || { origen: r.origen || 'agente', iniciales: ini } })); return e.list; })
       .catch((err) => { say('iniciales: ' + err.message); e.list = []; return []; });
     return e.p;
   }

@@ -4,7 +4,7 @@
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 
-export type Sug = { text: string; tone: string; emo: string };
+export type Sug = { text: string; tone: string; emo: string; traza?: Record<string, unknown> };
 export type Line = { dir: "in" | "out"; text: string };
 
 const MODEL = process.env.SUGGEST_MODEL ?? "haiku";
@@ -42,7 +42,8 @@ function parse(raw: string, ini?: string): Sug[] {
   const seen = new Set<string>();
   return list
     // sin < >: el texto viene de un modelo que lee mensajes de terceros (defensa además del escape en la TV)
-    .map((x) => ({ text: String(x?.text ?? "").replace(/[<>]/g, "").trim().slice(0, 160), tone: String(x?.tone ?? "").replace(/[<>]/g, "").slice(0, 30), emo: EMOS.includes(x?.emo) ? x.emo : "seria" }))
+    .map((x) => ({ text: String(x?.text ?? "").replace(/[<>]/g, "").trim().slice(0, 160), tone: String(x?.tone ?? "").replace(/[<>]/g, "").slice(0, 30), emo: EMOS.includes(x?.emo) ? x.emo : "seria",
+      traza: { origen: "respaldo", nota: "claude -p sin memoria (el agente no respondió)" } }))
     .filter((x) => x.text && !seen.has(x.text) && seen.add(x.text))
     // por iniciales: primero las que respetan exactamente las letras
     .sort((a, b) => (ini ? Number(initialsOf(b.text) === ini) - Number(initialsOf(a.text) === ini) : 0));

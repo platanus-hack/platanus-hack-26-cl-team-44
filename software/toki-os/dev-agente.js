@@ -105,7 +105,7 @@
 
   function opciones(ev) {
     const W = window.MYO;
-    W.S.cards = ev.opciones.map((o) => ({ text: o.text, tone: o.tone || o.origen, emo: EMOS.includes(o.emo) ? o.emo : 'seria' }));
+    W.S.cards = ev.opciones.map((o) => ({ text: o.text, tone: o.tone || o.origen, emo: EMOS.includes(o.emo) ? o.emo : 'seria', traza: o.traza || { origen: o.origen } }));
     contexto(ev);
     $('#cards').classList.remove('loading');
     if (W.S.screen === 'talk') renderCards(); else go('talk');
@@ -113,7 +113,8 @@
     const m = ev.meta || {};
     traza([
       `✓ ${ev.origen} · ${m.ms_total ?? '?'} ms total · ${m.duration_ms ?? '-'} ms modelo${m.error ? ' · ' + m.error : ''}`,
-      ...ev.opciones.map((o, i) => `  ${i + 1}. [${o.emo}] ${o.text}${o.fuentes?.length ? '  ← ' + o.fuentes.join(',') : ''}`),
+      ...(ev.traza ? [`contexto: ${ev.traza.privacidad} · ${Object.entries(ev.traza.memorias_en_contexto || {}).map(([t, ids]) => t + ' ' + ids.length).join(', ')} · ${ev.traza.fuera_por_privacidad} fuera por privacidad${ev.traza.temas_bloqueados?.length ? ' · bloqueados: ' + ev.traza.temas_bloqueados.join(', ') : ''}`] : []),
+      ...ev.opciones.map((o, i) => `  ${i + 1}. [${o.emo}] ${o.text}\n     ${window.trazaTexto ? trazaTexto(o.traza || { origen: o.origen }, true) : (o.fuentes || []).join(',')}`),
       ...(ev.descartadas || []).map((o) => `  ✗ ${o.text}  ← ${o.motivo}`),
     ].join('\n'));
     log(`agente · ${ev.origen} · ${m.ms_total ?? '?'} ms`);
@@ -162,6 +163,7 @@
       <button id="devBtn">Simular</button>
       <pre id="devTraza"></pre>`;
     document.body.append(panel);
+    document.body.classList.add('myo-dev'); if (W0().S.screen === 'talk') renderCards();   // cada tarjeta muestra de dónde sale
     // El teclado del panel no llega a la TV (Espacio = ceja, Enter = genSuggestions).
     panel.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter' && e.target.id === 'devTexto') simular(); });
     $('#devBtn').onclick = simular;
@@ -171,7 +173,8 @@
     salud();
   }
 
-  function cerrar() { panel?.remove(); panel = null; sse?.close(); sse = null; }
+  function cerrar() { panel?.remove(); panel = null; sse?.close(); sse = null; document.body.classList.remove('myo-dev'); if (W0().S.screen === 'talk') renderCards(); }
+  function W0() { return window.MYO || { S: {} }; }
 
   addEventListener('keydown', (e) => {
     if (e.shiftKey && e.key.toLowerCase() === 'd' && !(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName))) {

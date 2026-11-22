@@ -902,7 +902,7 @@ function waPage(){
 }
 
 /* ---- Claude (vía el puente): respuestas según la conversación y predicción por iniciales ---- */
-const aiCard=x=>({text:x.text, tone:(x.tone||'sugerida'), emo:EMO[x.emo]?x.emo:'seria', ai:true});
+const aiCard=x=>({text:x.text, tone:(x.tone||'sugerida'), emo:EMO[x.emo]?x.emo:'seria', ai:true, traza:x.traza||{origen:'whatsapp'}});
 const lastKey=cid=>{ const h=WA.hist[cid]||[]; return h.length? h[h.length-1].id : '-'; };
 async function waAi(body,ms=15000){
   const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
@@ -988,7 +988,7 @@ async function kbExpand(){
       const ai=S.kb.ai={ini,list:null,p:null}; ai.p=waAi({contactId:WA.to.id, initials:ini}).then(j=>{ ai.list=(j.suggestions||[]).map(aiCard); }).catch(()=>{ ai.list=[]; }); }
     if(!S.kb.ai.list){ island('✨','Completando la frase…',false,0);
       await Promise.race([S.kb.ai.p, new Promise(r=>setTimeout(r,9000))]); island('✨','Listo',false,600); }
-    const c=iniCandidates(); if(c.length) out=c.slice(0,6).map(x=>({text:x.text,tone:x.tone,emo:EMO[x.emo]?x.emo:'seria',ai:x.ai}));
+    const c=iniCandidates(); if(c.length) out=c.slice(0,6).map(x=>({text:x.text,tone:x.tone,emo:EMO[x.emo]?x.emo:'seria',ai:x.ai,traza:x.traza||(x.ai?null:{origen:'local',nota:'frases locales por iniciales'})}));
   }
   if(!out && CFG.EXPAND_URL){ try{ const ctl=new AbortController(); setTimeout(()=>ctl.abort(),2500);
       const r=await fetch(CFG.EXPAND_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
@@ -1373,12 +1373,29 @@ async function genSuggestions(){
   $('#cards').classList.remove('loading'); renderCards();
   if(WA.to) waAiReplies();                                                   // Claude lee el chat y reemplaza las 2 de arriba
 }
+/* Modo dev (Shift+D): bajo cada tarjeta, de dónde sale. Sin traza = frase local de la TV (reglas y plantillas del navegador). */
+window.trazaTexto=function(t,largo){
+  if(!t) return '💻 local de la TV (reglas y plantillas, sin modelo ni memoria)';
+  const fu=(t.fuentes||[]), inv=(t.inventadas||[]);
+  const mem=fu.map(f=>f.id+(f.tipo?' '+f.tipo:'')+(largo&&f.texto?' «'+f.texto+'»':'')).join(' · ');
+  const avisos=inv.length? ' ⚠ citó '+inv.join(',')+' sin tenerla en su contexto' : '';
+  switch(t.origen){
+    case 'agente': return (fu.length? '🧠 '+mem : '🤖 modelo, sin memoria')+(t.iniciales?' · iniciales '+t.iniciales.toUpperCase():'')+avisos;
+    case 'regla': case 'reglas': return '📏 regla fija de respaldo (el modelo no respondió o faltaban opciones)';
+    case 'tarjeta': return '🗂 tarjeta '+(t.de==='usuario'?'propia':'del catálogo')+' · tema '+t.tema+(t.fuente?' · de '+t.fuente:'')+(largo&&t.motivo?' · '+t.motivo:'');
+    case 'respaldo': return '🛟 respaldo: claude -p sin memoria (el agente no respondió)';
+    case 'whatsapp': return '💬 sugerencia del chat (sin traza)';
+    case 'local': return '💻 '+(t.nota||'local de la TV');
+    default: return '❔ '+(t.origen||'sin origen')+avisos;
+  }
+};
+const trazaHtml=c=> document.body.classList.contains('myo-dev') ? `<div class="traza" title="${esc(trazaTexto(c.traza,true))}">${esc(trazaTexto(c.traza,false))}</div>` : '';
 function renderCards(){
   const card=(c,i)=> c.plain ? `
-    <div class="t card plain" data-t data-act="say:${i}"><div class="ph">${esc(c.text)}</div><div class="tone">${esc(c.tone)}</div></div>` : `
+    <div class="t card plain" data-t data-act="say:${i}"><div class="ph">${esc(c.text)}</div><div class="tone">${esc(c.tone)}</div>${trazaHtml(c)}</div>` : `
     <div class="t card" data-t data-act="say:${i}"${i===0&&WA.to?' data-prior="1.25"':''}>
       <div class="ph">${esc(c.text)}</div><div class="tone">${c.ai?'<span class="ai">✨</span> ':''}${c.tone===EMO[c.emo].n ? esc(c.tone) : esc(c.tone)+' · '+EMO[c.emo].n}</div>
-      <div class="t emo" data-t data-dwell="${CFG.emoDwellMs}" data-act="emo:${i}">${EMO[c.emo].e}</div>
+      <div class="t emo" data-t data-dwell="${CFG.emoDwellMs}" data-act="emo:${i}">${EMO[c.emo].e}</div>${trazaHtml(c)}
     </div>`;
   // fila 1: frase, frase, Escribir · fila 2: frase, frase, Volver (siempre hay salida sin gestos)
   // En un chat de WhatsApp: "Escribir" pasa a iniciales y la 4ª tarjeta es "Otro" (más respuestas de Claude)

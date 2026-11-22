@@ -131,9 +131,40 @@ async def _consultar(sistema: str, prompt: str, pedir: int) -> tuple[dict | None
     return datos, meta
 
 
+def armar_traza(ctx: dict, opciones: list[dict], fuera: list[dict], origen: str, modo: str,
+                historial: list[str] | None, iniciales: str, excluir: list[str] | None) -> None:
+    """Modo dev: de dónde sale cada opción. Agrega o["traza"] a cada opción y ctx["traza"] al contexto.
+
+    Por opción: origen (agente o regla), las memorias que el modelo dice haber usado con su texto, y las que citó
+    pero NO estaban en su contexto (cita inventada). Solo se arma si la TV lo pide (traza: true en el pedido).
+    """
+    vistas = {f"m{m['id']}": m for ms in ctx["memorias"].values() for m in ms}
+    vistas.update({f"m{m['id']}": m for m in ctx["ultimos_encuentros"]})
+    for o in opciones:
+        citadas = [str(f) for f in o.get("fuentes", [])]
+        o["traza"] = {
+            "origen": o.get("origen", origen),
+            "fuentes": [{"id": f, "tipo": vistas[f]["tipo"], "texto": str(vistas[f]["texto"])[:120]} for f in citadas if f in vistas],
+            "inventadas": [f for f in citadas if f not in vistas],
+            "sin_memoria": o.get("origen") == "agente" and not citadas,
+        }
+    ctx["traza"] = {
+        "modo": modo, "modelo": MODELO,
+        "interlocutor": (ctx["interlocutor"] or {}).get("id"),
+        "privacidad": (ctx["interlocutor"] or {}).get("tipo_interlocutor", "desconocido"),
+        "memorias_en_contexto": {t: [f"m{m['id']}" for m in ms] for t, ms in ctx["memorias"].items() if ms},
+        "ultimos_encuentros": [f"m{m['id']}" for m in ctx["ultimos_encuentros"]],
+        "fuera_por_privacidad": len(ctx["descartadas"]),
+        "temas_bloqueados": ctx["bloqueados"],
+        "historial": len(historial or []), "iniciales": iniciales or None, "excluidas_por_repetidas": len(excluir or []),
+        "descartadas": [{"text": o.get("text"), "motivo": o.get("motivo")} for o in fuera],
+    }
+
+
 def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
               historial: list[str] | None = None, modo: str = "voz",
-              extra: set[str] | None = None, iniciales: str = "", excluir: list[str] | None = None) -> dict:
+              extra: set[str] | None = None, iniciales: str = "", excluir: list[str] | None = None,
+              traza: bool = False) -> dict:
     """Devuelve {modo, resumen, persona, ultimo_encuentro, opciones, descartadas, origen, meta}.
 
     persona puede ser una persona de la memoria o un dict con id y tipo_interlocutor
@@ -161,6 +192,8 @@ def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
     if iniciales:   # primero las que respetan exactamente las letras, luego las que empiezan con ellas
         opciones.sort(key=lambda o: (iniciales_de(o["text"]) != iniciales, not iniciales_de(o["text"]).startswith(iniciales)))
     meta["ms_total"] = int((time.monotonic() - t0) * 1000)
+    if traza:
+        armar_traza(ctx, opciones, fuera, origen, modo, historial, iniciales, excluir)
     return {
         "modo": modo,
         "resumen": (datos or {}).get("resumen", texto[:120]),
@@ -170,4 +203,5 @@ def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
         "descartadas": fuera,
         "origen": origen,
         "meta": meta,
+        **({"traza": ctx["traza"]} if traza else {}),
     }
