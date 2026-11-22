@@ -69,6 +69,9 @@ Tienen las mismas protecciones que `/api/wa/*`: solo local, Origin exacto y JSON
    - **El primero en contestar:** *"Emmy activó su alarma de emergencia a las 22:26, en [dirección]. Necesita ayuda ahora. ¿Puedes ir?"*
    - **Los siguientes:** *"…Juan ya contestó el aviso. Igual, si puedes brindar ayuda, acércate a [dirección]. ¿Puedes ir?"* o, si alguien ya confirmó, *"Juan ya va en camino. Igual, si puedes…"*
 4. Cuando alguien dice que va o que no puede, el agente lo avisa (`GET /api/emergencia/confirmar?conv=…&viene=si|no`) y **la TV se pone verde al instante**, sin esperar a que termine la llamada.
+   - **Si va:** el agente dice la dirección una vez, *"Gracias, le aviso a Emmy"*, y cuelga.
+   - **Si no puede ayudar:** dice solo *"Entendido, estamos llamando a otras personas. Gracias."* y cuelga. No insiste ni pide nada más.
+   - Ninguna llamada pasa de **2 minutos**.
 5. Si el puente no responde, el agente da el aviso completo igual.
 
 Las dos rutas exigen el id de una llamada activa, que no se puede adivinar. En el VPS exigen además el token del puente, guardado como secreto en ElevenLabs. ElevenLabs tiene que poder llegar al puente, así que el protocolo funciona con el **puente del VPS** (`/wa/api/*`). Con un puente local, el agente da siempre el aviso completo.
@@ -78,8 +81,6 @@ Configurar el agente (no llama a nadie):
 ```bash
 TOKI_PUBLIC_URL=https://179-66-157-161.sslip.io/wa npx tsx --env-file=.env protocolo-agente.ts
 ```
-
-Variables nuevas: `WOKI_NUM_EMERGENCIAS` es lo que el agente ofrece si nadie puede ir. Por defecto dice "el SAMU, ciento treinta y uno"; en Colombia sería "la línea ciento veintitrés".
 
 ## Agente telefónico de emergencia
 

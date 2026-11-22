@@ -13,7 +13,6 @@ const AGENT_ID = process.env.ELEVENLABS_AGENT_ID ?? "";
 const PHONE_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID ?? "";
 const PERSONA = process.env.WOKI_NOMBRE ?? "Emmy";
 const DIRECCION = process.env.WOKI_DIRECCION ?? "";
-const NUM_EMERGENCIAS = process.env.WOKI_NUM_EMERGENCIAS ?? "el SAMU, ciento treinta y uno";   // lo que dice el agente si nadie puede ir (Colombia: "la línea ciento veintitrés")
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
 const CALL_COOLDOWN_MS = 60_000;
@@ -225,7 +224,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       if (Date.now() - lastCall.at < CALL_COOLDOWN_MS) { json(429, { ok: false, reason: "Ya se llamó hace menos de un minuto" }); return true; }
       const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
       lastCall = { at: Date.now(), alarmId: id, hora, direccion: DIRECCION || "la casa", llamadas: [] };
-      const vars = { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia", emergencias: NUM_EMERGENCIAS };
+      const vars = { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia" };
       const res2 = await Promise.allSettled(destinos.map((c) => xiJson("/v1/convai/twilio/outbound-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
