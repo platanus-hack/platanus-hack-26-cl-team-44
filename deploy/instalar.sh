@@ -136,9 +136,11 @@ chmod 600 "$BASE/toki.env"
 cp "$BASE/repo/deploy/toki-agente.service" /etc/systemd/system/toki-agente.service
 # Huellas de voz (software/voces): Python 3.12 aparte, porque torch no tiene ruedas para el 3.14 del sistema.
 # torch solo CPU (1,3 GB; la versión con GPU pesa 5 GB) y webrtcvad ya compilado (la VPS no tiene compilador de C).
-export PATH="/root/.local/bin:$PATH"
+# El Python que baja uv va a $BASE/python (no a /root): el servicio corre como el usuario toki.
+export PATH="/root/.local/bin:$PATH" UV_PYTHON_INSTALL_DIR="$BASE/python"
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null
-if [ ! -x "$BASE/voces-venv/bin/python" ] || ! "$BASE/voces-venv/bin/python" -c "import resemblyzer" 2>/dev/null; then
+if ! sudo -u toki "$BASE/voces-venv/bin/python" -c "import resemblyzer" 2>/dev/null; then
+  rm -rf "$BASE/voces-venv"
   uv venv -q --python 3.12 "$BASE/voces-venv"
   uv pip install -q --python "$BASE/voces-venv/bin/python" --index-url https://download.pytorch.org/whl/cpu "torch==2.*"
   uv pip install -q --python "$BASE/voces-venv/bin/python" webrtcvad-wheels numpy scipy librosa
