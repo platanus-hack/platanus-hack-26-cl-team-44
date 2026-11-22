@@ -3,6 +3,7 @@ import http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync, chmodSync } from "node:fs";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
+import { Vistos } from "./vistos.ts";                   // conjuntos con vencimiento y tope
 import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
 import { sugOn, suggestReplies, expandInitials, type Sug, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
 import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente con memoria (software/agent); si no está, sigue sugerir.ts
@@ -188,8 +189,11 @@ async function personName(participant?: string, pushName?: string) {
 }
 
 // ---------- límites ----------
-const usedIdem = new Set<string>();
-const seenInbound = new Set<string>();
+// Claves de envío usadas y mensajes ya recibidos (reintentos de wapi): valen 24 h, máx. 5.000 cada uno; sale primero el más viejo.
+const DEDUPE_TTL_MS = Number(process.env.WA_DEDUPE_TTL_MS) || 24 * 3_600_000;
+const DEDUPE_MAX = Number(process.env.WA_DEDUPE_MAX) || 5_000;
+const usedIdem = new Vistos(DEDUPE_TTL_MS, DEDUPE_MAX);
+const seenInbound = new Vistos(DEDUPE_TTL_MS, DEDUPE_MAX);
 let day = new Date().toDateString(), sentToday = 0, lastSendAt = 0;
 function quotaOk() {
   const d = new Date().toDateString();
