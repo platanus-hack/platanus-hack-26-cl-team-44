@@ -53,6 +53,7 @@ export function itemImage(row, hosts) {
   for (const candidate of candidates) { const url = imageURL(candidate, hosts); if (url) return url; }
   return null;
 }
+const ARTICLE_MAX_CHARS = 15000; // una noticia completa (BioBio: 200–600 palabras), con tope ante textos anómalos
 const isoDate = value => Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 export function readingPages(text, limit = 180) {
   const words = text.split(/\s+/), pages=[];let page='';
@@ -73,9 +74,11 @@ export function parseRssFeed(xml, spec) {
   for (const row of rows.slice(0,60)) {
     const url=articleURL(row.link, spec),title=plain(row.title).slice(0,220);
     if (!url || !title) continue;
-    const full=plain(row.description).replace(/(?:Contin[uú]a leyendo|Leer m[aá]s|The post)\b[\s\S]*$/i,'').trim();
-    // Display the publisher's RSS excerpt only, never silently substitute a generated article.
-    const excerpt=full.length>900?full.slice(0,900).replace(/\s+\S*$/,'')+'…':full;
+    const clean=text=>text.replace(/(?:Contin[uú]a leyendo|Leer m[aá]s|The post)\b[\s\S]*$/i,'').trim();
+    // Only the publisher's own text from its feed: the full article (content:encoded) when it is
+    // published there, otherwise its summary. Never a generated article.
+    const full=clean(plain(row['content:encoded']))||clean(plain(row.description));
+    const excerpt=full.length>ARTICLE_MAX_CHARS?full.slice(0,ARTICLE_MAX_CHARS).replace(/\s+\S*$/,'')+'…':full;
     const id=createHash('sha256').update(url).digest('hex').slice(0,24);
     unique.set(id,{id,title,url,image:itemImage(row,spec.imageHosts),publishedAt:isoDate(row.pubDate),source:spec.name,titlePages:readingPages(title),pages:readingPages(excerpt || 'Esta noticia no incluye un extracto en la fuente.'),excerptAvailable:!!excerpt});
   }

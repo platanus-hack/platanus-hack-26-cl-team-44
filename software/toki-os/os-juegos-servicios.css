@@ -93,7 +93,10 @@
 .external-playing .external-frame-wrap { border-radius: var(--r-sm); }
 
 /* ---------- Servicios (toki-apps.js) ---------- */
-#s-apps { padding-bottom: 28px; }
+/* Mismos márgenes y barra superior que las demás pantallas: toki-apps.css trae los de la tablet
+   (barra de 95 px, márgenes de 65 px), que agrandaban la barra y empujaban el reloj fuera del borde. */
+#s-apps { padding: 28px 48px; }
+#s-apps .status { position: static; height: 60px; }
 #appsContent { flex: 1; min-height: 0; height: auto; background: none; border: 0; border-radius: 0; }
 #s-apps .toki-apps { padding: 0 !important; gap: 18px; grid-template-rows: minmax(0, 1fr) auto auto; color: var(--txt); }
 /* el foco agranda la tarjeta (como en todo el SO): que no la recorten los contenedores de Servicios */
@@ -123,6 +126,9 @@
 #s-apps .ta-detail-symbol { width: 140px; height: 140px; max-height: none; }
 #s-apps .ta-category { color: var(--blue); font-size: 24px; }
 #s-apps .news-card, #s-apps .news-reading p { font-size: 40px; }
+/* lectura: colores del tema (en modo claro quedaba azul oscuro fijo con letra oscura) */
+#s-apps .news-reading { background: var(--glass); border: 1.5px solid var(--hair); }
+#s-apps .news-reading p { color: var(--txt); }
 /* noticias: titular grande a la izquierda y miniatura 16:9 a la derecha, del alto de la tarjeta */
 #s-apps .news-list { gap: 20px; }
 #s-apps .news-card { flex-direction: column; align-items: stretch; justify-content: center; text-align: left; padding: 20px 40px; }
