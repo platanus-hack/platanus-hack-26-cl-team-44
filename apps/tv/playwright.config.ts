@@ -19,7 +19,20 @@ export default defineConfig({
     trace: 'retain-on-failure',
     ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 1000 } } }],
+  projects: [
+    {
+      name: 'paridad',
+      testIgnore: /myoware\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 1000 } },
+    },
+    // MyoWare descarta paquetes con más de 250 ms de viaje (igual que la TV real): corre al final, sin competir por CPU.
+    {
+      name: 'myoware',
+      testMatch: /myoware\.spec\.ts/,
+      dependencies: ['paridad'],
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 1000 } },
+    },
+  ],
   webServer: {
     command: `node e2e/serve.mjs ${PORT}`,
     url: `http://localhost:${PORT}/woki-os.html`,
