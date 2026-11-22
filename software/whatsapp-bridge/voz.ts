@@ -1,4 +1,4 @@
-// woki-bridge/voz.ts · ElevenLabs: voz de Marta (TTS), clonación/elección de voz y llamada de emergencia.
+// woki-bridge/voz.ts · ElevenLabs: voz de Emmy (TTS), clonación/elección de voz y llamada de emergencia.
 // La API key vive SOLO aquí (en .env). La TV y la página de onboarding hablan con el bridge, nunca con ElevenLabs.
 import type http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
@@ -11,15 +11,14 @@ const TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL ?? "eleven_multilingual_v2";
 const V3 = TTS_MODEL.startsWith("eleven_v3");
 const AGENT_ID = process.env.ELEVENLABS_AGENT_ID ?? "";
 const PHONE_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID ?? "";
-const EMERGENCY_NUMBER = process.env.EMERGENCY_NUMBER ?? "";       // E.164, p. ej. +569XXXXXXXX (cuidadora/familiar)
-const PERSONA = process.env.WOKI_NOMBRE ?? "Marta";
-const CONTACTO = process.env.EMERGENCY_NAME ?? "Tu contacto";            // nombre de quien recibe la llamada, para la TV ("Camila viene")
+const PERSONA = process.env.WOKI_NOMBRE ?? "Emmy";
 const DIRECCION = process.env.WOKI_DIRECCION ?? "";
+const NUM_EMERGENCIAS = process.env.WOKI_NUM_EMERGENCIAS ?? "el SAMU, ciento treinta y uno";   // lo que dice el agente si nadie puede ir (Colombia: "la línea ciento veintitrés")
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
 const CALL_COOLDOWN_MS = 60_000;
 
-// ---------- estado persistente: qué voz usa WOKI y cuáles se le ofrecen a Marta ----------
+// ---------- estado persistente: qué voz usa Myo y cuáles se le ofrecen a Emmy ----------
 type Voz = { id: string; name: string; kind: "clonada" | "biblioteca"; preview?: string };
 type VozState = { actual: string | null; opciones: Voz[] };
 const stateUrl = new URL("voz.json", import.meta.url);
@@ -63,14 +62,43 @@ const EMO: Record<string, { tag: string; stability: number; style: number; speed
 };
 
 // ---------- llamada de emergencia ----------
-let lastCall = { at: 0, alarmId: "", conversationId: "" };
-// Bloquea números cortos de servicios públicos (131, 133, 911, 123…): un robot no debe llamar a la ambulancia.
+// El SOS llama a TODOS los contactos a la vez y gana el primero que confirma que va.
+//   EMERGENCY_CONTACTS=Jhomar:+51XXXXXXXXX,Juan:+57XXXXXXXXXX,Paolo:+569XXXXXXXX   (máx. 5)
+// Si no está, se usa un solo contacto: EMERGENCY_NAME + EMERGENCY_NUMBER (como antes).
+// Números cortos (131, 133, 911, 123…) quedan fuera: un robot no debe llamar a la ambulancia.
+type Contacto = { nombre: string; numero: string };
 const esServicioPublico = (n: string) => digits(n).length < 8;
+const CONTACTOS: Contacto[] = (() => {
+  const lista = process.env.EMERGENCY_CONTACTS
+    ? process.env.EMERGENCY_CONTACTS.split(",").map((x) => { const i = x.lastIndexOf(":"); return { nombre: clean(x.slice(0, i), 30), numero: "+" + digits(x.slice(i + 1)) }; })
+    : process.env.EMERGENCY_NUMBER ? [{ nombre: process.env.EMERGENCY_NAME ?? "Tu contacto", numero: "+" + digits(process.env.EMERGENCY_NUMBER) }] : [];
+  const ok = lista.filter((c) => c.nombre && !esServicioPublico(c.numero) && digits(c.numero).length <= 15).slice(0, 5);
+  if (ok.length < lista.length) console.warn(`[emergencia] ${lista.length - ok.length} contacto(s) descartado(s): sin nombre, número de servicio público o mal escrito`);
+  return ok;
+})();
+// contestoAt: cuándo esta persona contestó y el agente pidió el protocolo · confirmo: lo que dijo en la llamada (herramienta del agente)
+type Llamada = Contacto & { conversationId: string; error: string; contestoAt: number; confirmo: boolean | null };
+let lastCall: { at: number; alarmId: string; hora: string; direccion: string; llamadas: Llamada[] } = { at: 0, alarmId: "", hora: "", direccion: "", llamadas: [] };
+
+// Protocolo de la llamada: el PRIMERO que contesta recibe el aviso completo; los que contestan después
+// saben que alguien ya respondió (o ya va) y se les pide igual que ayuden si pueden.
+function protocolo(l: Llamada) {
+  const hora = lastCall.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const dir = lastCall.direccion || DIRECCION || "la casa";
+  if (!l.contestoAt) l.contestoAt = Date.now();
+  const otras = lastCall.llamadas.filter((x) => x !== l);
+  const van = otras.filter((x) => x.confirmo === true).map((x) => x.nombre);
+  const antes = otras.filter((x) => x.contestoAt && x.contestoAt < l.contestoAt).sort((a, b) => a.contestoAt - b.contestoAt).map((x) => x.nombre);
+  if (van.length) return { rol: "ya_viene", quien: juntar(van), mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}. ${juntar(van)} ya ${van.length > 1 ? "van" : "va"} en camino. Igual, si puedes brindar ayuda, acércate a ${dir}. ¿Puedes ir?` };
+  if (antes.length) return { rol: "ya_contesto", quien: antes[0], mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}. ${antes[0]} ya contestó el aviso. Igual, si puedes brindar ayuda, acércate a ${dir}. ¿Puedes ir?` };
+  return { rol: "primero", quien: "", mensaje: `${PERSONA} activó su alarma de emergencia a las ${hora}, en ${dir}. Necesita ayuda ahora. ¿Puedes ir?` };
+}
+const juntar = (n: string[]) => (n.length < 2 ? n[0] ?? "" : `${n.slice(0, -1).join(", ")} y ${n[n.length - 1]}`);
 
 export function vozHealth() {
   return {
     tts: !!KEY, voz: st.actual, opciones: st.opciones.length,
-    llamada: !!(KEY && AGENT_ID && PHONE_ID && EMERGENCY_NUMBER && !esServicioPublico(EMERGENCY_NUMBER)),
+    llamada: !!(KEY && AGENT_ID && PHONE_ID && CONTACTOS.length), contactos: CONTACTOS.map((c) => c.nombre),
   };
 }
 
@@ -132,7 +160,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
-    // Clonar la voz de Marta (clonación instantánea). Llega en JSON con los audios en base64:
+    // Clonar la voz de Emmy (clonación instantánea). Llega en JSON con los audios en base64:
     // { nombre, consentimiento: true, audios: [{ b64, mime, nombre }] }
     if (req.method === "POST" && p === "/api/voz/clonar") {
       const body = JSON.parse((await readBody(req, MAX_AUDIO_B64 + 10_000)) || "{}");
@@ -140,9 +168,9 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       const audios: any[] = Array.isArray(body.audios) ? body.audios.slice(0, 10) : [];
       if (!audios.length) { json(400, { ok: false, reason: "No llegó ningún audio" }); return true; }
       const fd = new FormData();
-      const nombre = clean(body.nombre, 40) || `${PERSONA} (WOKI)`;
+      const nombre = clean(body.nombre, 40) || `${PERSONA} (Myo)`;
       fd.append("name", nombre);
-      fd.append("description", "Voz clonada para WOKI con consentimiento de la persona.");
+      fd.append("description", "Voz clonada para Myo con consentimiento de la persona.");
       fd.append("remove_background_noise", body.limpiarRuido ? "true" : "false");
       fd.append("labels", JSON.stringify({ language: "es" }));
       audios.forEach((a, i) => {
@@ -174,7 +202,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
-    // Marta elige la voz desde la TV (solo entre las candidatas).
+    // Emmy elige la voz desde la TV (solo entre las candidatas).
     if (req.method === "POST" && p === "/api/voz/elegir") {
       const { id } = JSON.parse((await readBody(req, 2_000)) || "{}");
       if (!st.opciones.some((o) => o.id === id)) { json(400, { ok: false, reason: "Esa voz no está entre las opciones" }); return true; }
@@ -183,47 +211,95 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
-    // Alarma de emergencia → llamada telefónica de un agente de ElevenLabs al número de emergencia.
-    // { alarmId, segundos } · una llamada por alarma, y como mucho una por minuto.
+    // Alarma de emergencia → un agente de ElevenLabs llama a todos los contactos de emergencia en paralelo.
+    // { alarmId } · una tanda por alarma, y como mucho una por minuto.
     if (req.method === "POST" && p === "/api/emergencia/llamar") {
-      const { alarmId, motivo } = JSON.parse((await readBody(req, 2_000)) || "{}");
-      if (!AGENT_ID || !PHONE_ID || !EMERGENCY_NUMBER) { json(503, { ok: false, reason: "Llamada no configurada (agente, número o destino)" }); return true; }
-      if (esServicioPublico(EMERGENCY_NUMBER)) { json(403, { ok: false, reason: "EMERGENCY_NUMBER debe ser un celular de la familia o la cuidadora, no un servicio público" }); return true; }
+      const { alarmId, motivo, solo } = JSON.parse((await readBody(req, 2_000)) || "{}");
+      // solo: nombre de UN contacto, para probar la llamada sin despertar a todos (solo nombres de la lista)
+      const destinos = solo ? CONTACTOS.filter((c) => c.nombre.toLowerCase() === String(solo).toLowerCase()) : CONTACTOS;
+      if (solo && !destinos.length) { json(400, { ok: false, reason: "Ese contacto no está en EMERGENCY_CONTACTS" }); return true; }
+      if (!AGENT_ID || !PHONE_ID || !CONTACTOS.length) { json(503, { ok: false, reason: "Llamada no configurada (agente, número o contactos)" }); return true; }
       const id = clean(alarmId, 64);
       if (!id) { json(400, { ok: false, reason: "Falta alarmId" }); return true; }
-      if (id === lastCall.alarmId) { json(200, { ok: true, repetida: true, conversationId: lastCall.conversationId }); return true; }
+      if (id === lastCall.alarmId) { json(200, { ok: true, repetida: true }); return true; }
       if (Date.now() - lastCall.at < CALL_COOLDOWN_MS) { json(429, { ok: false, reason: "Ya se llamó hace menos de un minuto" }); return true; }
-      lastCall = { at: Date.now(), alarmId: id, conversationId: "" };
       const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
-      const j = await xiJson("/v1/convai/twilio/outbound-call", {
+      lastCall = { at: Date.now(), alarmId: id, hora, direccion: DIRECCION || "la casa", llamadas: [] };
+      const vars = { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia", emergencias: NUM_EMERGENCIAS };
+      const res2 = await Promise.allSettled(destinos.map((c) => xiJson("/v1/convai/twilio/outbound-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          agent_id: AGENT_ID, agent_phone_number_id: PHONE_ID, to_number: "+" + digits(EMERGENCY_NUMBER),
-          conversation_initiation_client_data: {
-            dynamic_variables: { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia" },
-          },
+          agent_id: AGENT_ID, agent_phone_number_id: PHONE_ID, to_number: c.numero,
+          conversation_initiation_client_data: { dynamic_variables: vars },
           telephony_call_config: { ringing_timeout_secs: 45 },
         }),
+      })));
+      lastCall.llamadas = destinos.map((c, n) => {
+        const r = res2[n];
+        const j: any = r.status === "fulfilled" ? r.value : null;
+        const error = !j ? String((r as PromiseRejectedResult).reason?.message ?? "error") : j.success ? "" : String(j.message ?? "no se pudo llamar");
+        console.log(`[emergencia] ${c.nombre} …${digits(c.numero).slice(-4)} → ${error || "ok"}${j?.conversation_id ? " conv=" + j.conversation_id : ""}`);
+        return { ...c, conversationId: j?.conversation_id ?? "", error, contestoAt: 0, confirmo: null };
       });
-      lastCall.conversationId = j.conversation_id ?? "";
-      console.log(`[emergencia] llamada → …${digits(EMERGENCY_NUMBER).slice(-4)} ok=${j.success} conv=${j.conversation_id}`);
-      json(j.success ? 200 : 502, { ok: !!j.success, reason: j.message, conversationId: j.conversation_id });
+      const ok = lastCall.llamadas.filter((l) => !l.error);
+      json(ok.length ? 200 : 502, { ok: !!ok.length, llamadas: lastCall.llamadas.map((l) => ({ nombre: l.nombre, ok: !l.error, reason: l.error || undefined })) });
       return true;
     }
 
-    // Estado de la llamada (para mostrar en la TV si contestaron).
+    // Herramientas del agente durante la llamada (GET: ElevenLabs no manda Origin). Exigen el id de una llamada activa,
+    // que no se puede adivinar, y en el VPS además el token (X-Woki-Token, guardado como secreto en ElevenLabs).
+    // protocolo: qué decirle a quien contestó · confirmar: si viene o no (la TV se entera al instante)
+    if (req.method === "GET" && p === "/api/emergencia/protocolo") {
+      const conv = clean(url.searchParams.get("conv"), 80);
+      const l = lastCall.llamadas.find((x) => x.conversationId && x.conversationId === conv);
+      // Sin una llamada activa no se entrega nada (dirección, quién contestó): falla cerrado. El agente, si la
+      // herramienta falla, da el aviso completo con las variables que recibió al marcar.
+      if (!l) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
+      const r = protocolo(l);
+      console.log(`[emergencia] protocolo ${l.nombre} → ${r.rol}`);
+      json(200, { ok: true, ...r });
+      return true;
+    }
+    if (req.method === "GET" && p === "/api/emergencia/confirmar") {
+      const conv = clean(url.searchParams.get("conv"), 80);
+      const l = lastCall.llamadas.find((x) => x.conversationId && x.conversationId === conv);
+      if (!l) { json(404, { ok: false, reason: "llamada desconocida" }); return true; }
+      const v = String(url.searchParams.get("viene") ?? "").toLowerCase();
+      l.confirmo = v === "si" || v === "sí" || v === "true";
+      console.log(`[emergencia] ${l.nombre} ${l.confirmo ? "VIENE" : "no puede ir"}`);
+      json(200, { ok: true, registrado: l.confirmo ? "viene" : "no_viene" });
+      return true;
+    }
+
+    // Estado de las llamadas, resumido para la TV: quién suena, quién contestó y quién viene.
     if (req.method === "GET" && p === "/api/emergencia/estado") {
-      if (!lastCall.conversationId) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
-      const j = await xiJson(`/v1/convai/conversations/${encodeURIComponent(lastCall.conversationId)}`);
-      // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
-      const estado = j.status === "initiated" && Date.now() - lastCall.at > 75_000 ? "failed" : j.status;
-      // Al terminar, ElevenLabs extrae de la conversación si viene y qué respondió (data_collection del agente; ver setup-emergencia.ts).
-      // Llega unos segundos después de "done": mientras tanto viene = null.
-      const dc = j.analysis?.data_collection_results ?? {};
-      const viene = typeof dc.viene?.value === "boolean" ? dc.viene.value : null;
-      const respuesta = typeof dc.respuesta?.value === "string" ? clean(dc.respuesta.value, 140) : "";
-      json(200, { ok: true, estado, duracion: j.metadata?.call_duration_secs ?? null, contacto: CONTACTO, viene, respuesta });
+      if (!lastCall.llamadas.length) { json(200, { ok: true, estado: "sin_llamada" }); return true; }
+      const ls = await Promise.all(lastCall.llamadas.map(async (l) => {
+        if (l.error || !l.conversationId) return { nombre: l.nombre, estado: "failed", viene: null as boolean | null, respuesta: "" };
+        try {
+          const j = await xiJson(`/v1/convai/conversations/${encodeURIComponent(l.conversationId)}`);
+          // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
+          const estado = j.status === "initiated" && Date.now() - lastCall.at > 75_000 ? "failed" : String(j.status);
+          // Al terminar, ElevenLabs extrae si viene y qué respondió (data_collection del agente; ver setup-emergencia.ts). Llega segundos después de "done".
+          const dc = j.analysis?.data_collection_results ?? {};
+          // Lo que el agente avisó durante la llamada (confirmar) vale al instante; el análisis de ElevenLabs llega al terminar.
+          const viene = typeof dc.viene?.value === "boolean" ? dc.viene.value : l.confirmo;
+          return { nombre: l.nombre, estado, viene, respuesta: typeof dc.respuesta?.value === "string" ? clean(dc.respuesta.value, 140) : l.confirmo === true ? "Confirmó por teléfono que va" : "" };
+        } catch { return { nombre: l.nombre, estado: "initiated", viene: null, respuesta: "" }; }
+      }));
+      const de = (f: (l: (typeof ls)[number]) => boolean) => ls.filter(f);
+      const vienen = de((l) => l.viene === true), hablando = de((l) => l.estado === "in-progress"), sonando = de((l) => l.estado === "initiated");
+      const pendientes = de((l) => l.estado === "processing" || (l.estado === "done" && l.viene === null)), noVan = de((l) => l.viene === false);
+      let r: { estado: string; grupo: typeof ls; viene: boolean | null };
+      if (vienen.length) r = { estado: "done", grupo: vienen, viene: true };                // el primero que confirma gana
+      else if (hablando.length) r = { estado: "in-progress", grupo: hablando, viene: null };
+      else if (sonando.length) r = { estado: "initiated", grupo: sonando, viene: null };
+      else if (pendientes.length) r = { estado: "processing", grupo: pendientes, viene: null };
+      else if (noVan.length) r = { estado: "done", grupo: noVan, viene: false };
+      else r = { estado: "failed", grupo: ls, viene: null };
+      const respuesta = r.viene === true ? r.grupo[0].respuesta : r.viene === false ? r.grupo.map((l) => `${l.nombre}: ${l.respuesta || "no puede"}`).join(" · ") : "";
+      json(200, { ok: true, estado: r.estado, contacto: juntar(r.grupo.map((l) => l.nombre)), varios: r.grupo.length > 1, viene: r.viene, respuesta, llamadas: ls });
       return true;
     }
   } catch (e: any) {

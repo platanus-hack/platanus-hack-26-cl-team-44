@@ -136,7 +136,7 @@ final class GazeSensor: NSObject, ARSessionDelegate {
     func session(_ session: ARSession, didFailWithError error: Error) {
         log.error("ARKit falló: \(error.localizedDescription, privacy: .public)")
         if (error as? ARError)?.code == .cameraUnauthorized {
-            onState?(.failed("Falta permiso de cámara. Actívalo en Ajustes › Eye Tracking › Cámara."))
+            onState?(.failed("Falta permiso de cámara. Actívalo en Ajustes › Myo › Cámara."))
             return
         }
         onState?(.failed(error.localizedDescription))

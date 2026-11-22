@@ -1,4 +1,4 @@
-# WOKI · Guía de diseño (TV + mirada + EMG)
+# Myo · Guía de diseño (TV + mirada + EMG)
 
 Son valores iniciales para la hackathon. Cada número trae su origen: **[F]** viene de una fuente y **[P]** es una propuesta a calibrar. El detalle está en `hallazgos/`.
 
@@ -6,7 +6,7 @@ Son valores iniciales para la hackathon. Cada número trae su origen: **[F]** vi
 
 | Parámetro | Valor | Origen |
 |---|---|---|
-| Distancia de Marta a una TV de 55" | **2 a 2,5 m** | [P], cálculo con 3,7° de error *(02, 06)* |
+| Distancia de Emmy a una TV de 55" | **2 a 2,5 m** | [P], cálculo con 3,7° de error *(02, 06)* |
 | Si tiene que estar a 3 m | TV de 65" o más | [P] |
 | Canvas | 1920 × 1080 px | [F] Android TV, tvOS |
 | Margen seguro | 96 px a los lados, 54 px arriba y abajo | [F] Android TV, Fire TV |
@@ -29,7 +29,7 @@ Son valores iniciales para la hackathon. Cada número trae su origen: **[F]** vi
 |---|---|---|
 | Modelo | **La mirada elige la zona y el clic de ceja confirma** | [F] TAGSwipe, Mateo 2008 |
 | Tiempo para que la mirada se asiente antes de aceptar el clic | 300 a 500 ms | [P] *(02)* |
-| Dwell de respaldo si no hay EMG | **800 ms** (ajustable de 400 a 1.000 ms por Marta) | [F] rangos de Špakov y Majaranta |
+| Dwell de respaldo si no hay EMG | **800 ms** (ajustable de 400 a 1.000 ms por Emmy) | [F] rangos de Špakov y Majaranta |
 | Feedback | Anillo que se cierra + clic sonoro corto. **Sin voz por cada selección** | [F] Majaranta 2006 |
 | Respuesta visual al clic EMG | Menos de 100 ms | [P] |
 | Repetir la misma zona | Bloqueada hasta que la mirada salga | [F] Tobii |
@@ -53,14 +53,14 @@ Tiempos de partida [P] *(06)*: 250 ms entre clics, 1,2 s como máximo entre los 
 ### 5.1 Conversación (pantalla principal)
 - **Franja de estado** arriba, de 64 a 80 px: mirada, EMG y alarma, cada uno con ícono, texto y color, no solo color.
 - **Línea del mensaje** de 72 a 96 px: lo que se va armando. La familia la ve desde lejos.
-- **Indicador "Marta está escribiendo…"**, que aparece en menos de 1 s apenas empieza a elegir. Así nadie cambia de tema mientras compone *(05)*.
+- **Indicador "Emmy está escribiendo…"**, que aparece en menos de 1 s apenas empieza a elegir. Así nadie cambia de tema mientras compone *(05)*.
 - **4 tarjetas en 2×2** con texto de 56 a 64 px y 2 líneas como máximo, de unas 10 palabras.
   - El tono varía entre las cuatro: una cariñosa, una neutra, una con humor y una breve *(03)*.
   - Cada tarjeta muestra la emoción propuesta con emoji y color.
 
 ### 5.2 Emoción (modelo mixto)
 - La IA propone una emoción y **queda aceptada por defecto**: confirmar la frase con la ceja la dice con esa emoción.
-- Si Marta sostiene la mirada 800 a 1.000 ms sobre el emoji, se abre un **anillo de 6 emociones**: alegre, cariñosa, irónica, seria, susurro y entusiasmada. Las elige con la mirada y las confirma con la ceja.
+- Si Emmy sostiene la mirada 800 a 1.000 ms sobre el emoji, se abre un **anillo de 6 emociones**: alegre, cariñosa, irónica, seria, susurro y entusiasmada. Las elige con la mirada y las confirma con la ceja.
 - Eviten "triste" y "enojada" como opciones principales, porque casi no se notan en la voz sintética *(04)*.
 - La emoción también se ve en la TV, con un emoji de 120 px o más, para la familia.
 
@@ -89,7 +89,7 @@ Tiempos de partida [P] *(06)*: 250 ms entre clics, 1,2 s como máximo entre los 
 | 90 s | Aviso al contacto 2 |
 | Después | Se repite cada 60 s |
 
-- **La alarma no se apaga sola:** solo con el llavero RFID o desde el teléfono. La TV le muestra a Marta *"Camila viene"*.
+- **La alarma no se apaga sola:** solo con el llavero RFID o desde el teléfono. La TV le muestra a Emmy *"Camila viene"*.
 - Pantalla de alerta: 120 px o más, 4 palabras como máximo, **sin parpadeos de más de 3 Hz** (preferir luz fija).
 
 ## 6. Modos

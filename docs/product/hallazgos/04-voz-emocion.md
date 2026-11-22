@@ -90,9 +90,9 @@ Modelo mixto en TV [I, sin evidencia directa]:
 - **Superposición**: el backchannel es corto y se solapa con el otro hablante por diseño. No encontré estudio sobre interrumpir con voz sintética. Hay que permitir que un audio corto pregrabado suene sin esperar turno [I]. Un aviso visual de "te quiere interrumpir" (luz o pantalla) ayuda [I; los autores del paper de backchanneling lo proponen como "gesto de espera"].
 - **Voz que "se cansa"** en textos largos (Rodriguez) y límite de 5.000 caracteres en v3. Frases cortas lo evitan. [V]
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
-1. **La voz propia no es el diferenciador contra Apple; la entrega sí.** Personal Voice y Apple Eye Tracking ya ofrecen voz propia y mirada gratis. Lo que los usuarios piden y no tienen es la "autenticidad de la entrega" (Cave) y poder marcar emoción (Esser, Rodriguez). WOKI debe mostrar eso en la demo.
+1. **La voz propia no es el diferenciador contra Apple; la entrega sí.** Personal Voice y Apple Eye Tracking ya ofrecen voz propia y mirada gratis. Lo que los usuarios piden y no tienen es la "autenticidad de la entrega" (Cave) y poder marcar emoción (Esser, Rodriguez). Myo debe mostrar eso en la demo.
 2. **Español: Apple solo cubre México.** Para Chile o Colombia, un clon de ElevenLabs en `es` es la ruta más realista. Presentar a Apple Personal Voice (es-MX) como alternativa gratuita con acento distinto [I].
 3. **Pre-generar el set de reacciones** ("jaja", "¡no!", "mmm", "¿en serio?", "te quiero", "espera", "¡qué rico!") con la voz clonada y guardarlo como audios locales de 0 ms. Es lo mejor respaldado por la investigación (risa es el efecto mejor valorado, 4,6/5).
 4. **Emoción por defecto aceptada, cambio opcional**: la IA propone, un clic EMG confirma, un sostén de mirada abre el anillo. Así el 80% de los casos [I, sin dato] cuesta cero pasos adicionales.

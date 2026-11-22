@@ -29,7 +29,7 @@ async function setup(t, extra={}) {
 }
 async function settled(api,id){for(let i=0;i<80;i++){const job=(await api('jobs')).data.jobs.find(j=>j.id===id);if(job.status!=='preparing')return job;await new Promise(r=>setTimeout(r,10));}throw Error('Job did not settle');}
 
-test('the default entry opens Woki OS and the tablet keeps its own bookmark', async t => {
+test('the default entry opens Myo OS and the tablet keeps its own bookmark', async t => {
   const {base} = await setup(t);
   for (const path of ['/', '/index.html']) {
     const home = await fetch(base + path);

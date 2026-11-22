@@ -28,14 +28,14 @@ targets:
     info:
       path: EyeTracking/Info.plist
       properties:
-        CFBundleDisplayName: Eye Tracking
+        CFBundleDisplayName: Myo
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
         UIRequiredDeviceCapabilities: [arkit]
-        NSCameraUsageDescription: "Eye Tracking usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac."
-        NSLocalNetworkUsageDescription: "Eye Tracking envía tu mirada al Mac de tu misma red para controlar la pantalla."
+        NSCameraUsageDescription: "Myo usa la cámara TrueDepth para seguir tu mirada. Las imágenes nunca salen del iPhone: solo se envían números de geometría al Mac."
+        NSLocalNetworkUsageDescription: "Myo envía tu mirada al Mac de tu misma red para controlar la pantalla."
         NSBonjourServices: [_eyetracking._tcp]
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

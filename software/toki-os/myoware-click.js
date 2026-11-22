@@ -277,7 +277,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null) {
       ? mode === 'active' ? 'Desactivar gestos' : 'Activar gestos'
       : mode === 'active' ? 'Detener prueba' : 'Probar gestos';
     if (openWoki) openWoki.textContent = saved
-      ? 'Abrir Woki OS con esta calibración' : 'Abrir Woki OS sin activar el sensor';
+      ? 'Abrir Myo OS con esta calibración' : 'Abrir Myo OS sin activar el sensor';
     if (useWoki) useWoki.hidden = !saved || !enterWoki || mode !== 'off';
   }
 
