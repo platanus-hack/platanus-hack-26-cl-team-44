@@ -5,6 +5,7 @@
 | Conectar y probar el wearable | [Validación MyoWare](validation/MYOWARE.md) |
 | Entender la estructura | [Arquitectura](architecture/README.md) |
 | Revisar la entrega del concurso | [Requisitos](competition/README.md) |
+| Ver cómo se ve cada pantalla | [Capturas](screenshots/) |
 | Continuar el diseño de la interfaz | [Guía de diseño](product/GUIA-DISENO.md) y [plan](product/PLAN.md) |
 | Configurar WhatsApp | [Guía](product/GUIA-WAPI-PASO-A-PASO.md) |
 | Probar Rappi Chile y revisar lo pendiente | [Conector, evidencia y conexión local](research/rappi-chile/README.md) |

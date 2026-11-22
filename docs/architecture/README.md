@@ -14,6 +14,6 @@ Cinco áreas en la raíz: `software`, `firmware`, `hardware`, `docs` y `tests`. 
 
 Se preservan los archivos ejecutables del SO, puente, firmware y monitor. Cambian las carpetas de lanzamiento; la URL `http://localhost:8000/woki-os.html`, los puertos y protocolos se mantienen.
 
-No hay integración aún entre el monitor HTTP y el WebSocket de sensores esperado por el SO. La calibración de EMG y emisión de eventos siguen pendientes.
+El monitor ([`software/myoware-monitor/server.py`](../../software/myoware-monitor/server.py)) sirve Myo OS en el puerto 8766 y le entrega los gestos calibrados por HTTP (`/emg/gestures`). El WebSocket `EMG_WS` (puerto 8765) queda como puente opcional.
 
 Los marcadores sin implementación y las copias de README anteriores se retiraron. Los originales están disponibles en el historial de Git; no se eliminó investigación ni funcionalidad.
