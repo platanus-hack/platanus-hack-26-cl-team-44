@@ -27,17 +27,20 @@ MODOS = {
     #        opciones del modelo, total entregado, palabras máx., neutral al final
     # Se piden opciones de más: si el filtro descarta una, entra otra del modelo y no una de relleno.
     # Intenciones fijas (Smart Reply: forzar intenciones distintas y una de polaridad contraria). Ninguna "idea libre":
-    # con huecos libres el modelo los llena con datos de la memoria.
+    # con huecos libres el modelo los llena con datos de la memoria. El dato va en el puesto 3: la TV muestra los primeros
+    # (en voz y mención, 3 del modelo + "Después te respondo"); en el puesto 4 el filtro lo recortaba siempre.
     "chat":    {"pedir": 8, "n": 6, "palabras": 8, "neutral": False,
-                "tipos": "1) aceptar o decir que sí, 2) rechazar o dudar, 3) hacer una pregunta de vuelta, 4) mostrar afecto, "
-                         "5) decir que no sabe o que lo piensa, 6) pedir que lo repita o lo aclare, 7) agradecer, "
-                         "8) una que use un dato del contexto solo si responde directo al mensaje (si no hay, otra intención distinta)"},
+                "tipos": "1) aceptar o decir que sí, 2) rechazar o dudar, 3) si un dato del contexto responde directo al mensaje, "
+                         "una con ese único dato (si no hay, una pregunta de vuelta), 4) mostrar afecto, 5) decir que no sabe o que lo piensa, "
+                         "6) pedir que lo repita o lo aclare, 7) agradecer, 8) una pregunta de vuelta distinta"},
     "mencion": {"pedir": 4, "n": 4, "palabras": 8, "neutral": True,      # se muestra en las tarjetas chicas del chat
                 "tipos": "1) una corta que acepta o dice que sí, 2) una corta con la polaridad contraria (no, duda o un límite), "
-                         "3) una pregunta de vuelta, 4) una que use un dato del contexto solo si responde directo al mensaje (si no hay, agradecer o pedir que lo aclaren)"},
+                         "3) si un dato del contexto responde directo al mensaje, una con ese único dato (si no hay, una pregunta de vuelta), "
+                         "4) agradecer o pedir que lo aclaren"},
     "voz":     {"pedir": 4, "n": 4, "palabras": 12, "neutral": True,
                 "tipos": "1) una corta que acepta o dice que sí, 2) una corta con la polaridad contraria (no, duda o un límite), "
-                         "3) una pregunta de vuelta, 4) una que use un dato del contexto solo si responde directo al mensaje (si no hay, agradecer o pedir que lo repitan)"},
+                         "3) si un dato del contexto responde directo al mensaje, una con ese único dato (si no hay, una pregunta de vuelta), "
+                         "4) agradecer o pedir que lo repitan"},
     # En la sala, cuando ninguna tarjeta sirve y ella escribe la primera letra de cada palabra (myo-escucha.js).
     "iniciales": {"pedir": 5, "n": 5, "palabras": 14, "neutral": False,
                   "tipos": "frases distintas que respetan las iniciales, de la más probable a la menos"},
