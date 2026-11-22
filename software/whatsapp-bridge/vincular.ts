@@ -27,7 +27,7 @@ console.log(`Sesión ${session.id} (${existing ? "ya existía" : "creada"})`);
 // El QR también se dibuja en qr.html (se recarga sola cada 3 s), porque la terminal de
 // Claude Code colapsa la salida larga y el QR queda ilegible.
 const page = (body: string) => writeFileSync(QR_FILE,
-  `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular WOKI</title>
+  `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular Myo</title>
 <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font:18px system-ui;color:#111;text-align:center">
 <div>${body}</div></body>`);
 page("<p>Pidiendo el QR a wapi…</p>");

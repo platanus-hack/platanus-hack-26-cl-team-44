@@ -323,7 +323,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
     <div class="ctx glass">
       <div class="avatar">S</div><label>Sofía dice</label>
       <input id="ctxIn" placeholder="El acompañante escribe y aprieta Enter" value="¿Vienes a cenar el domingo?">
-      <div class="typing" id="typing"><i></i><i></i><i></i>Marta está escribiendo</div>
+      <div class="typing" id="typing"><i></i><i></i><i></i>Emmy está escribiendo</div>
     </div>
     <div class="grid2x2" id="cards"></div>
     <div class="hint"><span><b>Ceja</b> decir</span><span><b>Mirar el emoji</b> cambiar emoción</span><span><b>Ceja ×2</b> escribir</span><span><b>Mandíbula</b> pedir la palabra</span><span><b>Mandíbula larga</b> inicio</span></div>
@@ -383,7 +383,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   <div class="overlay" id="calib">
     <div class="cal-card glass" id="calCard">
       <div class="cal-logo">TOKI</div>
-      <div class="cal-title" id="calTitle">Hola, Marta</div>
+      <div class="cal-title" id="calTitle">Hola, Emmy</div>
       <div class="cal-text" id="calText">Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).</div>
       <div class="cal-steps" id="calSteps"><span class="on">Centro</span><span>Esquinas</span><span>Prueba</span><span>Listo</span></div>
       <div class="cal-btns" id="calBtns">
@@ -566,7 +566,7 @@ function renderCards(){
 }
 
 /* ===================== Teclado por grupos ===================== */
-/* memoria local: palabras y frases que Marta ya usó (primer paso del plan de memoria) */
+/* memoria local: palabras y frases que Emmy ya usó (primer paso del plan de memoria) */
 const MEM=(()=>{ let m={words:{},phrases:[]}; try{ m=JSON.parse(localStorage.getItem('toki.motion-lab.mem.v1'))||m; }catch(_){}
   return { m,
     add(text){ for(const w of (text.toLowerCase().match(/[a-záéíóúñü]+/g)||[])) if(w.length>2) m.words[w]=(m.words[w]||0)+1;
@@ -711,7 +711,7 @@ function action(g){
     case 'ceja': confirmFocus(); break;
     case 'ceja_doble':
       if(S.screen==='talk') go('keyboard');
-      else if(S.screen==='keyboard'){ if(S.kb.text.trim()){ $('#ctxIn').value='(Marta escribió) '+S.kb.text.trim(); S.cards=[]; } go('talk'); }
+      else if(S.screen==='keyboard'){ if(S.kb.text.trim()){ $('#ctxIn').value='(Emmy escribió) '+S.kb.text.trim(); S.cards=[]; } go('talk'); }
       break;
     case 'mandibula':
       if(S.screen==='keyboard'){ const p=preds(); if(p[0]){ S.kb.text=S.kb.text.replace(/[^\s]*$/,'')+p[0]+' '; renderKeys(); } }
@@ -1321,7 +1321,7 @@ const CAL = {
   close(){ $('#calib').classList.remove('on'); $('#calDot').classList.remove('on'); renderStatus(); },
   open(kind){ $('#calib').classList.add('on');
     if(kind==='gaze'){ this.steps(['Puntos','Validación','Listo']); this.ui('Calibrar la mirada','Vas a seguir 9 puntos solo con los ojos y después comprobamos con 4 más. Toma unos 25 segundos.',0,false); }
-    else { this.steps(['Centro','Esquinas','Prueba','Listo']); this.ui('Hola, Marta','Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).',0,false); }
+    else { this.steps(['Centro','Esquinas','Prueba','Listo']); this.ui('Hola, Emmy','Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).',0,false); }
     this.showBtns(); }
 };
 window.CAL=CAL;

@@ -10,7 +10,7 @@ const colors = fs.readFileSync(dir + "os-colores.css", "utf8");
 
 // 1. Los módulos del equipo se cargan tal cual y la conexión va después de ellos.
 const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.js", "os-juegos-servicios.js"].map((f) => html.indexOf(`<script src="${f}"`));
-assert.ok(order.every((i) => i > 0), "Woki OS carga los tres módulos y la conexión");
+assert.ok(order.every((i) => i > 0), "Myo OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
 // 2. El SO declara seis tarjetas y el SOS global.

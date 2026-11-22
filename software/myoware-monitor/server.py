@@ -34,8 +34,9 @@ toki_assets={
         'magnetic-pointer','tablet-keyboard',
         'woki-voz','dev-agente',   # voz ElevenLabs (PR #7) y panel dev del agente (PR #4)
         'toki-sse',               # eventos del puente y del agente con el token en un header
+        'toki-apps',              # Servicios: Rappi, Spotify, noticias (apps-bridge)
     )},
-    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard')},
+    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard','toki-apps')},
 }
 dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
 legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
@@ -144,12 +145,20 @@ class Handler(SimpleHTTPRequestHandler):
             local=self.headers.get('Host','') in (f'127.0.0.1:{args.http_port}',f'localhost:{args.http_port}')
             if not local or self.headers.get('Sec-Fetch-Site','same-origin')!='same-origin':
                 return self.send_error(403)
-            cfg={'remoto':os.environ.get('TOKI_REMOTO','').rstrip('/'),'waToken':os.environ.get('TOKI_WA_TOKEN','')}
+            cfg={'remoto':os.environ.get('TOKI_REMOTO','').rstrip('/'),'waToken':os.environ.get('TOKI_WA_TOKEN',''),
+                 'apps':os.environ.get('TOKI_APPS_URL','').rstrip('/')}   # apps-bridge local (Rappi, Spotify…)
             self.send_body(('window.TOKI_ENV='+json.dumps(cfg)+';').encode(),'text/javascript')
         elif path in toki_assets:
             self.send_toki_asset(Path(path[1:]),toki_assets[path])
         elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'text/javascript')
+        elif re.fullmatch(r'/[\w-]+\.(js|css)',path,re.ASCII) and (toki_dir/path[1:]).is_file():
+            # Todo .js/.css de primer nivel de software/toki-os: la TV suma archivos (juegos, servicios) y no deben faltar en escena
+            self.send_toki_asset(Path(path[1:]),'text/javascript' if path.endswith('.js') else 'text/css')
+        elif re.fullmatch(r'/game-covers/[a-z]+\.webp',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'image/webp')
+        elif re.fullmatch(r'/brands/[\w-]+\.svg',path,re.ASCII):
+            self.send_toki_asset(Path(path[1:]),'image/svg+xml')
         elif re.fullmatch(r'/presets/[\w-]+\.json',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'application/json')
         elif self.path in ('/', '/index.html'):super().do_GET()

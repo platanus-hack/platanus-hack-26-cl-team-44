@@ -112,7 +112,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
     const port = server.address().port;
     const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
     if (!hosts.includes(req.headers.host)) { res.writeHead(403); res.end(); return; }
-    const allowed = [`http://127.0.0.1:${port}`, `http://localhost:${port}`, 'http://localhost:8000', 'http://127.0.0.1:8000'];
+    const allowed = [`http://127.0.0.1:${port}`, `http://localhost:${port}`, 'http://localhost:8000', 'http://127.0.0.1:8000', 'http://127.0.0.1:8766', 'http://localhost:8766'];   // 8766: TV del escenario (monitor MyoWare)
     const origin = req.headers.origin;
     if (req.url.startsWith('/api/') && ((origin && !allowed.includes(origin)) || (!origin && req.headers['sec-fetch-site'] === 'cross-site'))) { res.writeHead(403); res.end(); return; }
     if (origin && allowed.includes(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }

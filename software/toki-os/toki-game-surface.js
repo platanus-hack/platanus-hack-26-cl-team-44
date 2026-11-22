@@ -2,7 +2,7 @@
 const tokiGameOwner = crypto.randomUUID();
 window.createTokiGameSurface = function(image, game, onReady, onError) {
   const controller = new AbortController();
-  const base = location.port === '8000' ? 'http://127.0.0.1:8790' : location.origin;
+  const base = window.TOKI_ENV?.apps || (location.port === '8000' ? 'http://127.0.0.1:8790' : location.origin);
   let id, headers, pendingFrame, paintRequest=0;
   function queueFrame(frame) {
     // A busy UI may receive several frames before the next paint. Show the newest one.

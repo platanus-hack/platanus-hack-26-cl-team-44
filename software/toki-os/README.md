@@ -35,7 +35,7 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. `J` sim
 
 1. Inicia el [monitor MyoWare](../myoware-monitor/README.md) con dos sensores en ENV: **mandíbula y ceja**, por USB (A0/A3) o BLE (dos Wireless Shield). Con electrodos puestos, sigue las precauciones de alimentación del montaje elegido.
 2. En el monitor, pulsa **Calibrar gestos**. Sigue los avisos: hablar y parpadear normalmente, cinco levantadas de ceja y cinco contracciones suaves de mandíbula. Pulsa **Probar gestos** para confirmar las etiquetas antes de usar el clic.
-3. Selecciona **Abrir Woki OS con esta calibración** desde el monitor. En la bienvenida, pulsa **Usar mouse + gestos MyoWare**. Para usar otro puntero, actívalo y abre **⌃** abajo a la derecha para pulsar **Activar gestos**. También puedes calibrar desde esa barra.
+3. Selecciona **Abrir Myo OS con esta calibración** desde el monitor. En la bienvenida, pulsa **Usar mouse + gestos MyoWare**. Para usar otro puntero, actívalo y abre **⌃** abajo a la derecha para pulsar **Activar gestos**. También puedes calibrar desde esa barra.
 4. Prueba la rueda y la navegación:
 
    | Gesto | Acción |
@@ -104,7 +104,7 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
-## Juegos y Apps en Woki OS
+## Juegos y Apps en Myo OS
 
 Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
 
@@ -120,7 +120,7 @@ Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefi
   Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
 - **Siempre hay salida:** "‹ Inicio" en la barra, "← Juegos" dentro de una partida y "Volver" dentro de cada app. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
 - **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
-- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
+- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Myo OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
 
 ## Tema y atajos
 

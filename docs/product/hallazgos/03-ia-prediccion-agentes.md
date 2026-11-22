@@ -1,6 +1,6 @@
 # 03. Predicción de texto con IA, sugerencias de LLM y agentes en CAA
 
-Fecha de la investigación: 21-nov-2026. Tema: lo que sabemos sobre sugerencias de LLM, agentes que actúan y cursores que predicen, para WOKI (Marta, ELA media, mirada por webcam de 1,5 a 3,7 grados de error, clic EMG, pantalla grande).
+Fecha de la investigación: 21-nov-2026. Tema: lo que sabemos sobre sugerencias de LLM, agentes que actúan y cursores que predicen, para Myo (Emmy, ELA media, mirada por webcam de 1,5 a 3,7 grados de error, clic EMG, pantalla grande).
 
 Convención: **[V]** = leí la fuente (texto completo o resumen del artículo). **[P]** = solo vi snippet o resumen de buscador; no la leí entera. **[I]** = inferencia mía, no está en la fuente.
 
@@ -12,7 +12,7 @@ Fuente principal del paper: https://www.nature.com/articles/s41467-024-53873-3 (
 
 **Interfaz [V]**
 - Vía "solo iniciales": la persona teclea la primera letra de cada palabra (ejemplo del paper: "ishpitb" para "I saw him playing in the bedroom"). La interfaz muestra **5 frases candidatas**; el número salió de simulaciones que mostraban rendimientos decrecientes más allá de 5.
-- Si ninguna sirve, vía **KeywordAE**: botón "Spell", la persona escribe completas (v1) o parcialmente (v2, ej. "bedr") algunas palabras clave, y el modelo vuelve a expandir. Este es exactamente el "plan B" que WOKI quiere (iniciales, luego expandir).
+- Si ninguna sirve, vía **KeywordAE**: botón "Spell", la persona escribe completas (v1) o parcialmente (v2, ej. "bedr") algunas palabras clave, y el modelo vuelve a expandir. Este es exactamente el "plan B" que Myo quiere (iniciales, luego expandir).
 - Vía **FillMask**: si la frase casi sirve pero una palabra está mal, se selecciona esa palabra y el modelo ofrece alternativas que empiezan con la misma letra. Es el patrón "casi correcta, edítala" más concreto que encontré.
 - Selección por mirada: clic de mirada en un botón de altavoz junto a la frase elegida, y eso dispara el texto a voz.
 - El contexto (turnos previos de la conversación) entra a los LLM y mejora mucho la precisión.
@@ -36,7 +36,7 @@ https://arxiv.org/abs/2205.03767 [P, abstract]
 - Un LLM de 64B expandió exactamente más del 70 % de las frases con abreviaturas de hasta 10 caracteres, para primeras respuestas, con KSR de hasta ~77 % sobre esas expansiones exactas.
 - Un solo turno de contexto **más que duplicó** la precisión frente a sin contexto; el efecto es mayor en frases largas.
 - Afinar con datos ruidosos mejora la robustez a errores de tipeo.
-- Insight [I]: lo que más sube la precisión es el contexto de la conversación. Para WOKI, lo que dice la otra persona (transcrito) es la entrada más valiosa.
+- Insight [I]: lo que más sube la precisión es el contexto de la conversación. Para Myo, lo que dice la otra persona (transcrito) es la entrada más valiosa.
 
 ## 3. Valencia et al., CHI 2023: "The less I type, the better"
 
@@ -58,7 +58,7 @@ Título real: **"The less I type, the better": How AI Language Models can Enhanc
 - **Privacidad:** querían saber si los datos están cifrados, cómo apagar la escucha continua; sin transparencia "no lo usarían".
 - Recomendación del paper: mostrar predicciones mientras escribe ayuda a decidir cuándo usarlas o teclear.
 
-**Implicación fuerte para WOKI [I]:** Marta usa la IA con la familia, justo el caso donde P8 y P10 dijeron que no la querían. Hay que dejar elegir cuándo se muestran sugerencias y no marcar a la persona como "el aparato lo hizo".
+**Implicación fuerte para Myo [I]:** Emmy usa la IA con la familia, justo el caso donde P8 y P10 dijeron que no la querían. Hay que dejar elegir cuándo se muestran sugerencias y no marcar a la persona como "el aparato lo hizo".
 
 ## 4. Autoetnografía "I, Robot?" (arXiv 2509.13671, Weinberg, Gonzalez Penuela, Valencia, Roumen)
 
@@ -82,7 +82,7 @@ https://arxiv.org/html/2410.16634 (leí 100.000 de 145.000 caracteres [V]). 7 en
 - Varias personas usaron la sugerencia como inspiración y la **retocaron** (P2, P4) para hacerla más personal.
 - Varias opciones dan elección pero tardan más en leerse en conversación rápida; algunos preferían 1 sola sugerencia por simplicidad.
 - Con mirada hubo problemas de scroll y objetivos pequeños.
-- Voz monótona: no transmite sarcasmo ni énfasis (conecta con las emociones de WOKI).
+- Voz monótona: no transmite sarcasmo ni énfasis (conecta con las emociones de Myo).
 - El abstract de otro trabajo del mismo grupo advierte que depender del autocompletado puede limitar comentarios espontáneos e impredecibles [P, vía buscador].
 - Insight [I]: para un "te quiero" o un chiste, 1 gesto rápido sobre una frase corta vale más que control fino.
 
@@ -91,7 +91,7 @@ https://arxiv.org/html/2410.16634 (leí 100.000 de 145.000 caracteres [V]). 7 en
 - **KWickChat** (Shen, Yang, Dudley, Kristensson, IUI 2022): sistema de diálogo multi-turno; el usuario escribe palabras clave y un LLM expande a frases con datos del usuario y el diálogo del interlocutor. Reportan ahorro de teclas ~71 % con umbral de tasa de error de palabra 0,65. Paper: https://www.pokristensson.com/pubs/ShenEtAlIUI2022.pdf [P, snippet]. Kristensson cita ahorros teóricos del 50 al 96 % en predicción de oraciones con contexto [P].
 - **LLM a nivel de carácter para CAA** (arXiv 2501.10582): https://arxiv.org/html/2501.10582v3 [P], reporta publicar código y modelos.
 - **Predictive Anchoring** (arXiv 2408.11140): pulsación larga sobre un botón del grid abre un overlay radial con **4 sugerencias** de vocabulario relacionado. Es solo un póster de diseño, sin estudio con usuarios; deja "cuántas opciones" como pregunta abierta [V]. https://arxiv.org/html/2408.11140v1
-- **Multi-System Cognitive Steering** (arXiv 2610.19177, BiAlign Workshop CHI 2026): contexto multimodal (objetos de la escena, emoción, motivo) sube la precisión top-5 de la expansión de abreviaturas hasta ~88 %, el doble que sin contexto, en benchmarks **simulados** [V, abstract]. Sugiere que la emoción se puede controlar mejor que el texto del prompt. https://arxiv.org/pdf/2610.19177 [I]: encaja con el modelo mixto de emociones de WOKI.
+- **Multi-System Cognitive Steering** (arXiv 2610.19177, BiAlign Workshop CHI 2026): contexto multimodal (objetos de la escena, emoción, motivo) sube la precisión top-5 de la expansión de abreviaturas hasta ~88 %, el doble que sin contexto, en benchmarks **simulados** [V, abstract]. Sugiere que la emoción se puede controlar mejor que el texto del prompt. https://arxiv.org/pdf/2610.19177 [I]: encaja con el modelo mixto de emociones de Myo.
 - **SPICA** (IUI 2026, Pal et al., Buffalo; Higginbotham como coautor): agente conversacional para CAA con perfil personal, memoria indexada, herramientas internas y módulo de plan. Informe técnico: https://cse.buffalo.edu/tech-reports/2026-27.pdf [V parcial]. Muestra **3 respuestas candidatas más una opción de "volver a empezar"** por turno. Latencia 10,2 ± 4,8 s. Los expertos calificaron 4,2-4,6/5 y el interlocutor 3,3-3,6/5. Problemas: **tono que se desvía** en temas emocionales (a veces groserías o formalidad que no eran del usuario), y **la selección multi-opción repetida causa fatiga cognitiva y física**. Evaluación con pocos participantes en vivo.
 
 ## 7. Productos con IA
@@ -119,8 +119,8 @@ No encontré información verificable sobre "Talk by Cognixion" como producto se
 - Antipatrón: pedir aprobación para todo causa fatiga y aprobaciones automáticas (https://aws.amazon.com/blogs/machine-learning/implement-human-in-the-loop-confirmation-with-amazon-bedrock-agents/).
 - Un blog de DEV citaba cifras que no pude verificar; las ignoro.
 
-**Inferencias para WOKI [I]:**
-- Mostrar el plan como **tarjeta de 1 a 3 pasos en lenguaje de Marta**, con destinatario y texto en grande ("Enviar a Camila por WhatsApp: llego a las 8"), y un único botón grande de aprobar con confirmación EMG; cancelar con otro gesto distinto o con mirar a otra zona.
+**Inferencias para Myo [I]:**
+- Mostrar el plan como **tarjeta de 1 a 3 pasos en lenguaje de Emmy**, con destinatario y texto en grande ("Enviar a Camila por WhatsApp: llego a las 8"), y un único botón grande de aprobar con confirmación EMG; cancelar con otro gesto distinto o con mirar a otra zona.
 - Clasificar acciones: reversibles (Spotify, luz) se ejecutan con un solo gesto y botón de deshacer; irreversibles (mensajes enviados, llamadas, pagos) piden doble confirmación; emergencia salta el plan y va por combo directo.
 - Lista cerrada de herramientas hace posible mostrar siempre el mismo formato de tarjeta y reduce el riesgo.
 
@@ -135,19 +135,19 @@ No encontré información verificable sobre "Talk by Cognixion" como producto se
 
 ---
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
 1. **Muestra 4 frases, con un orden fijo y estable.** 4 caben sin scroll (Valencia 2023), 5 es lo que usó SpeakFaster, 3 más "otra" usa SPICA. Con mirada de baja precisión, 4 zonas grandes encajan; la fatiga de elegir entre varias es un hallazgo repetido (SPICA, SpeakFaster, Why So Serious).
 2. **Una casilla fija "ninguna sirve" que abre iniciales.** Es el flujo de SpeakFaster (iniciales, luego Spell/KeywordAE). La persona lo usa como plan B sin salir de la pantalla.
 3. **"Casi correcta" = cambiar una palabra, no reescribir.** Copiar FillMask de SpeakFaster: elegir la palabra rara y ver 3 a 4 alternativas. Valencia mostró que editar sin esto anula el ahorro.
-4. **Sugerencias con variedad deliberada de tono**, por ejemplo 1 cariñosa, 1 neutra, 1 con humor, 1 breve. Valencia: lo abrupto sonó mal a 5 de 12; Marta quiere chiste y "te quiero".
+4. **Sugerencias con variedad deliberada de tono**, por ejemplo 1 cariñosa, 1 neutra, 1 con humor, 1 breve. Valencia: lo abrupto sonó mal a 5 de 12; Emmy quiere chiste y "te quiero".
 5. **Contexto = lo que dijo la otra persona.** Cai 2022: un turno de contexto duplica la precisión. Transcribir al interlocutor es la mejor inversión.
 6. **No marcar "hecho por IA" en la pantalla grande donde mira la familia, pero sí al elegir.** Valencia (P8, P10) y la autoetnografía muestran que la familia o amigos pueden sentirlo como "lo hizo el aparato". Dar un modo "familia/íntimo" con sugerencias apagadas o discretas, que se cambia con un gesto.
-7. **Marca clara para Marta, no para el público:** icono pequeño solo en su vista/indicador de qué frase vino de IA y cuál escribió ella; que pueda ver el origen ("por qué esta frase") ya que P11 lo preguntó.
-8. **Personalizar con historial, con permiso y por contexto.** Estilo propio (jerga chilena/colombiana, chistes) es lo que más pidieron, pero la autoetnografía advierte autocensura y filtración de privados. Perfil corto editable por Marta más ejemplos recientes aprobados por ella, con interruptor "no aprender esto".
+7. **Marca clara para Emmy, no para el público:** icono pequeño solo en su vista/indicador de qué frase vino de IA y cuál escribió ella; que pueda ver el origen ("por qué esta frase") ya que P11 lo preguntó.
+8. **Personalizar con historial, con permiso y por contexto.** Estilo propio (jerga chilena/colombiana, chistes) es lo que más pidieron, pero la autoetnografía advierte autocensura y filtración de privados. Perfil corto editable por Emmy más ejemplos recientes aprobados por ella, con interruptor "no aprender esto".
 9. **Aceptación parcial.** Poder aceptar la frase hasta la palabra N (patrón palabra por palabra, clave de agencia) y completar con iniciales o escribir.
 10. **Agente: tarjeta de plan de 1 a 3 pasos, destinatario y texto visibles, un solo gesto para aprobar,** y confirmación reforzada solo para lo irreversible (mensajes, llamadas). Reversibles con "deshacer".
-11. **Imán de cursor: solo como ayuda, nunca sin cancelar.** Con 4 zonas grandes quizá no haga falta; úsalo en el teclado de iniciales. Medir con Marta si el imán le molesta o la lleva a respuestas "esperables".
+11. **Imán de cursor: solo como ayuda, nunca sin cancelar.** Con 4 zonas grandes quizá no haga falta; úsalo en el teclado de iniciales. Medir con Emmy si el imán le molesta o la lleva a respuestas "esperables".
 12. **Honestidad en la demo:** SpeakFaster logró +29 a 60 % de wpm con 2 usuarios, no 5×. Promete rapidez realista y calidad de voz propia.
 
 ## Recomendaciones de diseño con números

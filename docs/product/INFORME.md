@@ -1,7 +1,7 @@
-# WOKI · Investigación UX/UI para una interfaz por mirada
+# Myo · Investigación UX/UI para una interfaz por mirada
 
 Fecha: 21 de noviembre de 2026. Platanus Hack 26.
-Usuaria de diseño: **Marta, ELA en etapa media**. Mueve ojos y cabeza, no tiene habla funcional ni manos útiles.
+Usuaria de diseño: **Emmy, ELA en etapa media**. Mueve ojos y cabeza, no tiene habla funcional ni manos útiles.
 Pantalla: **TV o monitor grande**, mirado desde la cama o la silla. La familia también lo ve.
 
 Este informe resume 6 investigaciones hechas en paralelo. El detalle y todas las URLs están en `hallazgos/01` a `06`. Ahí cada afirmación está marcada como verificada, sacada del buscador o inferida. Aquí solo uso lo que resiste esa revisión.
@@ -49,7 +49,7 @@ Este informe resume 6 investigaciones hechas en paralelo. El detalle y todas las
 - **"Triste" y "enojado" casi no se distinguen en la voz sintética** (Speak Ease). La risa, el sarcasmo y el cariño sí se notan. Por eso la emoción también se muestra en la TV, con emoji y color.
 
 ### 2.5 Conversación y familia *(05)*
-- **Cuando se pierde el turno, los demás cambian de tema o sacan el celular.** Un indicador visible de "Marta está escribiendo" lo evita.
+- **Cuando se pierde el turno, los demás cambian de tema o sacan el celular.** Un indicador visible de "Emmy está escribiendo" lo evita.
 - **Los usuarios inventan sus propios recursos:** algunos dicen una palabra para "pedir la palabra" y otros escriben la emoción al inicio de la frase. Ambos se pueden convertir en funciones.
 - **Que terminen tus frases es aceptable en privado, pero molesta en grupo.** *"I am very uncomfortable with someone speaking for me"* (usuario de AACrobat).
 - **La cuidadora quiere que el aparato la reemplace en lo mecánico:** *"You are making me obsolete, which I would love to be."*
@@ -63,7 +63,7 @@ Este informe resume 6 investigaciones hechas en paralelo. El detalle y todas las
 
 ## 3. Contra qué competimos
 
-| | Apple Eye Tracking | Look to Speak | Tobii TD Talk + Pilot | **WOKI** |
+| | Apple Eye Tracking | Look to Speak | Tobii TD Talk + Pilot | **Myo** |
 |---|---|---|---|---|
 | Precio | Incluido | Gratis | Miles de US$ | Unos US$375 en hardware |
 | Precisión necesaria | Cursor fino | 3 direcciones | Rastreador IR | Zonas grandes + clic EMG |
@@ -81,7 +81,7 @@ Este informe resume 6 investigaciones hechas en paralelo. El detalle y todas las
 - No hay ningún estudio sobre una IA que "hable por" una persona con ELA.
 - No hay ningún estudio sobre combos de gestos como comandos.
 - No hay estudios de emoción con mirada o EMG, ni en español de Chile o Colombia.
-- Todos los números de la guía de diseño son puntos de partida. Hay que calibrarlos con alguien del equipo haciendo de Marta.
+- Todos los números de la guía de diseño son puntos de partida. Hay que calibrarlos con alguien del equipo haciendo de Emmy.
 
 ---
 

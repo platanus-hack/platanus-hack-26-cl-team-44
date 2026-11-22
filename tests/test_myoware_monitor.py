@@ -66,7 +66,8 @@ class MonitorTest(unittest.TestCase):
                 ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
                 ('/iphone-gaze.js','text/javascript','window.IPHONE'),
-                ('/layout.css','text/css','.rest-wake'),
+                ('/layout.css','text/css','.rest-actions'),
+                ('/game-surface.css','text/css','.external-viewport'),
                 ('/magnetic-pointer.js?v=24','text/javascript','createMenuPointer'),
                 ('/magnetic-pointer.css?v=24','text/css','.dwell-outline'),
                 ('/tablet-keyboard.js?v=21','text/javascript','toki-'),
@@ -77,6 +78,9 @@ class MonitorTest(unittest.TestCase):
                 with urllib.request.urlopen(base+route,timeout=1) as r:
                     self.assertEqual(r.headers.get_content_type(),content_type)
                     self.assertIn(marker,r.read().decode())
+            with urllib.request.urlopen(base+'/game-covers/eyedrive.webp',timeout=1) as r:
+                self.assertEqual(r.headers.get_content_type(),'image/webp')
+                self.assertEqual(r.read(4),b'RIFF')
             for route in ['/server.py','/../README.md','/README.md','/eye-engine/../server.py','/presets/%2e%2e/Info.json']:
                 with self.assertRaises(urllib.error.HTTPError) as caught:
                     urllib.request.urlopen(base+route)
@@ -106,7 +110,7 @@ class TokiConfigTest(unittest.TestCase):
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]
-        env = {**os.environ, 'TOKI_REMOTO': 'https://vps.example/', 'TOKI_WA_TOKEN': 't0k'}
+        env = {**os.environ, 'TOKI_REMOTO': 'https://vps.example/', 'TOKI_WA_TOKEN': 't0k', 'TOKI_APPS_URL': 'http://127.0.0.1:8793/'}
         process = subprocess.Popen([sys.executable, str(ROOT/'software/myoware-monitor/server.py'),
                                     '--serial-port', os.ttyname(slave), '--http-port', str(port)],
                                    env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -128,7 +132,7 @@ class TokiConfigTest(unittest.TestCase):
                     time.sleep(.05)
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body.removeprefix('window.TOKI_ENV=').rstrip(';')),
-                             {'remoto': 'https://vps.example', 'waToken': 't0k'})
+                             {'remoto': 'https://vps.example', 'waToken': 't0k', 'apps': 'http://127.0.0.1:8793'})
             self.assertEqual(get({'Sec-Fetch-Site': 'cross-site'})[0], 403)
             self.assertEqual(get({'Sec-Fetch-Site': 'same-origin', 'Host': f'evil.example:{port}'})[0], 403)
         finally:

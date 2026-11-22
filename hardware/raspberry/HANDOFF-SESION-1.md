@@ -1,4 +1,4 @@
-# Traspaso · Sesión 1 · WOKI en Raspberry Pi + TS7 Pro
+# Traspaso · Sesión 1 · Myo en Raspberry Pi + TS7 Pro
 
 Fecha: 21-11-2026. Carpeta de trabajo: `/Users/emmypardo/Documents/Repositorios/woki-ux-research/raspberry/`
 

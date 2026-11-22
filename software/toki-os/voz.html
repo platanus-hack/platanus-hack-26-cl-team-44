@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WOKI · La voz de Marta</title>
+<title>Myo · La voz de Emmy</title>
 <style>
 :root{
   --bg:#000; --card:rgba(255,255,255,.065); --card-hi:rgba(255,255,255,.11); --hair:rgba(255,255,255,.12);
@@ -76,14 +76,14 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
 </head>
 <body>
 <main>
-  <div class="pill"><span class="dot" id="stDot"></span><span id="stTx">Conectando con WOKI…</span></div>
-  <h1>La voz de Marta</h1>
-  <p class="lead">Elijan cómo va a sonar Marta cuando WOKI hable por ella. Pueden crear su propia voz, elegir otras, o ambas cosas. Al final, Marta prueba cada una en la TV y se queda con la que sienta suya.</p>
+  <div class="pill"><span class="dot" id="stDot"></span><span id="stTx">Conectando con Myo…</span></div>
+  <h1>La voz de Emmy</h1>
+  <p class="lead">Elijan cómo va a sonar Emmy cuando Myo hable por ella. Pueden crear su propia voz, elegir otras, o ambas cosas. Al final, Emmy prueba cada una en la TV y se queda con la que sienta suya.</p>
 
   <!-- 1 · SU PROPIA VOZ -->
   <section class="card">
     <h2>1 · Su propia voz</h2>
-    <p>Con 1 a 2 minutos de Marta hablando sola alcanza. Lo ideal es audio de antes de que la ELA le cambiara la voz.</p>
+    <p>Con 1 a 2 minutos de Emmy hablando sola alcanza. Lo ideal es audio de antes de que la ELA le cambiara la voz.</p>
     <div class="tabs">
       <button class="tab on" data-tab="subir"><b>Subir audios</b><small>Notas de voz de WhatsApp, grabaciones</small></button>
       <button class="tab" data-tab="grabar"><b>Grabar ahora</b><small>Si todavía puede leer en voz alta</small></button>
@@ -94,13 +94,13 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
         <input type="file" id="files" multiple accept="audio/*,.opus,.ogg,.m4a,.mp3,.wav,.webm,.aac">
         <b style="color:var(--txt)">Toca para elegir audios</b><br>o arrástralos aquí
       </label>
-      <p style="font-size:14px;margin-top:10px">En WhatsApp: abre el chat → mantén presionada la nota de voz → Compartir → Guardar. Solo audios donde se escuche a Marta, sin música ni otras personas.</p>
+      <p style="font-size:14px;margin-top:10px">En WhatsApp: abre el chat → mantén presionada la nota de voz → Compartir → Guardar. Solo audios donde se escuche a Emmy, sin música ni otras personas.</p>
       <ul class="files" id="fileList"></ul>
     </div>
 
     <div data-pane="grabar" hidden>
-      <p>Que Marta lea este texto con calma, como si conversara. Un lugar silencioso y el celular a un palmo de la boca.</p>
-      <div class="read" id="readTx">Hola, soy Marta. Me encanta el café con leche en la mañana y escuchar boleros en la tarde. Los domingos almorzamos todos juntos y siempre hay alguien que llega tarde. ¿Y qué esperabas? Así es esta familia. Cuando algo me da risa, me río fuerte. Cuando algo no me gusta, lo digo. Gracias por estar aquí. Te quiero mucho. Obvio que sí. Ya po, porfa, no te demores.</div>
+      <p>Que Emmy lea este texto con calma, como si conversara. Un lugar silencioso y el celular a un palmo de la boca.</p>
+      <div class="read" id="readTx">Hola, soy Emmy. Me encanta el café con leche en la mañana y escuchar boleros en la tarde. Los domingos almorzamos todos juntos y siempre hay alguien que llega tarde. ¿Y qué esperabas? Así es esta familia. Cuando algo me da risa, me río fuerte. Cuando algo no me gusta, lo digo. Gracias por estar aquí. Te quiero mucho. Obvio que sí. Ya po, porfa, no te demores.</div>
       <div class="rec">
         <button class="recbtn" id="recBtn" aria-label="Grabar"><i></i></button>
         <div><div class="clock" id="recClock">0:00</div><div class="mtx" id="recHint">Toca para grabar · ideal 1 minuto</div></div>
@@ -110,7 +110,7 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
     <div class="meter"><i id="meter"></i></div>
     <div class="mtx" id="meterTx">0:00 de audio · recomendado 1 a 2 min</div>
 
-    <label class="chk"><input type="checkbox" id="consent"><span><b>Marta autoriza</b> crear una copia de su voz para que WOKI hable por ella. Si no puede firmar, lo autoriza su representante. La voz no se usa para nada más.</span></label>
+    <label class="chk"><input type="checkbox" id="consent"><span><b>Emmy autoriza</b> crear una copia de su voz para que Myo hable por ella. Si no puede firmar, lo autoriza su representante. La voz no se usa para nada más.</span></label>
     <label class="chk"><input type="checkbox" id="noise"><span>Hay ruido de fondo (tele, calle): limpiarlo</span></label>
     <button class="pri" id="cloneBtn" disabled>Crear su voz</button>
     <div class="msg" id="cloneMsg"></div>
@@ -119,7 +119,7 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
   <!-- 2 · ELEGIR OTRAS VOCES -->
   <section class="card">
     <h2>2 · Elegir voces</h2>
-    <p>Escuchen y marquen hasta 6 que se parezcan a cómo habla Marta. Son las que ella va a probar en la TV.</p>
+    <p>Escuchen y marquen hasta 6 que se parezcan a cómo habla Emmy. Son las que ella va a probar en la TV.</p>
     <div class="chips" id="filters">
       <button class="chip on" data-f="es">En español</button>
       <button class="chip" data-f="female">Mujer</button>
@@ -131,8 +131,8 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
 
   <!-- 3 · LAS QUE PROBARÁ MARTA -->
   <section class="card">
-    <h2>3 · Las que probará Marta</h2>
-    <p>La estrella marca con cuál parte WOKI. En la TV: <b>Ajustes → Voz</b>, cada ceja cambia de voz y la dice en voz alta.</p>
+    <h2>3 · Las que probará Emmy</h2>
+    <p>La estrella marca con cuál parte Myo. En la TV: <b>Ajustes → Voz</b>, cada ceja cambia de voz y la dice en voz alta.</p>
     <div class="cands" id="cands"></div>
   </section>
 </main>
@@ -165,11 +165,11 @@ async function init(){
     const j = await api('/api/voz/estado');
     S.cands = j.opciones || []; S.actual = j.actual;
     $('#stDot').className = 'dot '+(j.tts?'ok':'bad');
-    $('#stTx').textContent = j.tts ? 'Conectado con WOKI · ElevenLabs listo' : 'WOKI conectado · falta la clave de ElevenLabs en el bridge';
+    $('#stTx').textContent = j.tts ? 'Conectado con Myo · ElevenLabs listo' : 'Myo conectado · falta la clave de ElevenLabs en el bridge';
     renderCands();
     if(j.tts) loadVoices();
   }catch(e){
-    $('#stDot').className='dot bad'; $('#stTx').textContent='No encuentro WOKI en '+BRIDGE+' · ¿está corriendo el bridge?';
+    $('#stDot').className='dot bad'; $('#stTx').textContent='No encuentro Myo en '+BRIDGE+' · ¿está corriendo el bridge?';
   }
 }
 
@@ -236,10 +236,10 @@ $('#cloneBtn').onclick = async () => {
   const btn = $('#cloneBtn'); btn.disabled = true; msg('#cloneMsg','Creando su voz… (unos segundos)');
   try{
     const audios = await Promise.all(S.muestras.map(async m => ({ b64: await b64(m.blob), mime:m.mime, nombre:m.nombre })));
-    const j = await api('/api/voz/clonar', { nombre:'Marta (su voz)', consentimiento:true, limpiarRuido:$('#noise').checked, audios });
+    const j = await api('/api/voz/clonar', { nombre:'Emmy (su voz)', consentimiento:true, limpiarRuido:$('#noise').checked, audios });
     S.cands = [j.voz, ...S.cands.filter(c => c.id!==j.voz.id)].slice(0, MAX); S.actual = j.voz.id;
     renderCands(); renderVoices();
-    msg('#cloneMsg', j.requiresVerification ? 'Voz creada, pero ElevenLabs pide verificarla en su web antes de usarla.' : '✓ Voz creada y elegida. Escúchenla abajo, en “Las que probará Marta”.', j.requiresVerification ? 'err' : 'ok');
+    msg('#cloneMsg', j.requiresVerification ? 'Voz creada, pero ElevenLabs pide verificarla en su web antes de usarla.' : '✓ Voz creada y elegida. Escúchenla abajo, en “Las que probará Emmy”.', j.requiresVerification ? 'err' : 'ok');
     probar(j.voz.id);
   }catch(e){ msg('#cloneMsg','No se pudo crear la voz: '+e.message,'err'); }
   updateClone();
@@ -290,7 +290,7 @@ function renderCands(){
 async function probar(id){
   S.playing = 'try:'+id; renderCands();
   try{
-    const r = await fetch(BRIDGE+'/api/voz/tts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ text:'Hola, soy Marta. ¿Cómo estás? Obvio que te extrañé.', emo:'carinosa', voiceId:id }) });
+    const r = await fetch(BRIDGE+'/api/voz/tts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ text:'Hola, soy Emmy. ¿Cómo estás? Obvio que te extrañé.', emo:'carinosa', voiceId:id }) });
     if(!r.ok) throw new Error('HTTP '+r.status);
     if(player) player.pause(); player = new Audio(URL.createObjectURL(await r.blob())); await player.play();
     player.onended = () => { S.playing=null; renderCands(); };
@@ -307,7 +307,7 @@ $('#cands').onclick = e => {
 $('#saveBtn').onclick = async () => {
   const b = $('#saveBtn'); b.disabled = true; msg('#saveMsg','Guardando…');
   try{ const j = await api('/api/voz/opciones', { opciones:S.cands, actual:S.actual }); S.actual = j.actual;
-    msg('#saveMsg', j.opciones.length ? `✓ Listo. La TV tiene ${j.opciones.length} voz${j.opciones.length>1?'es':''} para que Marta pruebe.` : 'Guardado sin voces: WOKI usará la voz del sistema.', 'ok'); }
+    msg('#saveMsg', j.opciones.length ? `✓ Listo. La TV tiene ${j.opciones.length} voz${j.opciones.length>1?'es':''} para que Emmy pruebe.` : 'Guardado sin voces: Myo usará la voz del sistema.', 'ok'); }
   catch(e){ msg('#saveMsg','No se pudo guardar: '+e.message,'err'); }
   b.disabled = false;
 };
