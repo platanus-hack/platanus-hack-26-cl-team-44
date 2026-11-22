@@ -9,6 +9,7 @@
 #   bash deploy/toki.sh clave           copia la contraseña de /equipo/ al portapapeles (usuario: equipo)
 #   bash deploy/toki.sh escena          arranca el escenario (igual que doble clic en Toki.command)
 #   bash deploy/toki.sh rappi           abre el login oficial de Rappi (Colombia por defecto) y guarda la sesión local
+#   bash deploy/toki.sh llave "ssh-ed25519 AAAA… nombre"   autoriza la llave SSH de otra persona del equipo en la VPS
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
@@ -55,11 +56,16 @@ case "$cmd" in
   escena)
     exec bash "$RAIZ/deploy/escena.sh" "$@"
     ;;
+  llave)
+    k="${1:-}"
+    [[ "$k" =~ ^ssh-(ed25519|rsa)\ [A-Za-z0-9+/=]{60,}( .*)?$ ]] || { echo 'Pásame la llave PÚBLICA completa (empieza con ssh-ed25519 o ssh-rsa), entre comillas.'; exit 1; }
+    printf '%s\n' "$k" | en_vps 'k=$(cat); grep -qxF "$k" /root/.ssh/authorized_keys || printf "%s\n" "$k" >> /root/.ssh/authorized_keys; echo "llaves autorizadas: $(grep -c . /root/.ssh/authorized_keys)"'
+    ;;
   rappi)
     [ -d "$RAIZ/software/apps-bridge/node_modules" ] || npm ci --silent --no-audit --no-fund --prefix "$RAIZ/software/apps-bridge"
     TOKI_RAPPI_PAIS="${TOKI_RAPPI_PAIS:-co}" node "$RAIZ/software/apps-bridge/connectors/rappi-login.mjs"
     ;;
   *)
-    sed -n '2,12p' "$0"
+    sed -n '2,13p' "$0"
     ;;
 esac
