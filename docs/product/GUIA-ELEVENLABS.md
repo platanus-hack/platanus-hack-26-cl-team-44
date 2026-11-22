@@ -6,8 +6,8 @@ Todo pasa por el puente (`software/whatsapp-bridge`). La API key solo vive en `s
 
 | Momento | Qué pasa | Archivo |
 |---|---|---|
-| Marta elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). Modelo `eleven_v3`, elegido al oído frente a flash, multilingual v2 y v4 turbo: es el menos robótico. La emoción de la tarjeta va como etiqueta que el modelo entiende y no pronuncia (`[sarcastically]`, `[whispers]`, `[cheerfully]`, `[warmly]`, `[excited]`). Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `software/toki-os/woki-voz.js` + `speak()` en `woki-os.html` |
-| Aparecen las 4 tarjetas, y al iniciar las reacciones | Se pide el audio por adelantado: v3 tarda ~1,5 s por frase y así suena al instante cuando elige. Consume créditos: 4 frases por turno (`VOZ.PREFETCH=false` lo apaga) | `renderCards()`, `VOZ.init()` |
+| Marta elige una frase, una reacción o escribe | Suena con su voz (clonada o elegida). Modelo `eleven_multilingual_v2`: es el que mejor respeta el acento de una voz clonada (con `eleven_v3`, la voz colombiana clonada salía con acento argentino). La emoción de la tarjeta cambia estabilidad, estilo y velocidad. Con `ELEVENLABS_TTS_MODEL=eleven_v3` se usan etiquetas de emoción (`[sarcastically]`, `[whispers]`…), más expresivas pero el acento del clon se pierde. Si ElevenLabs falla, usa la voz del sistema: nunca queda muda | `software/toki-os/woki-voz.js` + `speak()` en `woki-os.html` |
+| Aparecen las 4 tarjetas, y al iniciar las reacciones | Se pide el audio por adelantado (~0,5–2,5 s por frase según el modelo), así suena al instante cuando elige. Consume créditos: 4 frases por turno (`VOZ.PREFETCH=false` lo apaga) | `renderCards()`, `VOZ.init()` |
 | Alarma de **emergencia** (ceja ×2 → mandíbula) | Pasada la ventana de 3 s para cancelar, un agente de ElevenLabs llama por teléfono al contacto de emergencia, explica qué pasó y pide que vaya. La de **atención** no llama | `alarmTick()` → `VOZ.emergencia(A)` → `POST /api/emergencia/llamar` |
 | La llamada avanza | La pantalla de alarma le muestra a Marta cada etapa: *Llamada enviada a Camila* → *Camila contestó* → **pantalla verde "Camila viene en camino"** con su respuesta, un sonido y un aviso hablado; o *Camila no puede ir: …* (la alarma sigue). Al terminar la llamada, ElevenLabs extrae `viene` y `respuesta` de la conversación (data collection del agente). Si el operador rechaza la llamada, a los 75 s se informa como fallida | `GET /api/emergencia/estado` |
 | Onboarding de voz (familia, desde el celular) | `voz.html`: (1) clonar su voz subiendo notas de voz de WhatsApp o grabando 1 minuto; (2) escuchar y elegir voces; (3) dejar hasta 6 candidatas | `software/toki-os/voz.html` |
@@ -17,7 +17,7 @@ Todo pasa por el puente (`software/whatsapp-bridge`). La API key solo vive en `s
 
 ```
 ELEVENLABS_API_KEY=...
-# opcional: ELEVENLABS_TTS_MODEL=eleven_flash_v2_5   (por defecto eleven_v3: más natural; flash es más rápido)
+# opcional: ELEVENLABS_TTS_MODEL=eleven_v3   (por defecto eleven_multilingual_v2: respeta el acento del clon; v3 es más expresivo; eleven_flash_v2_5 más rápido)
 
 # Llamada de emergencia
 ELEVENLABS_AGENT_ID=...            # lo imprime setup-emergencia.ts
