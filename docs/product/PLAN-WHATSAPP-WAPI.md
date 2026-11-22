@@ -1,4 +1,4 @@
-# WOKI · Plan de mensajes por WhatsApp con wapi
+# Myo · Plan de mensajes por WhatsApp con wapi
 
 **Objetivo:** que la pantalla **Mensajes** de `software/toki-os/woki-os.html` deje de simular y envíe de verdad desde el WhatsApp del celular a una lista cerrada de contactos (Sofía, Camila). Y que los mensajes que llegan aparezcan en la TV como "Sofía dice…" para que Emmy responda con las 4 frases.
 

@@ -1,6 +1,6 @@
-# WOKI · Plan de onboarding y memoria personal
+# Myo · Plan de onboarding y memoria personal
 
-**Objetivo:** que WOKI suene a Emmy desde el primer día y cada vez más con el uso. Que sepa cómo se llaman sus nietos, que los domingos almuerza con Sofía, que dice "obvio" y "porfa", que su humor es irónico y que no habla de su diagnóstico con todos.
+**Objetivo:** que Myo suene a Emmy desde el primer día y cada vez más con el uso. Que sepa cómo se llaman sus nietos, que los domingos almuerza con Sofía, que dice "obvio" y "porfa", que su humor es irónico y que no habla de su diagnóstico con todos.
 
 **Por qué importa (con datos):**
 - En sus pruebas, **agregar un perfil subió el acierto de Sonnet de 7 a 15 de 100** en habla personal. Es la palanca con más ganancia que midieron.
@@ -23,7 +23,7 @@ Por eso la memoria se diseña con control de Emmy desde el inicio.
 
 Se hace en un formulario de celular, por bloques y con ejemplos. **Todo es opcional y editable.**
 
-| Bloque | Qué se pregunta | Ejemplo | Para qué lo usa WOKI |
+| Bloque | Qué se pregunta | Ejemplo | Para qué lo usa Myo |
 |---|---|---|---|
 | **Identidad** | Nombre, cómo le gusta que le digan, edad, de dónde es, cómo habla | "Emmy, la Tata para los nietos. Santiago. Dice 'porfa', 'obvio', 'ya po'" | Vocabulario y tono |
 | **Personas** | Nombre, relación, apodo, cómo le habla a cada una | "Sofía, hija, 'Sofi', cariñosa y bromista". "Camila, cuidadora, formal pero cercana" | Respuestas distintas según con quién habla |
@@ -109,7 +109,7 @@ Son 5 tipos de memoria, cada uno con su propia regla de privacidad:
 
 ### Señales de aprendizaje
 
-| Lo que hace Emmy | Qué aprende WOKI |
+| Lo que hace Emmy | Qué aprende Myo |
 |---|---|
 | Elige una frase sin cambios | +1 a ese estilo con esa persona |
 | Cambia la emoción | Ajusta la emoción por defecto con esa persona |
@@ -156,7 +156,7 @@ Son 5 tipos de memoria, cada uno con su propia regla de privacidad:
 | ✅ Léxico local: la predicción prioriza sus palabras | Importar un chat de WhatsApp |
 | **Perfil JSON escrito a mano** para la Emmy ficticia, enviado a Claude en cada turno | Formulario de onboarding para la familia |
 | **Personas: elegir con quién habla** (Sofía o Camila) cambia el tono de las 4 frases | Reconocer quién habla por la voz |
-| **Guardar la frase elegida como estilo** y mostrar "WOKI recordó que dices 'obvio'" | Episodios y rutinas automáticas |
+| **Guardar la frase elegida como estilo** y mostrar "Myo recordó que dices 'obvio'" | Episodios y rutinas automáticas |
 | Mencionar la privacidad en el pitch | Panel para ver y borrar recuerdos, modo íntimo, "no aprendas esto" |
 
 **Momento para la demo:** la misma pregunta, "¿Vienes el domingo?", hecha por Sofía y luego por Camila, produce respuestas distintas: cariñosa y con chiste para la hija, cordial para la cuidadora. En 15 segundos se ve la personalización sin explicarla.

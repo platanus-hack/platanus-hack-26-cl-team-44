@@ -1,4 +1,4 @@
-# WOKI · Guía de diseño (TV + mirada + EMG)
+# Myo · Guía de diseño (TV + mirada + EMG)
 
 Son valores iniciales para la hackathon. Cada número trae su origen: **[F]** viene de una fuente y **[P]** es una propuesta a calibrar. El detalle está en `hallazgos/`.
 

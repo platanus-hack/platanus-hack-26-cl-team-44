@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WOKI · La voz de Emmy</title>
+<title>Myo · La voz de Emmy</title>
 <style>
 :root{
   --bg:#000; --card:rgba(255,255,255,.065); --card-hi:rgba(255,255,255,.11); --hair:rgba(255,255,255,.12);
@@ -76,9 +76,9 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
 </head>
 <body>
 <main>
-  <div class="pill"><span class="dot" id="stDot"></span><span id="stTx">Conectando con WOKI…</span></div>
+  <div class="pill"><span class="dot" id="stDot"></span><span id="stTx">Conectando con Myo…</span></div>
   <h1>La voz de Emmy</h1>
-  <p class="lead">Elijan cómo va a sonar Emmy cuando WOKI hable por ella. Pueden crear su propia voz, elegir otras, o ambas cosas. Al final, Emmy prueba cada una en la TV y se queda con la que sienta suya.</p>
+  <p class="lead">Elijan cómo va a sonar Emmy cuando Myo hable por ella. Pueden crear su propia voz, elegir otras, o ambas cosas. Al final, Emmy prueba cada una en la TV y se queda con la que sienta suya.</p>
 
   <!-- 1 · SU PROPIA VOZ -->
   <section class="card">
@@ -110,7 +110,7 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
     <div class="meter"><i id="meter"></i></div>
     <div class="mtx" id="meterTx">0:00 de audio · recomendado 1 a 2 min</div>
 
-    <label class="chk"><input type="checkbox" id="consent"><span><b>Emmy autoriza</b> crear una copia de su voz para que WOKI hable por ella. Si no puede firmar, lo autoriza su representante. La voz no se usa para nada más.</span></label>
+    <label class="chk"><input type="checkbox" id="consent"><span><b>Emmy autoriza</b> crear una copia de su voz para que Myo hable por ella. Si no puede firmar, lo autoriza su representante. La voz no se usa para nada más.</span></label>
     <label class="chk"><input type="checkbox" id="noise"><span>Hay ruido de fondo (tele, calle): limpiarlo</span></label>
     <button class="pri" id="cloneBtn" disabled>Crear su voz</button>
     <div class="msg" id="cloneMsg"></div>
@@ -132,7 +132,7 @@ label.chk input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--blue);f
   <!-- 3 · LAS QUE PROBARÁ MARTA -->
   <section class="card">
     <h2>3 · Las que probará Emmy</h2>
-    <p>La estrella marca con cuál parte WOKI. En la TV: <b>Ajustes → Voz</b>, cada ceja cambia de voz y la dice en voz alta.</p>
+    <p>La estrella marca con cuál parte Myo. En la TV: <b>Ajustes → Voz</b>, cada ceja cambia de voz y la dice en voz alta.</p>
     <div class="cands" id="cands"></div>
   </section>
 </main>
@@ -165,11 +165,11 @@ async function init(){
     const j = await api('/api/voz/estado');
     S.cands = j.opciones || []; S.actual = j.actual;
     $('#stDot').className = 'dot '+(j.tts?'ok':'bad');
-    $('#stTx').textContent = j.tts ? 'Conectado con WOKI · ElevenLabs listo' : 'WOKI conectado · falta la clave de ElevenLabs en el bridge';
+    $('#stTx').textContent = j.tts ? 'Conectado con Myo · ElevenLabs listo' : 'Myo conectado · falta la clave de ElevenLabs en el bridge';
     renderCands();
     if(j.tts) loadVoices();
   }catch(e){
-    $('#stDot').className='dot bad'; $('#stTx').textContent='No encuentro WOKI en '+BRIDGE+' · ¿está corriendo el bridge?';
+    $('#stDot').className='dot bad'; $('#stTx').textContent='No encuentro Myo en '+BRIDGE+' · ¿está corriendo el bridge?';
   }
 }
 
@@ -307,7 +307,7 @@ $('#cands').onclick = e => {
 $('#saveBtn').onclick = async () => {
   const b = $('#saveBtn'); b.disabled = true; msg('#saveMsg','Guardando…');
   try{ const j = await api('/api/voz/opciones', { opciones:S.cands, actual:S.actual }); S.actual = j.actual;
-    msg('#saveMsg', j.opciones.length ? `✓ Listo. La TV tiene ${j.opciones.length} voz${j.opciones.length>1?'es':''} para que Emmy pruebe.` : 'Guardado sin voces: WOKI usará la voz del sistema.', 'ok'); }
+    msg('#saveMsg', j.opciones.length ? `✓ Listo. La TV tiene ${j.opciones.length} voz${j.opciones.length>1?'es':''} para que Emmy pruebe.` : 'Guardado sin voces: Myo usará la voz del sistema.', 'ok'); }
   catch(e){ msg('#saveMsg','No se pudo guardar: '+e.message,'err'); }
   b.disabled = false;
 };

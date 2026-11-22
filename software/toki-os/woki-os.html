@@ -875,7 +875,7 @@ function markLikelyKeys(){
     el.classList.toggle('likely', ws[i]===top && top>=4); });   // solo el grupo más probable se marca
 }
 
-/* ---- Teclado por iniciales: Emmy elige la primera letra de cada palabra y WOKI completa la frase ---- */
+/* ---- Teclado por iniciales: Emmy elige la primera letra de cada palabra y Myo completa la frase ---- */
 const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const initialsOf=t=>(fold(t).match(/[a-zñ0-9]+/g)||[]).map(w=>w[0]).join('');
 function kbIni(){ S.kb={level:1,group:null,text:'',mode:'ini',ini:''}; go('keyboard'); }

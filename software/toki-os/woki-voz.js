@@ -93,17 +93,17 @@
       const poll = setInterval(async () => {
         if(S.alarm!==A || A.ack){ clearInterval(poll); return; }
         try{
-          const e = await api('/api/emergencia/estado'), quien = e.contacto || 'Tu contacto';
-          if(e.estado==='failed'){ set(`⚠️ ${quien} no contestó · la llamada falló`); clearInterval(poll); return; }
+          const e = await api('/api/emergencia/estado'), quien = e.contacto || 'Tu contacto', pl = !!e.varios;   // varios = la frase va en plural
+          if(e.estado==='failed'){ set(pl ? `⚠️ ${quien} no contestaron · las llamadas fallaron` : `⚠️ ${quien} no contestó · la llamada falló`); clearInterval(poll); return; }
           if(e.estado==='done' && e.viene===true){ clearInterval(poll); confirmada(A, quien, e.respuesta); return; }
           if(e.estado==='done' && e.viene===false){ clearInterval(poll);
-            set(`⚠️ ${quien} no puede ir${e.respuesta ? ': '+e.respuesta : ''}`);
-            if(window.island) island('⚠️', `${quien} no puede ir. La alarma sigue activa.`); return; }
+            set(`⚠️ ${quien} no ${pl?'pueden':'puede'} ir${e.respuesta ? ': '+e.respuesta : ''}`);
+            if(window.island) island('⚠️', `${quien} no ${pl?'pueden':'puede'} ir. La alarma sigue activa.`); return; }
           set({ initiated:`📤 Llamada enviada a ${quien} · sonando…`,
-                'in-progress':`📞 ${quien} contestó · está escuchando el aviso`,
+                'in-progress':pl ? `📞 ${quien} contestaron · están escuchando el aviso` : `📞 ${quien} contestó · está escuchando el aviso`,
                 processing:'📞 Llamada terminada · confirmando la respuesta…',
                 done:'📞 Llamada terminada · confirmando la respuesta…' }[e.estado] || '');
-          if(e.estado==='done' && ++esperas>8){ set(`📞 ${quien} recibió el aviso · falta confirmar con el llavero`); clearInterval(poll); }
+          if(e.estado==='done' && ++esperas>8){ set(`📞 ${quien} ${pl?'recibieron':'recibió'} el aviso · falta confirmar con el llavero`); clearInterval(poll); }
         }catch(_){}
       }, 4000);
     }catch(e){
@@ -125,7 +125,7 @@
     $('#alCancel').textContent = 'Toque del llavero = resuelto';
     if(typeof log==='function') log(`emergencia: ${quien} confirmó por teléfono (${secs} s)`);
     if(typeof beep==='function'){ beep(660,160,.08); setTimeout(()=>beep(880,220,.08),180); }
-    // Aviso hablado con la voz del sistema (no con la de Emmy: es WOKI quien le avisa).
+    // Aviso hablado con la voz del sistema (no con la de Emmy: es Myo quien le avisa).
     try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${quien} viene en camino`); u.lang = 'es-CL'; speechSynthesis.speak(u); }catch(_){}
     if(typeof renderStatus==='function') renderStatus();
     if(typeof updateLCD==='function') updateLCD();

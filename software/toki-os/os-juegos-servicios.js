@@ -19,7 +19,7 @@ window.addEventListener('load', () => {
   const OWN = /^(game|external|apps):/;
   const SERVICE_LOGOS = ['spotify', 'youtube', 'biobio', 'mercadolibre'];
 
-  /* ---------- íconos en el estilo de Woki (trazo, 24×24) ---------- */
+  /* ---------- íconos en el estilo de Myo (trazo, 24×24) ---------- */
   document.querySelector('svg defs').insertAdjacentHTML('beforeend',
     '<symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.4l-.8 4a2.6 2.6 0 0 1-4.5 1.2L14.5 16h-5l-1.6 2.1a2.6 2.6 0 0 1-4.5-1.2l-.8-4A4.5 4.5 0 0 1 7 7.5z"/><path d="M8 10.5v3M6.5 12h3M15.5 11h.01M17.5 13h.01"/></symbol>' +
     '<symbol id="i-apps" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>' +

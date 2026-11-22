@@ -1,4 +1,4 @@
-# WOKI · Investigación UX/UI para una interfaz por mirada
+# Myo · Investigación UX/UI para una interfaz por mirada
 
 Fecha: 21 de noviembre de 2026. Platanus Hack 26.
 Usuaria de diseño: **Emmy, ELA en etapa media**. Mueve ojos y cabeza, no tiene habla funcional ni manos útiles.
@@ -63,7 +63,7 @@ Este informe resume 6 investigaciones hechas en paralelo. El detalle y todas las
 
 ## 3. Contra qué competimos
 
-| | Apple Eye Tracking | Look to Speak | Tobii TD Talk + Pilot | **WOKI** |
+| | Apple Eye Tracking | Look to Speak | Tobii TD Talk + Pilot | **Myo** |
 |---|---|---|---|---|
 | Precio | Incluido | Gratis | Miles de US$ | Unos US$375 en hardware |
 | Precisión necesaria | Cursor fino | 3 direcciones | Rastreador IR | Zonas grandes + clic EMG |

@@ -144,7 +144,7 @@ const contextOf = (m: any): any => {
   return undefined;
 };
 
-// ---------- menciones en grupos (solo aviso: WOKI no responde en grupos) ----------
+// ---------- menciones en grupos (solo aviso: Myo no responde en grupos) ----------
 let me: { ids: Set<string> } = { ids: new Set() }; // mi número y mi LID, sin dominio
 async function loadMe() {
   // Sin wapi (modo dry) se puede probar la mención con WOKI_ME_IDS=<número>,<lid>

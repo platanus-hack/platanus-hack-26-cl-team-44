@@ -46,7 +46,7 @@ Confirma que ambos selectores físicos estén en ENV. El servidor no configura n
 
 Para distinguir gestos, usa **Prueba de gestos** con A0 en la mandíbula y A3 en la frente. Calibra ambos y observa el último gesto y los contadores: A3 solo cuenta como ceja; A0, aun cuando A3 también se active, cuenta como mandíbula. Esto no activa ni envía acciones.
 
-Selecciona **Abrir Woki OS con esta calibración** en el monitor y, en la pantalla de bienvenida, **Usar mouse + gestos MyoWare**. La calibración se guarda en el navegador para esa dirección (`localhost` y `127.0.0.1` guardan perfiles por separado). Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
+Selecciona **Abrir Myo OS con esta calibración** en el monitor y, en la pantalla de bienvenida, **Usar mouse + gestos MyoWare**. La calibración se guarda en el navegador para esa dirección (`localhost` y `127.0.0.1` guardan perfiles por separado). Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
 
 ## Diagnóstico
 

@@ -1,13 +1,13 @@
-# Brief común: investigación UX/UI de WOKI
+# Brief común: investigación UX/UI de Myo
 
 ## Proyecto
-WOKI es un comunicador manos libres para personas con ELA. Equipo finalista de Platanus Hack 26 (Santiago de Chile, 20-22 de noviembre de 2026). La demo es el domingo 22; las funciones se congelan a las 14:00. El plan que sale de esta investigación es **solo para la hackathon**.
+Myo es un comunicador manos libres para personas con ELA. Equipo finalista de Platanus Hack 26 (Santiago de Chile, 20-22 de noviembre de 2026). La demo es el domingo 22; las funciones se congelan a las 14:00. El plan que sale de esta investigación es **solo para la hackathon**.
 
 ## Usuaria principal: "Emmy", ELA en etapa media
 - Mueve los ojos y la cabeza. Ya no tiene habla funcional ni manos útiles.
 - Lo que más necesita es **velocidad** y **conservar su propio estilo y personalidad**: interrumpir, hacer chistes, decir "te quiero" sin planearlo. No solo pedidos básicos.
 - Habla español (Chile o Colombia).
-- Hoy existen opciones gratis que le podrían servir (Apple Eye Tracking, Switch Control, Look to Speak). WOKI tiene que justificar por qué es mejor.
+- Hoy existen opciones gratis que le podrían servir (Apple Eye Tracking, Switch Control, Look to Speak). Myo tiene que justificar por qué es mejor.
 
 ## Pantalla
 **TV o monitor grande**, mirado a distancia desde la cama o la silla. La familia también lo ve.
@@ -41,4 +41,4 @@ Productos reales, papers de HCI (CHI, ASSETS, ETRA y similares) y la voz de los 
 - Cada afirmación con su **URL**.
 - Separar lo **verificado** (leíste la fuente) de lo **inferido**.
 - No inventar cifras. Si algo no se pudo verificar, decirlo.
-- Terminar con: **"Insights accionables para WOKI"** (5 a 10 puntos concretos) y **"Recomendaciones de diseño con números"** cuando aplique (tamaños, tiempos, cantidades).
+- Terminar con: **"Insights accionables para Myo"** (5 a 10 puntos concretos) y **"Recomendaciones de diseño con números"** cuando aplique (tamaños, tiempos, cantidades).

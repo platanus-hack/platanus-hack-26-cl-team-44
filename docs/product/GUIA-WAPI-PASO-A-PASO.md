@@ -1,4 +1,4 @@
-# WOKI × wapi · Guía paso a paso desde cero
+# Myo × wapi · Guía paso a paso desde cero
 
 Esta guía no supone que conoces wapi ni el proyecto `wspbot`. Primero explica la herramienta, luego cómo conseguir acceso y después el armado, paso por paso. Cada paso tiene cuatro partes: **para qué sirve**, **qué hacer**, **qué deberías ver** y **si falla**.
 
@@ -60,7 +60,7 @@ Tu celular ──(QR, dispositivo vinculado)──► servidor de wapi ◄──
 | Enviar un mensaje, leer contactos, ver si la sesión está conectada | Session key |
 | Crear un sandbox, configurar el webhook, activar account protection, leer las claves de una sesión | PAT |
 
-## 1.4 · Cómo encaja en WOKI
+## 1.4 · Cómo encaja en Myo
 
 ```
  TV · woki-os.html (navegador, localhost:8000)
@@ -646,7 +646,7 @@ const s = await account.sessions.update(sessionId, {
   webhook_enabled: true,
   webhook_events: ["messages.received", "session.status"],
   account_protection: true,   // 1 envío cada 5 s desde wapi
-  ignore_groups: true,        // WOKI no lee grupos
+  ignore_groups: true,        // Myo no lee grupos
 });
 console.log(`Webhook de la sesión ${s.id} → ${s.webhook_url}`);
 ```
@@ -826,7 +826,7 @@ npx tsx --env-file=.env setup-webhook.ts https://algo-algo-algo.trycloudflare.co
 1. En `.env`, cambia `WA_MODE=dry` por `WA_MODE=live`.
 2. Terminal 1: `npm run dev`.
 3. `curl -s localhost:8787/api/wa/health` → `"mode":"live","session":"connected"`.
-4. Desde la TV, envía "prueba WOKI" a Sofía. Tiene que llegar al celular de Sofía, desde el número del equipo.
+4. Desde la TV, envía "prueba Myo" a Sofía. Tiene que llegar al celular de Sofía, desde el número del equipo.
 5. Sofía responde desde su celular. La TV tiene que mostrarlo.
 
 En modo real, cada envío espera unos 5 s por account protection. Es normal.

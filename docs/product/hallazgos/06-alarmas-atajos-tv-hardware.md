@@ -26,7 +26,7 @@ Fuentes que no se pudieron leer: el HIG de Apple solo entregó la introducción 
 ### Fatiga de alarmas (salud)
 
 - Alerta Centinela n.º 50 de la Joint Commission (abril 2013): 98 eventos relacionados con alarmas entre enero 2009 y junio 2012 (80 muertes, 13 pérdidas permanentes de función, 5 con atención adicional). La fatiga de alarmas aparece como el factor contribuyente más común. Estima que entre 85 % y 99 % de las alarmas no requieren intervención clínica. Causas típicas: configuraciones por defecto sin ajustar y electrodos secos o mal puestos. [Buscador] https://digitalassets.jointcommission.org/api/public/content/f65e5c9df2b94000a99445e0a7877007 y https://www.beckershospitalreview.com/quality/joint-commission-alert-medical-device-alarm-safety/
-- Lo que importa para WOKI: **los electrodos EMG que se secan o se despegan son la fuente de falsas alarmas más probable**, igual que en hospital.
+- Lo que importa para Myo: **los electrodos EMG que se secan o se despegan son la fuente de falsas alarmas más probable**, igual que en hospital.
 - ECRI señala que no hay consenso amplio de mejores prácticas de gestión de alarmas. [Buscador] https://www.ecri.org/search-results/member-preview/hdjournal/pages/alarm-management-resource-list/
 - Marco de 2025 para reducir alertas a enfermería: define alarmas "inalcanzables" (no llegan a tiempo al cuidador correcto) e "inalcanzables por ocupación" (llegan a alguien que no puede actuar). También propone enrutar por proximidad en vez de avisar a todos. [Buscador] https://pmc.ncbi.nlm.nih.gov/articles/PMC12608296
 - Interrupciones fragmentan el trabajo del cuidador, suben el estrés y la carga cognitiva. [Buscador] mismo PMC12608296.
@@ -40,7 +40,7 @@ Fuentes que no se pudieron leer: el HIG de Apple solo entregó la introducción 
 - Sobre confirmación (ack) por RFID/NFC: **no encontré** una fuente que describa confirmar una alerta con NFC. Lo que sí existe es NFC/RFID como prueba de presencia del cuidador en visitas de cuidado domiciliario (EVV) y patentes de residencias con RFID en personal y residentes. [Buscador] https://www3.hidglobal.com/solutions/electronic-visit-verification y https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/12614439
 - **Conclusión [Inferido]:** usar el llavero RFID como "estoy aquí, lo vi" es una extensión natural del patrón de prueba de presencia. No hay precedente directo documentado.
 
-### Propuesta de alarma para WOKI (todo [Inferido], valores a calibrar el sábado)
+### Propuesta de alarma para Myo (todo [Inferido], valores a calibrar el sábado)
 
 Dos prioridades y no más (para no fabricar fatiga):
 
@@ -76,13 +76,13 @@ Reglas de diseño:
 - Tiempo de escaneo usado en un estudio: de 0,48 a 2,00 s por ítem; los usuarios podían agregar un retraso extra para la primera fila y columna. [Buscador] https://arxiv.org/pdf/2204.01619
 - Subir el retraso reduce la sensibilidad al ruido en el momento del clic, a costa de velocidad. [Buscador] https://ar5iv.arxiv.org/html/1712.10073
 - Valor por defecto de PRC-Saltillo: 1 s. Tienen "tiempo de aceptación" (cuánto hay que sostener el interruptor) y "tiempo de liberación" (bloquea un doble clic accidental). [Buscador] https://saltillo.com/support/article/Scan-Timing (la página dio error de certificado al abrirla; es dato del buscador).
-- Apple Switch Control trae: "hold before perform" (segundos de sostén para registrar), "ignore switch repeats" (descarta pulsaciones repetidas en una ventana), "auto scanning time" y "move repeat". Es lo que WOKI tiene que superar o igualar. [Buscador] https://support.apple.com/guide/mac-help/mh43181/mac
+- Apple Switch Control trae: "hold before perform" (segundos de sostén para registrar), "ignore switch repeats" (descarta pulsaciones repetidas en una ventana), "auto scanning time" y "move repeat". Es lo que Myo tiene que superar o igualar. [Buscador] https://support.apple.com/guide/mac-help/mh43181/mac
 - Muchas interfaces vuelven a filas tras N ciclos de columnas sin entrada; un estudio usó dos ciclos completos. Algunas dan una ventana de "deshacer" durante el escaneo. [Buscador] https://arxiv.org/pdf/2204.01619 y https://ar5iv.arxiv.org/html/1712.10073
-- Un usuario de ELA en un foro dice que con NeuroNode hay que escanear opciones y que la mirada, si funciona, es mucho más rápida. [Buscador] https://www.alsforums.com/community/threads/emg-switch-by-control-bionics-is-tinkertron.39924/post-424163 (anecdótico). Esto respalda el modelo de WOKI: la mirada elige, el EMG confirma, sin escanear.
+- Un usuario de ELA en un foro dice que con NeuroNode hay que escanear opciones y que la mirada, si funciona, es mucho más rápida. [Buscador] https://www.alsforums.com/community/threads/emg-switch-by-control-bionics-is-tinkertron.39924/post-424163 (anecdótico). Esto respalda el modelo de Myo: la mirada elige, el EMG confirma, sin escanear.
 
 ### Mirada y activación accidental (Midas touch)
 
-- El problema: con dwell basta mirar para activar. Los diseños híbridos agregan un segundo canal para confirmar, lo que es la arquitectura de WOKI. [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf y https://pmc.ncbi.nlm.nih.gov/articles/PMC7715037
+- El problema: con dwell basta mirar para activar. Los diseños híbridos agregan un segundo canal para confirmar, lo que es la arquitectura de Myo. [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf y https://pmc.ncbi.nlm.nih.gov/articles/PMC7715037
 - Dwell más corto da más velocidad y más activaciones falsas; el artículo CHI 2017 propone subir el dwell de teclas improbables y bajarlo en las probables. Esto es la lógica del "cursor que predice". [Buscador] https://faculty.washington.edu/wobbrock/pubs/chi-17.02.pdf
 - Estudio de 2008 con pacientes de ELA fijó el dwell en 800 ms. Es el único valor concreto que encontré; no hay estudio que recomiende un dwell óptimo para ELA. [Buscador] https://www.researchgate.net/profile/Kristian-Torning/publication/220810980_Gaze_typing_compared_with_input_by_head_and_hand/links/0912f513092d1a2e8a000000/Gaze-typing-compared-with-input-by-head-and-hand.pdf
 - Look to Speak (Google) usa gestos de mirada fuera de pantalla (izquierda, derecha, arriba), con distancia (cerca, media, lejos) y duración (rápida, media, larga) configurables por dirección. Advierte que menos distancia y menos duración suben las activaciones accidentales. [Buscador] https://g.co/looktospeak y https://storage.googleapis.com/experiments-uploads/LTS_GUIDE.pdf
@@ -94,7 +94,7 @@ Reglas de diseño:
 - **Mandíbula (masetero):** proyecto de BU con interruptor sEMG de umbral por paciente, partes comerciales, software abierto, CAD de la carcasa. Es el punto de partida abierto más cercano. [Buscador] https://sites.bu.edu/stepplab/research/semg-based-switch-design
 - Silla de ruedas por apretar mandíbula en ELA: apretón corto y largo, izquierda y derecha. El artículo avisa que la progresión de la ELA puede borrar la diferencia entre reposo y contracción. [Buscador] https://pmc.ncbi.nlm.nih.gov/articles/PMC9375912 (probable; confirmar)
 - Instructables con MyoWare y BITalino que manda teclas a The Grid 3, con potenciómetro de sensibilidad. [Buscador] https://www.instructables.com/Muscle-EMG-Activated-Switch
-- No encontré ningún proyecto que combine varios clics en secuencia como lenguaje de comandos. **El combo de gestos de WOKI no tiene precedente directo.** [Inferido]
+- No encontré ningún proyecto que combine varios clics en secuencia como lenguaje de comandos. **El combo de gestos de Myo no tiene precedente directo.** [Inferido]
 
 ### Diseño de combos (todo [Inferido], valores iniciales a calibrar con los sensores reales)
 
@@ -256,7 +256,7 @@ Notas de seguridad para la demo: la demo es un prototipo y no un dispositivo mé
 
 ---
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
 1. **La alarma es un diferenciador real.** No encontré alarma nativa ni integración con nurse call en los CAA que revisé. Es un argumento frente a Apple y Look to Speak.
 2. **Dos niveles y no más (atención y emergencia).** La Joint Commission estima que 85 a 99 % de las alarmas no requieren intervención; más niveles y más ruido fabrican fatiga.

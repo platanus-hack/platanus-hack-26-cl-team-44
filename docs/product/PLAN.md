@@ -1,4 +1,4 @@
-# WOKI · Plan de construcción hasta el congelamiento
+# Myo · Plan de construcción hasta el congelamiento
 
 **Congelamiento: domingo 22 de noviembre, 14:00.** Después de esa hora solo se ensaya.
 Demo: "La noche de Luis", adaptada a Emmy. Las pantallas y los números salen de `GUIA-DISENO.md`.
@@ -16,7 +16,7 @@ Demo: "La noche de Luis", adaptada a Emmy. Las pantallas y los números salen de
 ## Frentes de trabajo
 
 ### A. Sensores EMG
-1. Cargar `MyoWareBLEPeripheral` en los 3 Wireless Shield, con nombres distintos (`WOKI-CEJA`, `WOKI-MAND`, `WOKI-TRAGAR`). Probar cuáles de las 3 unidades Ding & Dent funcionan.
+1. Cargar `MyoWareBLEPeripheral` en los 3 Wireless Shield, con nombres distintos (`Myo-CEJA`, `Myo-MAND`, `Myo-TRAGAR`). Probar cuáles de las 3 unidades Ding & Dent funcionan.
 2. En el Mac, recibir los datos por Bluetooth (Python con `bleak`) y emitir eventos con el formato común `{src, seq, t_dev, t_host, type, value, conf}`.
 3. Detector de clic: umbral más calibración de 10 s (reposo y contracción). Clic corto, doble y largo.
 4. Detector de combos: 250 ms entre clics, 1,2 s entre gestos, 3 s para el combo completo.

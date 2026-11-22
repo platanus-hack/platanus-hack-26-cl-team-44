@@ -1,4 +1,4 @@
-# WOKI × wapi en tu propio Mac (sin Crafter Station)
+# Myo × wapi en tu propio Mac (sin Crafter Station)
 
 wapi es open source ([github.com/crafter-station/wapi](https://github.com/crafter-station/wapi)). Esta guía lo instala en el Mac del equipo, así no hace falta pedirle una cuenta a nadie. **Reemplaza la Parte 2 de `GUIA-WAPI-PASO-A-PASO.md` (conseguir acceso)** y simplifica la Parte 5: ya no hace falta túnel.
 
@@ -22,7 +22,7 @@ Todo lo que dice aquí sale del código del repositorio (commit `4ca20d8`, 6-oct
 
 ## 2. Qué se instala y qué no
 
-wapi tiene cuatro programas y tres servicios por debajo. Para WOKI basta con la mitad:
+wapi tiene cuatro programas y tres servicios por debajo. Para Myo basta con la mitad:
 
 | Pieza | Para qué sirve | ¿La usamos? |
 |---|---|---|
@@ -32,7 +32,7 @@ wapi tiene cuatro programas y tres servicios por debajo. Para WOKI basta con la 
 | **web** (dashboard) | Página para ver QR, sesiones y claves | ❌ No: exige Clerk. Lo reemplazan los scripts de esta guía |
 | **Postgres** | Base de datos: sesiones, claves y la vinculación del celular | ✅ Sí (ya tienes Postgres 16 y 17 con Homebrew) |
 | **Redis** | Comunicación interna entre las piezas y la cola de avisos | ✅ Sí (hay que instalarlo) |
-| **UploadX / MinIO** | Guardar imágenes y archivos | ❌ No: UploadX es otro servicio de Crafter. WOKI solo manda texto |
+| **UploadX / MinIO** | Guardar imágenes y archivos | ❌ No: UploadX es otro servicio de Crafter. Myo solo manda texto |
 | **backup** | Respaldo nocturno de Postgres | ❌ No para la demo |
 
 No hace falta Docker. wapi está escrito para **Bun** (ya lo tienes, versión 1.4.2) y su CI lo corre así, sin contenedores.
@@ -245,7 +245,7 @@ console.log(`Sesión ${session.id} (${existing ? "ya existía" : "creada"})`);
 // El QR también se dibuja en qr.html (se recarga sola cada 3 s), porque la terminal de
 // Claude Code colapsa la salida larga y el QR queda ilegible.
 const page = (body: string) => writeFileSync("qr.html",
-  `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular WOKI</title>
+  `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular Myo</title>
 <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font:18px system-ui;color:#111;text-align:center">
 <div>${body}</div></body>`);
 page("<p>Pidiendo el QR a wapi…</p>");
@@ -293,7 +293,7 @@ console.log(`✓ Celular vinculado · sesión ${s.id} · claves guardadas en .en
 npx tsx --env-file=.env vincular.ts +569XXXXXXXX
 ```
 
-**Qué deberías ver:** se abre en el navegador una pestaña "Vincular WOKI" con el QR en grande (se recarga sola cada 3 s). Dentro de Claude Code la terminal colapsa el QR y no se puede escanear: usa la pestaña. Lo escaneas desde el celular y, en unos segundos, aparece `✓ Celular vinculado · sesión N · claves guardadas en .env`.
+**Qué deberías ver:** se abre en el navegador una pestaña "Vincular Myo" con el QR en grande (se recarga sola cada 3 s). Dentro de Claude Code la terminal colapsa el QR y no se puede escanear: usa la pestaña. Lo escaneas desde el celular y, en unos segundos, aparece `✓ Celular vinculado · sesión N · claves guardadas en .env`.
 
 **Si falla:**
 - El QR se ve deformado: agranda la ventana de la terminal o achica la letra (Cmd + −).

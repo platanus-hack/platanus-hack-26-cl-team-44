@@ -1,6 +1,6 @@
 # 05. La voz de los usuarios: ELA, eye tracking y CAA en la vida diaria
 
-Fecha de la investigación: 21-nov-2026. Informe para WOKI (solo hackathon).
+Fecha de la investigación: 21-nov-2026. Informe para Myo (solo hackathon).
 
 ## Cómo leer este informe
 
@@ -33,7 +33,7 @@ Fecha de la investigación: 21-nov-2026. Informe para WOKI (solo hackathon).
 - [V] Hilo de ALS Forums (resumen del buscador, no lo abrí): un usuario reportó que su Tobii no calibraba bien con lentes progresivos y sí con lentes de lectura de visión simple. https://www.alsforums.com/community/threads/eyegaze-systems.45048/ (**no verificado textualmente**).
 - [V] "the sunlight coming through the window affects the accuracy during certain parts of the day." (MichelleFox, ALS Forums, 17-ago-2011). https://www.alsforums.com/community/threads/eye-gaze-technology.16428/
 - [V] "I have learned to accept missing my favourite TV shows and living in the dark, literally without lights on." (Eddy Lefrançois, ALS Society of Canada, persona con ELA). https://als.ca/?p=10659
-- [V] "Strong emotion hinders Tobii usage, tears confuse eyegaze technology and anger prevents focus." (A7, mujer con ELA). Kane et al., CHI/ASSETS 2016: https://microsoft.com/en-us/research/wp-content/uploads/2016/10/aacselfexpression-1.pdf . [I] Esto es un dolor poco citado: **llorar o enojarse rompe el rastreo justo cuando más quieres hablar.** Pega con las "emociones en la voz" de WOKI.
+- [V] "Strong emotion hinders Tobii usage, tears confuse eyegaze technology and anger prevents focus." (A7, mujer con ELA). Kane et al., CHI/ASSETS 2016: https://microsoft.com/en-us/research/wp-content/uploads/2016/10/aacselfexpression-1.pdf . [I] Esto es un dolor poco citado: **llorar o enojarse rompe el rastreo justo cuando más quieres hablar.** Pega con las "emociones en la voz" de Myo.
 
 ### 1.3 Calibración, reinicios y posición
 - [V] "every time he took his eyes off the screen to sip from the vent, he had to recalibrate the system." (MichelleFox, 2011). https://www.alsforums.com/community/threads/eye-gaze-technology.16428/
@@ -54,7 +54,7 @@ Fecha de la investigación: 21-nov-2026. Informe para WOKI (solo hackathon).
 - [V] "My Tobii was supposed to arrive yesterday, then today and now UPS says Monday." (KW1234, 2017) y "it will take 6 weeks before the Eyegaze" (Mydad). https://www.alsforums.com/community/threads/tobi.38505/
 - [V] Alemania: solo el 61 % de los CAA recetados se entregaron, con demora media de 93 días (Funke et al., citado en Linse 2018). https://pmc.ncbi.nlm.nih.gov/articles/PMC6072854
 - [V] Lo bueno cuando hay soporte: "The phone support is actually pretty good." (catcaniac, 2011). https://www.alsforums.com/community/threads/eye-gaze-technology.16428/
-- [I] El mercado compite en **soporte y tolerancia a fallos**, no solo en hardware. WOKI no tiene soporte; debe ser autodiagnosticable en pantalla ("por qué no te veo").
+- [I] El mercado compite en **soporte y tolerancia a fallos**, no solo en hardware. Myo no tiene soporte; debe ser autodiagnosticable en pantalla ("por qué no te veo").
 
 ---
 
@@ -73,7 +73,7 @@ Fuente principal: Kane et al., 7 personas con ELA y sus parejas. https://microso
 ### 2.2 No poder interrumpir
 - [V] "burst in" a la conversación; cuando él "engages the Tobii, it has that interruptive kind of spin to it" (P2, esposa). Misma fuente.
 - [V] Truco inventado por un usuario (A6): decir rápido una palabra fácil como "but" o "also" para indicar que va a seguir. Misma fuente.
-- [I] El objetivo de WOKI de interrumpir tiene respaldo real: un usuario ya inventó un hack manual.
+- [I] El objetivo de Myo de interrumpir tiene respaldo real: un usuario ya inventó un hack manual.
 
 ### 2.3 La gente que termina tus frases
 Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://www.microsoft.com/en-us/research/?p=301169 (PDF: https://microsoft.com/en-us/research/wp-content/uploads/2016/10/AACrobat-1.pdf)
@@ -82,7 +82,7 @@ Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://ww
 - [V] Otro: "It's not socially acceptable. Makes me more aware of my losses in capabil[ities]" (cita cortada en el PDF).
 - [V] Matiz importante: "I am very comfortable with someone anticipating my comments but if I am in a conversation with someone or a group of people, I am very uncomfortable with someone speaking for me and/or reading over my shoulder."
 - [V] Las parejas pensaban distinto: cuatro de seis estaban neutrales o incómodas con la ayuda que daban; muchas veces lo hacen para ahorrar tiempo: "Sometimes he just needs a few words and I know him well enough that I get what he's saying it save [sic] us both time."
-- [I] Adelantarse es aceptable en privado y con confianza, inaceptable en público. La IA de WOKI debería tener ese mismo interruptor: **sugerir en privado, nunca hablar por la persona en grupo sin su gesto.**
+- [I] Adelantarse es aceptable en privado y con confianza, inaceptable en público. La IA de Myo debería tener ese mismo interruptor: **sugerir en privado, nunca hablar por la persona en grupo sin su gesto.**
 
 ### 2.4 El humor llega tarde
 - [V] "Each day presents countless frustrations as humor and incisive comments require timing and inflection." (A7).
@@ -97,7 +97,7 @@ Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://ww
 - [V] "is monotone every time" (A3). "emotions don't come through." (A7). "a layer that's missing" (P2, esposa). Kane et al.
 - [V] "there are only so many please and thank yous you can write." (A1): la brevedad se lee como grosería.
 - [V] "I think I'm heard by others as less compassionate with my voice so non-expressive." (A6). Y A4 siente que lo ven "condescending" por el sonido del aparato.
-- [V] Estrategia manual: "I just say emotions in the first sentence" (A4) y "I have to write the words 'I'm disappointed', or 'I'm getting frustrated.'" (A6). [I] Es lo que WOKI haría automático con el tag de emoción.
+- [V] Estrategia manual: "I just say emotions in the first sentence" (A4) y "I have to write the words 'I'm disappointed', or 'I'm getting frustrated.'" (A6). [I] Es lo que Myo haría automático con el tag de emoción.
 - [V] A7 pensaba poder pregrabar frases con voces ("Marvin the Martian") y "Unfortunately, this is not possible at this point." Kane et al. [I] Voces/sonidos como "estampillas" de humor son una necesidad real.
 
 ---
@@ -137,7 +137,7 @@ Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://ww
 - [V] "[A5] missed the window on voice banking." (P5) y la voz del ser querido tiene valor "enormous". Misma fuente. En foro: "I'm sorry I didn't know about voice banking soon enough to record myself." (Debk, 2025). https://www.alsforums.com/community/threads/bulbarals.55402/
 - [V] "Hearing my voice again, after I hadn't heard it for some time, lifted my spirits," (Jules Rodriguez, ELA). MIT Technology Review, 13-feb-2025. https://www.technologyreview.com/2025/02/13/1111882/motor-neuron-diseases-took-their-voices-ai-bringing-them-back/amp/
 - [V] "Losing my voice has been a massive deal for me, because it's such a big part of who I am." (Joyce Esser, MND bulbar). Misma fuente.
-- [V] Límite de la voz clonada: "The issue I have is that when you write something long, the AI voice almost seems to get tired" (Rodriguez). Y Esser: "It's good for pre-prepared statements, but not for conversation". Misma fuente. [I] Es exactamente el hueco de WOKI: conversación rápida con emoción.
+- [V] Límite de la voz clonada: "The issue I have is that when you write something long, the AI voice almost seems to get tired" (Rodriguez). Y Esser: "It's good for pre-prepared statements, but not for conversation". Misma fuente. [I] Es exactamente el hueco de Myo: conversación rápida con emoción.
 - [V] Otra persona (cáncer, no ELA): "Sometimes I'm really relaxed about something and it comes out like I'm all hyped out or stressed" (Harty, WBUR). https://www.wbur.org/upnext/2026/08/13/artifical-intelligence-ai-voice-clone-cancer-als . Solo como apoyo; no es ELA.
 - [V] "I cried the first time I heard it because it was actually my voice again," (April Kerner). https://abc7.com/health/als-took-a-young-mothers-voice-away-ai-helped-her-regain-it/15441377/
 
@@ -154,7 +154,7 @@ Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://ww
 - [V] Falla técnica e inaccesibilidad de noche: "But at night it is not turned on or not accessable" (Rickmcmahan, 2007). https://www.alsforums.com/community/threads/when-things-progress-how-do-you-communicate.1915/post-14635
 - [V] Precio: "I think the whole Tobii system on my PC was about $1k, while the Tobii system was $16k" (MaxEidswick, 2014). https://www.alsforums.com/community/threads/pals-communication-methods.26299/
 - [V] "practicing the eye tracking technology as soon as possible, as there is a slight learning curve." (Atsugi, 2014). Misma URL. [I] Se abandona cuando se entrega tarde, a alguien ya fatigado.
-- [I] Patrón: abandonan por **suma de fricciones** (calibración + fatiga + sin soporte + conversación lenta) más que por una sola. Cada decepción en una demo de WOKI suma a esa lista.
+- [I] Patrón: abandonan por **suma de fricciones** (calibración + fatiga + sin soporte + conversación lenta) más que por una sola. Cada decepción en una demo de Myo suma a esa lista.
 
 ---
 
@@ -176,7 +176,7 @@ Fuente: AACrobat, Fiannaca et al., 2020 (usuarios con ELA y parejas). https://ww
 - [V] "How do you wake you caregiver up if you cannot speak or use your arms and hands?" (Rickmcmahan, 14-feb-2007). https://www.alsforums.com/community/threads/when-things-progress-how-do-you-communicate.1915/post-14635
 - [V] "I get my wife's attention by clicking." / "I pull a vacuum between my tongue and the roof of my mouth to make the sound." / "she then reads my lips." (Quadbliss/Mike, 2007). Misma URL.
 - [V] "wake us up in the middle of night just in case he has any urgent needs" y "push button type of device is not useful" (dbw, 2010, hijo de un paciente). https://www.alsforums.com/community/threads/help-on-in-home-alert-communication-device.12946/
-- [V] "a switch that can be activated by eye or facial movement" (joelc, 2010). Misma URL. [I] Un switch por ceja/mandíbula ya era lo que pedía la gente en 2010. Es el caso de uso EMG de WOKI.
+- [V] "a switch that can be activated by eye or facial movement" (joelc, 2010). Misma URL. [I] Un switch por ceja/mandíbula ya era lo que pedía la gente en 2010. Es el caso de uso EMG de Myo.
 - [V] "alarm system with blinking lights to let me no when the lights go out" (dottie, 2010): alarma de corte de energía para los equipos. Misma URL.
 - [V] Un cuidador de elDiario.es: la pareja de Esteban "dejó de trabajar para cuidarle por las noches" (paráfrasis del periodista, no cita). https://www.eldiario.es/1_cae90e
 - [V] Resumen del buscador (no abrí): ALS Network recomienda un call button "that can be activated by your hands, head, or feet", y las smart speakers fallan si el habla no se entiende. https://alsnetwork.org/wp-content/uploads/2024/06/Sleep-and-ALS-ALS-Network.pdf (**no verificado textualmente**).
@@ -202,7 +202,7 @@ Fuente principal: Valencia et al., CHI 2023, 12 usuarios de CAA (**no solo ELA**
 - [V] Con quienes los conocen: "[I would not use this] with my family and friends who know me personally. I think sometimes the human feelings cannot be translated by devices." (P8).
 - [V] Los autores: los participantes querían que las frases reflejaran su estilo. Misma URL.
 - [V] Humor y IA, CAA general: "AAC users are willing to trade agency for efficiency" cuando el tiempo es crítico. https://arxiv.org/html/2410.16634
-- [V] ELA específico: no encontré un estudio que pregunte a personas con ELA si la IA "habla por ellos" (el buscador lo confirma). Esto es un vacío; **WOKI puede decir que lo está probando, no que está resuelto.**
+- [V] ELA específico: no encontré un estudio que pregunte a personas con ELA si la IA "habla por ellos" (el buscador lo confirma). Esto es un vacío; **Myo puede decir que lo está probando, no que está resuelto.**
 - [V] Con voz clonada + escritura asistida, personas con ELA sí hablan con entusiasmo cuando la voz es suya: ver 3.5.
 - [I] Regla de la evidencia: aceptan sugerencias que ahorran esfuerzo **si pueden editar y si suenan a ellos**; rechazan que la IA decida el contenido emocional con la gente cercana.
 
@@ -212,10 +212,10 @@ Fuente principal: Valencia et al., CHI 2023, 12 usuarios de CAA (**no solo ELA**
 
 1. **El dolor número uno es el ritmo, no el tipo de letra.** "Pacing" fue la queja más frecuente en las 7 entrevistas con ELA (Kane et al.). El turno se pierde porque el tema cambia mientras escribes. [V] https://microsoft.com/en-us/research/wp-content/uploads/2016/10/aacselfexpression-1.pdf
 2. **El humor y el sarcasmo son el segundo reclamo.** "speed is the number one factor. And the ability to express sarcasm is number two." (A6). Emmy quiere interrumpir y bromear: hay respaldo directo. [V]
-3. **Un usuario ya se inventó el "pedir la palabra"** (decir "but" o "also") y otro agrega la emoción en la primera frase. WOKI puede automatizar ambos hacks. [V + I]
+3. **Un usuario ya se inventó el "pedir la palabra"** (decir "but" o "also") y otro agrega la emoción en la primera frase. Myo puede automatizar ambos hacks. [V + I]
 4. **Las emociones fuertes rompen el eye tracking** ("tears confuse eyegaze technology and anger prevents focus"). Esto es un argumento a favor de una segunda vía (EMG, cabeza) que no depende de los ojos, precisamente en los momentos que importan. [V + I]
-5. **El eye tracking falla por lo que cambia con la enfermedad** (párpados, ojos secos, lentes, sol) y la familia no sabe diagnosticarlo. WOKI necesita un "por qué no te veo" en pantalla y un modo degradado a zonas grandes. [V + I]
-6. **Terminar las frases del otro es ayuda y ofensa a la vez.** Es aceptable con confianza y en privado; es una pérdida de agencia en grupo. La sugerencia de WOKI debe ser mostrada, nunca emitida sin confirmación. [V + I] https://microsoft.com/en-us/research/wp-content/uploads/2016/10/AACrobat-1.pdf
+5. **El eye tracking falla por lo que cambia con la enfermedad** (párpados, ojos secos, lentes, sol) y la familia no sabe diagnosticarlo. Myo necesita un "por qué no te veo" en pantalla y un modo degradado a zonas grandes. [V + I]
+6. **Terminar las frases del otro es ayuda y ofensa a la vez.** Es aceptable con confianza y en privado; es una pérdida de agencia en grupo. La sugerencia de Myo debe ser mostrada, nunca emitida sin confirmación. [V + I] https://microsoft.com/en-us/research/wp-content/uploads/2016/10/AACrobat-1.pdf
 7. **Las parejas pierden la señal de "está escribiendo".** Mostrar en la TV un indicador de "estoy componiendo" resuelve parte de la incomodidad de las pausas largas. [V + I]
 8. **Con la voz propia, la gente lo vive como recuperar identidad**, pero la voz clonada hoy "is good for pre-prepared statements, but not for conversation". Voz propia + emoción + velocidad es el hueco. [V] https://www.technologyreview.com/2025/02/13/1111882/motor-neuron-diseases-took-their-voices-ai-bringing-them-back/amp/
 9. **La noche es el punto ciego.** El aparato de CAA suele estar apagado o fuera de alcance de noche, y desde 2007 la gente pide un switch por gesto facial. Un combo EMG de emergencia que funcione sin pantalla es la función con más historia de demanda. [V + I] https://www.alsforums.com/community/threads/help-on-in-home-alert-communication-device.12946/
@@ -252,7 +252,7 @@ Precaución: las citas de pacientes salen de estudios con consentimiento o de pr
 
 ---
 
-## Insights accionables para WOKI
+## Insights accionables para Myo
 
 1. **Mostrar en la TV un indicador "Emmy está componiendo"** (puntos animados o barra de progreso visible a 3 m). Evita que los demás cambien de tema y que la gente saque el celular. [V + I]
 2. **Botón "pedir la palabra" de un solo gesto** (un clic EMG corto): emite un sonido o una palabra corta ("a ver…") antes de hablar. Es el hack de A6 hecho función.
@@ -272,6 +272,6 @@ Solo cifras con respaldo o marcadas como supuesto.
 - **Velocidad de referencia:** teclado ocular 10 a 20 palabras por minuto frente a 180 hablado (Kane et al., citando otros). https://microsoft.com/en-us/research/wp-content/uploads/2016/10/aacselfexpression-1.pdf . Máximo teórico estimado del teclado ocular: 46 wpm (misma fuente). **Meta de demo (supuesto, no es dato):** que una respuesta corta llegue en menos de 5 s con las 4 frases sugeridas.
 - **Eye tracking por webcam:** el error de 1,5 a 3,7 grados es del brief; con eso, **zonas de selección grandes** (supuesto de diseño: 4 a 6 zonas, cada una de al menos 15 % de la pantalla). No validado con usuarios.
 - **Umbral de ayuda:** la clínica deriva a CAA con habla por debajo de 100 a 125 palabras por minuto (Linse et al.). https://pmc.ncbi.nlm.nih.gov/articles/PMC6072854 . No es una meta de diseño pero sirve de contexto.
-- **Tiempo de entrega real de un dispositivo:** 93 días de media en Alemania; Tobii "6 weeks" según foro. Argumento de contexto: WOKI funciona con hardware que el equipo ya tiene.
+- **Tiempo de entrega real de un dispositivo:** 93 días de media en Alemania; Tobii "6 weeks" según foro. Argumento de contexto: Myo funciona con hardware que el equipo ya tiene.
 - **Pausa percibida:** en las entrevistas, el silencio mientras ella compone hace que los demás cambien de tema. [I] Mostrar el indicador al instante (menos de 1 s) y mantenerlo mientras haya selección en curso.
 - **Triple combo de emergencia (ejemplo del brief):** ceja, ceja, mandíbula. No hay evidencia sobre cuánto se confunden gestos normales con combos; **probar falsos positivos** antes de congelar a las 14:00.
