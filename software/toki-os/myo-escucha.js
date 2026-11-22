@@ -33,7 +33,7 @@
   const MAX_TURNOS = 8;
 
   const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0, usuaria: '',
-              pool: [], pag: 0, pidiendoMas: false, ini: { ini: '', p: null, list: null } };
+              pool: [], inicio: 0, pidiendoMas: false, ini: { ini: '', p: null, list: null } };
   const SALA_MS = 15 * 60 * 1000;   // modo sala: hubo un turno escuchado en los últimos 15 min
   try { E.hablantes = JSON.parse(sessionStorage.getItem('myo.hablantes') || '{}'); } catch (_) {}
 
@@ -101,7 +101,7 @@
     const id = ++E.req;
     const pid = personaDe(t);
     setCtx(etiqueta(t) + ' dice', etiqueta(t).slice(0, 1).toUpperCase(), t.texto, 'Escuchando la sala…', pid ? '' : 'rgba(255,255,255,.18)');
-    E.pool = []; E.pag = 0;   // nada del turno anterior mientras llega lo nuevo
+    E.pool = []; E.inicio = 0;   // nada del turno anterior mientras llega lo nuevo
     if (W.S.screen === 'home') go('talk');
     const base = cuerpo(t);
     // 1) Tarjetas por tema: al instante.
@@ -134,26 +134,27 @@
   function ponerPool(cartas) {
     const vistos = new Set(), pool = [];
     for (const c of cartas) { const k = c.text.toLowerCase().trim(); if (k && !vistos.has(k)) { vistos.add(k); pool.push(c); } }
-    E.pool = pool; E.pag = 0;
+    E.pool = pool; E.inicio = 0;
     pagina();
   }
-  function pagina() {
-    const n = Math.max(1, Math.ceil(E.pool.length / 3));
-    W.S.cards = [...E.pool.slice((E.pag % n) * 3, (E.pag % n) * 3 + 3), MAS];
+  function pagina() {   // siempre 3 tarjetas (si hay), desde E.inicio
+    if (E.inicio >= E.pool.length) E.inicio = 0;
+    W.S.cards = [...E.pool.slice(E.inicio, E.inicio + 3), MAS];
     if (W.S.screen === 'talk') renderCards();
   }
   async function mas() {
-    if ((E.pag + 1) * 3 < E.pool.length) { E.pag++; pagina(); return; }
+    if (E.inicio + 3 < E.pool.length) { E.inicio = Math.min(E.inicio + 3, Math.max(0, E.pool.length - 3)); pagina(); return; }
     const t = E.turnos[E.turnos.length - 1];
-    if (!t || E.pidiendoMas) { E.pag = 0; pagina(); return; }
+    if (!t || E.pidiendoMas) { E.inicio = 0; pagina(); return; }
     E.pidiendoMas = true;
     document.getElementById('cards')?.classList.add('loading');
     try {   // se acabaron: el agente propone otras, sin repetir las que ya vio
       const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
       const r = await post(URL_AGENTE, '/api/sugerir', { ...cuerpo(t), modo: 'voz', historial: hist, excluir: E.pool.map((c) => c.text) });
       const nuevas = aCartas(r.opciones).filter((c) => !E.pool.some((x) => x.text.toLowerCase() === c.text.toLowerCase()));
-      if (nuevas.length) { const desde = E.pool.length; E.pool.push(...nuevas); E.pag = Math.floor(desde / 3); } else E.pag = 0;
-    } catch (e) { say('más: ' + e.message); E.pag = 0; }
+      // las nuevas al final, y la página termina en ellas: siempre se ven 3 (las nuevas + las anteriores)
+      if (nuevas.length) { E.pool.push(...nuevas); E.inicio = Math.max(0, E.pool.length - 3); } else E.inicio = 0;
+    } catch (e) { say('más: ' + e.message); E.inicio = 0; }
     E.pidiendoMas = false;
     document.getElementById('cards')?.classList.remove('loading');
     pagina();
@@ -171,7 +172,7 @@
       if (m && (W.S.cards[3] || {}).mas) {
         m.dataset.act = 'escuchaMas';
         m.querySelector('.ph').textContent = E.pidiendoMas ? 'Buscando…' : 'Más ▸';
-        m.querySelector('.tone').textContent = (E.pag + 1) * 3 < E.pool.length ? 'otras respuestas' : 'pedir otras nuevas';
+        m.querySelector('.tone').textContent = E.inicio + 3 < E.pool.length ? 'otras respuestas' : 'pedir otras nuevas';
       }
       const esc = g.querySelector('.side[data-act="go:keyboard"]');
       if (esc) { esc.dataset.act = 'waKb'; esc.innerHTML = '<svg><use href="#i-keys"/></svg>Primera letra<small>con lo que te dijeron</small>'; }
@@ -393,5 +394,5 @@
 
   // Para probar sin micrófono: MYO_ESCUCHA.turno("¿Le duele la espalda?", {hablante: "S2"}); MYO_ESCUCHA.asignar("S2", "juan")
   window.MYO_ESCUCHA = { encender, apagar, turno, asignar, mas, enSala,
-    estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes }, pool: E.pool.map((c) => c.text), pag: E.pag }) };
+    estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes }, pool: E.pool.map((c) => c.text), inicio: E.inicio }) };
 })();
