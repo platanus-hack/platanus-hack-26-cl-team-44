@@ -78,7 +78,7 @@
 /* ---------- barra de desarrollo: interruptor de tema + pestaña de atajos ---------- */
 body.legend-off #legend { display: none; }
 #devbar {
-  position: fixed; right: 12px; bottom: 160px; z-index: 120; display: flex; gap: 8px; align-items: center;
+  position: fixed; right: 12px; bottom: calc(var(--panel-height, 150px) + 8px); z-index: 120; display: flex; gap: 8px; align-items: center;
   transition: bottom 220ms cubic-bezier(.23, 1, .32, 1);
 }
 body.legend-off #devbar { bottom: 12px; }

@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
     }
   };
   const baseGo=go;
-  go=function(name) { if(name==='games') lobby(); baseGo(name); };
+  go=function(name, ...args) { if(name==='games' && !window.TOKI_OS_SHELL && !window.TOKI_EXTERNAL) lobby(); baseGo(name, ...args); };
   // Losing face, hiding the page or opening calibration must never collect a target.
   function syncSuspension() {
     if(latch) {

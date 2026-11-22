@@ -9,7 +9,7 @@ Terreno: frontend interactivo (Svelte, juegos Unity/WebGL y juegos en iframe). R
 ## Observado
 
 - `GET https://www.eyegazegames.com/carousel` devuelve 200. El catálogo muestra Petal Pinchers, Othello, Open Drive, Mole Miners, Eye Drive, Gazey Golf, Snakes & Ladders, Solitaire, 4 in a Row, Chess, Checkers, Sudoku, Sudoku Monsters y Music.
-- El primer uso pide idioma y un perfil del servicio. «Crear usuario» genera un perfil del servicio; no es solamente almacenamiento local. Para no crear perfiles en cada prueba, la experiencia final debe reutilizar un perfil persistente.
+- El primer uso pide idioma y un perfil del servicio. «Crear usuario» genera un perfil del servicio; no es solamente almacenamiento local. El SO local conserva ese perfil entre partidas y cambios de control en el directorio de estado del puente.
 - La página se renderizó dentro de un iframe de `localhost:8000` durante la verificación. No se observaron X-Frame-Options ni frame-ancestors en la respuesta del catálogo.
 - `GET /game?id=mole_miners` crea un iframe a `https://prod.games.eyegazegames.com/?game=moleminers`. En la primera prueba su contenido permaneció vacío: no se considera juego verificado.
 - `GET /gamesource?id=gazey_golf` carga Unity desde `https://assets.eyegazegames.io/prod/gazeygolf/Build/`. Se observó menú e instrucciones en español: elegir ángulo, elegir potencia y golpear; alternar controles. La selección del menú se completó por permanencia del puntero.
@@ -44,11 +44,12 @@ Se buscaron documentación/API/SDK de Eye Gaze Games; no se encontró contrato o
 
 La UI transmite coordenadas CSS del viewport de Toki, por lo que Chrome resuelve la entrada en los iframes de otros orígenes. Se envía únicamente mientras la cámara está activa, el juego visible y el seguimiento disponible. La pausa suspende el control; no se afirma que pause internamente todos los juegos.
 
+En el SO local, el reproductor abre el juego como página principal de un Chrome dedicado y muestra sus cuadros dentro de Toki. Mouse, Espacio y puntero por cámara usan el mismo perfil. Se verificó que Eye Drive reconoció el perfil al reabrirlo y que Espacio permitió elegir modo, circuito y nave.
+
 ## Por verificar
 
 - Precisión y comodidad con cámara real y pacientes: probar nariz, mirada y calibración con la persona.
 - Cada juego y sus modalidades: completar una partida en cada ruta; cargar un canvas no basta.
-- Persistencia entre sesiones del lanzador: el prototipo usa un perfil temporal aislado. Diseñar una opción persistente antes de uso diario.
 - Ranking compartido: no se ha implementado una API de resultados ni clasificación Toki.
 - Derechos y soporte de distribución comercial: el iframe probado es evidencia técnica, no acuerdo comercial con SpecialEffect.
 

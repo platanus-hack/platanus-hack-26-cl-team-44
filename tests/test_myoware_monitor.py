@@ -66,7 +66,8 @@ class MonitorTest(unittest.TestCase):
                 ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
                 ('/iphone-gaze.js','text/javascript','window.IPHONE'),
-                ('/layout.css','text/css','.rest-wake'),
+                ('/layout.css','text/css','.rest-actions'),
+                ('/game-surface.css','text/css','.external-viewport'),
                 ('/magnetic-pointer.js?v=24','text/javascript','createMenuPointer'),
                 ('/magnetic-pointer.css?v=24','text/css','.dwell-outline'),
                 ('/tablet-keyboard.js?v=21','text/javascript','toki-'),
@@ -77,6 +78,9 @@ class MonitorTest(unittest.TestCase):
                 with urllib.request.urlopen(base+route,timeout=1) as r:
                     self.assertEqual(r.headers.get_content_type(),content_type)
                     self.assertIn(marker,r.read().decode())
+            with urllib.request.urlopen(base+'/game-covers/eyedrive.webp',timeout=1) as r:
+                self.assertEqual(r.headers.get_content_type(),'image/webp')
+                self.assertEqual(r.read(4),b'RIFF')
             for route in ['/server.py','/../README.md','/README.md','/eye-engine/../server.py','/presets/%2e%2e/Info.json']:
                 with self.assertRaises(urllib.error.HTTPError) as caught:
                     urllib.request.urlopen(base+route)

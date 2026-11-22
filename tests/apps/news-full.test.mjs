@@ -34,7 +34,7 @@ test('un texto anómalamente largo se corta con tope', () => {
 const css = readFileSync(new URL('../../software/toki-os/os-juegos-servicios.css', import.meta.url), 'utf8');
 test('en Toki OS, Servicios usa la barra y márgenes del sistema y la lectura usa los colores del tema', () => {
   assert.match(css, /#s-apps \{ padding: 28px 48px; \}/);
-  assert.match(css, /#s-apps \.status \{ position: static; height: 60px; \}/);
+  assert.match(css, /#s-apps \.status \{ position: static; \}/);
   assert.match(css, /#s-apps \.news-reading \{ background: var\(--glass\);/);
   assert.match(css, /#s-apps \.news-reading p \{ color: var\(--txt\); \}/);
 });

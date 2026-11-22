@@ -1,6 +1,6 @@
 # Toki OS
 
-La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene ocho tarjetas e incluye Juegos, Servicios y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
+La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene siete tarjetas e incluye Juegos, Apps y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
 
 Desde la raíz del repositorio, con Node 22 o posterior:
 
@@ -43,9 +43,9 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. `J` sim
    | Ceja corta | Confirma la opción enfocada. |
    | Dos cejas rápidas | Cierra la rueda o vuelve un nivel, sin borrar el borrador. |
    | Mandíbula sostenida 3 s | Abre **Sí / No**, **Acomódame**, **Ven cuando puedas** y **Me duele**. Suelta para habilitar la selección. |
-   | Ceja sostenida 3 s | Abre el **SOS de prueba**, incluso con la rueda abierta. |
+   | Ceja sostenida 3 s | Activa el **SOS**, incluso con la rueda abierta. |
 
-Dentro de la rueda, la mirada enfoca sin elegir automáticamente. Si se pierde la mirada, el escaneo recorre las opciones y la ceja confirma. Los dos avisos son **simulados**: no llaman ni envían mensajes. `R` simula una respuesta; `Esc` o **Cerrar simulación** cierran el SOS.
+Dentro de la rueda, la mirada enfoca sin elegir automáticamente. Si se pierde la mirada, el escaneo recorre las opciones y la ceja confirma. El aviso no urgente es simulado. Antes de probar el SOS, mira la barra de estado. **SOS de prueba** indica una simulación. **SOS listo** indica que al activarlo se intentará llamar al contacto de emergencia. `R` simula la llegada del acompañante y `Esc` cierra la alarma en pantalla.
 
 La calibración de banco acepta al menos tres detecciones por gesto y rechaza activaciones en reposo, confusiones o repeticiones. El detector da prioridad a la mandíbula cuando contamina la señal de ceja; no hay combinación simultánea. Soltar antes de 3 s cancela la acción sostenida. La falta de muestras recientes cancela el gesto pendiente en vez de simular una liberación.
 
@@ -104,13 +104,13 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
 
-## Juegos y Servicios en Myo OS
+## Juegos y Apps en Myo OS
 
-Myo OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo y los recuadros grandes de Myo. Para probarlo con Servicios funcionando, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
+Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
 
-- **Inicio.** Las ocho tarjetas se distribuyen en dos filas de cuatro. Las columnas de los bordes son un 20 % más anchas. Para escuchar música, elige **Servicios → Spotify**.
-- **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse. Al jugar, el juego ocupa casi toda la pantalla y arriba solo queda una línea: "Primera vez: toca la bandera de España y luego «Crear usuario»" (así es la bienvenida real del sitio). Al salir de Juegos la partida se cierra.
-- **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Inicio.** La primera fila reúne Hablar, Escribir y Mensajes. La segunda contiene Apps, Juegos y Ajustes. **SOS** y **Descansar** comparten una fila al pie de la pantalla. **Descansar** pausa la selección. **Volver** reanuda en el mismo lugar. Para escuchar música, elige **Apps → Spotify**.
+- **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una, la partida se amplía a la ventana y la cámara sigue activa si se usa para apuntar. El botón **← Juegos** vuelve al catálogo. Con la mirada, nariz o iPhone, el servidor de Apps transmite la partida en la misma pantalla y recibe la posición del puntero. Mantenerlo sobre una opción o confirmar con la ceja o Espacio envía el clic. Con mouse, se interactúa directamente con el juego.
+- **Apps:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
 - **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
 
   ```bash
@@ -118,11 +118,11 @@ Myo OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo
   ```
 
   Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
-- **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
+- **Siempre hay salida:** "‹ Inicio" en la barra, "← Juegos" dentro de una partida y "Volver" dentro de cada app. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
 - **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
 - **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Myo OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
 
 ## Tema y atajos
 
 - **Tema claro / oscuro:** interruptor ☀︎/☾ abajo a la derecha o tecla `T`. Se recuerda en el navegador.
-- **Atajos de desarrollo** (teclas simuladas, cámara, LCD, eventos): ocultos por defecto. La pestaña con flecha (⌃) de abajo a la derecha los muestra u oculta.
+- **Controles** muestra la cámara, la detección de rostro y los grupos de sensores, atajos y diagnóstico. El panel recuerda si lo dejaste abierto o cerrado. **Activar cámara** inicia la vista previa y **Apagar cámara** libera la cámara.

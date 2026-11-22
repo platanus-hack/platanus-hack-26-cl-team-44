@@ -14,7 +14,7 @@ function setup(){
   const app=vm.createContext({
     S, document, CFG:{doubleMs:500,tapMs:900,holdMs:3000},
     $:()=>({classList:{contains:()=>calib},firstElementChild:{},lastElementChild:{}}), $$:()=>[],
-    flashPill(){}, confirmFocus(){ actions.push('confirm'); }, goBack(){ actions.push('back'); },
+    flashGesture(){}, confirmFocus(){ actions.push('confirm'); }, goBack(){ actions.push('back'); },
     startAlarm(){ actions.push('sos'); S.alarm={level:'emergencia'}; },
     openQuick(origin){ actions.push('open'); S.quick={opener:origin}; },
     unlockQuick(){ actions.push('unlock'); S.quick.opener=null; },

@@ -1,0 +1,21 @@
+/* The hosted games use a 16:9 viewport for both layout and pointer coordinates. */
+.external-frame-wrap {
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.external-viewport {
+  position: relative;
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+}
+#externalGame[hidden] { display: none; }
+.external-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #eee;
+  background: #111;
+  font-size: 30px;
+}

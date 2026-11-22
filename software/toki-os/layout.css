@@ -10,6 +10,26 @@
 /* ---------- más espacio para las tarjetas en todas las pantallas ---------- */
 .screen { padding: 28px 48px; gap: 20px; }
 .status { height: 60px; }
+.official-os .status { height: 78px; }
+.official-os #s-home .status { height: 60px; }
+.global-actions {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 64px;
+  flex: none; margin-top: auto; padding-top: 18px; border-top: 2px solid var(--hair);
+}
+.global-actions .sos-nav { --action-accent: #ff8b83; }
+.global-actions .rest-nav { --action-accent: #c6acff; }
+:root[data-theme="light"] .global-actions .sos-nav { --action-accent: #ac302f; }
+:root[data-theme="light"] .global-actions .rest-nav { --action-accent: #6743a0; }
+.global-actions .nav-action {
+  height: 132px; gap: .58em; border-radius: .58em;
+  background-color: color-mix(in srgb, var(--action-accent) 7%, var(--glass));
+  border-color: color-mix(in srgb, var(--action-accent) 25%, var(--hair));
+  font-size: 38px; line-height: 1.1;
+}
+.global-actions .nav-icon {
+  flex: none; width: 1.9em; height: 1.9em; padding: .37em; border-radius: 50%;
+  color: var(--action-accent); background: color-mix(in srgb, currentColor 13%, transparent);
+}
 .grid4x2, .grid2x2 { gap: 20px; }
 .grid3x2 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
 .grid5x2 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
@@ -19,6 +39,54 @@
 .app svg { width: 92px; height: 92px; }
 .tile .lb { font-size: 58px; }
 .tile .sb { font-size: 30px; }
+
+.official-os { --card-focus: #71b7ff; --card-ready: #73d596; }
+:root[data-theme="light"] .official-os { --card-focus: #005eb8; --card-ready: #167943; }
+
+/* Inicio oficial: tres acciones de comunicación y tres destinos en la segunda fila. */
+.official-os #s-home { gap: 28px; }
+.official-os.external-playing #s-games .status { margin: 8px 20px 0; }
+.official-os.external-playing #s-games .global-actions { margin: auto 20px 8px; }
+.official-os #tiles { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 32px; }
+.official-os #tiles > .tile { gap: 22px; padding: 24px; border-radius: 32px; font: inherit; color: var(--txt); cursor: pointer; animation: none; }
+.official-os #tiles .app { width: 152px; height: 152px; border-radius: 38px; box-shadow: none; }
+.official-os #tiles .app svg { width: 80px; height: 80px; }
+.official-os #tiles .home-mosaic img { box-shadow: none; }
+.official-os #tiles .lb { font-size: 54px; line-height: 1.08; }
+.official-os #tiles .sb { margin-top: -10px; font-size: 28px; line-height: 1.22; }
+.official-os #s-home .hint span { padding: 4px 12px; background: none; border: 0; }
+/* El lienzo se escala completo. En pantallas pequeñas se reserva altura para apuntar
+   a las acciones, con iconos de Inicio cuadrados en el espacio que queda. */
+@media (max-width:660px), (max-height:560px) {
+  .global-actions { gap: 96px; }
+  .global-actions .nav-action { height: 224px; font-size: 64px; }
+  .official-os #tiles > .tile { gap: 12px; padding: 12px; }
+  .official-os #tiles .app { flex: none; width: 112px; height: 112px; border-radius: 28px; }
+  .official-os #tiles .app svg { width: 66px; height: 66px; }
+  .official-os #tiles .home-mosaic { width: 88px; height: 88px; gap: 7px; }
+}
+@media (max-width:420px), (max-height:420px) {
+  .global-actions .nav-action { height: 280px; font-size: 82px; }
+}
+.official-os :is(#tiles .tile,.nav-action) {
+  box-shadow: none; transform: none;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.official-os :is(#tiles .tile,.nav-action)::before,
+.official-os.gaze-only :is(#tiles .tile,.nav-action)::after { display: none; }
+.official-os :is(#tiles .tile,.nav-action).focus { border-color: var(--card-focus); background-color: var(--glass-hi); }
+.official-os :is(#tiles .tile,.nav-action).armed { border-color: var(--card-ready); }
+.official-os :is(#tiles .tile,.nav-action).pressed { background-color: color-mix(in srgb,var(--blue) 16%,var(--glass-hi)); }
+.official-os :is(#tiles .tile,.nav-action):focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.official-os :is(#tiles,.status,.global-actions) .dwell-outline > rect:last-child { stroke: var(--card-focus); }
+.official-os :is(#tiles,.status,.global-actions) .armed .dwell-outline > rect:last-child { stroke: var(--card-ready); }
+.official-os #tiles .badge { top: 18px; right: 20px; left: auto; bottom: auto; transform: none; font-size: 20px; padding: 5px 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .official-os :is(#tiles .tile,.nav-action) { transition: none !important; }
+}
+@media (forced-colors: active) {
+  .official-os :is(#tiles,.status,.global-actions) .dwell-outline > rect:last-child { stroke: Highlight; }
+}
 
 /* hablar: 4 frases grandes + columna con Escribir y Volver */
 .talkgrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr 400px; grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
@@ -115,12 +183,24 @@
   .quick-wheel .t:focus-visible,.quick-wheel .t.focus { outline-color:Highlight; }
 }
 
-/* descanso: salida con la mirada (mantener 2 s) */
-.rest-wake { margin-top: 28px; width: 760px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 54px; font-weight: 700; color: var(--txt); cursor: pointer; }
-.rest-wake small { font-size: 28px; font-weight: 550; color: var(--txt2); }
-.rest-wake.focus { transform: scale(1.03); }
-.rest-wake .fill { position: absolute; inset: 0; border-radius: inherit; background: rgba(10, 132, 255, .18); transform: scaleX(var(--p, 0)); transform-origin: left; z-index: -1; }
-
+/* Descanso: dos objetivos estables y una sola indicación de uso. */
+.rest-actions { margin-top:36px; display:grid; grid-template-columns:530px 410px; gap:56px; }
+.rest-actions .t {
+  position:relative; display:grid; grid-template-columns:60px auto; grid-template-rows:auto auto;
+  align-content:center; justify-content:center; align-items:center; gap:6px 24px;
+  min-height:204px; padding:20px 32px; overflow:hidden; border-radius:32px;
+  color:var(--txt); font:inherit; cursor:pointer; transform:none; box-shadow:none;
+}
+.rest-actions svg { grid-row:span 2; width:58px; height:58px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.rest-actions strong,.rest-actions small { text-align:left; }
+.rest-actions strong { font-size:54px; line-height:1.1; }
+.rest-actions small { font-size:29px; color:var(--txt2); }
+.rest-actions .rest-sos { background:color-mix(in srgb,var(--red) 7%,var(--glass)); border-color:color-mix(in srgb,var(--red) 45%,var(--hair)); }
+.rest-sos svg { color:var(--red); }
+.rest-actions .t.focus,.rest-actions .t:focus-visible { outline:4px solid var(--card-focus,var(--blue)); outline-offset:5px; transform:none; box-shadow:none; }
+.rest-actions .fill { position:absolute; bottom:0; left:0; width:100%; height:7px; background:var(--card-focus,var(--blue)); transform:scaleX(var(--p,0)); transform-origin:left; }
+.rest-actions .badge,.rest-actions .ring { display:none; }
+.rest-hint { margin:10px 0 0; color:var(--txt2); font-size:26px; }
 /* ---------- modo solo mirada (iPhone): sin gestos de ceja ni mandíbula ---------- */
 /* las pistas de gestos no aplican: se ocultan y las tarjetas ganan esa altura */
 body.gaze-only .hint { display: none; }
@@ -164,3 +244,41 @@ body.gaze-only .badge { display: none; }
 .grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
 /* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
 .key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+
+/* Elección inicial de control. La calibración conserva su espacio para los puntos. */
+.official-os .cal-card.choose-control {
+  width: 1032px; padding: 48px; border-radius: 36px; text-align: left; transition: none;
+  background: var(--panel, #181c24);
+}
+:root[data-theme="light"] .official-os .cal-card.choose-control { background: #f7f8fb; }
+.official-os .choose-control .cal-title { font-size: 50px; line-height: 1.1; letter-spacing: -.035em; }
+.official-os .choose-control .cal-steps, .official-os .cal-text:empty { display: none; }
+.official-os .choose-control .cal-text { margin: 16px 0 0; font-size: 27px; }
+.official-os .choose-control .cal-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 32px; align-items: stretch; }
+.official-os .control-option {
+  min-width: 0; height: auto; min-height: 124px; padding: 22px 24px; border-radius: 22px;
+  display: flex; align-items: center; gap: 20px; text-align: left; background: var(--glass); color: var(--txt);
+}
+.official-os .control-option strong, .official-os .control-option small { display: block; }
+.official-os .control-option strong { font-size: 34px; line-height: 1.1; letter-spacing: -.02em; }
+.official-os .control-option small { font-size: 23px; font-weight: 450; line-height: 1.25; color: var(--txt2); margin-top: 6px; }
+.official-os .control-option svg { flex: none; width: 56px; height: 56px; padding: 10px; border-radius: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; background: color-mix(in srgb, currentColor 12%, transparent); }
+.official-os .control-option[data-c="start"] svg { color: var(--green); }
+.official-os .control-option[data-c="gaze"] svg { color: var(--blue); }
+.official-os .control-option[data-c="iphone"] svg { color: var(--purple); }
+.official-os .control-option[data-c="mouse"] svg { color: var(--txt2); }
+.official-os .choose-control .resume-control { grid-column: 1/-1; border-radius: 16px; min-width: 0; height: 76px; font-size: 28px; }
+.official-os .choose-control .cbtn:hover, .official-os .choose-control .cbtn:focus-visible { border-color: var(--blue); outline: 3px solid var(--blue); outline-offset: 2px; }
+@media (max-width:700px), (max-height:500px) {
+  body.official-os:has(#calib.on .choose-control) #wrap { inset: 0 !important; transform: none !important; z-index: 125; }
+  body.official-os:has(#calib.on .choose-control) #stage { width: 100%; height: 100%; }
+  .official-os #calib.on:has(.choose-control) { display: flex; padding: 12px; overflow: auto; }
+  .official-os .cal-card.choose-control { position: static; margin: auto; transform: none; width: min(100%,440px); padding: 18px; border-radius: 20px; }
+  .official-os .choose-control .cal-title { font-size: 27px; }
+  .official-os .choose-control .cal-text { font-size: 16px; }
+  .official-os .choose-control .cal-btns { margin-top: 18px; gap: 10px; }
+  .official-os .control-option { min-height: 108px; gap: 7px; padding: 12px; flex-direction: column; align-items: flex-start; border-radius: 14px; }
+  .official-os .control-option svg { width: 30px; height: 30px; padding: 4px; border-radius: 7px; }
+  .official-os .control-option strong { font-size: 18px; } .official-os .control-option small { font-size: 13px; margin-top: 3px; }
+  .official-os .choose-control .resume-control { height: 48px; font-size: 16px; }
+}
