@@ -13,18 +13,16 @@ const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.j
 assert.ok(order.every((i) => i > 0), "Woki OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
-// 2. Inicio: 10 tarjetas en 5×2 (Servicios antes de Juegos, nada se quita).
+// 2. El SO declara las ocho tarjetas en su orden de lectura y usa la rejilla de cuatro columnas.
 {
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
-  const TILES = vm.runInNewContext(tilesSrc.replace("const TILES =", "TILES =") + ";TILES", {});
-  TILES.splice(6, 0, ["go:games", "g-purple", "i-game", "Juegos", "A tu ritmo"]); // lo que hace prototype-games.js
-  const gi = TILES.findIndex((t) => t[0] === "go:games");
-  TILES[gi] = ["go:games", "g-teal", "i-gamepad", "Juegos", "A tu ritmo"];
-  TILES.splice(TILES.findIndex((t) => t[0] === "go:games"), 0, ["go:apps", "g-white", "i-apps", "Servicios", ""]);
-  assert.equal(TILES.length, 10);
-  assert.equal(TILES.map((t) => t[3]).slice(5).join(" · "), "Música · Servicios · Juegos · Descansar · Ajustes");
-  assert.match(glue, /\$\('#tiles'\)\.className = 'grid5x2'/, "el inicio pasa a 5×2");
-  assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid5x2 \{ grid-template-columns: var\(--edge\)/, "5×2 con bordes más anchos");
+  const tiles = vm.runInNewContext(tilesSrc + " TILES");
+  assert.deepEqual(Array.from(tiles, ([action]) => action), [
+    "go:talk", "go:keyboard", "attention", "go:contacts",
+    "go:apps", "go:games", "rest", "go:settings",
+  ]);
+  assert.match(html, /class="grid4x2" id="tiles"/);
+  assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 
 // 3. Siempre hay salida grande: "‹ Inicio" en la barra, "← Inicio" en Juegos y "← Juegos" en el catálogo externo.
@@ -56,13 +54,11 @@ assert.match(css, /#s-apps \.news-card\.has-thumb \{ display: grid; grid-templat
 assert.match(css, /#s-apps \.news-pagebar \.ta-button \{ min-height: 120px;/, "BioBío: paginación con objetivos de 120 px");
 assert.match(glue, /new MutationObserver\(targets\)\.observe\(root, \{ subtree: true, attributes: true, attributeFilter: \['disabled'\] \}\)/, "un botón habilitado sin repintar («Reproducir») se puede elegir con la mirada");
 
-// 5c. Parejas sin «Continuar» (las tarjetas distintas giran solas); Constelaciones guarda tiempo sin contar pausas;
-//     Música abre Spotify en Servicios.
+// 5c. Parejas sin «Continuar» (las tarjetas distintas giran solas); Constelaciones guarda tiempo sin contar pausas.
 assert.ok(!/act==='next'/.test(games), "Parejas ya no necesita «Continuar»");
 assert.match(games, /setTimeout\(\(\)=>\{ if\(state!==s\|\|s\.done\) return; s\.open=\[\]; s\.flipBack=pair; renderGame\(\); \}, 1200\)/);
 assert.match(games, /function clock\(s, now=performance\.now\(\)\)/);
 assert.match(games, /'¡Nuevo récord de tiempo!'/);
-assert.match(glue, /if \(act === 'music'\) \{[^]*?go\('apps'\);\s*void app\?\.openSpotify\(\);/);
 
 // 6. Ajustes › Tema y color: tema y 5 colores, todos definidos en claro y oscuro, y se recuerda.
 for (const p of ["bosque", "oceano", "atardecer", "lavanda"]) {
@@ -73,4 +69,4 @@ assert.match(html, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océan
 assert.match(html, /localStorage\.getItem\('woki\.palette'\)/, "el color se aplica antes de pintar");
 assert.match(html, /case 'look':/);
 
-console.log("Juegos y Servicios en Toki OS: módulos del equipo, 10 tarjetas en 5×2, salidas grandes, sin elección en cadena y colores.");
+console.log("Juegos y Servicios en Toki OS: módulos del equipo, 8 tarjetas en 4×2, salidas grandes, sin elección en cadena y colores.");

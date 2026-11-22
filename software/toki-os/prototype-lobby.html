@@ -1,14 +1,54 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>Toki OS</title>
-  <script>
-    const home = new URL('index.html', location.href);
-    home.search = location.search;
-    home.hash = location.hash;
-    location.replace(home.href);
-  </script>
-</head>
-<body><a href="index.html">Abrir Toki OS</a></body>
-</html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101c26"><title>Toki · Tablet</title><link rel="stylesheet" href="magnetic-pointer.css?v=24"><link rel="stylesheet" href="prototype-lobby.css?v=26"></head>
+<body><div id="world" aria-hidden="true"><div class="horizon"></div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="ground"></div><div class="grain"></div></div>
+<div class="shell">
+<header class="system-header">
+ <div class="tablet-wordmark" aria-label="Toki" role="img">toki<span aria-hidden="true"></span></div>
+ <button id="return-home" class="nav-control" aria-label="Inicio"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7"/></svg> Inicio</button>
+ <div class="session"><span id="location" tabindex="-1" role="heading" aria-level="1">Inicio</span></div>
+ <div class="header-actions"><button class="nav-control" id="take-rest"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15a9 9 0 0 1-11-11 9 9 0 1 0 11 11Z"/></svg>Descansar</button><button class="nav-control" id="settings" aria-expanded="false" aria-controls="tablet-settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h8m6 0h4M3 17h2m6 0h10"/><circle cx="14" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg>Ajustes</button></div>
+</header>
+<section id="tablet-settings" hidden aria-label="Ajustes">
+ <h2>Cómo apuntar y elegir</h2>
+ <fieldset class="dwell-options">
+  <legend>Tiempo para elegir</legend>
+  <div class="control-options">
+   <button type="button" data-dwell-ms="2000" aria-label="2 segundos" aria-pressed="false">2 s</button>
+   <button type="button" data-dwell-ms="3000" aria-label="3 segundos" aria-pressed="true">3 s</button>
+   <button type="button" data-dwell-ms="4000" aria-label="4 segundos" aria-pressed="false">4 s</button>
+   <button type="button" data-dwell-ms="6000" aria-label="6 segundos" aria-pressed="false">6 s</button>
+  </div>
+ </fieldset>
+ <div class="control-options">
+ <button id="tracking">Elegir mirada, nariz o mouse</button>
+ <button id="pause-access" aria-pressed="false">Pausar selección</button><button id="selection">Selección por permanencia</button>
+ <button id="magnet" aria-pressed="true">Imán del puntero activado</button>
+ <button id="sensor">Conectar MyoWare USB</button></div>
+ <p id="input-state" role="status"></p>
+ <div class="control-options"><button id="sound" aria-pressed="false"></button><button id="motion" aria-pressed="false"></button><button id="fullscreen">Pantalla completa</button></div>
+ <div class="control-options"><button id="ambient-toggle">Escuchar sonido ambiente</button></div>
+ <div id="ambient-volume" hidden><div class="control-options" role="group" aria-label="Volumen del sonido ambiente"><button id="ambient-quieter">Bajar volumen</button><button id="ambient-louder">Subir volumen</button></div></div>
+ <button id="finish-settings" class="primary">Listo</button>
+</section>
+<main id="stage"><div id="art" aria-hidden="true"></div><section id="content" aria-live="polite"></section></main>
+<footer><div class="bottom"><div class="page-steps"><button id="page-up" hidden>Subir</button><button id="page-down" hidden>Bajar</button></div><span id="active-control">Mouse</span><span>Mensajes de prueba · envío simulado</span></div></footer>
+</div>
+<section id="visual-rest" role="dialog" aria-modal="true" aria-label="Descanso visual" hidden>
+ <button id="resume-rest">Continuar</button>
+</section>
+<div id="access-layer" hidden>
+ <section id="access-chooser" hidden role="dialog" aria-modal="true" aria-labelledby="choice-title">
+  <div class="choice-header">
+   <span class="tablet-wordmark" role="img" aria-label="Toki">toki<span aria-hidden="true"></span></span>
+   <h1 id="choice-title" tabindex="-1">Elige tu control</h1>
+  </div>
+  <p id="choice-error" role="status" hidden></p>
+   <div class="choice-options">
+    <button class="choice-option" data-pointer="Mirada"><span class="choice-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M5 32q27-34 54 0-27 34-54 0Z"/><circle cx="32" cy="32" r="9"/></svg></span><strong>Mirada</strong></button>
+    <button class="choice-option" data-pointer="Nariz"><span class="choice-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M17 55v-9c-6-6-9-13-6-22 3-10 11-15 21-14 11 0 17 8 18 19l5 10-7 2v4q0 5-6 5h-5v6M38 27h5"/></svg></span><strong>Nariz</strong></button>
+    <button class="choice-option" data-pointer="Mouse"><span class="choice-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="7" width="32" height="50" rx="16"/><path d="M32 8v15m-15 4h30"/></svg></span><strong>Mouse</strong></button>
+   </div>
+  <button id="dismiss-chooser" class="secondary" hidden>Volver a ajustes</button>
+ </section>
+ <button id="cancel-tracking" hidden>Cambiar control</button>
+</div><div id="access-cursor" aria-hidden="true" hidden></div><div id="announcer" class="sr-only" role="status"></div><div id="toast" role="status"></div><link rel="stylesheet" href="toki-apps.css?v=24"><script src="toki-apps.js?v=24"></script><script src="prototype-conversation.js?v=9"></script><script src="magnetic-pointer.js?v=24"></script><script src="tablet-access.js?v=28"></script><script src="prototype-lobby.js?v=28"></script></body></html>

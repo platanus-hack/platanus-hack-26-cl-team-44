@@ -169,8 +169,8 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       }
       if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
       if (req.method !== 'GET' && req.method !== 'HEAD') throw fault('Método no permitido.', 405);
-      if (url.pathname === '/prototype-lobby.html') {
-        res.writeHead(302, {Location: '/' + url.search, 'Cache-Control': 'no-store'});
+      if ((url.pathname === '/' || url.pathname === '/index.html') && !url.search) {
+        res.writeHead(302, {Location: '/woki-os.html', 'Cache-Control': 'no-store'});
         res.end();
         return;
       }
