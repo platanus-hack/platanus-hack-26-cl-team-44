@@ -17,6 +17,7 @@ import re
 import sqlite3
 import time
 
+import llm
 from memoria import contexto, store
 
 MODELO = os.environ.get("TOKI_MODELO", "claude-sonnet-5-5")
@@ -55,19 +56,7 @@ def _limpio(s: str, n: int) -> str:
 
 
 async def _consultar(sistema: str, prompt: str) -> tuple[dict | None, dict]:
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-
-    opciones = ClaudeAgentOptions(
-        system_prompt=sistema, model=MODELO, tools=[], allowed_tools=[], setting_sources=[],
-        strict_mcp_config=True, max_turns=2, effort="low",
-        output_format={"type": "json_schema", "schema": ESQUEMA},
-        env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
-    )
-    datos, meta = None, {}
-    async for msg in query(prompt=prompt, options=opciones):
-        if isinstance(msg, ResultMessage):
-            datos, meta = msg.structured_output, {"duration_ms": msg.duration_ms, "error": msg.is_error}
-    return datos, meta
+    return await llm.consultar(sistema, prompt, ESQUEMA, MODELO)
 
 
 def plan(c: sqlite3.Connection, para: str, ocasion: str = "una ocasión especial",

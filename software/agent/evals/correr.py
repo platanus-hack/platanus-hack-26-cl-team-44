@@ -52,7 +52,7 @@ def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[b
     el contenido es solo informativo (casos reales: cuánto se acerca al dato que ella dio), no cuenta como acierto."""
     import asyncio
 
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
+    import llm
     if not opciones:
         return False, -1, False
     prompt = (f"Le dijeron: «{pregunta}»\nRespuestas aceptables (cualquiera sirve):\n" + "\n".join(f"- {a}" for a in aceptables)
@@ -60,17 +60,9 @@ def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[b
               + "\n\n¿Alguna opción tiene la misma intención que alguna aceptable? No hace falta que traiga los mismos datos; el estilo puede cambiar. "
               "calza = true o false; cual = índice de la mejor (o -1). "
               "Aparte, solo como dato: contenido = true si alguna además trae los mismos datos.")
-    op = ClaudeAgentOptions(model=JUEZ, tools=[], allowed_tools=[], setting_sources=[], strict_mcp_config=True, max_turns=2,
-                            effort="low", output_format={"type": "json_schema", "schema": JUEZ_ESQUEMA},
-                            env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
-                            system_prompt="Eres un evaluador estricto y breve. Respondes solo con el JSON pedido.")
-
-    async def correr():
-        async for m in query(prompt=prompt, options=op):
-            if isinstance(m, ResultMessage):
-                return m.structured_output or {}
-        return {}
-    r = asyncio.run(correr())
+    datos, _ = asyncio.run(llm.consultar("Eres un evaluador estricto y breve. Respondes solo con el JSON pedido.",
+                                         prompt, JUEZ_ESQUEMA, JUEZ))
+    r = datos or {}
     return bool(r.get("calza")), int(r.get("cual", -1)), bool(r.get("calza")) and bool(r.get("contenido"))
 
 

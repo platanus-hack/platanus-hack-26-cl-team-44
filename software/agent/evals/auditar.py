@@ -35,6 +35,7 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(AGENT))
 import agente  # noqa: E402
+import llm  # noqa: E402
 from memoria import store  # noqa: E402
 
 AQUI = Path(__file__).resolve().parent
@@ -98,16 +99,9 @@ Juzga solo con el turno y las opciones. No conoces su memoria."""
 
 
 async def _juez(turno: str, rol: str, opciones: list[str]) -> list[dict]:
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-    o = ClaudeAgentOptions(system_prompt=SISTEMA_JUEZ, model=agente.MODELO, tools=[], allowed_tools=[], setting_sources=[],
-                           strict_mcp_config=True, max_turns=2, effort="low",
-                           output_format={"type": "json_schema", "schema": ESQUEMA_JUEZ},
-                           env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"})
     prompt = f"Le habla: {rol}.\nTurno: «{turno}»\nOpciones:\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(opciones))
-    async for m in query(prompt=prompt, options=o):
-        if isinstance(m, ResultMessage) and m.structured_output:
-            return m.structured_output.get("opciones", [])
-    return []
+    datos, _ = await llm.consultar(SISTEMA_JUEZ, prompt, ESQUEMA_JUEZ, agente.MODELO)
+    return (datos or {}).get("opciones", [])
 
 
 def correr_caso(db: str, caso: dict, limites: list[dict], juez: bool) -> dict:

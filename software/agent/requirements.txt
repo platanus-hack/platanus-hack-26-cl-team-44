@@ -1,1 +1,2 @@
 claude-agent-sdk==0.2.187
+anthropic==2.12.0
