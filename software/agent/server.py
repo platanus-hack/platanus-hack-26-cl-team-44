@@ -15,9 +15,12 @@ Modo dev de la TV:
   POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, resultado por SSE
 
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
+Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Woki-Token
+(o ?token= en /api/eventos, porque EventSource no manda headers). El puente local entra sin token.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import queue
@@ -28,6 +31,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
@@ -109,6 +113,20 @@ def trabajador_dev() -> None:
             c.close()
 
 
+TOKEN = os.environ.get("TOKI_TOKEN", "")
+
+
+def autorizado(headers, path: str, token: str = TOKEN) -> bool:
+    """Sin token configurado, o pedido local directo (sin proxy): pasa. Por el proxy: exige el token."""
+    if not token or not headers.get("X-Forwarded-For"):
+        return True
+    dado = headers.get("X-Woki-Token", "")
+    u = urlparse(path)
+    if not dado and u.path == "/api/eventos":
+        dado = (parse_qs(u.query).get("token") or [""])[0]
+    return hmac.compare_digest(dado.encode(), token.encode())
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -138,10 +156,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self._cors()
         self.send_header("Access-Control-Allow-Methods", "GET, POST")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Woki-Token")
         self.end_headers()
 
     def do_GET(self):
+        if not autorizado(self.headers, self.path):
+            return self._json(401, {"error": "falta el token"})
+        self.path = urlparse(self.path).path
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
@@ -186,6 +207,8 @@ class Handler(BaseHTTPRequestHandler):
                 _clientes.discard(q)
 
     def do_POST(self):
+        if not autorizado(self.headers, self.path):
+            return self._json(401, {"error": "falta el token"})
         o = self.headers.get("Origin")
         if o and o not in ORIGENES:
             return self._json(403, {"error": "origen no permitido"})

@@ -28,7 +28,8 @@ chown -R toki:toki "$BASE/repo"
 [ -d "$BASE/venv" ] || python3 -m venv "$BASE/venv"
 "$BASE/venv/bin/pip" install -q -r "$BASE/repo/software/agent/requirements.txt"
 
-# Memoria con la semilla de EJEMPLO (persona ficticia). Nunca la de la usuaria real.
+# Memoria: la de EJEMPLO si no hay base. La real (data/semilla.json) se copia a mano y no se pisa:
+#   scp software/agent/data/semilla.json toki-vps:/opt/toki/repo/software/agent/data/ y correr semilla.py como toki.
 if [ ! -f "$BASE/repo/software/agent/data/memoria.db" ]; then
   sudo -u toki "$BASE/venv/bin/python" "$BASE/repo/software/agent/scripts/semilla.py" --ejemplo
 fi
@@ -125,6 +126,10 @@ install -d -o toki -g toki -m 700 "$BASE/puente"
 [ -f "$BASE/puente/profile.json" ] || install -o toki -g toki -m 600 "$BASE/repo/software/whatsapp-bridge/profile.example.json" "$BASE/puente/profile.json"
 runuser -u toki -- bash -c "cd '$BASE/repo/software/whatsapp-bridge' && npm ci --silent --no-audit --no-fund"
 cp "$BASE/repo/deploy/toki-puente.service" /etc/systemd/system/toki-puente.service
+
+# El agente público exige el mismo token del puente (TOKI_TOKEN); el puente lo llama directo, sin token.
+printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-)" >> "$BASE/toki.env"
+chmod 600 "$BASE/toki.env"
 
 cp "$BASE/repo/deploy/toki-agente.service" /etc/systemd/system/toki-agente.service
 mkdir -p /etc/systemd/system/caddy.service.d

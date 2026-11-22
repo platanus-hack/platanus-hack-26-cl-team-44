@@ -14,7 +14,9 @@ La TV es una sola. Se abre de 2 formas, y el código elige los servicios según 
 
 - Máquina: `srv2186003.hstgr.cloud`, 179.66.157.161, Ubuntu 26.04. Acceso: `ssh toki-vps`.
 - Caddy sirve la TV en `/` y el agente en `/agente/*`, con HTTPS de Let's Encrypt. HTTP/3 está apagado: con él, el navegador se colgaba.
-- El agente corre como el servicio `toki-agente`, con el usuario `toki` y la semilla de **ejemplo**.
+- El agente corre como el servicio `toki-agente`, con el usuario `toki`. Sin `data/semilla.json` usa la semilla de **ejemplo**.
+- `/agente/*` exige el mismo token del puente (`TOKI_TOKEN` en `/opt/toki/toki.env`): sin `?wa_token=`, el modo dev público no ve la memoria. El puente llama al agente directo, sin token.
+- Memoria real: `scp software/agent/data/semilla.json toki-vps:/opt/toki/repo/software/agent/data/` y `ssh toki-vps 'cd /opt/toki/repo/software/agent && sudo -u toki /opt/toki/venv/bin/python scripts/semilla.py && systemctl restart toki-agente'`.
 - Tope de 300 llamadas al agente por día (`TOKI_MAX_DIA` en `/opt/toki/toki.env`).
 - Modo dev para los jueces: https://179-66-157-161.sslip.io/?dev=1
 
