@@ -91,7 +91,7 @@ def plan(c: sqlite3.Connection, para: str = "juan", ocasion: str = "aniversario"
     tope = int(presupuesto or datos.get("presupuesto") or 0)
     meta["ms_total"] = int((time.monotonic() - t0) * 1000)
     return {
-        "para": persona["id"], "ocasion": _limpio(ocasion, 60),
+        "para": persona["id"], "para_nombre": persona["nombre"], "ocasion": _limpio(ocasion, 60),
         "mensaje": _limpio(datos["mensaje"], 160), "query": _limpio(datos["query"], 40),
         "preferir": [_limpio(w, 30).lower() for w in datos.get("preferir", [])][:5],
         "evitar": [_limpio(w, 30).lower() for w in datos.get("evitar", [])][:5],
