@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import sqlite3
 import time
 
@@ -31,12 +32,32 @@ MODOS = {
                 "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y 2 con otras ideas"},
     "voz":     {"pedir": 4, "n": 4, "palabras": 12, "neutral": True,
                 "tipos": "una que acepta o dice que sí, una que rechaza o pone un límite, y 2 con otras ideas"},
+    # En la sala, cuando ninguna tarjeta sirve y ella escribe la primera letra de cada palabra (myo-escucha.js).
+    "iniciales": {"pedir": 5, "n": 5, "palabras": 14, "neutral": False,
+                  "tipos": "frases distintas que respetan las iniciales, de la más probable a la menos"},
 }
 DONDE = {
     "chat": "Te escriben por WhatsApp, en un chat 1 a 1.",
     "mencion": "Te mencionan en un grupo de WhatsApp. Tu respuesta la leen todos los del grupo.",
     "voz": "Te hablan en persona, en la sala. Tu frase sale en voz alta.",
+    "iniciales": "Te hablan en persona, en la sala. Ella escribe su respuesta eligiendo la primera letra de cada palabra; tu frase sale en voz alta.",
 }
+
+
+def iniciales_de(texto: str) -> str:
+    """Primera letra de cada palabra, sin tildes: «¿Ya voy, amor?» -> «yva»."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", texto.lower())
+    t = "".join(ch for ch in t if not unicodedata.combining(ch))
+    return "".join(w[0] for w in re.findall(r"[a-zñ0-9]+", t))
+
+
+def instruccion_iniciales(ini: str) -> str:
+    letras = " · ".join(ini.upper())
+    return (f"Ella está escribiendo su respuesta: eligió solo la PRIMERA letra de cada palabra. Lleva estas iniciales: {letras}\n"
+            f"Propón frases que respondan al mensaje y cuyas palabras empiecen, en orden, EXACTAMENTE por esas letras "
+            f"({len(ini)} palabras; las contracciones cuentan como una). Si con esas letras la frase parece incompleta, "
+            f"puedes añadir hasta 3 palabras más al final.")
 
 
 def _esquema(pedir: int) -> dict:
@@ -112,7 +133,7 @@ async def _consultar(sistema: str, prompt: str, pedir: int) -> tuple[dict | None
 
 def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
               historial: list[str] | None = None, modo: str = "voz",
-              extra: set[str] | None = None) -> dict:
+              extra: set[str] | None = None, iniciales: str = "", excluir: list[str] | None = None) -> dict:
     """Devuelve {modo, resumen, persona, ultimo_encuentro, opciones, descartadas, origen, meta}.
 
     persona puede ser una persona de la memoria o un dict con id y tipo_interlocutor
@@ -124,7 +145,11 @@ def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
     datos, meta, origen = None, {}, "agente"
     try:
         datos, meta = asyncio.run(asyncio.wait_for(
-            _consultar(_sistema(c, modo), _prompt(ctx, texto, historial), m["pedir"]), TOPE_S))
+            _consultar(_sistema(c, modo), _prompt(ctx, texto, historial)
+                       + ("\n\n" + instruccion_iniciales(iniciales) if iniciales else "")
+                       + ("\n\nYa le mostraste estas opciones; propón otras distintas, sin repetirlas:\n"
+                          + "\n".join(f"- {x}" for x in excluir[:20]) if excluir else ""),
+                       m["pedir"]), TOPE_S))
     except asyncio.TimeoutError:
         meta = {"error": f"pasó el tope de {TOPE_S:.0f} s"}
     except Exception as e:  # el demo sigue con reglas
@@ -133,6 +158,8 @@ def run_agent(c: sqlite3.Connection, persona: dict | None, texto: str,
         origen = "reglas"
     opciones, fuera = salida.validar(c, (datos or {}).get("opciones", []), persona,
                                      n=m["n"], max_palabras=m["palabras"], neutral=m["neutral"], extra=extra)
+    if iniciales:   # primero las que respetan exactamente las letras, luego las que empiezan con ellas
+        opciones.sort(key=lambda o: (iniciales_de(o["text"]) != iniciales, not iniciales_de(o["text"]).startswith(iniciales)))
     meta["ms_total"] = int((time.monotonic() - t0) * 1000)
     return {
         "modo": modo,

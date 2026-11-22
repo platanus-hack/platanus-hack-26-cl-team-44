@@ -72,6 +72,33 @@ class TestAudiencia(Base):
                     self.assertTrue(visto <= set(VISIBLE[q["tipo_interlocutor"] if q else "desconocido"]))
 
 
+class TestTemasNombresPropios(unittest.TestCase):
+    """Un tema por comienzo de palabra no debe marcar un nombre propio («plata» ≠ «Platanus»)."""
+    T = {"dinero": ["plata"], "salud": ["endocrin", "mounjaro"]}
+
+    def temas(self, t):
+        from memoria import filtros
+        return filtros.temas_de_texto(t, self.T)
+
+    def test_nombre_propio_no_calza_por_prefijo(self):
+        self.assertEqual(self.temas("Fueron a la final de Platanus Hack."), set())
+
+    def test_palabra_comun_y_comienzo_de_oracion_si(self):
+        self.assertEqual(self.temas("No hay plata."), {"dinero"})
+        self.assertEqual(self.temas("Plata no hay."), {"dinero"})
+
+    def test_prefijo_en_palabra_comun_y_nombre_exacto(self):
+        self.assertEqual(self.temas("Empezó con endocrinología."), {"salud"})
+        self.assertEqual(self.temas("Usa Mounjaro."), {"salud"})
+
+
+class TestIniciales(unittest.TestCase):
+    def test_iniciales_de(self):
+        from agente import iniciales_de   # noqa: PLC0415 (agente importa el SDK solo al consultar)
+        self.assertEqual(iniciales_de("¿Ya voy, amor?"), "yva")
+        self.assertEqual(iniciales_de("Sí, ñoño"), "sn")   # igual que fold() en la TV: la ñ cuenta como n
+
+
 class TestTarjetas(unittest.TestCase):
     def ordenar(self, texto, tipo="familia", usuaria=NADA, uso=NADA, presentes=(), ultima=None):
         return tarjetas.ordenar([{"speaker": "partner", "text": texto}], tipo, set(VISIBLE[tipo]), usuaria, uso,
