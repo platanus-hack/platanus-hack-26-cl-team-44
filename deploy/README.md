@@ -20,6 +20,7 @@ Con la llave SSH del equipo (`ssh toki-vps`):
 | `make estado` | Servicios, WhatsApp, agente y commit en una pantalla |
 | `make logs S=toki-puente` | Últimas 50 líneas de un servicio |
 | `make semilla` | Sube `software/agent/data/semilla.json` (memoria real, fuera de git) y la carga |
+| `make tarjetas` | Sube `software/agent/data/tarjetas.json` (tarjetas propias de la usuaria, fuera de git) |
 | `make rotar-token` | Cambia el token del puente si se filtró y reinicia lo necesario |
 | `make clave` | Copia la contraseña de `/equipo/` al portapapeles |
 | `make escena` | Lo mismo que doble clic en `Myo.command` |

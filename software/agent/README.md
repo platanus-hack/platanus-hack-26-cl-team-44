@@ -8,7 +8,19 @@ Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 3 piezas:
 
 - **Endpoints para el puente de WhatsApp.** `/api/sugerir` (modos `chat`, `mencion`, `voz`) y `/api/grupo` con disparadores que la usuaria aprueba. Ver `INTEGRACION-PUENTE.md`.
 
-Todavía no trae voz ni escucha.
+- **Escucha con voces separadas y tarjetas por tema.** La TV escucha la sala con ElevenLabs Scribe v3 Live (`toki-os/myo-escucha.js`). Ver «Escuchar la sala» abajo.
+
+## Escuchar la sala
+
+El acompañante aprieta «🎙 Escuchar» en Hablar. El puente entrega un token de un solo uso (`POST /api/voz/escucha`); la llave de ElevenLabs no sale de la VPS.
+
+- Scribe separa las voces: cada turno llega como «Voz 1», «Voz 2». El acompañante elige de quién es cada voz una vez por sesión.
+- Por cada turno, la TV pide **tarjetas por tema** (`POST /api/tarjetas`, sin modelo, en milisegundos) y luego las **opciones del agente** (`/api/sugerir`, modo `voz`). Quedan 3 del agente y la mejor tarjeta del tema.
+- **Privacidad:** la TV manda `hablantes` (ids o `null`). Gana el tipo que ve menos; una voz sin identificar cuenta como desconocido. Con `hablantes`, el agente no adivina la persona por nombres en el texto (`hablantes.py`).
+- **Tarjetas:** `catalogo/temas.json` (14 temas genéricos, en git) y `data/tarjetas.json` (propias de la usuaria, fuera de git, `make tarjetas`). Formato: `{"tarjetas": [{"id", "tema", "texto", "personas"?: [id], "privacidad"?: "publico" | "salud" | "familia"}]}`. Una tarjeta con `personas` solo sale si esa persona está hablando.
+- **Aprende el orden:** cada tarjeta dicha se anota en `data/tarjetas_uso.jsonl` (id, tema y persona; sin texto).
+- **Medido** con voces sintéticas: sin ruido de fondo, 100 % de turnos con el hablante correcto y ~0,65 s de latencia. Con la TV del cuarto a volumen medio o alto, los turnos se atrasan 8-14 s: en la demo, TV apagada o baja.
+- **Privacidad del audio:** en el plan actual de ElevenLabs (no Enterprise) el audio de la sesión queda registrado en sus servidores.
 
 ## Probar en la TV (modo dev)
 
