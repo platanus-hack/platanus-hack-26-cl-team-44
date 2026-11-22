@@ -110,7 +110,9 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
     const department=fromAgent?'restaurants':category.department;
     const stores=data.stores.map(store=>catalogStore(store,department)).filter(Boolean).slice(0,60);
     if(libre&&(preferir.length||evitar.length||max)){
-     for(const s of stores){s.products=s.products.map(p=>({...p,score:puntaje(p.name,preferir,evitar)})).filter(p=>p.score>=0&&(!max||p.price<=max)).sort((a,b)=>b.score-a.score);s.best=(s.products[0]?.score||0)+(puntaje(s.name,preferir)>0?1:0);}
+     for(const s of stores){s.products=s.products.map(p=>({...p,score:puntaje(p.name,preferir,evitar)})).filter(p=>p.score>=0&&(!max||p.price<=max)).sort((a,b)=>b.score-a.score);const best=s.products[0];s.best=(best?.score||0)*2;
+      // La tienda gana por las palabras de la búsqueda que no están en el producto ("El Corral Vaquero Hawaiano" → "corral")
+      if(best){const pn=plano(best.name),sn=plano(s.name);s.best+=plano(libre).split(/\s+/).filter(w=>w.length>=4&&!pn.includes(w)&&sn.includes(w)).length;}}
      stores.splice(0,stores.length,...stores.filter(s=>s.products.length).sort((a,b)=>b.best-a.best));
     }
     ctx.signal.throwIfAborted();

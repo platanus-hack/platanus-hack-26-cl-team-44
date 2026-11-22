@@ -146,6 +146,11 @@
       // ---- Pago en 3 pasos + seguimiento ----
       const pasos=n=>`<ol class="pay-steps" aria-label="Paso ${n} de 3">${['Carrito','Propina','Revisar y pagar'].map((t,i)=>`<li class="${i+1<n?'done':i+1===n?'now':''}">${i+1<n?'✓':i+1}<span>${t}</span></li>`).join('')}</ol>`;
       const totalDe=c=>c?.total??((c?.productsTotal||0)+(c?.shippingTotal||0)+(c?.tip||0));
+      if(this.view==='food-hero'){   // sugerencia de Myo: el producto exacto, en grande, con el motivo
+        const st=f.stores[0],p=st?.products?.[0];
+        if(!p)return this.header('Sugerencia de Myo','No encontré esa sugerencia cerca de tu dirección.')+`<div class="food-actions">${this.btn('food-hero-more','Ver otras opciones')}</div>`;
+        return this.header('Sugerencia de Myo',esc(f.plan?.mensaje||''))+`<div class="hero-card">${p.image?`<img src="${esc(p.image)}" alt="" draggable="false">`:''}<div><h2>${esc(p.name)}</h2><p class="hero-price">${this.foodPrice(p.price)}</p><p>${esc(st.name)}${st.eta?` · llega en ${esc(st.eta)}`:''}</p>${f.plan?.fuentes?.length?`<p class="food-note">Lo recordé de la memoria de Emmy (${esc(f.plan.fuentes.join(', '))})</p>`:''}</div></div><div class="food-actions">${this.btn('food-hero-more','Ver otras opciones')}${this.btn('food-hero-pick','Pedir esto →',{className:'ta-primary pay-now',value:`${st.id}:${p.id}`})}</div>`;
+      }
       if(this.view==='food-cart'){
         const items=(f.cart?.stores||[]).flatMap(s=>s.items),cart=f.cart;
         return pasos(1)+this.header('Tu carrito',items.length?`${items.length} producto${items.length>1?'s':''} · todavía no pagas nada`:'Tu carrito está vacío')+`<div class="food-list food-options-list">${items.slice(f.page*2,f.page*2+2).map(p=>`<div class="food-card food-cart-item"><strong>${esc(p.name)}</strong><span>${esc(p.quantity)} × ${this.foodPrice(p.price)}</span></div>`).join('')}</div>`+this.foodPager(items,2)+`<p class="food-note">Productos: <b>${this.foodPrice(cart?.productsTotal)}</b>${f.plan?.nota?` · Nota: «${esc(f.plan.nota)}»`:''}</p><div class="food-actions">${this.btn('food-cart','Actualizar')}${this.btn('food-to-tip','Siguiente: propina →',{className:'ta-primary',disabled:!items.length})}</div>`;
@@ -163,7 +168,7 @@
         const o=f.order||{},t=f.track||{},step=t.step??(o.orderId?1:1);
         const nombres=['Recibido','Preparando','En camino','Entregado'];
         const linea=step===0?'<p class="pay-cancel">Rappi canceló o se canceló el pedido.</p>':`<ol class="track-steps">${nombres.map((n,i)=>`<li class="${i+1<step?'done':i+1===step?'now':''}"><i>${i+1<step?'✓':i+1===step?'●':'○'}</i><span>${n}</span></li>`).join('')}</ol>`;
-        return this.header(esc(t.label||'Pedido recibido'),esc([t.store||o.store||'',o.orderId?`Pedido ${o.orderId}`:''].filter(Boolean).join(' · ')))+linea+`<div class="pay-box">${t.courier?`<p class="track-courier">🛵 Te lo lleva ${esc(t.courier)}</p>`:''}${(t.messages||[]).map(m=>`<p class="track-msg">${esc(m)}</p>`).join('')}${o.total||t.total?`<div class="pay-row pay-total"><span>Pagado</span><b>${this.foodPrice(t.total??o.total)}</b></div>`:''}<p class="food-note">${step===4||step===0?'Seguimiento terminado.':'Se actualiza solo cada 10 segundos.'}${t.updatedAt?` Última revisión: ${new Date(t.updatedAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}.`:''}</p></div><div class="food-actions">${this.btn('food-check','Volver a Rappi')}</div>`;
+        return this.header(esc(t.label||'Pedido recibido'),esc([t.store||o.store||'',o.orderId?`Pedido ${o.orderId}`:''].filter(Boolean).join(' · ')))+linea+`<div class="pay-box">${f.aviso?`<p class="track-msg">${esc(f.aviso)}</p>`:''}${t.courier?`<p class="track-courier">🛵 Te lo lleva ${esc(t.courier)}</p>`:''}${(t.messages||[]).map(m=>`<p class="track-msg">${esc(m)}</p>`).join('')}${o.total||t.total?`<div class="pay-row pay-total"><span>Pagado</span><b>${this.foodPrice(t.total??o.total)}</b></div>`:''}<p class="food-note">${step===4||step===0?'Seguimiento terminado.':'Se actualiza solo cada 10 segundos.'}${t.updatedAt?` Última revisión: ${new Date(t.updatedAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}.`:''}</p></div><div class="food-actions">${this.btn('food-check','Volver a Rappi')}</div>`;
       }
       if(this.view==='food-query'){
         return this.header('Buscar en Rappi','Nombre de un producto o una tienda')+
@@ -201,7 +206,20 @@
       if(this.epoch!==epoch||this.destroyed)return;
       if(!plan||!plan.query){this.error=plan?.mensaje||this.error;this.render();return;}
       f.plan=plan;f.searchFrom=this.view;this.error='';
-      return this.foodAction('search',{query:plan.query,preferir:plan.preferir,evitar:plan.evitar,...(plan.presupuesto?{max:plan.presupuesto}:{})},'food-stores');
+      return this.foodAction('search',{query:plan.query,preferir:plan.preferir,evitar:plan.evitar,...(plan.presupuesto?{max:plan.presupuesto}:{})},'food-hero');
+    }
+    // Al pagar una sugerencia de Myo, aviso sorpresa a la persona por WhatsApp (desde el número de Emmy, por el puente).
+    // El número no está en el código: se busca por nombre entre los contactos principales del puente.
+    async avisarPorWhatsApp(){
+      const f=this.food,quien=f.plan?.para_nombre;if(!quien||typeof CFG==='undefined'||!CFG.WA_URL||!f.order?.orderId)return;
+      const h={'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Woki-Token':CFG.WA_TOKEN}:{})};
+      try{
+        const favs=(await (await fetch(CFG.WA_URL+'/api/wa/favorites',{headers:h})).json()).contacts||[];
+        const c=favs.find(x=>(x.name||'').toLowerCase().startsWith(quien.toLowerCase()));if(!c)return;
+        const text=`${f.plan.nota||'Feliz aniversario ✨'} Te va a llegar una sorpresa 🎁`;
+        const r=await fetch(CFG.WA_URL+'/api/wa/send',{method:'POST',headers:h,body:JSON.stringify({contactId:c.id,text,idemKey:'rappi-'+f.order.orderId})});
+        f.aviso=r.ok?`💬 Le avisé a ${c.name} por WhatsApp`:'';if(this.view==='food-track')this.render();
+      }catch{}
     }
     startTrack(){clearInterval(this.trackTimer);if(!this.food.order?.orderId)return;this.foodTrack();this.trackTimer=setInterval(()=>this.foodTrack(),10000);}
     async foodTrack(){
@@ -221,7 +239,7 @@
         if(action==='products'){f.items=result.items;f.store=result.store;}
         if(action==='select'){f.selection=result;f.options=[];f.group=0;}
         if(['add','cart','quote','tip'].includes(action)){f.cart=result;f.confirmOrder=false;if(result.notice)this.error=result.notice;}
-        if(action==='order'){f.order={...result,store:(f.cart?.stores||[])[0]?.name||''};f.cart=null;f.confirmOrder=false;f.track=null;this.error='';this.startTrack();}
+        if(action==='order'){f.order={...result,store:(f.cart?.stores||[])[0]?.name||''};f.cart=null;f.confirmOrder=false;f.track=null;this.error='';this.startTrack();this.avisarPorWhatsApp();}
         if(action==='connect')this.error=result.state==='connected'?'Cuenta conectada. Comprueba la conexión.':result.state==='error'?'No se pudo abrir Chrome. Reintenta la conexión.':'Inicia sesión en la ventana oficial de Rappi.';
         if(action==='disconnect'){f.status=null;f.selection=null;f.cart=null;this.error='Sesión local desconectada.';}
         if(next)this.view=next;
@@ -234,6 +252,8 @@
       if(action==='food-connect')return this.foodAction('connect');
       if(action==='food-disconnect')return this.foodAction('disconnect');
       if(action==='food-check'){if(this.view==='food-track'){this.view='food';clearInterval(this.trackTimer);}return this.foodAction('status');}
+      if(action==='food-hero-pick'){const [sid,pid]=String(value).split(':').map(Number);f.store=f.stores.find(s=>s.id===sid);return this.foodAction('select',{storeId:sid,productId:pid},'food-product');}
+      if(action==='food-hero-more'){this.view='food-stores';f.page=0;this.epoch++;this.render();return;}
       if(action==='food-to-tip'){this.view='food-tip';f.confirmOrder=false;this.epoch++;this.render();return;}
       if(action==='food-back-cart'){this.view='food-cart';this.epoch++;this.render();return;}
       if(action==='food-query'){this.rappiQuery='';this.group='';this.view='food-query';this.epoch++;this.render();return;}
@@ -361,6 +381,7 @@
       else if(this.view==='food-products'){this.view='food-stores';this.food.page=0;}
       else if(this.view==='food-product'||this.view==='food-options'){this.view='food-products';this.food.page=0;}
       else if(this.view==='food-cart')this.view='food';
+      else if(this.view==='food-hero')this.view='food';
       else if(this.view==='food-tip')this.view='food-cart';
       else if(this.view==='food-review')this.view='food-tip';
       else if(this.view==='food-track'){this.view='food';clearInterval(this.trackTimer);}
