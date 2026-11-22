@@ -184,3 +184,9 @@
 #s-apps .ta-video-status { min-height: 36px; font-size: 28px; color: var(--txt2); }
 #s-apps .ta-video-status.has-error { color: var(--orange); }
 #s-apps .ta-video-controls { gap: 20px; }
+
+/* Parejas: las tarjetas giran al mostrarse y al volver a «?» (sin pausa ni «Continuar») */
+@keyframes game-flip { from { transform: perspective(900px) rotateY(90deg); opacity: .3; } to { transform: none; opacity: 1; } }
+.game-revealed, .game-matched { animation: game-flip 320ms var(--ease-out) both; }
+.game-board .game-button[data-flip] { animation: game-flip 380ms var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .game-revealed, .game-matched, .game-board .game-button[data-flip] { animation: none; } }

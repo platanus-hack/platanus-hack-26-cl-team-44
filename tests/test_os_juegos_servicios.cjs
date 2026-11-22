@@ -56,6 +56,14 @@ assert.match(css, /#s-apps \.news-card\.has-thumb \{ display: grid; grid-templat
 assert.match(css, /#s-apps \.news-pagebar \.ta-button \{ min-height: 120px;/, "BioBío: paginación con objetivos de 120 px");
 assert.match(glue, /new MutationObserver\(targets\)\.observe\(root, \{ subtree: true, attributes: true, attributeFilter: \['disabled'\] \}\)/, "un botón habilitado sin repintar («Reproducir») se puede elegir con la mirada");
 
+// 5c. Parejas sin «Continuar» (las tarjetas distintas giran solas); Constelaciones guarda tiempo sin contar pausas;
+//     Música abre Spotify en Servicios.
+assert.ok(!/act==='next'/.test(games), "Parejas ya no necesita «Continuar»");
+assert.match(games, /setTimeout\(\(\)=>\{ if\(state!==s\|\|s\.done\) return; s\.open=\[\]; s\.flipBack=pair; renderGame\(\); \}, 1200\)/);
+assert.match(games, /function clock\(s, now=performance\.now\(\)\)/);
+assert.match(games, /'¡Nuevo récord de tiempo!'/);
+assert.match(glue, /if \(act === 'music'\) \{[^]*?go\('apps'\);\s*void app\?\.openSpotify\(\);/);
+
 // 6. Ajustes › Tema y color: tema y 5 colores, todos definidos en claro y oscuro, y se recuerda.
 for (const p of ["bosque", "oceano", "atardecer", "lavanda"]) {
   assert.match(colors, new RegExp(`:root\\[data-palette="${p}"\\] #stage`), `falta ${p} oscuro`);

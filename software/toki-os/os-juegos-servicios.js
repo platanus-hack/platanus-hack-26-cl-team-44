@@ -35,6 +35,8 @@ window.addEventListener('load', () => {
   const games = ['go:games', 'g-teal', 'i-gamepad', 'Juegos', 'A tu ritmo'];
   if (gi >= 0) TILES[gi] = games; else TILES.splice(6, 0, games);
   TILES.splice(TILES.findIndex(t => t[0] === 'go:games'), 0, ['go:apps', 'g-white', 'i-apps', 'Servicios', 'Música, videos, noticias']);
+  const mi = TILES.findIndex(t => t[0] === 'music');
+  if (mi >= 0) TILES[mi] = ['music', 'g-pink', 'i-music', 'Música', 'Abre Spotify'];
   $('#tiles').className = 'grid5x2';
   const baseTiles = renderTiles;
   renderTiles = function () {
@@ -94,6 +96,14 @@ window.addEventListener('load', () => {
   const innerActivate = activate;
   activate = function (el, calibrate = true) {
     const act = el?.dataset.act || '';
+    // Música: acceso directo al reproductor de Spotify de Servicios (antes era un aviso simulado).
+    if (act === 'music') {
+      press(el);
+      if (gazeOnly()) S.lockUntil = performance.now() + LOCKOUT_MS;
+      go('apps');
+      void app?.openSpotify();
+      return;
+    }
     if (!OWN.test(act)) return innerActivate(el, calibrate);
     // Igual que el resto del SO: se ve la pulsación y, con el iPhone, nada se elige en cadena.
     press(el);
