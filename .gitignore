@@ -23,3 +23,5 @@ software/eye-tracking/logs/
 software/eye-tracking/ios/build/
 xcuserdata/
 software/eye-tracking/ios/EyeTracking.xcodeproj/
+# token y URL del escenario
+deploy/escena.env

@@ -1,10 +1,13 @@
 // woki-bridge/vincular.ts   uso: npx tsx --env-file=.env vincular.ts +569XXXXXXXX
 // Crea (o reutiliza) la sesión del celular, muestra el QR en la terminal y, al vincular,
 // guarda su key, id y secreto en .env sin mostrarlos.
+// En la VPS: ENV_FILE=/opt/toki/puente.env (dónde guardar las claves) y QR_FILE (dónde dibujar qr.html).
 import { readFileSync, writeFileSync } from "node:fs";
 import qrcode from "qrcode-terminal";
 import QR from "qrcode";
 import { execFile } from "node:child_process";
+const ENV_FILE = process.env.ENV_FILE ?? ".env";
+const QR_FILE = process.env.QR_FILE ?? "qr.html";
 import { WapiClient } from "./wapi-sdk/index.ts";
 
 const phone = process.argv[2];
@@ -23,12 +26,12 @@ console.log(`Sesión ${session.id} (${existing ? "ya existía" : "creada"})`);
 
 // El QR también se dibuja en qr.html (se recarga sola cada 3 s), porque la terminal de
 // Claude Code colapsa la salida larga y el QR queda ilegible.
-const page = (body: string) => writeFileSync("qr.html",
+const page = (body: string) => writeFileSync(QR_FILE,
   `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="3"><title>Vincular WOKI</title>
 <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font:18px system-ui;color:#111;text-align:center">
 <div>${body}</div></body>`);
 page("<p>Pidiendo el QR a wapi…</p>");
-execFile("open", ["qr.html"]);
+if (process.platform === "darwin") execFile("open", [QR_FILE], () => {}); // en Linux (VPS) no hay navegador: vale el QR de la terminal
 let lastQr = "";
 const show = async (qr?: string | null) => {
   if (!qr || qr === lastQr) return;
@@ -58,11 +61,11 @@ const set = (env: string, k: string, v: string) => {
   const re = new RegExp(`^${k}=.*$`, "m");
   return re.test(env) ? env.replace(re, () => `${k}=${v}`) : `${env.trimEnd()}\n${k}=${v}\n`;
 };
-let env = readFileSync(".env", "utf8");
+let env = readFileSync(ENV_FILE, "utf8");
 env = set(env, "WAPI_SESSION_ID", String(s.id));
 env = set(env, "WAPI_API_KEY", s.api_key);
 env = set(env, "WAPI_WEBHOOK_SECRET", s.webhook_secret ?? "");
-writeFileSync(".env", env);
+writeFileSync(ENV_FILE, env, { mode: 0o600 });
 console.clear();
 page("<h1>✓ Celular vinculado</h1><p>Ya puedes cerrar esta pestaña.</p>");
-console.log(`✓ Celular vinculado · sesión ${s.id} · claves guardadas en .env`);
+console.log(`✓ Celular vinculado · sesión ${s.id} · claves guardadas en ${ENV_FILE}`);

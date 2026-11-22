@@ -1,0 +1,21 @@
+[Unit]
+Description=wapi · gateway (la conexión con WhatsApp, 127.0.0.1:3102)
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+Requires=postgresql.service redis-server.service
+
+[Service]
+User=wapi
+WorkingDirectory=/opt/toki/wapi/apps/gateway
+# DATABASE_URL, REDIS_URL, ENCRYPTION_KEY, GATEWAY_TOKEN... Archivo solo para root, fuera de git.
+EnvironmentFile=/opt/toki/wapi.env
+Environment=PORT=3102
+Environment=NODE_OPTIONS=--import=/opt/toki/wapi-local/solo-local.mjs
+ExecStart=/opt/toki/wapi/node_modules/.bin/tsx src/server.ts
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
