@@ -8,7 +8,8 @@ La TV es una sola. Se abre de 3 formas. El token del puente nunca va en una URL.
 | Acceso | El monitor entrega el token desde variables de entorno (`/toki-config.js`) | Usuario `equipo` y contraseña (`make clave`); Caddy agrega el token por dentro | Libre |
 | MyoWare | Real, por USB o BLE | Teclado: Espacio = ceja, J = mandíbula | Teclado |
 | WhatsApp | Real (VPS) | Real (VPS) | Simulado |
-| Agente y memoria | De la usuaria (VPS) | De la usuaria (VPS) | Sin acceso (401) |
+| Agente y memoria | De la usuaria (VPS) | De la usuaria (VPS) | Agente demo con memoria ficticia (`toki-agente-demo`) |
+| Apps (Rappi, Spotify, YouTube, noticias) | Reales (apps-bridge en el Mac) | Ilustrativas (datos de ejemplo) | Ilustrativas (datos de ejemplo) |
 
 ## Comandos del equipo
 
@@ -31,21 +32,24 @@ Con la llave SSH del equipo (`ssh toki-vps`):
 - Caddy (HTTPS de Let's Encrypt, HTTP/3 apagado porque colgaba el navegador):
   - `/`: TV pública.
   - `/equipo/*`: TV del equipo con `basicauth`. `/equipo/wa/*` y `/equipo/agente/*` llevan el token, que agrega Caddy.
-  - `/wa/api/*` y `/agente/*`: para la TV del escenario, con el header `X-Myo-Token`.
+  - `/wa/api/*`: para la TV del escenario, con el header `X-Myo-Token`.
+  - `/agente/*`: con el token del escenario va al agente real (8790). Sin ese token va al agente demo (8792) y Caddy le agrega `TOKI_TOKEN_DEMO`.
 - Secretos, solo root y fuera de git:
   - `/opt/toki/puente.env`: wapi, token, ElevenLabs, Twilio.
-  - `/opt/toki/caddy.env`: token y hash de la contraseña.
+  - `/opt/toki/caddy.env`: token del escenario, token del agente demo y hash de la contraseña.
+  - `/opt/toki/toki-demo.env`: configuración del agente demo (puerto 8792, `TOKI_DATA`, tope y token).
   - `/opt/toki/equipo.clave`: contraseña de `/equipo/`.
   - `/opt/toki/agente.env`: suscripción de Claude.
   - `/opt/toki/wapi.env`: base y cifrado de wapi.
 - El agente (`toki-agente`) usa `data/semilla.json` si existe y, si no, la semilla de ejemplo. Tope de 300 llamadas por día (`TOKI_MAX_DIA`).
+- El agente demo (`toki-agente-demo`, 127.0.0.1:8792) corre el mismo código con `TOKI_DEMO=1`, la memoria ficticia de `software/agent/ejemplos/semilla.demo.json` en `/opt/toki/demo-data` y tope de 150 llamadas por día (`TOKI_MAX_DIA_DEMO` al instalar). Usa las mismas credenciales (`agente.env`). Rechaza las rutas que escriben, las de voces y `/api/grupo`.
 - Los logs del puente no guardan nombres ni texto de los mensajes.
 
 El token de la suscripción de Claude:
 
 ```bash
 claude setup-token        # en el Mac; copia el token que imprime
-read -s T && ssh toki-vps "umask 077 && printf 'CLAUDE_CODE_OAUTH_TOKEN=%s\n' '$T' > /opt/toki/agente.env && systemctl restart toki-agente" && unset T
+read -s T && ssh toki-vps "umask 077 && printf 'CLAUDE_CODE_OAUTH_TOKEN=%s\n' '$T' > /opt/toki/agente.env && systemctl restart toki-agente toki-agente-demo" && unset T
 ```
 
 ### WhatsApp real en la VPS (wapi + puente)
