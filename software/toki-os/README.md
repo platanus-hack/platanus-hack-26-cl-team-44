@@ -43,9 +43,9 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. `J` sim
    | Ceja corta | Confirma la opción enfocada. |
    | Dos cejas rápidas | Cierra la rueda o vuelve un nivel, sin borrar el borrador. |
    | Mandíbula sostenida 3 s | Abre **Sí / No**, **Acomódame**, **Ven cuando puedas** y **Me duele**. Suelta para habilitar la selección. |
-   | Ceja sostenida 3 s | Abre el **SOS de prueba**, incluso con la rueda abierta. |
+   | Ceja sostenida 3 s | Activa el **SOS**, incluso con la rueda abierta. |
 
-Dentro de la rueda, la mirada enfoca sin elegir automáticamente. Si se pierde la mirada, el escaneo recorre las opciones y la ceja confirma. Los dos avisos son **simulados**: no llaman ni envían mensajes. `R` simula una respuesta; `Esc` o **Cerrar simulación** cierran el SOS.
+Dentro de la rueda, la mirada enfoca sin elegir automáticamente. Si se pierde la mirada, el escaneo recorre las opciones y la ceja confirma. El aviso no urgente es simulado. Antes de probar el SOS, mira la barra de estado. **SOS de prueba** indica una simulación. **SOS listo** indica que al activarlo se intentará llamar al contacto de emergencia. `R` simula la llegada del acompañante y `Esc` cierra la alarma en pantalla.
 
 La calibración de banco acepta al menos tres detecciones por gesto y rechaza activaciones en reposo, confusiones o repeticiones. El detector da prioridad a la mandíbula cuando contamina la señal de ceja; no hay combinación simultánea. Soltar antes de 3 s cancela la acción sostenida. La falta de muestras recientes cancela el gesto pendiente en vez de simular una liberación.
 
