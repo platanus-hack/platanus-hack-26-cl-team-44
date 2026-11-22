@@ -178,3 +178,6 @@ body.apps-open #content{padding:0!important;overflow:hidden!important}
 .track-courier{font-size:clamp(20px,2vw,28px);margin:0;font-weight:700}
 .track-msg{margin:0;font-size:clamp(16px,1.5vw,22px)}
 @media(max-width:700px){.pay-steps li span{display:none}.track-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ta-button.pay-now{background:#1f9d5c!important;color:#fff!important;border-color:#1f9d5c!important}
+.ta-button.pay-now.pay-confirm{background:#f5b400!important;color:#1b1400!important;border-color:#f5b400!important;outline:none}
+.ta-button.pay-tip.ta-selected{background:#1f9d5c!important;color:#fff!important;border-color:#1f9d5c!important}

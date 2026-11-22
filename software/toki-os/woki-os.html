@@ -803,9 +803,9 @@ async function waLoadHistory(cid){
 /* ---- Respuestas del chat: 2 contextuales + «Pregúntele a…» + «Otro» + teclado de iniciales ---- */
 const GENERIC=[['Sí, me parece bien.','de acuerdo','seria'],['No estoy segura.','duda','seria']];
 const toCard=([text,tone,emo])=>({text,tone,emo:EMO[emo]?emo:'seria'});
-function waHelper(){   // el acompañante: un contacto principal con relación de cuidado, si no Camila
+function waHelper(){   // el acompañante: un contacto principal con relación de cuidado; si no hay, ''
   const h=WA.favs.find(c=>/cuidador|acompa|enfermer/i.test(c.relation||''));
-  return h? h.name.split(' ')[0] : 'Camila';
+  return h? h.name.split(' ')[0] : '';
 }
 function waSetPool(cards,generic){
   const seen=new Set(), pool=[];
@@ -816,7 +816,9 @@ function waSetPool(cards,generic){
 function waPage(){
   const n=Math.max(1,Math.ceil(S.pool.length/2)), p=S.poolPage%n;
   const two=S.pool.slice(p*2,p*2+2);
-  S.cards=[...two, {text:`Pregúntele a ${waHelper()}.`, tone:'lo decide tu acompañante', emo:'seria', plain:true}];
+  const quien=waHelper();   // sin acompañante en los contactos: una frase neutra (antes salía «Camila», del perfil de prueba)
+  S.cards=[...two, quien? {text:`Pregúntele a ${quien}.`, tone:'lo decide tu acompañante', emo:'seria', plain:true}
+                         : {text:'Después te respondo.', tone:'lo dejo para después', emo:'seria', plain:true}];
 }
 
 /* ---- Claude (vía el puente): respuestas según la conversación y predicción por iniciales ---- */

@@ -164,3 +164,9 @@ body.gaze-only .badge { display: none; }
 .grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
 /* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
 .key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+
+/* chat de WhatsApp: tarjetas más angostas → franja del emoji más angosta y el texto con su espacio (antes se tapaban) */
+#s-talk.chatmode .card { padding: 22px 134px 22px 30px !important; }
+#s-talk.chatmode .card.plain { padding-right: 30px !important; }
+#s-talk.chatmode .emo { width: 112px !important; font-size: 58px !important; }
+#s-talk.chatmode .emo .ring { right: 10px; bottom: 10px; width: 36px; height: 36px; }
