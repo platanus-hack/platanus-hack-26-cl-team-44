@@ -18,6 +18,17 @@ const DIRECCION = process.env.WOKI_DIRECCION ?? "";
 const MAX_TTS = 400;
 const MAX_AUDIO_B64 = 14_000_000; // ~10 MB de audio
 const CALL_COOLDOWN_MS = 60_000;
+// ElevenLabs acepta 5 pedidos simultáneos por cuenta (429 concurrent_limit_exceeded). El puente deja 1 libre
+// (llamada de emergencia, clonación) y pone en cola el resto; si igual llega un 429 (otro cliente usa la cuenta), reintenta una vez.
+const TTS_SIMULTANEOS = Number(process.env.ELEVENLABS_TTS_SIMULTANEOS ?? 4);
+let ttsActivos = 0;
+const ttsEspera: (() => void)[] = [];
+async function conCupoTts<T>(fn: () => Promise<T>): Promise<T> {
+  if (ttsActivos >= TTS_SIMULTANEOS) await new Promise<void>((ok) => ttsEspera.push(ok));
+  ttsActivos++;
+  try { return await fn(); }
+  finally { ttsActivos--; ttsEspera.shift()?.(); }
+}
 
 // ---------- estado persistente: qué voz usa Myo y cuáles se le ofrecen a Emmy ----------
 type Voz = { id: string; name: string; kind: "clonada" | "biblioteca"; preview?: string };
@@ -141,7 +152,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       if (!t || t.length > MAX_TTS) { json(400, { ok: false, reason: "Texto vacío o muy largo" }); return true; }
       if (!vid) { json(409, { ok: false, reason: "Todavía no hay una voz elegida" }); return true; }
       const e = EMO[emo] ?? EMO.seria;
-      const r = await xi(`/v1/text-to-speech/${encodeURIComponent(vid)}/stream?output_format=mp3_44100_128`, {
+      const pedir = () => xi(`/v1/text-to-speech/${encodeURIComponent(vid)}/stream?output_format=mp3_44100_128`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,11 +164,22 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
                              : { stability: e.stability, similarity_boost: 0.9, style: e.style, use_speaker_boost: true, speed: e.speed },   // 0,9: lo más cerca posible de la voz clonada
         }),
       });
-      if (!r.ok || !r.body) { console.error("[voz] tts", r.status, (await r.text()).slice(0, 300)); json(502, { ok: false, reason: "ElevenLabs no devolvió audio" }); return true; }
-      res.writeHead(200, { "Content-Type": "audio/mpeg", "Cache-Control": "no-store", "Access-Control-Allow-Origin": origin });
-      const reader = r.body.getReader();
-      for (;;) { const { done, value } = await reader.read(); if (done) break; res.write(value); }
-      res.end();
+      // El cupo se ocupa hasta terminar de transmitir: ElevenLabs cuenta el pedido mientras genera el audio.
+      await conCupoTts(async () => {
+        let r = await pedir();
+        if (r.status === 429) { await r.body?.cancel(); await new Promise((ok) => setTimeout(ok, 700 + Math.random() * 500)); r = await pedir(); }
+        if (!r.ok || !r.body) {
+          console.error("[voz] tts", r.status, (await r.text()).slice(0, 300));
+          // 503 si ElevenLabs sigue saturado tras el reintento: la TV usa la voz del sistema para esa frase
+          if (r.status === 429) json(503, { ok: false, reason: "ElevenLabs ocupado (límite de pedidos simultáneos)" });
+          else json(502, { ok: false, reason: "ElevenLabs no devolvió audio" });
+          return;
+        }
+        res.writeHead(200, { "Content-Type": "audio/mpeg", "Cache-Control": "no-store", "Access-Control-Allow-Origin": origin });
+        const reader = r.body.getReader();
+        for (;;) { const { done, value } = await reader.read(); if (done) break; res.write(value); }
+        res.end();
+      });
       return true;
     }
 

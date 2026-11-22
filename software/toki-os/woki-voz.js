@@ -1,6 +1,8 @@
 /* woki-voz.js · ElevenLabs en la TV (vía woki-bridge; la API key nunca llega al navegador).
    - VOZ.speak(texto, emo): habla con la voz elegida o clonada. Si falla, woki-os.html usa la voz del sistema.
    - VOZ.prefetch(frases): pide el audio de las 4 tarjetas antes de que Emmy elija → suena al instante.
+     Los pedidos pasan por una cola: máximo TTS_PARALELO a la vez y lo que Emmy elige va primero
+     (ElevenLabs acepta 5 pedidos simultáneos por cuenta, sumando todas las pantallas abiertas).
    - VOZ.emergencia(alarma): llamada telefónica del agente de emergencia + estado en la pantalla de alarma.
    - VOZ.siguiente(): Emmy recorre las voces candidatas desde Ajustes y escucha cada una. */
 (function(){
@@ -41,18 +43,44 @@
   V.nombre = () => (V.opciones.find(o=>o.id===V.actual)||{}).name || '';
 
   // ---------- texto a voz ----------
+  // Cola con prioridad: 'alta' = lo que Emmy eligió (speak), 'baja' = precarga. Un pedido de precarga que
+  // todavía espera sube a 'alta' si Emmy elige esa frase. Nunca hay más de TTS_PARALELO pedidos en vuelo.
+  const TTS_PARALELO = 2;
+  const cola = { alta: [], baja: [], activos: 0 };
+  const espera = new Map();   // clave → trabajo que aún no sale (para subirle la prioridad)
+  function bombear(){
+    while(cola.activos < TTS_PARALELO){
+      const job = cola.alta.shift() || cola.baja.shift();
+      if(!job) return;
+      espera.delete(job.k);
+      cola.activos++;
+      job.run().finally(() => { cola.activos--; bombear(); });
+    }
+  }
   const key = (t,e) => V.actual+'|'+e+'|'+t;
-  function fetchAudio(text, emo){
+  function fetchAudio(text, emo, prioridad='alta'){
     const k = key(text, emo);
-    if(V.cache.has(k)) return V.cache.get(k);
-    const p = (base() ? fetch(base()+'/api/voz/tts', { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify({ text, emo }) }) : Promise.reject(new Error('sin puente')))
-      .then(async r => { if(!r.ok) throw new Error('tts HTTP '+r.status); return URL.createObjectURL(await r.blob()); });
+    if(V.cache.has(k)){
+      const j = espera.get(k);
+      if(prioridad==='alta' && j && cola.baja.includes(j)){ cola.baja.splice(cola.baja.indexOf(j), 1); cola.alta.push(j); }
+      return V.cache.get(k);
+    }
+    const p = new Promise((ok, ko) => {
+      const job = { k, run: () => (base()
+        ? fetch(base()+'/api/voz/tts', { method:'POST', headers:hdr({'Content-Type':'application/json'}), body:JSON.stringify({ text, emo }) })
+        : Promise.reject(new Error('sin puente')))
+        .then(async r => { if(!r.ok) throw new Error('tts HTTP '+r.status); return URL.createObjectURL(await r.blob()); })
+        .then(ok, ko) };
+      espera.set(k, job);
+      cola[prioridad].push(job);
+    });
     p.catch(()=>V.cache.delete(k));
     V.cache.set(k, p);
     if(V.cache.size>60){ const [old] = V.cache.keys(); V.cache.get(old).then(u=>URL.revokeObjectURL(u),()=>{}); V.cache.delete(old); }
+    bombear();
     return p;
   }
-  V.prefetch = function(items){ if(!V.on || !V.PREFETCH) return; items.forEach(([t,e]) => { if(t) fetchAudio(t, e).catch(()=>{}); }); };
+  V.prefetch = function(items){ if(!V.on || !V.PREFETCH) return; items.forEach(([t,e]) => { if(t) fetchAudio(t, e, 'baja').catch(()=>{}); }); };
   V.stop = function(){ if(V.audio){ V.audio.pause(); V.audio = null; } };
   V.speak = async function(text, emo='seria'){
     const clean = String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').trim();
