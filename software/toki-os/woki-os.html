@@ -1107,6 +1107,7 @@ async function waSend(){
     const msg = c.group ? {groupJid:c.group, mention:c.mention, mentionId:c.mentionId||undefined, text:WA.text, idemKey:WA.idem} : {contactId:c.id, text:WA.text, idemKey:WA.idem};
     const j=await waApi('/api/wa/send',{method:'POST',body:JSON.stringify(msg)});
     WA.lastMsg={id:j.msgId,name:c.name};
+    if(window.MYO_SELECCION) MYO_SELECCION(WA.text, c.group?'grupo':'whatsapp');   // registro sin texto: origen, posición, editada
     island('✓', j.dry? `Enviado a ${c.name} (prueba)` : `Enviado a ${c.name}`); MEM.add(WA.text); log('WhatsApp → '+c.name);
     if(c.mentionId && WA.menciones[c.mentionId]) WA.menciones[c.mentionId].estado='respondida';
     go('home');
