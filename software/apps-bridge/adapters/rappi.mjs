@@ -15,12 +15,19 @@ const plano=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').to
 // (es el más específico, p. ej. "perro vaquero"). "evitar" y pasar el tope descartan el producto.
 function puntaje(name,preferir,evitar=[]){const n=plano(name);if(evitar.some(w=>w&&n.includes(w)))return -1;
  return preferir.reduce((t,term,i)=>t+term.split(/\s+/).filter(w=>w.length>=4&&n.includes(w)).length*(preferir.length-i),0);}
+// Seguimiento: estados de Rappi → 4 pasos de la TV (1 recibido, 2 preparando, 3 en camino, 4 entregado; 0 cancelado)
+const PASOS=[[/cancel/,0,'Pedido cancelado'],[/finish|deliver|closed|complete/,4,'Entregado'],[/arriv|arrive/,3,'El domiciliario está llegando'],
+ [/route|picked|on_the_way|shipping|delivery_in/,3,'En camino'],[/store|taken|cook|prepar|progress|ready|accept/,2,'Preparando en la tienda'],[/./,1,'Pedido recibido']];
+function paso(state){const st=String(state||'').toLowerCase();const m=PASOS.find(([re])=>re.test(st));return {step:m[1],label:m[2],state:st};}
+function textosDe(o,out=[]){if(!o||out.length>=4)return out;if(Array.isArray(o)){for(const x of o)textosDe(x,out);return out;}
+ if(typeof o==='object')for(const [k,v] of Object.entries(o)){if(typeof v==='string'&&/^(title|subtitle|text|description|message|label)$/i.test(k)&&v.trim()&&v.length<=120&&!out.includes(v.trim()))out.push(v.trim());else if(v&&typeof v==='object')textosDe(v,out);}
+ return out;}
 const palabras=v=>Array.isArray(v)?v.filter(w=>typeof w==='string').slice(0,5).map(w=>plano(w).slice(0,30)):[];
 function image(value,prefix='products'){
  if(typeof value!=='string'||!value)return '';
  try{const url=new URL(value.startsWith('https:')?value:`https://${RAPPI_PAIS.images}/${prefix}/${value}`);return url.protocol==='https:'&&['images.rappi.cl','images.rappi.com'].includes(url.hostname)?url.href:'';}catch{return '';}
 }
-export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'tip',mutates:true,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace con confirmación doble y tope. Si Rappi pide CVV o 3DS, lo completa una persona en la app.']};
+export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'tip',mutates:true,requiresAccount:true},{id:'track',mutates:false,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace con confirmación doble y tope. Si Rappi pide CVV o 3DS, lo completa una persona en la app.']};
 
 export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRappiSession(stateDir),login,now=Date.now}={}){
  const request=createRappiClient({fetcher});
@@ -147,6 +154,18 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
     cotizacion=null;
     const raw=await request('/api/ms/shopping-cart/v1/restaurant/recalculate',{method:'POST',body:{store_type:'restaurant'},session,signal:ctx.signal});
     return {...normalizedCart(raw),notice:'Propina actualizada. Revisa los importes otra vez para pedir.'};
+   }
+   if(action==='track'){
+    // Estado del pedido para la pantalla de seguimiento. Solo lectura; la TV lo consulta cada 10 s.
+    const session=await account(),oid=String(payload.orderId||'');
+    if(!/^\d{6,14}$/.test(oid))throw fault('Pedido no válido.');
+    const est=(await request(`/api/ms/user-order-state/auth/${oid}`,{session,signal:ctx.signal}))?.[oid]||{};
+    let det={};try{det=await request(`/api/order-summary/${oid}/detail`,{session,signal:ctx.signal});}catch{}
+    const p=paso(est.state||det.state);
+    const sk=det.storekeeper&&typeof det.storekeeper==='object'?det.storekeeper:null;
+    const total=(det.totals||[]).find(t=>/^total$/i.test(t.description||''))?.value;
+    return {orderId:oid,...p,store:text(det.store?.name||''),courier:text((sk?.first_name||sk?.name||'').split(' ')[0],30),
+     total:total!==undefined?Number(total):undefined,messages:textosDe([est.toolbar,est.widgets]),updatedAt:new Date().toISOString()};
    }
    if(action==='order'){
     // Confirmación: ticket de la última revisión (5 min), mismo carrito y un tope. Un intento; sin reintentos.
