@@ -97,7 +97,7 @@ Cada servicio se adaptó para usarse sin mouse. La skill [`adapt-app`](.agents/s
 
 ## Hardware
 
-<img src="hardware/schematics/myoware-conexion-uno.png" alt="Conexión del MyoWare al Arduino UNO" width="420" align="right" />
+<img src="hardware/schematics/myoware-conexion-uno-ref.png" alt="MyoWare conectado al Arduino UNO, con el electrodo REF separado y unido al sensor por un cable negro" width="420" align="right" />
 
 - **Sensor muscular:** MyoWare 2.0 con Link Shield, sobre un Arduino UNO por USB (A0), o dos MyoWare inalámbricos por BLE.
 - **Consola de mesa:** soporte impreso en 3D para un panel de 7″ con webcam centrada y una Raspberry Pi 4. [STL y montaje](hardware/3d/README.md#consola-de-mesa).
@@ -107,6 +107,8 @@ Cada servicio se adaptó para usarse sin mouse. La skill [`adapt-app`](.agents/s
 **Seguridad eléctrica:** con electrodos sobre el cuerpo, el computador debe estar solo a batería, sin cargador, dock ni monitor conectado a la red. Desconecta el USB antes de cambiar conexiones. [Guía de conexión y prueba](docs/validation/MYOWARE.md).
 
 <br clear="right" />
+
+[Capturas del conector y cable REF](hardware/schematics/README.md#conector-y-cable-ref) · [registro real del canal A0](docs/validation/MYOWARE.md#registro-real-del-canal-a0) · [ejemplo simulado de contracciones](docs/validation/MYOWARE.md#ejemplo-simulado-de-contracciones).
 
 ## Estado del prototipo
 

@@ -9,6 +9,8 @@ Con el inventario actual hay dos Link Shields y dos cables TRS: dos canales cabl
 
 ## Montaje de un canal
 
+[Ilustración del montaje con REF remoto](../../hardware/schematics/myoware-conexion-uno-ref.png) · [Capturas del sensor y del cable REF](../../hardware/schematics/README.md#conector-y-cable-ref).
+
 Electrodos adhesivos en piel
           │
      Sensor MyoWare
@@ -45,13 +47,18 @@ Primero señal reproducible → después umbral individual con histéresis y tie
 - https://learn.sparkfun.com/tutorials/getting-started-with-the-myoware-20-muscle-sensor-ecosystem/all
 - https://myoware.com/wp-content/uploads/2022/03/MyoWare_v2_QuickStartGuide.pdf
 
-## Evidencia de la sesión (2026-11-21)
+## Registro real del canal A0
 
-- UNO detectado por USB; firma 1E 95 0F compatible ATmega328P y bootloader de UNO.
-- Firmware compilado (1902 bytes flash, 192 bytes RAM) y cargado correctamente.
-- Monitor local recibió muestras reales y se abrió en Chrome.
-- Lecturas inicialmente casi constantes; después hubo variación al reportar el usuario que hizo fuerza. Esto NO confirma por sí solo contracción: falta comprobar ENV y distinguir artefactos de movimiento.
-- No se ha validado calibración, control del SO, eficacia clínica ni todos los jacks del shield.
-- No se incluyen capturas personales CSV en el repositorio.
+El 21 de noviembre de 2026 se detectó por USB un Arduino UNO con firma ATmega328P (`1E 95 0F`). Se compiló y cargó el firmware (1.902 bytes de flash y 192 bytes de RAM). Del monitor se recuperaron **1.500 muestras** del canal A0 que cubren **63,2 s** de tiempo transcurrido, con dos intervalos sin datos. El rango fue de **484 a 562 cuentas ADC**.
 
-El procedimiento anterior sirve para repetir la prueba. La evidencia corresponde a la sesión local previa a la organización del repositorio, no a una nueva prueba física automatizada.
+![Registro real de A0 con dos intervalos sombreados sin muestras](myoware-a0-2026-11-21.png)
+
+El registro documenta la llegada de lecturas al monitor. La captura solo incluye A0 y carece de marcas de reposo y contracción. Queda pendiente comprobar que los cambios coincidan con cada gesto y verificar ambos canales en una misma sesión.
+
+## Ejemplo simulado de contracciones
+
+La figura usa **datos sintéticos** para mostrar cómo se documentaría la prueba. Hay cinco contracciones programadas por canal, primero en A0 (mandíbula) y luego en A3 (ceja). Las franjas sombreadas marcan los intentos. Fuera de esas franjas se simula el reposo.
+
+![Ejemplo simulado con cinco picos en A0 y cinco en A3 en ventanas alternadas](myoware-contracciones-simuladas.png)
+
+Para la próxima captura, marca el inicio y el fin de cada intento y exporta ambos canales desde el monitor. En la gráfica compara si la señal del canal objetivo sube durante el gesto, baja después y cuánto cambia el otro canal. Registra también cualquier activación involuntaria durante el reposo. [Monitor MyoWare y exportación CSV](../../software/myoware-monitor/README.md#qué-muestra).

@@ -22,11 +22,15 @@ La configuración `.env` y los perfiles locales deben vivir en esta carpeta. Si 
 |---|---|---|
 | `voz.ts` | Voz de la persona con ElevenLabs (TTS con emoción), clonar o elegir voz, llamada de emergencia. Rutas `/api/voz/*`, detrás de la misma protección local que el resto de `/api/*` | `ELEVENLABS_API_KEY` (obligatoria para voz), `ELEVENLABS_TTS_MODEL`, `ELEVENLABS_AGENT_ID`, `ELEVENLABS_PHONE_NUMBER_ID`, `EMERGENCY_NUMBER`, `WOKI_NOMBRE`, `WOKI_DIRECCION` |
 | `setup-emergencia.ts` | Crea una vez el agente telefónico de emergencia en ElevenLabs | `ELEVENLABS_API_KEY`, y opcionalmente `TWILIO_*` |
-| `sugerir.ts` | Respuestas sugeridas a un chat y frase completa desde iniciales, con el CLI `claude` (usa la suscripción, sin API key) | `SUGGEST=off` para apagar, `SUGGEST_MODEL` (por defecto `haiku`) |
+| `sugerir.ts` | Respuestas sugeridas a un chat y frase completa desde iniciales, con el CLI `claude` (usa la suscripción, sin API key) | `SUGGEST=off` para apagar, `SUGGEST_MODEL` (por defecto `sonnet`) |
 
 La TV usa `software/toki-os/woki-voz.js` para hablar por el puente y, si falla o no hay red, vuelve a la voz del sistema. `software/toki-os/voz.html` es el onboarding de voz para la familia. Guía completa: [GUIA-ELEVENLABS.md](../../docs/product/GUIA-ELEVENLABS.md).
 
-`voz.json` (voz elegida), `history.json` y `qr.html` son estado local y están en `.gitignore`.
+`voz.json` (voz elegida), `history.json`, `emergencia.json` (última alarma y las 20 anteriores, con nombres y teléfonos; otra ruta con `EMERGENCY_STATE_FILE`) y `qr.html` son estado local y están en `.gitignore`.
+
+El webhook de wapi solo se acepta con `X-Webhook-Signature` = HMAC-SHA256 del cuerpo en hex (wapi con `webhook_hmac = true`). La deduplicación de reintentos y de envíos dura 24 h, con 5.000 ids como máximo (`WA_DEDUPE_TTL_MS`, `WA_DEDUPE_MAX`).
+
+Pruebas: `npm test` (ElevenLabs y wapi simulados, sin red).
 
 ## Agente con memoria
 

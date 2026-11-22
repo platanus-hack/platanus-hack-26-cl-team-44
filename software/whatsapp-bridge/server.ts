@@ -1,8 +1,10 @@
 // woki-bridge/server.ts
 import http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync, chmodSync } from "node:fs";
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
+import { firmaValida, leerCrudo } from "./firma.ts";   // webhook: solo HMAC-SHA256 del cuerpo crudo
+import { Vistos } from "./vistos.ts";                   // conjuntos con vencimiento y tope
 import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
 import { sugOn, suggestReplies, expandInitials, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
 import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente con memoria (software/agent); si no está, sigue sugerir.ts
@@ -181,8 +183,11 @@ async function personName(participant?: string, pushName?: string) {
 }
 
 // ---------- límites ----------
-const usedIdem = new Set<string>();
-const seenInbound = new Set<string>();
+// Claves de envío usadas y mensajes ya recibidos (reintentos de wapi): valen 24 h, máx. 5.000 cada uno; sale primero el más viejo.
+const DEDUPE_TTL_MS = Number(process.env.WA_DEDUPE_TTL_MS) || 24 * 3_600_000;
+const DEDUPE_MAX = Number(process.env.WA_DEDUPE_MAX) || 5_000;
+const usedIdem = new Vistos(DEDUPE_TTL_MS, DEDUPE_MAX);
+const seenInbound = new Vistos(DEDUPE_TTL_MS, DEDUPE_MAX);
 let day = new Date().toDateString(), sentToday = 0, lastSendAt = 0;
 function quotaOk() {
   const d = new Date().toDateString();
@@ -218,8 +223,7 @@ function json(res: http.ServerResponse, code: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 const safeEqual = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
-const verify = (raw: string, sig?: string) =>
-  !!SECRET && !!sig && (safeEqual(sig, SECRET) || safeEqual(sig, createHmac("sha256", SECRET).update(raw).digest("hex")));
+let firmaMalaAt = 0; // aviso de firma inválida en el log, como mucho uno por minuto (sin cuerpo ni firma)
 
 // ---------- rutas ----------
 const server = http.createServer(async (req, res) => {
@@ -391,10 +395,13 @@ const server = http.createServer(async (req, res) => {
 
   // wapi → mensaje entrante (firmado)
   if (req.method === "POST" && url.pathname === "/webhook/wapi") {
-    const raw = await readBody(req);
-    if (!verify(raw, req.headers["x-webhook-signature"] as string | undefined)) { res.writeHead(401); return res.end(); }
+    const raw = await leerCrudo(req);
+    if (!firmaValida(SECRET, raw, req.headers["x-webhook-signature"])) {
+      if (Date.now() - firmaMalaAt > 60_000) { firmaMalaAt = Date.now(); console.warn("[webhook] firma inválida → 401 (¿wapi firma con HMAC? webhook_hmac en whatsapp_sessions)"); }
+      res.writeHead(401); return res.end();
+    }
     res.writeHead(200); res.end("ok"); // responder YA: wapi reintenta si tardamos
-    setImmediate(() => handleEvent(raw));
+    setImmediate(() => handleEvent(raw.toString("utf8")));
     return;
   }
 

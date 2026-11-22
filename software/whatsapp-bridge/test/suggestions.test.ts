@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createSuggestions } from "./suggestions.ts";
-import type { Sug } from "./sugerir.ts";
+import { createSuggestions } from "../suggestions.ts";
+import type { Sug } from "../sugerir.ts";
 
 const suggestion: Sug = { text: "Hola", tone: "amable", emo: "alegre" };
 

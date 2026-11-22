@@ -10,6 +10,8 @@
   const usable = job => ['needs_connection','needs_test','ready'].includes(job?.status);
   const failedJob = job => ['cancelled','error','interrupted'].includes(job?.status);
   const safeImage = url => typeof url === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(url) ? url : '';
+  // apps-bridge solo escucha en 127.0.0.1: con otra URL (la pública) no hay puente y se usa el modo ilustrativo.
+  const loopback = url => /^https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?(?:\/|$)/i.test(url);
   // Spotify se consulta cada 5 s; entre consultas, la línea de tiempo avanza sola si está sonando.
   function playbackElapsed(state, sinceMs) {
     const duration = Number(state?.item?.duration_ms) || 0;
@@ -19,7 +21,7 @@
   }
   function brandLogo(id, sourceUrl = '') {
     if (/^https:\/\/(?:www\.)?cooperativa\.cl\//i.test(sourceUrl)) id = 'cooperativa';
-    if(!['spotify','whatsapp','youtube','biobio','rappi','mercadolibre','cooperativa'].includes(id))return '<span aria-hidden="true">▤</span>';
+    if(!['spotify','whatsapp','youtube','biobio','rappi','mercadolibre','cooperativa','noticias'].includes(id))return '<span aria-hidden="true">▤</span>';
     return `<img class="service-logo logo-${id}" src="brands/${id}.svg" alt="" draggable="false">`;
   }
   function rappiPhoto(original, detail=false) {
@@ -55,6 +57,8 @@
       this.readingPlayback = false;
       this.admin=new URLSearchParams(location.search).get('appsAdmin')==='1';
       this.base=(window.TOKI_ENV&&TOKI_ENV.apps)||(location.port==='8000'?'http://127.0.0.1:8790':location.origin);   // escenario: el monitor entrega TOKI_APPS_URL
+      // Modo ilustrativo (toki-apps-ilustrativo.js): sin apps-bridge, las apps muestran datos de ejemplo. ?apps=ilustrativo lo fuerza.
+      this.demo=null;this.reached=false;this.forceDemo=new URLSearchParams(location.search).get('apps')==='ilustrativo';
       root.classList.add('toki-apps'); root.classList.toggle('ta-admin',this.admin);
       this.click=e=>{const el=e.target.closest('[data-app-action]');if(el&&!options.motion){e.preventDefault();void this.act(el);}};
       this.input=e=>{if(e.target.dataset.appField)this[e.target.dataset.appField]=e.target.value;};
@@ -66,11 +70,41 @@
     }
     destroy(){this.videoController?.destroy();this.videoController=null;this.destroyed=true;this.epoch++;clearInterval(this.timer);clearInterval(this.playbackTimer);clearInterval(this.clockTimer);clearInterval(this.trackTimer);clearTimeout(this.orderTimer);this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);}
     async api(path,body,ms=45000){
-      if(!this.token){const r=await fetch(this.base+'/api/session',{signal:AbortSignal.timeout(4000)});if(!r.ok)throw Error('No se pudo conectar con el servicio local.');this.token=(await r.json()).token;}
+      if(!this.demo&&!this.token)await this.connect();
+      if(this.demo)return this.demo.handle(path,body);
       const r=await fetch(this.base+path,{method:body===undefined?'GET':'POST',headers:{'x-toki-token':this.token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(ms)});
       if(r.status===401)this.token='';const data=await r.json();if(!r.ok)throw Error(data.error||'La operación no se completó.');return data;
     }
+    // Primer contacto: el puente real si responde. Si nunca respondió, el modo ilustrativo. Si ya respondió una vez,
+    // un corte se muestra como siempre ("Sin conexión…") y no cambia a datos de ejemplo.
+    async connect(){
+      this.connecting??=(async()=>{
+        if(!this.forceDemo&&loopback(this.base)){
+          const token=await this.session();
+          if(token){this.token=token;this.reached=true;return;}
+        }
+        if(this.reached||!(await this.loadDemo()))throw Error('No se pudo conectar con el servicio local.');
+      })().finally(()=>{this.connecting=null;});
+      return this.connecting;
+    }
+    async session(){
+      try{const r=await fetch(this.base+'/api/session',{signal:AbortSignal.timeout(4000)});return r.ok?(await r.json()).token||'':'';}catch{return '';}
+    }
+    async loadDemo(){
+      try{
+        const load=this.options.illustrative||(()=>import('./toki-apps-ilustrativo.js').then(m=>m.loadIllustrative()));
+        const demo=await load();if(!this.destroyed&&!this.reached)this.demo=demo;
+      }catch{}
+      return !!this.demo;
+    }
+    // Modo ilustrativo por un puente local apagado (escenario): cada 15 s se prueba el puente; si vuelve, se usa el real.
+    async probeBridge(){
+      if(!this.demo||this.forceDemo||!loopback(this.base)||Date.now()-(this.probeAt||0)<15000)return;
+      this.probeAt=Date.now();const token=await this.session();if(!token||this.destroyed)return;
+      Object.assign(this,{demo:null,token,reached:true,jobs:[],adapters:[],id:null,view:'store'});this.epoch++;
+    }
     async sync(){
+      await this.probeBridge();
       try{
         const [{jobs}, manifest]=await Promise.all([this.api('/api/jobs'),this.api('/api/adapters')]);
         const changed=JSON.stringify(jobs)!==JSON.stringify(this.jobs)||!this.online||JSON.stringify(manifest.adapters)!==JSON.stringify(this.adapters);
@@ -162,7 +196,7 @@
       if(this.view==='food-review'){
         const c=f.cart||{},total=totalDe(c),servicio=Math.max(0,total-(c.productsTotal||0)-(c.shippingTotal||0)-(c.tip||0));
         const fila=(t,v,cls='')=>`<div class="pay-row ${cls}"><span>${t}</span><b>${this.foodPrice(v)}</b></div>`;
-        return pasos(3)+this.header('Revisa y paga',esc(f.status?.locationLabel?`Entrega en ${f.status.locationLabel}`:'Entrega en tu dirección de Rappi'))+`<div class="pay-box">${fila('Productos',c.productsTotal)}${fila('Envío',c.shippingTotal)}${servicio?fila('Servicio de Rappi',servicio):''}${fila('Propina',c.tip||0)}${fila('Total a pagar',total,'pay-total')}<p class="food-note">Pagas con la tarjeta guardada en tu cuenta de Rappi. Myo no reintenta si algo falla.</p></div><div class="food-actions">${this.btn('food-to-tip','← Propina')}${this.btn('food-pay',f.confirmOrder?`Elige otra vez para pagar ${this.foodPrice(total)}`:`Pagar ${this.foodPrice(total)}`,{className:'ta-primary pay-now '+(f.confirmOrder?'pay-confirm':''),disabled:!c.ticket})}</div>`;
+        return pasos(3)+this.header('Revisa y paga',esc(f.status?.locationLabel?`Entrega en ${f.status.locationLabel}`:'Entrega en tu dirección de Rappi'))+`<div class="pay-box">${fila('Productos',c.productsTotal)}${fila('Envío',c.shippingTotal)}${servicio?fila('Servicio de Rappi',servicio):''}${fila('Propina',c.tip||0)}${fila('Total a pagar',total,'pay-total')}<p class="food-note">${this.demo?esc(this.demo.payNote):'Pagas con la tarjeta guardada en tu cuenta de Rappi. Myo no reintenta si algo falla.'}</p></div><div class="food-actions">${this.btn('food-to-tip','← Propina')}${this.btn('food-pay',f.confirmOrder?`Elige otra vez para pagar ${this.foodPrice(total)}`:`Pagar ${this.foodPrice(total)}`,{className:'ta-primary pay-now '+(f.confirmOrder?'pay-confirm':''),disabled:!c.ticket})}</div>`;
       }
       if(this.view==='food-track'){
         const o=f.order||{},t=f.track||{},step=t.step??(o.orderId?1:1);
@@ -176,7 +210,7 @@
           this.keyboard('rappiQuery')+this.btn('food-submit','Buscar',{className:'ta-primary'});
       }
       const categoryButton=c=>{
-        const icon=foodIcons[c.id];
+        const icon=c.icon?esc(c.icon):foodIcons[c.id];
         const label=(icon?`<span class="food-cat-icon" aria-hidden="true">${icon}</span>`:'')+`<span>${esc(c.name)}</span>`;
         return this.btn('food-search',label,{value:c.id,className:'food-cat'});
       };
@@ -292,7 +326,7 @@
     }
     async loadVideos(){
       if(this.busy)return;const epoch=this.epoch;this.busy=true;this.error='';this.render();
-      try{const [data,module]=await Promise.all([this.appAction('list'),import('./toki-video.js')]);if(this.epoch===epoch&&!this.destroyed){this.videoItems=data.items;this.videoModule=module;}}
+      try{const [data,module]=await Promise.all([this.appAction('list'),this.demo?this.demo.videoModule:import('./toki-video.js')]);if(this.epoch===epoch&&!this.destroyed){this.videoItems=data.items;this.videoModule=module;}}
       catch(e){if(this.epoch===epoch)this.error=e.message;}
       finally{this.busy=false;if(this.epoch===epoch)this.render();}
     }
@@ -303,7 +337,7 @@
         `<img src="${esc(video.thumbnail)}" alt="" draggable="false"><strong>${esc(video.label)}</strong>`,
         {value:video.id,className:'video-card'})).join('');
       const empty=this.busy?'<div class="ta-center"><p role="status">Cargando videos…</p></div>':`<div class="ta-center"><p>No se pudieron mostrar los videos.</p>${this.btn('reload-videos','Reintentar',{className:'ta-primary'})}</div>`;
-      return this.header('Videos','YouTube · Chile Travel')+(cards?`<div class="video-choices">${cards}</div>${pager}`:empty);
+      return this.header('Videos',this.demo?esc(this.demo.videosLabel):'YouTube · Chile Travel')+(cards?`<div class="video-choices">${cards}</div>${pager}`:empty);
     }
     videoPlayer(){return `<section class="ta-video-player"><h2>${esc(this.videoSelection?.video.label||'YouTube')}</h2><div class="ta-video-frame"><div id="toki-video-frame"></div></div><p class="ta-video-status" role="status">Conectando con YouTube…</p><div class="ta-video-controls">${this.btn('video-toggle','Reproducir',{disabled:true})}${this.btn('retry-video','Reintentar video')}</div></section>`;}
     mountVideo(){
@@ -338,6 +372,7 @@
     }
     get job(){return this.jobs.find(j=>j.id===this.id);}
     get catalog(){
+      if(this.demo)return this.demo.catalog;
       const extra=new Map();
       for(const m of this.adapters.filter(a=>a.generated))extra.set(m.name,{id:m.id,name:m.name,sourceUrl:m.source});
       for(const j of this.jobs.filter(j=>j.sourceUrl&&j.status!=='cancelled'))if(!extra.has(j.name))extra.set(j.name,{id:j.app==='custom'?'request-'+j.id:j.app,name:j.name,sourceUrl:j.sourceUrl});
@@ -345,7 +380,7 @@
       return [...services,...[...extra.values()].map(a=>({...a,category:'Noticias',intent:'Leer titulares',tasks:'Elegir titulares y leer extractos RSS por páginas.',description:'Elegir titulares y leer sus extractos por partes.'}))];
     }
     get catalogLabel(){ return window.TOKI_OS_SHELL ? 'Apps' : 'servicios'; }
-    get preset(){return this.catalog.find(a=>a.id===this.selected)||this.catalog.find(a=>a.name===this.job?.name)||catalog[0];}
+    get preset(){return this.catalog.find(a=>a.id===this.selected)||this.catalog.find(a=>a.name===this.job?.name)||this.catalog[0]||catalog[0];}
     existing(a){return this.jobs.find(j=>j.name===a.name&&!['cancelled'].includes(j.status));}
     btn(action,label,o={}){
       const available=['home','back','store','catalog-prev','catalog-next','input-pause'];
@@ -544,7 +579,7 @@
     }
     music(){
       if(this.job?.status==='needs_connection')return this.header('Elegir música','Falta conectar tu cuenta de Spotify.')+'<div class="ta-center"><p>La conexión se prepara una sola vez desde la configuración del equipo. Puedes volver y usar reproducir o pausar.</p></div>';
-      return this.header('¿Qué te apetece escuchar?','Elige una opción.')+`<div class="ta-control-grid ta-fill">${music.map(([name,q])=>this.btn('music-search',name,{value:q})).join('')}</div>`;
+      return this.header('¿Qué te apetece escuchar?','Elige una opción.')+`<div class="ta-control-grid ta-fill">${(this.demo?.music?.length?this.demo.music:music).map(([name,q])=>this.btn('music-search',name,{value:q})).join('')}</div>`;
     }
     results(){const tracks=this.tracks.slice(this.page*3,this.page*3+3);return this.header('Elige una canción',this.query)+`<div class="ta-results">${tracks.map(t=>this.btn('play-track',`<strong>${esc(t.name)}</strong><small>${esc(t.artists)}</small>`,{value:t.uri,className:'ta-track'})).join('')}${!tracks.length?'<p>No encontramos canciones. Vuelve y elige otra opción.</p>':''}</div><div class="ta-result-nav">${this.btn('page',this.page?'← Anteriores':'Más canciones →',{disabled:this.tracks.length<=3})}</div>`;}
     keyboard(field){this.field=field;const keys=this.group?[...this.group].map(c=>this.btn('key',esc(c),{value:c})):groups.map(g=>this.btn('group',g,{value:g}));return `<div class="ta-keyboard">${keys.join('')}${this.group?this.btn('groups','← Grupos'):''}${this.btn('key','Espacio',{value:' '})}${this.btn('delete','Borrar')}</div>`;}
@@ -577,7 +612,9 @@
       const content=this.view.startsWith('food')?this.foodView():({store:()=>this.store(),detail:()=>this.detail(),progress:()=>this.progress(),player:()=>this.player(),music:()=>this.music(),results:()=>this.results(),news:()=>this.news(),reading:()=>this.reading(),videos:()=>this.videos(),'video-player':()=>this.videoPlayer()}[this.view]||(()=>this.store()))();
       this.root.classList.toggle('ta-food-results', ['food-stores','food-products'].includes(this.view));
       this.root.classList.toggle('ta-food-cart', this.view === 'food-cart');
-      this.root.innerHTML=`<div class="ta-screen">${content}</div><div class="ta-feedback" role="status" aria-live="polite">${this.busy?'Un momento…':esc(this.error)||(!this.online?'Sin conexión con la preparación local.':'')}</div>${this.nav()}`;
+      const label=this.demo?`<p class="ta-ilustrativo" role="note">${esc(this.demo.label)}</p>`:'';
+      this.root.classList.toggle('ta-ilus',!!this.demo);
+      this.root.innerHTML=`<div class="ta-screen">${label}${content}</div><div class="ta-feedback" role="status" aria-live="polite">${this.busy?'Un momento…':esc(this.error)||(!this.online?'Sin conexión con la preparación local.':'')}</div>${this.nav()}`;
       for(const img of this.root.querySelectorAll('.rappi-photo')){
         img.addEventListener('error',()=>{
           if(img.dataset.original){
