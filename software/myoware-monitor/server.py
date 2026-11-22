@@ -152,6 +152,9 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_toki_asset(Path(path[1:]),toki_assets[path])
         elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'text/javascript')
+        elif re.fullmatch(r'/[\w-]+\.(js|css)',path,re.ASCII) and (toki_dir/path[1:]).is_file():
+            # Todo .js/.css de primer nivel de software/toki-os: la TV suma archivos (juegos, servicios) y no deben faltar en escena
+            self.send_toki_asset(Path(path[1:]),'text/javascript' if path.endswith('.js') else 'text/css')
         elif re.fullmatch(r'/brands/[\w-]+\.svg',path,re.ASCII):
             self.send_toki_asset(Path(path[1:]),'image/svg+xml')
         elif re.fullmatch(r'/presets/[\w-]+\.json',path,re.ASCII):
