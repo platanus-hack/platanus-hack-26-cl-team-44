@@ -6,9 +6,11 @@ window.addEventListener('load', () => {
   section.innerHTML = '<div class="status"></div><div id="gameContent"></div>';
   document.querySelector('#stage').append(section);
   document.querySelector('svg defs')?.insertAdjacentHTML('beforeend', '<symbol id="i-game" viewBox="0 0 80 80"><rect x="10" y="20" width="60" height="40" rx="16"/><path d="M23 40h18m-9-9v18M55 35h1m5 12h1"/></symbol>');
-  TILES.splice(6, 0, ['go:games', 'g-purple', 'i-game', 'Juegos', 'A tu ritmo']);
   document.body.classList.add('has-games');
-  renderTiles();
+  if (!TILES.some(([action]) => action === 'go:games')) {
+    TILES.splice(6, 0, ['go:games', 'g-purple', 'i-game', 'Juegos', 'A tu ritmo']);
+    renderTiles();
+  }
   let state = null, paused = false, suspended = false, inputPending = false, latch = null;
   const content = document.querySelector('#gameContent');
   const KEY = 'toki.games.records.v1';

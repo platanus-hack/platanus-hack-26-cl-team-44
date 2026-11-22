@@ -15,14 +15,14 @@ Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes exp
 
 ## Probarlo
 
-**Toki OS** abre la pantalla con Hablar, Mensajes, Compañía, Servicios y Juegos. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
+**Toki OS** es la interfaz oficial. Su inicio reúne ocho tarjetas, entre ellas Juegos y Servicios. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
 
 ```bash
 npm ci --prefix software/apps-bridge
 npm start --prefix software/apps-bridge
 ```
 
-Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En el primer inicio elige Mirada, Nariz o Mouse. Para desarrollar la pantalla principal, edita [software/toki-os/index.html](software/toki-os/index.html).
+Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En la bienvenida puedes calibrar la mirada o la nariz, conectar la mirada con iPhone o usar el mouse. Desarrolla las pantallas del SO en [software/toki-os/woki-os.html](software/toki-os/woki-os.html) y sus módulos.
 
 ### Herramientas de prueba
 

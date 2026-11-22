@@ -417,7 +417,6 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.2s1.5 2.3 4 2.3 4-2.3 4-2.3M9 9.5h.01M15 9.5h.01"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.6 2H4.4z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5"/><path d="M21 3l-6.5 18-4-7.5L3 9.5z"/></symbol>
-    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5.5l11-2.3v12.5"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="15.8" r="2.6"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
@@ -677,10 +676,10 @@ CFG.sugMode=(()=>{ try{ return localStorage.getItem('woki.sugmode')==='lista'? '
 const TILES = [
   ['go:talk','g-blue','i-chat','Hablar','Respuestas sugeridas'],
   ['go:keyboard','g-indigo','i-keys','Escribir','Teclado por grupos'],
-  ['go:reactions','g-yellow','i-smile','Reacciones','Sin esperar'],
   ['attention','g-orange','i-bell','Llamar a Camila','Atención, no urgencia'],
   ['go:contacts','g-green','i-send','Mensajes','WhatsApp a los tuyos'],
-  ['music','g-pink','i-music','Música','Lo de siempre'],
+  ['go:apps','g-white','i-apps','Servicios','Música, videos, noticias'],
+  ['go:games','g-teal','i-gamepad','Juegos','A tu ritmo'],
   ['rest','g-purple','i-moon','Descansar','Pausa la mirada'],
   ['go:settings','g-gray','i-gear','Ajustes','Tiempo, voz, modo']];
 const EMOS = [
@@ -1466,7 +1465,6 @@ function activate(el, calibrateGaze=true){
     case 'reactMore': S.reactPage=(S.reactPage+1)%Math.ceil(REACTS.length/REACT_PAGE); renderReacts(); break;
     case 'attention': startAlarm('atencion'); break;
     case 'quick': chooseQuick(arg); break;
-    case 'music': island('🎵','Reproduciendo “Lo de siempre” (simulado)'); break;
     case 'rest': setRest(true); break;
     case 'wake': setRest(false); break;
     case 'agentSend':
