@@ -10,39 +10,51 @@ const colors = fs.readFileSync(dir + "os-colores.css", "utf8");
 
 // 1. Los módulos del equipo se cargan tal cual y la conexión va después de ellos.
 const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.js", "os-juegos-servicios.js"].map((f) => html.indexOf(`<script src="${f}"`));
-assert.ok(order.every((i) => i > 0), "Myo OS carga los tres módulos y la conexión");
+assert.ok(order.every((i) => i > 0), "Toki OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
-// 2. El SO declara las ocho tarjetas en su orden de lectura y usa la rejilla de cuatro columnas.
+// 2. El SO declara seis tarjetas y el SOS global.
 {
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
-    "go:talk", "go:keyboard", "sos", "go:contacts",
-    "go:apps", "go:games", "rest", "go:settings",
+    "go:talk", "go:keyboard", "go:contacts",
+    "go:apps", "go:games", "go:settings",
   ]);
-  assert.match(html, /class="grid4x2" id="tiles"/);
+  assert.match(html, /class="grid3x2" id="tiles"/);
   assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 
-// 3. Siempre hay salida grande: "‹ Inicio" en la barra, "← Inicio" en Juegos y "← Juegos" en el catálogo externo.
-assert.match(glue, /home-nav" data-t data-act="go:home"/);
-assert.match(games, /window\.TOKI_OS_SHELL\?button\('home','← Inicio'\)/);
-assert.match(games, /if\(act==='home'\) return go\('home'\);/);
-assert.match(external, /window\.TOKI_OS_SHELL\?b\('toki','← Juegos'\)/);
-assert.match(external, /if\(act==='toki'\)return window\.TOKI_GAMES\?\.lobby\(\);/);
+// 3. Juegos abre el catálogo externo directamente. La partida permite volver al catálogo.
+assert.match(html, /home-nav" data-t data-act="go:home"/);
+assert.match(html, /sos-nav" data-t data-act="sos" data-dwell="2000"/);
+assert.match(html, /rest-sos" data-t data-act="sos" data-dwell="2000"/);
+assert.match(html, /rest-nav" data-t data-act="rest"/);
+assert.match(external, /if\(name==='games'\)catalog\(\)/);
+assert.match(external, /b\('catalog','← Juegos'\)/);
+assert.doesNotMatch(external, /external:toki|b\('toki'/);
+assert.match(games, /baseGo\(name, \.\.\.args\)/, "el envoltorio conserva argumentos de historial");
+assert.match(external, /oldGo\(name,\.\.\.args\)/, "el envoltorio externo conserva argumentos de historial");
 
 // 4. Dentro del SO el puntero se elige en Ajustes (no hay botones Nariz/Mirada/Mouse que apaguen el iPhone).
 assert.match(games, /if \(window\.TOKI_OS_SHELL\) return `<p class="game-note">/);
 assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 
 // 5. Con el iPhone nada se elige en cadena en Juegos y Servicios (mismo bloqueo que el resto del SO).
-assert.match(glue, /if \(gazeOnly\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /if \(iphoneDwell\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /return innerActivate\(el, calibrate, immediate\)/);
+assert.match(external, /oldActivate\(el,calibrate,immediate\)/, "el control externo conserva activación inmediata");
+assert.match(glue, /confirming: Boolean\(G\.brow\)/, "la confirmación usa el estado de ceja vigente");
+assert.match(glue, /careWheel\?\.active/, "la rueda de cuidado suspende el control del juego");
+assert.match(glue, /controlPointFresh\(now\)/, "la entrada de cámara solo usa puntos frescos");
+assert.match(external, /!shared\?\.confirming && !shared\?\.muscle/, "la ceja o el modo MyoWare desactivan el clic automático");
 
-// 5b. Juegos de Toki con íconos de app del SO; partida externa grande con aviso de una línea; al salir se cierra.
-assert.match(games, /window\.TOKI_GAME_ART\?\.\[kind\]/);
-assert.match(glue, /window\.TOKI_GAME_ART = \{ stars: .*memory: .*external: /);
-assert.match(external, /Primera vez: toca la bandera de España y luego «Crear usuario»\./);
+// 5b. Miniaturas del inicio y navegación en la partida.
+assert.match(glue, /SERVICE_LOGOS = \['spotify', 'rappi', 'biobio', 'mercadolibre'\]/);
+for (const [, cover] of external.matchAll(/image:'([^']+)'/g)) {
+  assert.ok(fs.existsSync(dir + 'game-covers/' + cover + '.webp'), cover);
+}
+assert.match(external, /Apunta y confirma con Espacio/);
 assert.ok(!/if\(window\.TOKI_OS_SHELL\)\{[^]*?Si aparece la bienvenida[^]*?return;\n  \}/.test(external), "dentro del SO no aparece el aviso largo");
 assert.match(glue, /if \(name !== 'games'\) \$\('#externalGame'\)\?\.remove\(\);/);
 const css = fs.readFileSync(dir + "os-juegos-servicios.css", "utf8");
@@ -69,4 +81,4 @@ assert.match(html, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océan
 assert.match(html, /localStorage\.getItem\('woki\.palette'\)/, "el color se aplica antes de pintar");
 assert.match(html, /case 'look':/);
 
-console.log("Juegos y Servicios en Toki OS: módulos del equipo, 8 tarjetas en 4×2, salidas grandes, sin elección en cadena y colores.");
+console.log("Juegos y Servicios en Toki OS: módulos del equipo, 6 tarjetas y SOS y descanso globales, salidas grandes, sin elección en cadena y colores.");

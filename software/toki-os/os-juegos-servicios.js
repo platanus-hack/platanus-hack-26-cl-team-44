@@ -2,7 +2,7 @@
    Juegos y Servicios dentro de Toki OS (woki-os.html)
 
    Reutiliza los módulos del equipo sin copiarlos:
-   - prototype-games.js            Juegos de Toki (Constelaciones, Parejas, récords)
+   - prototype-games.js            pantalla de Juegos y bloqueo de selección al perder el seguimiento
    - prototype-external-games.js   catálogo de Eye Gaze Games (SpecialEffect)
    - toki-apps.js                  Servicios (Spotify, BioBioChile, YouTube…) vía apps-bridge
    Este archivo solo los conecta al SO: tarjetas del inicio, pantalla de Servicios,
@@ -12,36 +12,49 @@
 window.TOKI_OS_SHELL = true;
 // Los módulos de juegos los esperan; en la tablet los define prototype-motion.html.
 const tabletAccess = null;
-function tabletGameInput() { return null; }
+function tabletGameInput() {
+  const now = performance.now();
+  const iphone = iphonePointing();
+  const camera = Boolean(iphone || NOSE.on);
+  const blocked = document.hidden || !document.hasFocus() || S.gazeLost || S.rest || S.alarm ||
+    careWheel?.active || document.body.classList.contains('panel') || $('#calib').classList.contains('on');
+  return {
+    mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
+    point: blocked ? null : camera ? (controlPointFresh(now) ? gz : null) : mouse,
+    dwellEnabled: CFG.mode === 'dwell',
+    confirming: Boolean(G.brow),
+    muscle: myowareConfirming(),
+    dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
+  };
+}
 
 window.addEventListener('load', () => {
   'use strict';
   const OWN = /^(game|external|apps):/;
-  const SERVICE_LOGOS = ['spotify', 'youtube', 'biobio', 'mercadolibre'];
+  const SERVICE_LOGOS = ['spotify', 'rappi', 'biobio', 'mercadolibre'];
 
   /* ---------- íconos en el estilo de Myo (trazo, 24×24) ---------- */
   document.querySelector('svg defs').insertAdjacentHTML('beforeend',
     '<symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.4l-.8 4a2.6 2.6 0 0 1-4.5 1.2L14.5 16h-5l-1.6 2.1a2.6 2.6 0 0 1-4.5-1.2l-.8-4A4.5 4.5 0 0 1 7 7.5z"/><path d="M8 10.5v3M6.5 12h3M15.5 11h.01M17.5 13h.01"/></symbol>' +
-    '<symbol id="i-apps" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>' +
-    '<symbol id="i-stars" viewBox="0 0 24 24"><path d="M10 3.5l1.6 4.4 4.4 1.6-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6z"/><path d="M17.5 13.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/><path d="M18 3.5v3M16.5 5h3"/></symbol>' +
-    '<symbol id="i-pairs" viewBox="0 0 24 24"><rect x="2.8" y="5.5" width="9.4" height="13" rx="2.2"/><rect x="11.8" y="5.5" width="9.4" height="13" rx="2.2"/><path d="M7.5 10.2l1.6 1.8-1.6 1.8-1.6-1.8zM16.5 10.2l1.6 1.8-1.6 1.8-1.6-1.8z"/></symbol>' +
-    '<symbol id="i-eyegame" viewBox="0 0 24 24"><path d="M2.5 12s3.6-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.6 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/><path d="M12 10.6v2.8M10.6 12h2.8"/></symbol>');
-  // Íconos de los Juegos de Toki con el mismo estilo de app del inicio (los lee prototype-games.js).
-  const gameIcon = (color, icon) => `<span class="app ${color} game-icon"><svg><use href="#${icon}"/></svg></span>`;
-  window.TOKI_GAME_ART = { stars: gameIcon('g-indigo', 'i-stars'), memory: gameIcon('g-orange', 'i-pairs'), external: gameIcon('g-teal', 'i-eyegame') };
+    '<symbol id="i-apps" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>');
 
   const baseTiles = renderTiles;
   renderTiles = function () {
     baseTiles();
     // Servicios muestra los logos reales (como en el inicio de la tablet), cada uno con su fondo de marca.
     const app = $('#tiles [data-act="go:apps"] .app');
-    if (app && window.TokiApps) app.innerHTML = `<span class="service-mosaic">${SERVICE_LOGOS.map(id => TokiApps.brandLogo(id)).join('')}</span>`;
+    if (app && window.TokiApps) app.innerHTML = `<span class="home-mosaic" aria-hidden="true">${SERVICE_LOGOS.map(id => TokiApps.brandLogo(id)).join('')}</span>`;
+    const games = $('#tiles [data-act="go:games"] .app');
+    if (games && window.TOKI_EXTERNAL) {
+      const covers = TOKI_EXTERNAL.covers.slice(0, 4);
+      games.innerHTML = `<span class="home-mosaic" aria-hidden="true">${covers.map(src => `<img src="${src}" alt="" draggable="false">`).join('')}</span>`;
+    }
   };
   renderTiles();
 
   /* ---------- pantalla de Servicios ---------- */
   const section = document.createElement('section');
-  section.id = 's-apps'; section.className = 'screen'; section.dataset.title = 'Servicios';
+  section.id = 's-apps'; section.className = 'screen'; section.dataset.title = 'Apps';
   section.innerHTML = '<div class="status"></div><div id="appsContent"></div>';
   $('#stage').append(section);
   const root = $('#appsContent');
@@ -71,12 +84,6 @@ window.addEventListener('load', () => {
   }
 
   /* ---------- navegación y elección ---------- */
-  // Barra superior como en las demás pantallas: "‹ Inicio" grande + estado.
-  for (const el of $$('#s-games .status, #s-apps .status')) {
-    el.innerHTML = '<button type="button" class="t pill glass home-nav" data-t data-act="go:home">‹ Inicio</button><div class="status-info"></div>';
-  }
-  renderStatus();
-
   const innerGo = go;
   go = function (name, ...rest) {
     // El bloqueo anti-repetición es de la visita actual: si quedaba de la anterior (p. ej. al salir con
@@ -88,13 +95,21 @@ window.addEventListener('load', () => {
     if (name !== 'apps') { app?.destroy(); app = null; latch = null; }
   };
   const innerActivate = activate;
-  activate = function (el, calibrate = true) {
+  activate = function (el, calibrate = true, immediate = false) {
     const act = el?.dataset.act || '';
-    if (!OWN.test(act)) return innerActivate(el, calibrate);
+    // Música: acceso directo al reproductor de Spotify de Servicios (antes era un aviso simulado).
+    if (act === 'music') {
+      press(el);
+      if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
+      go('apps');
+      void app?.openSpotify();
+      return;
+    }
+    if (!OWN.test(act)) return innerActivate(el, calibrate, immediate);
     // Igual que el resto del SO: se ve la pulsación y, con el iPhone, nada se elige en cadena.
     press(el);
-    if (gazeOnly()) S.lockUntil = performance.now() + LOCKOUT_MS;
-    if (!act.startsWith('apps:')) return innerActivate(el, calibrate);
+    if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
+    if (!act.startsWith('apps:')) return innerActivate(el, calibrate, immediate);
     if (!app || S.screen !== 'apps' || el.disabled || unavailable() || (app.paused && el.dataset.appAction !== 'input-pause')) return;
     if (calibrate && latch) return;   // al repintar, la mirada quieta no elige otra cosa
     latch = el.getBoundingClientRect();

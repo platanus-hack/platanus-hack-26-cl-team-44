@@ -12,7 +12,7 @@ async function until(fn,seconds=30){const end=Date.now()+seconds*1000;while(Date
 try{
  await until(()=>run('!!window.TOKI_EXTERNAL'));
  console.log('Toki loaded'); await run("go('games')");await sleep(900);
- await run("activate(document.querySelector('[data-act=\"external:setup\"]'),false)");
+ await run("activate(document.querySelector('[data-act=\"external:play:0\"]'),false)");
  await until(()=>run('TOKI_EXTERNAL.connected')); console.log('Bridge connected');
  const iframeTarget=await until(async()=> (await cdp('Target.getTargets')).targetInfos.find(t=>t.type==='iframe'&&t.url.includes('eyegazegames.com')));
  console.log('Iframe target found'); const {sessionId:inner}=await cdp('Target.attachToTarget',{targetId:iframeTarget.targetId,flatten:true});

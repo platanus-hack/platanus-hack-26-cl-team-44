@@ -152,6 +152,9 @@ body.apps-open #content{padding:0!important;overflow:hidden!important}
 .ta-video-nav>.ta-button:only-child{grid-column:1/-1}
 
 .food-list.food-options-list{grid-template-rows:repeat(2,minmax(0,1fr))}
+
+.food-selection:has(> div:only-child){grid-template-columns:1fr}
+.food-selection .rappi-photo{height:auto;aspect-ratio:1;object-fit:contain}
 /* categorías de comida: ícono grande sobre el nombre */
 .food-cat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .food-cat-icon{font-size:clamp(40px,5vw,72px);line-height:1}

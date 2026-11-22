@@ -1,11 +1,13 @@
 """Integration checks with synthetic serial input; no physical sensor involved."""
 import json
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 from pathlib import Path
 import pty
 import socket
 import subprocess
 import sys
+import threading
 import time
 import unittest
 import urllib.request
@@ -66,9 +68,12 @@ class MonitorTest(unittest.TestCase):
                 ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
                 ('/iphone-gaze.js','text/javascript','window.IPHONE'),
-                ('/layout.css','text/css','.rest-wake'),
+                ('/layout.css','text/css','.rest-actions'),
+                ('/game-surface.css','text/css','.external-viewport'),
                 ('/magnetic-pointer.js?v=24','text/javascript','createMenuPointer'),
                 ('/magnetic-pointer.css?v=24','text/css','.dwell-outline'),
+                ('/gaze-calibration.js','text/javascript','gazeCalibrationPoints'),
+                ('/care-wheel.js','text/javascript','createCareWheel'),
                 ('/tablet-keyboard.js?v=21','text/javascript','toki-'),
                 ('/tablet-keyboard.css?v=21','text/css','tablet'),
                 ('/eye-engine/connection.js','text/javascript','createConnection'),
@@ -77,6 +82,9 @@ class MonitorTest(unittest.TestCase):
                 with urllib.request.urlopen(base+route,timeout=1) as r:
                     self.assertEqual(r.headers.get_content_type(),content_type)
                     self.assertIn(marker,r.read().decode())
+            with urllib.request.urlopen(base+'/game-covers/eyedrive.webp',timeout=1) as r:
+                self.assertEqual(r.headers.get_content_type(),'image/webp')
+                self.assertEqual(r.read(4),b'RIFF')
             for route in ['/server.py','/../README.md','/README.md','/eye-engine/../server.py','/presets/%2e%2e/Info.json']:
                 with self.assertRaises(urllib.error.HTTPError) as caught:
                     urllib.request.urlopen(base+route)
@@ -95,9 +103,6 @@ class MonitorTest(unittest.TestCase):
             process.terminate();process.wait(timeout=3)
             if master is not None:os.close(master)
             os.close(slave)
-
-if __name__=='__main__':unittest.main()
-
 
 class TokiConfigTest(unittest.TestCase):
     """/toki-config.js entrega TOKI_REMOTO y TOKI_WA_TOKEN solo a la propia TV."""
@@ -134,3 +139,61 @@ class TokiConfigTest(unittest.TestCase):
         finally:
             process.terminate(); process.wait(timeout=5)
             os.close(master); os.close(slave)
+
+    def test_stage_forwards_only_model_assets_without_credentials(self):
+        requests = []
+        class AppsFixture(BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append((self.path, self.headers.get('X-Woki-Token')))
+                if self.path == '/web/model.json':
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(b'{"model":"fixture"}')
+                else:
+                    self.send_response(302)
+                    self.send_header('Location', '/redirected')
+                    self.end_headers()
+
+            def log_message(self, *args):
+                pass
+
+        master, slave = pty.openpty()
+        apps = HTTPServer(('127.0.0.1', 0), AppsFixture)
+        thread = threading.Thread(target=apps.serve_forever, daemon=True)
+        thread.start()
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        env = {**os.environ, 'TOKI_APPS_URL': f'http://127.0.0.1:{apps.server_port}', 'TOKI_WA_TOKEN': 'stage-token'}
+        process = subprocess.Popen([sys.executable, str(ROOT/'software/myoware-monitor/server.py'),
+                                    '--serial-port', os.ttyname(slave), '--http-port', str(port)],
+                                   env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        base = f'http://127.0.0.1:{port}'
+        try:
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    req = urllib.request.Request(base+'/web/model.json', headers={'X-Woki-Token': 'header-token'})
+                    with urllib.request.urlopen(req, timeout=1) as response:
+                        self.assertEqual(response.headers.get_content_type(), 'application/json')
+                        self.assertEqual(json.load(response), {'model': 'fixture'})
+                    break
+                except urllib.error.HTTPError:
+                    raise
+                except OSError:
+                    if time.monotonic() > deadline: self.fail('Monitor did not start')
+                    time.sleep(.05)
+            for route, code in [('/web/tracker.js', 502), ('/web/other.js', 404)]:
+                with self.assertRaises(urllib.error.HTTPError) as caught:
+                    urllib.request.urlopen(base+route, timeout=1)
+                self.assertEqual(caught.exception.code, code)
+                caught.exception.close()
+            self.assertEqual(requests, [('/web/model.json', None), ('/web/tracker.js', None)])
+        finally:
+            process.terminate(); process.wait(timeout=5)
+            apps.shutdown(); apps.server_close()
+            os.close(master); os.close(slave)
+
+
+if __name__ == '__main__':
+    unittest.main()
