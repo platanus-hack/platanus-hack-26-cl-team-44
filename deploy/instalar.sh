@@ -129,6 +129,21 @@ install -d -o toki -g toki -m 700 "$BASE/puente"
 runuser -u toki -- bash -c "cd '$BASE/repo/software/whatsapp-bridge' && npm ci --silent --no-audit --no-fund"
 cp "$BASE/repo/deploy/toki-puente.service" /etc/systemd/system/toki-puente.service
 
+# ---------- TV v2 (apps/tv, React) · se publica en /v2/ y /equipo/v2/ junto a la TV actual ----------
+# Si falla, el deploy sigue: la TV actual no depende de esta build. Vite 8 pide Node 20.19+ o 22.12+.
+TV2="$BASE/repo/apps/tv"
+if [ -f "$TV2/package.json" ]; then
+  if node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&b>=12)||(a===20&&b>=19)?0:1)'; then
+    if runuser -u toki -- bash -c "cd '$TV2' && npm ci --silent --no-audit --no-fund && npm run build --silent" >/dev/null; then
+      echo "TV v2: build lista en $TV2/dist"
+    else
+      echo "TV v2: la build falló; /v2/ queda sin publicar. La TV actual sigue igual."
+    fi
+  else
+    echo "TV v2: Node $(node -v) es viejo (hace falta 20.19+ o 22.12+); /v2/ queda sin publicar."
+  fi
+fi
+
 # El agente público exige el mismo token del puente (TOKI_TOKEN); el puente lo llama directo, sin token.
 printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-)" >> "$BASE/toki.env"
 chmod 600 "$BASE/toki.env"
