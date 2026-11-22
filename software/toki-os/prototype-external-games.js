@@ -1,7 +1,7 @@
 window.addEventListener('load',()=>{
  const root='https://www.eyegazegames.com';
  const games=[
-  {id:'eye_drive',name:'Eye Drive',image:'eyedrive',tag:'CARRERAS',desc:'Conduce un coche con controles accesibles.',route:'gamesource'},
+  {id:'eye_drive',name:'Eye Drive',image:'eyedrive',tag:'CARRERAS',desc:'Pilota una nave en una carrera espacial.',route:'gamesource'},
   {id:'gazey_golf',name:'Gazey Golf',image:'gazeygolf',tag:'PUNTERÍA',desc:'Elige la dirección y prepara tu golpe.',route:'gamesource'},
   {id:'mole_miners',name:'Mole Miners',image:'moleminers',tag:'ARCADE',desc:'Un juego de bolas de colores.',route:'game'},
   {id:'open_drive',name:'Open Drive',image:'opendrive',tag:'EXPLORACIÓN · BETA',desc:'Explora conduciendo a tu ritmo.',route:'gamesource'},
@@ -56,10 +56,10 @@ window.addEventListener('load',()=>{
  function catalog(){
   stopSurface();
   frame=null;paused=true;pointerInGame=false;lastPoint=null;document.body.classList.remove('external-playing');
-  render(`<div class="game-heading"><h1>Eye Gaze Games</h1>${window.TOKI_OS_SHELL?'':b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${cover(g)}" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div><div class="game-footer">${b('all','Todos los juegos')}${b('setup','Configurar Eye Gaze Games')}<p>Juegos originales de SpecialEffect. Sus ajustes y progreso se gestionan en su servicio.</p></div>`);
+  render(`<div class="game-heading"><h1>Eye Gaze Games</h1>${window.TOKI_OS_SHELL?'':b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${cover(g)}" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div>`);
   check();
  }
- function help(){if(tabletAccess||window.TOKI_OS_SHELL){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Entra en «Configurar Eye Gaze Games»: elige español y crea tu perfil del servicio.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
+ function help(){if(tabletAccess||window.TOKI_OS_SHELL){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Abre un juego. La primera vez, elige el idioma y crea tu perfil en Eye Gaze Games.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
  function open(game) {
   const g=games.find(item=>item.id===game);
   if (!g && !['setup','all'].includes(game)) return;
@@ -72,11 +72,12 @@ window.addEventListener('load',()=>{
   document.body.classList.add('external-playing');paused=false;anchor=null;didClick=false;lastPoint=null;lastTracking=null;pointerInGame=false;
   const input=tabletGameInput();
   const streamed=usesSurface(input);
-  const media=streamed ? `<img id="externalGame" alt="Partida de ${title}" draggable="false">` :
+  const media=streamed ? `<img id="externalGame" alt="Partida de ${title}" draggable="false" hidden><div class="external-loading" role="status">Abriendo ${title}…</div>` :
     `<iframe id="externalGame" title="${title} · SpecialEffect" src="${url}" allow="autoplay; fullscreen; gamepad" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-  const player=`<div class="external-frame-wrap">${media}<div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div>`;
+  const player=`<div class="external-frame-wrap"><div class="external-viewport">${media}</div><div id="externalCurtain" hidden><h2>Control en pausa</h2><p>El juego sigue abierto. Usa su menú para pausar la partida.</p></div></div>`;
   if(window.TOKI_OS_SHELL){
-   const hint=streamed ? 'Apunta y confirma con Espacio, la ceja o un clic.' : 'Selecciona con el mouse.';
+   const hint = !streamed ? 'Selecciona con el mouse.' : input?.dwellEnabled
+    ? 'Mantén el puntero sobre una opción para elegirla.' : 'Apunta y confirma con Espacio, la ceja o un clic.';
    render(`<div class="external-toolbar">${b('catalog','← Juegos')}<div class="external-title"><strong>${title}</strong><small>${hint}</small></div>${streamed?b('pause','Pausar control'):''}${b('reload','Reintentar')}</div>${player}`);
   } else {
    render(`<div class="external-toolbar">${b('catalog','← Juegos')}<strong>${title}</strong>${b('pause','Pausar control')}${b('clicks',`Clic extra: ${autoClick?'sí':'no'}`)}${b('help','Ayuda')}</div>${controls()}${player}<p class="game-note">Si aparece la bienvenida, configura tu perfil y luego elige el juego. Si no carga, ${b('reload','Reintentar')} ${b('all','Abrir catálogo')}</p>`);
@@ -85,6 +86,7 @@ window.addEventListener('load',()=>{
   if (streamed) {
    launching=true;updateStatus();
    surface=window.createTokiGameSurface(frame,lastGame,()=>{
+    frame.hidden=false;frame.parentElement.querySelector('.external-loading').remove();
     launching=false;connected=true;bridgeError=false;updateStatus();
    },showFailure);
    frame.addEventListener('click',e=>{
@@ -135,7 +137,8 @@ window.addEventListener('load',()=>{
  }
  function confirmPoint(start){
   const point=capturePoint();
-  if(point && point.frame===start.frame && Math.hypot(point.x-start.x,point.y-start.y)<=28) clickGame(point.x,point.y);
+  // The eyebrow can move the pointer. Confirm where the gesture began, after the double-tap window.
+  if(point && point.frame===start.frame && document.elementFromPoint(start.x,start.y)===frame) clickGame(start.x,start.y);
  }
  async function tickExternal(now){
   requestAnimationFrame(tickExternal);
@@ -149,7 +152,7 @@ window.addEventListener('load',()=>{
   lastTracking=cameraPresent;
   const suspendControl=S.alarm || document.querySelector('#calib').classList.contains('on') || (S.rest && !window.TOKI_OS_SHELL);
   if(suspendControl && !paused && (surface || managed)) pause(true);
-  if(!connected || inFlight || now-lastSend<40) return;
+  if(!connected || inFlight || now-lastSend < (surface ? 16 : 40)) return;
   const r=frame.getBoundingClientRect(), point=shared?.point || gz;
   const inside=tracking && !paused && !document.hidden && point.x>=r.left && point.x<r.right && point.y>=r.top && point.y<r.bottom && (!window.TOKI_OS_SHELL || document.elementFromPoint(point.x,point.y)===frame);
   let x=surface?point.x:(point.topX ?? point.x), y=surface?point.y:(point.topY ?? point.y);
@@ -163,7 +166,8 @@ window.addEventListener('load',()=>{
    type='leave';pointerInGame=false;
   } else {
    if(!anchor || Math.hypot(x-anchor.x,y-anchor.y)>28){anchor={x,y,t:now};didClick=false;}
-   if(autoClick && (!localPlayer || shared.camera) && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
+   const dwellEnabled = !localPlayer || shared?.camera || shared?.dwellEnabled;
+   if(autoClick && dwellEnabled && !shared?.confirming && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
    if(type==='move' && lastPoint && Math.hypot(x-lastPoint.x,y-lastPoint.y)<.7) return;
    lastPoint={x,y};pointerInGame=true;
   }

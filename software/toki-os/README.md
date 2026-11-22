@@ -108,8 +108,8 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 
 Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
 
-- **Inicio.** La primera fila reúne cuatro acciones de comunicación y ayuda. La segunda contiene Apps, Juegos y Ajustes. **Descansar**, en la cabecera de cada pantalla, pausa la selección. **Volver** reanuda en el mismo lugar. Para escuchar música, elige **Apps → Spotify**.
-- **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una se abre la partida dentro del SO. El botón **← Juegos** vuelve al catálogo. Con la mirada, nariz o iPhone, el servidor de Apps transmite la partida en la misma pantalla y recibe la posición del puntero. Mantenerlo sobre una opción o confirmar con la ceja envía el clic. Con mouse, se interactúa directamente con el juego.
+- **Inicio.** La primera fila reúne Hablar, Escribir y Mensajes. La segunda contiene Apps, Juegos y Ajustes. **SOS** y **Descansar** comparten una fila al pie de la pantalla. **Descansar** pausa la selección. **Volver** reanuda en el mismo lugar. Para escuchar música, elige **Apps → Spotify**.
+- **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una, la partida se amplía a la ventana y la cámara sigue activa si se usa para apuntar. El botón **← Juegos** vuelve al catálogo. Con la mirada, nariz o iPhone, el servidor de Apps transmite la partida en la misma pantalla y recibe la posición del puntero. Mantenerlo sobre una opción o confirmar con la ceja o Espacio envía el clic. Con mouse, se interactúa directamente con el juego.
 - **Apps:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
 - **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
 

@@ -1,5 +1,8 @@
 import {chromium} from 'playwright-core';
 
+// A frame-polled game needs to see the button held across a render tick.
+const GAME_PRESS_MS = 100;
+
 // The visible tab keeps the camera. This browser only renders the selected game
 // and receives pointer coordinates relative to its own, isolated viewport.
 export async function renderGame({url, profile, viewport, signal, onFrame, onEnded}, prepareContext) {
@@ -31,16 +34,29 @@ export async function renderGame({url, profile, viewport, signal, onFrame, onEnd
       const initial = await page.screenshot({type:'jpeg',quality:75});
       if (!receivedFrame) onFrame(initial.toString('base64'));
     }
-    return {
-      close,
-      async input({type,x,y}) {
+    let previousInput = Promise.resolve();
+    let pendingMove;
+    function input(point) {
+      // Replace only adjacent, unsent gaze samples. A click or leave separates them.
+      if (point.type === 'move' && pendingMove) {
+        pendingMove.point = point;
+        return pendingMove.done;
+      }
+      const queued = {point};
+      pendingMove = point.type === 'move' ? queued : null;
+      queued.done = previousInput.then(() => {
+        if (pendingMove === queued) pendingMove = null;
+        const {type,x,y} = queued.point;
         if (type === 'leave') return page.mouse.move(-1,-1);
         const px = x * (viewport.width - 1);
         const py = y * (viewport.height - 1);
-        if (type === 'click') return page.mouse.click(px,py);
+        if (type === 'click') return page.mouse.click(px,py,{delay:GAME_PRESS_MS});
         return page.mouse.move(px,py);
-      }
-    };
+      });
+      previousInput = queued.done.catch(() => {});
+      return queued.done;
+    }
+    return {close, input};
   } catch (error) {
     await close();
     throw error;

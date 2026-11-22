@@ -21,6 +21,8 @@ function tabletGameInput() {
   return {
     mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
     point: blocked ? null : camera ? (controlPointFresh(now) ? gz : null) : mouse,
+    dwellEnabled: CFG.mode === 'dwell',
+    confirming: Boolean(G.down.ceja || G.tap),
     dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
   };
 }

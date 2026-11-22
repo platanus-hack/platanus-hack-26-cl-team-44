@@ -3,7 +3,25 @@ const tokiGameOwner = crypto.randomUUID();
 window.createTokiGameSurface = function(image, game, onReady, onError) {
   const controller = new AbortController();
   const base = location.port === '8000' ? 'http://127.0.0.1:8790' : location.origin;
-  let id, headers;
+  let id, headers, pendingFrame, paintRequest=0;
+  function queueFrame(frame) {
+    // A busy UI may receive several frames before the next paint. Show the newest one.
+    pendingFrame=frame;
+    if (!paintRequest) paintRequest=requestAnimationFrame(()=>{
+      paintRequest=0;
+      image.src='data:image/jpeg;base64,'+pendingFrame;
+      pendingFrame=null;
+    });
+  }
+  const firstFrameTimeout=setTimeout(()=>{
+    controller.abort();
+    onError('La partida tardó demasiado en mostrar la primera imagen. Puedes reintentar.');
+  },45000);
+  controller.signal.addEventListener('abort',()=>{
+    clearTimeout(firstFrameTimeout);
+    cancelAnimationFrame(paintRequest);
+    pendingFrame=null;
+  },{once:true});
   async function start() {
     const session = await fetch(base+'/api/session',{signal:controller.signal});
     if (!session.ok) throw Error('No se pudo conectar con el servidor de Toki.');
@@ -26,8 +44,15 @@ window.createTokiGameSurface = function(image, game, onReady, onError) {
         if (item.error) throw Error(item.error);
         if (item.id) id=item.id;
         if (item.frame) {
-          image.src='data:image/jpeg;base64,'+item.frame;
-          if (!ready) { ready=true; onReady(); }
+          if (ready) queueFrame(item.frame);
+          else {
+            image.src='data:image/jpeg;base64,'+item.frame;
+            try { await image.decode(); }
+            catch { throw Error('No se pudo mostrar la primera imagen de la partida.'); }
+            if (controller.signal.aborted) return;
+            clearTimeout(firstFrameTimeout);
+            ready=true; onReady();
+          }
         }
       }
     }

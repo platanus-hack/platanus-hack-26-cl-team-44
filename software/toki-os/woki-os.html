@@ -424,6 +424,7 @@ body.panel #gaze{opacity:0}
 <link rel="stylesheet" href="layout.css">
 <link rel="stylesheet" href="toki-apps.css">
 <link rel="stylesheet" href="os-juegos-servicios.css">
+<link rel="stylesheet" href="game-surface.css">
 <link rel="stylesheet" href="os-colores.css">
 <!-- tema antes de pintar (sin parpadeo): oscuro por defecto, claro si se eligió -->
 <script src="toki-config.js"></script>
@@ -1165,9 +1166,26 @@ $('#wapSave').onclick=async()=>{
 
 /* ===================== Escalado de la TV ===================== */
 // Con los atajos visibles se reserva su altura; ocultos, solo una franja para la barra de desarrollo.
-function fit(){ const reserve=tabletComposer ? 16 : document.body.classList.contains('legend-off')? 60 : $('#legend').offsetHeight + 48;
-  const s=Math.min((innerWidth-16)/1920,(innerHeight-reserve)/1080); S.scale=s;
-  const w=$('#wrap'); w.style.transform=`scale(${s})`; w.style.left=((innerWidth-1920*s)/2)+'px'; }
+function gameFillsWindow(){
+  return document.body.matches('.official-os.external-playing:not(.panel)') &&
+    !document.querySelector('#rest.on, #calib.on, #alarm.on');
+}
+function fit(){
+  const immersive=gameFillsWindow();
+  document.body.classList.toggle('game-immersive',immersive);
+  const reserve=tabletComposer ? 16 : document.body.classList.contains('legend-off') ? 60 : $('#legend').offsetHeight + 48;
+  const s=immersive ? 1 : Math.min((innerWidth-16)/1920,(innerHeight-reserve)/1080);
+  S.scale=s;
+  const w=$('#wrap'); w.style.transform=immersive ? 'none' : `scale(${s})`;
+  w.style.left=immersive ? '0px' : ((innerWidth-1920*s)/2)+'px';
+}
+// Rest and calibration use the same stage and scale as the rest of the OS.
+const gameLayoutObserver=new MutationObserver(()=>{
+  if(document.body.classList.contains('game-immersive')!==gameFillsWindow()) fit();
+});
+for(const el of [document.body,$('#rest'),$('#calib'),$('#alarm')]){
+  gameLayoutObserver.observe(el,{attributes:true,attributeFilter:['class']});
+}
 addEventListener('resize',fit); fit();
 
 /* ===================== Plantillas ===================== */
@@ -2340,6 +2358,7 @@ const NOSE = window.NOSE = {
       try{ r=this.lm.detectForVideo(v,now); }
       catch(e){ this.stop(); this.showCamera('error','Se interrumpió la detección. Activa la cámara para reintentar.'); log('detección: '+e.message); return; }
       const f=r.faceLandmarks && r.faceLandmarks[0];
+      const showPreview=!document.body.classList.contains('game-immersive');
       if(f){
         this.showCamera('found','Rostro detectado');
         this.lastFace=now;
@@ -2383,13 +2402,15 @@ const NOSE = window.NOSE = {
           if(this.mode==='gaze'){ W.mouse.x=x; W.mouse.y=y; }            // la mirada ya viene suavizada (mediana + One Euro propios)
           else { W.mouse.x=this.fx.f(x,now); W.mouse.y=this.fy.f(y,now); }
         }
-        this.draw(f);
+        if(showPreview) this.draw(f);
       } else {
         this.resetFaceEdges();
         this._back=null;
         if(now-this.lastFace>1500 && !W.S.gazeLost) setGazeLost(true);   // sin cara 1,5 s → escaneo con EMG
         if(!this.raw || now-this.lastFace>400) this.showCamera('searching','Buscando rostro…');
-        const canvas=$('#camDot'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+        if(showPreview){
+          const canvas=$('#camDot'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+        }
       }
     } else if(v.readyState<2) this.resetFaceEdges();
     this.frameId=requestAnimationFrame(()=>this.loop());
