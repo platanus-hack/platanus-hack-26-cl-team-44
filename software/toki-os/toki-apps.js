@@ -29,11 +29,11 @@
       active?.destroy(); active=this;
       Object.assign(this,{root,options,jobs:[],view:'store',id:null,selected:'spotify',catalogPage:0,busy:false,error:'',query:'',group:'',field:'query',tracks:[],page:0,browser:'chrome',token:'',online:false,paused:false,functional:false,personal:false,epoch:0,destroyed:false});
       this.videoItems=[];this.videoSelection=null;this.videoController=null;this.videoModule=null;this.adapters=[];this.newsItems=[];this.newsPage=0;this.article=null;this.articlePage=0;
-      this.food={categories:[],stores:[],items:[],page:0,selection:null,options:[],group:0,cart:null,status:null};
+      this.food={categories:[],stores:[],items:[],page:0,selection:null,options:[],group:0,cart:null,status:null,plan:null};
       this.playbackRevision = 0;
       this.readingPlayback = false;
       this.admin=new URLSearchParams(location.search).get('appsAdmin')==='1';
-      this.base=location.port==='8000'?'http://127.0.0.1:8790':location.origin;
+      this.base=(window.TOKI_ENV&&TOKI_ENV.apps)||(location.port==='8000'?'http://127.0.0.1:8790':location.origin);   // escenario: el monitor entrega TOKI_APPS_URL
       root.classList.add('toki-apps'); root.classList.toggle('ta-admin',this.admin);
       this.click=e=>{const el=e.target.closest('[data-app-action]');if(el&&!options.motion){e.preventDefault();void this.act(el);}};
       this.input=e=>{if(e.target.dataset.appField)this[e.target.dataset.appField]=e.target.value;};
@@ -101,11 +101,11 @@
       }catch(e){if(this.epoch===epoch)this.error=/fetch|Network|timeout|abort/i.test(e.message)?'No respondió el servicio. Vuelve a intentarlo.':e.message;}
       finally{if(this.epoch===epoch){this.openingEpoch=null;if(!this.maybeOpen())this.render();}}
     }
-    foodPrice(value){return typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(value):'Por confirmar';}
+    foodPrice(value){return typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat(this.food.status?.locale||'es-CL',{style:'currency',currency:this.food.status?.currency||'CLP',maximumFractionDigits:0}).format(value):'Por confirmar';}
     foodPager(items,perPage=3){return `<div class="food-pages">${this.btn('food-prev','← Anteriores',{disabled:!this.food.page})}<span>${items.length?`${this.food.page+1} / ${Math.ceil(items.length/perPage)}`:''}</span>${this.btn('food-next','Más →',{disabled:(this.food.page+1)*perPage>=items.length})}</div>`;}
     foodView(){
       const f=this.food,photo=url=>url?`<img src="${esc(url)}" alt="" draggable="false">`:'',cards=(items,action,label)=>`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(item=>this.btn(action,photo(item.image)+label(item),{value:item.id,className:'food-card',disabled:item.available===false})).join('')}${!items.length?'<p>No hay resultados disponibles. Vuelve y elige otra categoría.</p>':''}</div>`;
-      if(this.view==='food-stores')return this.header('Elige un restaurante',esc(f.category))+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
+      if(this.view==='food-stores')return this.header(f.plan?'Sugerencia de Toki':'Elige un restaurante',esc(f.plan?f.plan.mensaje:f.category))+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
       if(this.view==='food-products')return this.header(esc(f.store?.name),'Productos encontrados · precios por confirmar al pedir')+cards(f.items,'food-product',p=>`<span><strong>${esc(p.name)}</strong><small>${this.foodPrice(p.price)}</small></span>`)+this.foodPager(f.items);
       if(this.view==='food-product'){
         const selection=f.selection,p=selection.product;
@@ -117,9 +117,24 @@
       }
       if(this.view==='food-cart'){
         const items=(f.cart?.stores||[]).flatMap(s=>s.items),cart=f.cart;
-        return this.header('Tu carrito','No se ha realizado ninguna compra')+`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(p=>`<div class="food-card food-cart-item"><strong>${esc(p.name)}</strong><span>${esc(p.quantity)} × ${this.foodPrice(p.price)}</span></div>`).join('')}${items.length?'':'<p>Tu carrito está vacío.</p>'}</div>`+this.foodPager(items)+`<p class="food-note">Productos: ${this.foodPrice(cart?.productsTotal)} · Envío: ${this.foodPrice(cart?.shippingTotal)}. Compra y pago aún pendientes de habilitar.</p><div class="food-actions">${this.btn('food-cart','Actualizar carrito')}${this.btn('food-quote','Revisar importes',{disabled:!items.length})}</div>`;
+        return this.header('Tu carrito','No se ha realizado ninguna compra')+`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(p=>`<div class="food-card food-cart-item"><strong>${esc(p.name)}</strong><span>${esc(p.quantity)} × ${this.foodPrice(p.price)}</span></div>`).join('')}${items.length?'':'<p>Tu carrito está vacío.</p>'}</div>`+this.foodPager(items)+`<p class="food-note">Productos: ${this.foodPrice(cart?.productsTotal)} · Envío: ${this.foodPrice(cart?.shippingTotal)}. ${f.plan?.nota?`Nota: «${esc(f.plan.nota)}». `:''}Toki no paga: la compra se termina en el celular de quien paga.</p><div class="food-actions">${this.btn('food-cart','Actualizar carrito')}${this.btn('food-quote','Revisar importes',{disabled:!items.length})}</div>`;
       }
-      return this.header('¿Qué te gustaría comer?',esc(f.status?.locationLabel||'Rappi Chile'))+`<div class="ta-control-grid">${(f.status?.categories||[]).map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('')}</div><div class="food-actions">${this.btn('food-cart','Ver carrito',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div><p class="food-note">${f.status?.connected?'Cuenta conectada.':'Puedes explorar; la cuenta se conecta desde la configuración del equipo.'} Compra y pago aún pendientes.</p>`;
+      return this.header('¿Qué te gustaría comer?',esc(f.status?.locationLabel||'Rappi'))+(this.agente()?`<div class="food-actions">${this.btn('food-suggest','💡 Sugerencia de Toki para el aniversario',{className:'ta-primary'})}</div>`:'')+`<div class="ta-control-grid">${(f.status?.categories||[]).map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('')}</div><div class="food-actions">${this.btn('food-cart','Ver carrito',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div><p class="food-note">${f.status?.connected?'Cuenta conectada.':'Puedes explorar; la cuenta se conecta desde la configuración del equipo.'} Compra y pago aún pendientes.</p>`;
+    }
+    // Agente con memoria (VPS en el escenario): qué pedir y por qué. El token va en un header.
+    agente(){return (typeof CFG!=='undefined'&&CFG.AGENTE_URL)||'';}
+    async foodSuggest(){
+      if(this.busy)return;const f=this.food,epoch=this.epoch;this.busy=true;this.error='Toki está revisando la memoria…';this.render();
+      let plan=null;
+      try{
+        const r=await fetch(this.agente()+'/api/pedido',{method:'POST',headers:{'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Woki-Token':CFG.WA_TOKEN}:{})},body:JSON.stringify({para:'juan',ocasion:'aniversario'}),signal:AbortSignal.timeout(30000)});
+        plan=await r.json();if(!r.ok)throw Error(plan.error||'El agente no respondió.');
+      }catch(e){if(this.epoch===epoch){this.error='No pude pedir la sugerencia: '+e.message;}}
+      finally{this.busy=false;}
+      if(this.epoch!==epoch||this.destroyed)return;
+      if(!plan||!plan.query){this.error=plan?.mensaje||this.error;this.render();return;}
+      f.plan=plan;this.error='';
+      return this.foodAction('search',{query:plan.query,preferir:plan.preferir,evitar:plan.evitar,...(plan.presupuesto?{max:plan.presupuesto}:{})},'food-stores');
     }
     async foodAction(action,payload={},next){
       if(this.busy)return;const epoch=this.epoch;this.busy=true;this.error='';this.render();
@@ -132,7 +147,7 @@
         if(action==='products'){f.items=result.items;f.store=result.store;}
         if(action==='select'){f.selection=result;f.options=[];f.group=0;}
         if(['add','cart','quote'].includes(action)){f.cart=result;if(result.notice)this.error=result.notice;}
-        if(action==='connect')this.error=result.state==='connected'?'Cuenta conectada. Comprueba la conexión.':result.state==='error'?'No se pudo abrir Chrome. Reintenta la conexión.':'Inicia sesión en la ventana oficial de Rappi Chile.';
+        if(action==='connect')this.error=result.state==='connected'?'Cuenta conectada. Comprueba la conexión.':result.state==='error'?'No se pudo abrir Chrome. Reintenta la conexión.':'Inicia sesión en la ventana oficial de Rappi.';
         if(action==='disconnect'){f.status=null;f.selection=null;f.cart=null;this.error='Sesión local desconectada.';}
         if(next)this.view=next;
         const data=await this.api('/api/jobs');this.jobs=data.jobs;
@@ -144,7 +159,8 @@
       if(action==='food-connect')return this.foodAction('connect');
       if(action==='food-disconnect')return this.foodAction('disconnect');
       if(action==='food-check')return this.foodAction('status');
-      if(action==='food-search')return this.foodAction('search',{category:value},'food-stores');
+      if(action==='food-search'){f.plan=null;return this.foodAction('search',{category:value},'food-stores');}
+      if(action==='food-suggest')return this.foodSuggest();
       if(action==='food-store')return this.foodAction('products',{storeId:Number(value)},'food-products');
       if(action==='food-product')return this.foodAction('select',{storeId:f.store.id,productId:Number(value)},'food-product');
       if(action==='food-cart')return this.foodAction('cart',{},'food-cart');

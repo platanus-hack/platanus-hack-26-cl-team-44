@@ -1,25 +1,31 @@
 import {randomUUID} from 'node:crypto';
-import {createRappiClient,createRappiSession,createRappiGuest,RAPPI_DEFAULT_LOCATION,rappiFault as fault} from '../connectors/rappi-client.mjs';
+import {createRappiClient,createRappiSession,createRappiGuest,RAPPI_DEFAULT_LOCATION,RAPPI_PAIS,rappiFault as fault} from '../connectors/rappi-client.mjs';
 import {createRappiLogin} from '../connectors/rappi-login.mjs';
 
 export const rappiCategories=[{id:'pizza',name:'Pizza'},{id:'hamburguesa',name:'Hamburguesas'},{id:'sushi',name:'Sushi'},{id:'empanadas',name:'Empanadas'}];
 const text=(s,n=150)=>typeof s==='string'?s.slice(0,n):'';
 const number=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
 const id=n=>Number.isSafeInteger(n)&&n>0;
+const plano=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+// Pedido sugerido por el agente: cada palabra (4+ letras) de "preferir" que aparece suma; el primer término pesa más
+// (es el más específico, p. ej. "perro vaquero"). "evitar" y pasar el tope descartan el producto.
+function puntaje(name,preferir,evitar=[]){const n=plano(name);if(evitar.some(w=>w&&n.includes(w)))return -1;
+ return preferir.reduce((t,term,i)=>t+term.split(/\s+/).filter(w=>w.length>=4&&n.includes(w)).length*(preferir.length-i),0);}
+const palabras=v=>Array.isArray(v)?v.filter(w=>typeof w==='string').slice(0,5).map(w=>plano(w).slice(0,30)):[];
 function image(value,prefix='products'){
  if(typeof value!=='string'||!value)return '';
- try{const url=new URL(value.startsWith('https:')?value:`https://images.rappi.cl/${prefix}/${value}`);return url.protocol==='https:'&&['images.rappi.cl','images.rappi.com'].includes(url.hostname)?url.href:'';}catch{return '';}
+ try{const url=new URL(value.startsWith('https:')?value:`https://${RAPPI_PAIS.images}/${prefix}/${value}`);return url.protocol==='https:'&&['images.rappi.cl','images.rappi.com'].includes(url.hostname)?url.href:'';}catch{return '';}
 }
-export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:['Rappi Chile'],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet','Cuenta Rappi Chile para carrito'],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true}],limitations:['La compra y el pago aún no están habilitados.']};
+export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true}],limitations:['La compra y el pago aún no están habilitados.']};
 
 export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRappiSession(stateDir),login,now=Date.now}={}){
  const request=createRappiClient({fetcher});
  const auth=login||createRappiLogin({sessionStore,request});
  const selections=new Map(),guest=createRappiGuest(request,{now});
  async function location(session,signal){
-  if(!session)return {...RAPPI_DEFAULT_LOCATION,label:'Explorando Santiago',confirmed:false};
+  if(!session)return {...RAPPI_DEFAULT_LOCATION,label:`Explorando ${RAPPI_PAIS.ciudad}`,confirmed:false};
   const a=await request('/api/ms/consumer-address/v2/user-addresses/active',{session,signal});
-  if(!a||!Number.isFinite(a.lat)||!Number.isFinite(a.lng)||!id(a.id)||!['CL','CHL','Chile'].includes(a.country))throw fault('Elige una dirección de Chile en Rappi y vuelve a comprobar la conexión.',409);
+  if(!a||!Number.isFinite(a.lat)||!Number.isFinite(a.lng)||!id(a.id)||!RAPPI_PAIS.countries.includes(a.country))throw fault(`Elige una dirección de ${RAPPI_PAIS.ciudad} en Rappi y vuelve a comprobar la conexión.`,409);
   return {lat:a.lat,lng:a.lng,id:a.id,label:text(a.title||a.address||a.subtitle),confirmed:true};
  }
  function state(payload,ctx,session){
@@ -27,7 +33,7 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
   if(!s||s.generation!==ctx.generation||s.sessionAt!==(session?.connectedAt||'')||now()-s.at>10*60*1000)throw fault('Vuelve a elegir una categoría para actualizar los productos.',409);
   return s;
  }
- async function account(){const session=await sessionStore.read();if(!session)throw fault('Falta conectar la cuenta de Rappi Chile desde la configuración del equipo.',409);return session;}
+ async function account(){const session=await sessionStore.read();if(!session)throw fault(`Falta conectar la cuenta de ${RAPPI_PAIS.nombre} desde la configuración del equipo.`,409);return session;}
  function normalizedCart(raw){
   if(!raw||!Array.isArray(raw.stores)||!number(raw.product_total)||!number(raw.shipping_total))throw fault('Rappi devolvió un carrito no reconocido. Revísalo en Rappi.',502);
   return {productsTotal:raw.product_total,shippingTotal:raw.shipping_total,stores:raw.stores.map(s=>({id:s.id,name:text(s.name),valid:s.valid===true,items:(Array.isArray(s.products)?s.products:[]).map(p=>({id:text(p.id),name:text(p.name),quantity:p.units,price:p.price,total:p.total}))})),paymentEnabled:false};
@@ -40,7 +46,7 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
  }
  return {manifest:rappiManifest,errorMessage:()=> 'No se pudo conectar con Rappi. Comprueba Internet y vuelve a intentarlo.',close:()=>auth.close(),
   async prepare({signal,report}){
-   report({stage:1,connector:'crafter-rappi-chile',message:'Comprobando la búsqueda de Rappi Chile…'});
+   report({stage:1,connector:'crafter-rappi-'+RAPPI_PAIS.country.toLowerCase(),message:`Comprobando la búsqueda de ${RAPPI_PAIS.nombre}…`});
    const data=await request('/api/pns-global-search-api/v1/unified-search?is_prime=false',{method:'POST',body:{query:'pizza',...RAPPI_DEFAULT_LOCATION},signal});
    if(!Array.isArray(data.stores)||!data.stores.some(s=>s.store_type==='restaurant'&&id(s.store_id)&&s.products?.length))throw fault('Rappi no devolvió restaurantes. Puedes reintentar.',502);
    return {stage:2,status:'needs_test',message:'Puedes explorar comida real. Cuenta y dirección se conectan para el carrito; compra y pago siguen pendientes.'};
@@ -51,18 +57,25 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
    if(action==='disconnect'){await auth.close();await sessionStore.clear();selections.clear();ctx.disconnected();return {connected:false};}
    const session=await sessionStore.read();
    if(action==='status'){
-    if(!session)return {connected:false,locationLabel:'Explorando Santiago · sin dirección de entrega',categories:rappiCategories,paymentEnabled:false};
+    if(!session)return {connected:false,locationLabel:`Explorando ${RAPPI_PAIS.ciudad} · sin dirección de entrega`,categories:rappiCategories,paymentEnabled:false,currency:RAPPI_PAIS.moneda,locale:RAPPI_PAIS.formato};
     await request('/ms/application-user/auth',{session,signal:ctx.signal});
     const loc=await location(session,ctx.signal);
     ctx.connected();
-    return {connected:true,locationLabel:loc.label,categories:rappiCategories,paymentEnabled:false};
+    return {connected:true,locationLabel:loc.label,categories:rappiCategories,paymentEnabled:false,currency:RAPPI_PAIS.moneda,locale:RAPPI_PAIS.formato};
    }
    if(action==='search'){
-    const category=rappiCategories.find(c=>c.id===payload.category);if(!category)throw fault('Elige una categoría de comida.');
+    // Categoría fija, o texto libre (la sugerencia del agente con memoria: query + preferir/evitar/max)
+    const libre=typeof payload.query==='string'?payload.query.replace(/\s+/g,' ').trim().slice(0,60):'';
+    const category=libre.length>=2?{id:libre,name:libre}:rappiCategories.find(c=>c.id===payload.category);if(!category)throw fault('Elige una categoría de comida.');
+    const preferir=palabras(payload.preferir),evitar=palabras(payload.evitar),max=Number.isSafeInteger(payload.max)&&payload.max>0?payload.max:0;
     const loc=await location(session,ctx.signal);
     const data=await request('/api/pns-global-search-api/v1/unified-search?is_prime=false',{method:'POST',body:{query:category.id,lat:loc.lat,lng:loc.lng},session,signal:ctx.signal});
     if(!Array.isArray(data.stores))throw fault('No pudimos leer los restaurantes de Rappi.',502);
     const stores=data.stores.filter(s=>s.store_type==='restaurant'&&id(s.store_id)&&typeof s.store_name==='string').map(s=>({id:s.store_id,name:text(s.store_name),image:image(s.logo,'restaurants_logo'),eta:text(s.eta,40),products:(Array.isArray(s.products)?s.products:[]).filter(p=>id(p.product_id)&&p.store_id===s.store_id&&typeof p.name==='string'&&number(p.price)).slice(0,60).map(p=>({id:p.product_id,storeId:s.store_id,name:text(p.name),price:p.price,image:image(p.image),available:p.in_stock===true,hasOptions:p.has_toppings===true}))})).filter(s=>s.products.length).slice(0,60);
+    if(libre&&(preferir.length||evitar.length||max)){
+     for(const s of stores){s.products=s.products.map(p=>({...p,score:puntaje(p.name,preferir,evitar)})).filter(p=>p.score>=0&&(!max||p.price<=max)).sort((a,b)=>b.score-a.score);s.best=(s.products[0]?.score||0)+(puntaje(s.name,preferir)>0?1:0);}
+     stores.splice(0,stores.length,...stores.filter(s=>s.products.length).sort((a,b)=>b.best-a.best));
+    }
     ctx.signal.throwIfAborted();
     if(selections.size>=100)selections.delete(selections.keys().next().value);
     selections.set(payload.jobId,{generation:ctx.generation,at:now(),sessionAt:session?.connectedAt||'',location:loc,stores});
