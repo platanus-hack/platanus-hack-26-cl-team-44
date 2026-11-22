@@ -145,7 +145,7 @@ def ordenar(turns: list[dict], partner: str, visible: set, path_usuario: Path, l
             s += math.log1p(total[c["id"]])
         if s > 0:
             out.append({"id": c["id"], "texto": salida.limpiar(c["texto"]), "tema": c["tema"], "origen": c["origen"],
-                        "score": round(s, 2), "motivo": ", ".join(motivos)})
+                        "fuente": c.get("fuente", ""), "score": round(s, 2), "motivo": ", ".join(motivos)})
     out.sort(key=lambda x: (-x["score"], x["id"]))
     principal = detectados[0][0] if detectados else None
     return {"tema": {"id": principal, "nombre": temas[principal]["nombre"]} if principal else None,

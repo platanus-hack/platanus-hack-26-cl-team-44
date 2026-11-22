@@ -8,7 +8,8 @@ const URL_AGENTE = process.env.AGENT_URL ?? "http://127.0.0.1:8790";
 export const agenteOn = process.env.AGENT !== "off";
 const EMOS = ["seria", "alegre", "carinosa", "ironica", "susurro", "entusiasta"];
 
-export type Opcion = { text: string; tone: string; emo: string; fuentes?: string[]; origen?: string };
+export type Traza = { origen?: string; fuentes?: { id: string; tipo?: string }[]; inventadas?: string[]; sin_memoria?: boolean };
+export type Opcion = { text: string; tone: string; emo: string; fuentes?: string[]; origen?: string; traza?: Traza & { fuentes?: { id: string; tipo?: string; texto?: string }[] } };
 export type RespuestaGrupo = {
   accion: "ignorar" | "guardado" | "repetido" | "mencion";
   motivo?: string;
@@ -35,6 +36,9 @@ const limpia = (o: Opcion): Sug => ({
   text: String(o.text ?? "").replace(/[<>]/g, "").trim().slice(0, 160),
   tone: String(o.tone ?? "").replace(/[<>]/g, "").slice(0, 30),
   emo: EMOS.includes(o.emo) ? o.emo : "seria",
+  // De dónde sale la opción (modo dev de la TV): solo ids y tipos de memoria; el texto de la memoria no viaja por el SSE.
+  traza: { origen: o.traza?.origen ?? o.origen ?? "agente", fuentes: (o.traza?.fuentes ?? (o.fuentes ?? []).map((id) => ({ id, tipo: undefined as string | undefined })))
+    .map((f) => ({ id: String(f.id), tipo: f.tipo })), inventadas: o.traza?.inventadas ?? [], sin_memoria: o.traza?.sin_memoria },
 });
 
 /** 6 respuestas para el chat 1 a 1. [] si el agente no está o no respondió con el modelo. */
@@ -45,6 +49,7 @@ export async function agenteChat(phone: string, name: string, lines: Line[]): Pr
   try {
     const r = await post<{ origen: string; opciones: Opcion[] }>("/api/sugerir", {
       modo: "chat",
+      traza: true,
       telefono: phone,
       texto: ultimo,
       historial: lines.slice(-14).map((l) => `${l.dir === "in" ? name : "Yo"}: ${l.text.replace(/\s+/g, " ").slice(0, 300)}`),

@@ -324,3 +324,8 @@ body.iphone-pointer:not(.iphone-hold) .t.focus::before { opacity: 0; }
 .key.completar { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px 64px !important; }
 .key.completar small { margin: 0; white-space: normal; line-height: 1.2; max-height: 2.4em; overflow: hidden; font-size: 28px; color: var(--txt); text-align: center; }
 .key.completar:not(.best) small { font-size: 22px; color: var(--txt2); }
+
+/* Modo dev (Shift+D): de dónde sale cada tarjeta. Ocupa el lugar de la línea de tono, abajo de la frase. */
+body.myo-dev .card .tone { display: none; }
+body.myo-dev .card .traza { margin-top: 10px; padding: 6px 12px; border-radius: 12px; background: rgba(10,132,255,.9); color: #fff;
+  font: 600 22px/1.25 system-ui; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }

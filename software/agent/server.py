@@ -122,7 +122,7 @@ def trabajador_dev() -> None:
             etiqueta = f"{quien} {verbo}"
             emitir({"tipo": "pensando", "id": ev["id"], "canal": ev["canal"], "texto": ev["texto"],
                     "persona": p and p["id"], "etiqueta": etiqueta})
-            r = ejecutar(c, p, ev["texto"], modo=modo)
+            r = ejecutar(c, p, ev["texto"], modo=modo, traza=True)   # el modo dev siempre muestra la traza
             emitir({"tipo": "opciones", "id": ev["id"], "canal": ev["canal"], "texto": ev["texto"],
                     "etiqueta": etiqueta, "inicial": quien[:1].upper(), **r})
             print(f"[dev {ev['id']}] {r['persona'] or 'desconocido'} · {modo} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
@@ -268,7 +268,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))   # sin persona = desconocido (lo más restringido)
                 excluir = [str(x)[:200] for x in (body.get("excluir") or [])][:20]
-                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=excluir)
+                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=excluir, traza=body.get("traza") is True)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})
             finally:
@@ -300,14 +300,17 @@ class Handler(BaseHTTPRequestHandler):
             c = store.conectar(DB)
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
-                r = ejecutar(c, p, texto or "(sin mensaje: ella quiere decir algo)", historial=historial, modo="iniciales", iniciales=ini)
+                r = ejecutar(c, p, texto or "(sin mensaje: ella quiere decir algo)", historial=historial, modo="iniciales", iniciales=ini,
+                             traza=body.get("traza") is True)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})
             finally:
                 c.close()
             print(f"[iniciales] {ini} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms", flush=True)
-            return self._json(200, {"suggestions": [{"text": o["text"], "tone": o.get("tone") or "por iniciales", "emo": o.get("emo")}
-                                                    for o in r["opciones"]], "origen": r["origen"], "persona": r["persona"]})
+            return self._json(200, {"suggestions": [{"text": o["text"], "tone": o.get("tone") or "por iniciales", "emo": o.get("emo"),
+                                                     **({"traza": o["traza"]} if "traza" in o else {})}
+                                                    for o in r["opciones"]], "origen": r["origen"], "persona": r["persona"],
+                                    **({"traza": r["traza"]} if "traza" in r else {})})
 
         if self.path == "/api/tarjetas/uso":
             if not body.get("tarjeta_id"):
