@@ -192,7 +192,29 @@
     "postre",
     "queque",
     "sopa",
-    "torta"
+    "torta",
+    "hamburguesa",
+    "pizza",
+    "pollo",
+    "carne",
+    "arroz",
+    "pasta",
+    "ensalada",
+    "empanada",
+    "arepa",
+    "taco",
+    "sandwich",
+    "sanduche",
+    "restaurante",
+    "domicilio",
+    "pedir comida",
+    "antojo",
+    "combo",
+    "papas",
+    "helado",
+    "dulce",
+    "cocinar",
+    "receta"
    ],
    "tarjetas": [
     {
@@ -566,7 +588,17 @@
     "serie",
     "tele",
     "television",
-    "volumen"
+    "volumen",
+    "artista",
+    "cantante",
+    "concierto",
+    "cantar",
+    "bailar",
+    "libro",
+    "leer",
+    "juego",
+    "jugar",
+    "video"
    ],
    "tarjetas": [
     {
