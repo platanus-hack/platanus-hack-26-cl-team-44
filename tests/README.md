@@ -6,7 +6,7 @@ La prueba crea una pseudoterminal local con datos sintéticos. Comprueba pares A
 
 Firmware: `arduino-cli compile --fqbn arduino:avr:uno firmware/myoware_a0`.
 
-Toki OS:
+Myo OS:
 
 - `node tests/test_os_click.cjs` — clic directo.
 - `node --test tests/test_myoware_click.cjs tests/test_os_gesture_selection.cjs` — calibración, prioridad de mandíbula, selección con la ceja, navegación y cancelación por pérdida de señal.

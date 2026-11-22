@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Escenario: el MyoWare va al computador; WhatsApp, agente y memoria están en la VPS.
-# Doble clic en Toki.command (o: make escena). Sin argumentos busca solo el MyoWare por USB.
+# Doble clic en Myo.command (o: make escena). Sin argumentos busca solo el MyoWare por USB.
 #
 #   bash deploy/escena.sh                                   # busca /dev/cu.usbmodem* o /dev/ttyACM*
 #   bash deploy/escena.sh --serial-port /dev/cu.usbmodem1101
@@ -24,7 +24,7 @@ ok() { printf '  ✅ %s\n' "$1"; }
 ko() { printf '  ❌ %s\n' "$1"; }
 fin() { echo; read -r -p "Enter para cerrar…" _ </dev/tty 2>/dev/null; exit 1; }
 
-echo "Toki · escenario"
+echo "Myo · escenario"
 echo
 
 # 1) Sensor: argumentos dados, o el primer puerto USB que aparezca
@@ -47,9 +47,9 @@ TOKEN="${TOKI_WA_TOKEN:-}"
 if [ -n "$TOKEN" ]; then ok "Token del puente"; else ko "Sin token: define TOKI_WA_TOKEN en deploy/escena.env o configura 'ssh toki-vps'"; fin; fi
 
 # 3) La VPS responde: WhatsApp y agente
-wa=$(curl -s -m 8 -H "X-Woki-Token: $TOKEN" "$REMOTO/wa/api/wa/health" || true)
+wa=$(curl -s -m 8 -H "X-Myo-Token: $TOKEN" "$REMOTO/wa/api/wa/health" || true)
 case "$wa" in *'"session":"connected"'*) ok "WhatsApp conectado en la VPS";; *) ko "WhatsApp no responde en $REMOTO (la TV va a mostrar 'sin conexión')";; esac
-ag=$(curl -s -m 8 -H "X-Woki-Token: $TOKEN" "$REMOTO/agente/api/salud" || true)
+ag=$(curl -s -m 8 -H "X-Myo-Token: $TOKEN" "$REMOTO/agente/api/salud" || true)
 case "$ag" in *'"ok": true'*) ok "Agente con memoria en la VPS";; *) ko "El agente no responde en $REMOTO";; esac
 
 # Spotify: macOS pide permiso de Automatización la primera vez. El aviso solo sale desde una terminal en primer plano.

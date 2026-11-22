@@ -1,12 +1,12 @@
-# Creador de apps accesibles de Toki
+# Creador de apps accesibles de Myo
 
 ## Decisión explícita de Jhomar
 
-La generación bajo demanda es parte central del producto. El paciente o su ayudante pide una aplicación (por ejemplo Spotify) mediante una acción como «Instalar» o «Adaptar». Toki investiga primero conexiones existentes, usa REA cuando aporta evidencia y produce una UI/UX pensada para su método de interacción. No se limita a habilitar un catálogo de adaptaciones previamente hechas.
+La generación bajo demanda es parte central del producto. El paciente o su ayudante pide una aplicación (por ejemplo Spotify) mediante una acción como «Instalar» o «Adaptar». Myo investiga primero conexiones existentes, usa REA cuando aporta evidencia y produce una UI/UX pensada para su método de interacción. No se limita a habilitar un catálogo de adaptaciones previamente hechas.
 
 ## Resultado que debe producir
 
-Una adaptación utilizable y conectada al servicio real, con acceso desde el inicio de Toki. Para Spotify, por ejemplo: encontrar música, elegir una lista y controlar la reproducción. Una imagen, un iframe o un clon de pantallas sin ejecución real no cumplen este resultado.
+Una adaptación utilizable y conectada al servicio real, con acceso desde el inicio de Myo. Para Spotify, por ejemplo: encontrar música, elegir una lista y controlar la reproducción. Una imagen, un iframe o un clon de pantallas sin ejecución real no cumplen este resultado.
 
 ## Flujo del producto (primer piloto implementado parcialmente)
 
@@ -15,7 +15,7 @@ Una adaptación utilizable y conectada al servicio real, con acceso desde el ini
 3. Diseño: transformar tareas en opciones grandes y estables, reducir pasos y precisión requerida, ofrecer pausa, retroceso y confirmaciones comprensibles. Parametrizar mirada, nariz, permanencia y señal muscular según el usuario.
 4. Conexión: implementar acciones y lectura del servicio; pedir al usuario iniciar sesión cuando corresponda, sin fingir autenticación o resultados.
 5. Prueba: completar tareas reales y comprobar estados de error, pérdida de control, cancelación y recuperación. Probar con el método de entrada de la persona.
-6. Instalación: publicar la adaptación dentro de su Toki, identificando funciones disponibles y pendientes; conservar una versión anterior que permita revertir.
+6. Instalación: publicar la adaptación dentro de su Myo, identificando funciones disponibles y pendientes; conservar una versión anterior que permita revertir.
 
 Una solicitud puede acabar en «necesita conexión», «necesita revisión» o «no compatible todavía». La UI no debe anunciar «instalado» mientras falten funciones prometidas.
 
@@ -58,7 +58,7 @@ Jhomar aceptó las recomendaciones de la primera ronda de `GRILL-CREADOR-APPS.md
 
 Jhomar también aceptó la segunda ronda:
 
-- Toki se usa en navegador de escritorio; el generador se ejecuta inicialmente en el computador del equipo.
+- Myo se usa en navegador de escritorio; el generador se ejecuta inicialmente en el computador del equipo.
 - La configuración del perfil puede ser asistida, con participación de la persona y acceso directo a pausa y ajustes.
 - Se usa la cuenta propia de la persona, iniciando sesión en el servicio original; sesión conservada en su equipo y opción de desconexión. No entregar contraseñas al generador.
 - Habilitar requiere revisión funcional del equipo y prueba de las tareas con la persona y su método de acceso. La demo del equipo solo demuestra funcionamiento técnico.
@@ -67,7 +67,7 @@ Jhomar también aceptó la segunda ronda:
 
 La tercera ronda de `GRILL-CREADOR-APPS.md` concreta el comportamiento de esa espera y el primer piloto Spotify. El piloto y el coordinador de solicitudes están implementados; la generación automática está limitada a lectores RSS configurados por el equipo.
 
-Actualización aceptada («sí a las tres»): la preparación continúa mientras se usa Toki, con avance consultable, cancelación y reintento; se acepta controlar Spotify.app local mediante un componente local si el CLI supera la prueba; el recorrido inicial usará mirada/nariz y permanencia, clic alternativo y teclado accesible para buscar canciones. Quedan por concretar los criterios de comodidad con la persona, los límites de ejecución y los detalles técnicos de conexión; las decisiones de producto mencionadas ya no están abiertas.
+Actualización aceptada («sí a las tres»): la preparación continúa mientras se usa Myo, con avance consultable, cancelación y reintento; se acepta controlar Spotify.app local mediante un componente local si el CLI supera la prueba; el recorrido inicial usará mirada/nariz y permanencia, clic alternativo y teclado accesible para buscar canciones. Quedan por concretar los criterios de comodidad con la persona, los límites de ejecución y los detalles técnicos de conexión; las decisiones de producto mencionadas ya no están abiertas.
 
 Jhomar aceptó el piloto privado con Premium (Q12) y confirmó el enfoque de buscar y reutilizar integraciones existentes antes de recurrir a REA. Se instaló `spogo` 0.13.2 y se eligió para el piloto, con lectura de estado y reproducción/pausa local verificadas. La búsqueda de catálogo queda pendiente de conectar la sesión web. REA es opcional; no se presupone que deba reconstruir capacidades ya disponibles.
 

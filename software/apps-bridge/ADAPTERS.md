@@ -1,6 +1,6 @@
-# Adaptaciones de Toki
+# Adaptaciones de Myo
 
-El registro contiene código revisado incluido con Toki y paquetes declarativos validados que usan el lector RSS compartido. El servidor no carga módulos elegidos por una petición web ni ejecuta resultados de GitHub.
+El registro contiene código revisado incluido con Myo y paquetes declarativos validados que usan el lector RSS compartido. El servidor no carga módulos elegidos por una petición web ni ejecuta resultados de GitHub.
 
 ## Contrato v1
 
@@ -83,7 +83,7 @@ El servidor sigue siendo local de confianza: `appsAdmin` separa presentación, n
 
 `adapters/youtube.mjs` registra la categoría `video`. Verifica la selección pública mediante oEmbed y ofrece `list`, `select` y `observe` por las rutas comunes. `select` devuelve un ticket ligado al trabajo, video y generación; no registra reproducción. `observe` acepta únicamente estados 1/2 del video seleccionado y exige reproducción previa para acreditar pausa. Cancelar/reintentar o elegir otro video invalida la observación anterior.
 
-`toki-video.js` usa la [API oficial de reproductor](https://developers.google.com/youtube/iframe_api_reference), con origen explícito, sin autoplay y controles de Toki fuera del iframe. La evidencia procede de eventos confirmados por el reproductor en el cliente local de confianza; no es una prueba criptográfica ni una consulta independiente del servidor a YouTube. El navegador local ya puede declarar la revisión funcional/personal. Los callbacks tardíos no cambian otras pantallas. La sincronización de solicitudes conserva el iframe; salir destruye el reproductor.
+`toki-video.js` usa la [API oficial de reproductor](https://developers.google.com/youtube/iframe_api_reference), con origen explícito, sin autoplay y controles de Myo fuera del iframe. La evidencia procede de eventos confirmados por el reproductor en el cliente local de confianza; no es una prueba criptográfica ni una consulta independiente del servidor a YouTube. El navegador local ya puede declarar la revisión funcional/personal. Los callbacks tardíos no cambian otras pantallas. La sincronización de solicitudes conserva el iframe; salir destruye el reproductor.
 
 El catálogo ofrece seis videos públicos de Chile Travel con miniaturas de YouTube. Sin búsqueda general, cuenta personal, suscripciones ni generación automática de adaptadores de video. Un video puede dejar de permitir reproducción integrada; la interfaz muestra error, reintento y regreso. La prueba real de play/pause funciona; la habilitación personal sigue pendiente.
 

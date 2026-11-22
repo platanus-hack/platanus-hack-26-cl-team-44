@@ -61,8 +61,8 @@ export function createMyoWareRoutes(fetcher = fetch) {
       } catch { return respond(503, 'No se pudo conectar con el monitor MyoWare.'); }
       const nonce = randomBytes(16).toString('base64');
       const value = JSON.stringify(JSON.stringify(calibration));
-      return respond(200, `<!doctype html><html lang="es"><meta charset="utf-8"><title>Abrir Woki con MyoWare</title>
-        <p>Abriendo Woki con la calibración de MyoWare…</p><script nonce="${nonce}">
+      return respond(200, `<!doctype html><html lang="es"><meta charset="utf-8"><title>Abrir Myo con MyoWare</title>
+        <p>Abriendo Myo con la calibración de MyoWare…</p><script nonce="${nonce}">
         try { localStorage.setItem(${JSON.stringify(MYOWARE_PROFILE_KEY)}, ${value}); }
         catch { try { sessionStorage.setItem(${JSON.stringify(MYOWARE_PROFILE_KEY)}, ${value}); } catch {} }
         location.replace('/woki-os.html?myoware=1');

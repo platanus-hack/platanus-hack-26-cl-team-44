@@ -1,4 +1,4 @@
-// Presets de calibración del iPhone (Toki OS). Ejecutar desde la raíz: node tests/test_iphone_presets.mjs
+// Presets de calibración del iPhone (Myo OS). Ejecutar desde la raíz: node tests/test_iphone_presets.mjs
 import assert from "node:assert/strict";
 import { addPreset, fromFile, listPresets, migrateSaved, toFile, validateModel } from "../software/toki-os/iphone-presets.js";
 

@@ -1,5 +1,5 @@
 /**
- * Toki OS · predicción de palabras (español, sin conexión, en el dispositivo).
+ * Myo OS · predicción de palabras (español, sin conexión, en el dispositivo).
  *
  * Cómo predice (n-gramas con "Stupid Backoff", Brants et al. 2007 — el método de Google para
  * modelos de lenguaje grandes; con modelos chicos rinde casi igual que Kneser-Ney):

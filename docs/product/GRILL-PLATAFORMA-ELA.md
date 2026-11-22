@@ -48,7 +48,7 @@ Las definiciones consensuadas se incorporarán a `GLOSSARY.md`. Los ADR se crear
 
 ### Implementación de exploración autorizada
 
-Se añadieron dos juegos locales originales (Constelaciones y Parejas) al prototipo y un acceso al catálogo externo de SpecialEffect. No son copias ni integraciones de los juegos de SpecialEffect. El puntero de cámara de Toki no se transmite a páginas externas. Los resultados actuales se guardan en este navegador; no hay leaderboard público implementado.
+Se añadieron dos juegos locales originales (Constelaciones y Parejas) al prototipo y un acceso al catálogo externo de SpecialEffect. No son copias ni integraciones de los juegos de SpecialEffect. El puntero de cámara de Myo no se transmite a páginas externas. Los resultados actuales se guardan en este navegador; no hay leaderboard público implementado.
 
 Los juegos usan el sistema existente de puntero/calibración y permanencia de 1,1 s, con alternativa de clic. Constelaciones permite recoger 10 estrellas sin reloj. Parejas mantiene las figuras reveladas hasta que se elija continuar. Pérdida de cara, descanso o calibración suspenden los objetivos del juego; una partida activa vuelve pausada.
 
@@ -60,7 +60,7 @@ Pendiente: probar precisión y comodidad con la cámara real; acordar si la clas
 
 ## Segunda corrección de Jhomar: creador bajo demanda y juegos originales
 
-- Q4 resuelta explícitamente: la persona o su ayudante solicita una app X; Toki la investiga con REA y rediseña la UI/UX para utilizarla. El creador bajo demanda es central, no una línea opcional posterior. Ver `CREADOR-APPS-ELA.md`.
+- Q4 resuelta explícitamente: la persona o su ayudante solicita una app X; Myo la investiga con REA y rediseña la UI/UX para utilizarla. El creador bajo demanda es central, no una línea opcional posterior. Ver `CREADOR-APPS-ELA.md`.
 - Jhomar rechazó la calidad de los minijuegos locales básicos y pidió entender e integrar los originales de Eye Gaze Games. El acceso principal de Juegos ahora presenta ese catálogo y carga las páginas originales dentro del SO.
 - Se implementó un puente local de navegador para que mirada/nariz pueda producir entrada real en páginas embebidas de otros orígenes. Se verificó movimiento y clic por permanencia con coordenadas simuladas. Pendiente prueba física de cámara y partidas completas de cada juego.
 - El creador no se presenta como implementado: todavía faltan motor REA, generación UI/UX, conectores, pruebas e instalación de adaptaciones.

@@ -7,7 +7,7 @@
 #   bash deploy/toki.sh semilla         sube software/agent/data/semilla.json (la memoria real) y la carga
 #   bash deploy/toki.sh rotar-token     cambia el token del puente (si se filtró) y reinicia lo necesario
 #   bash deploy/toki.sh clave           copia la contraseña de /equipo/ al portapapeles (usuario: equipo)
-#   bash deploy/toki.sh escena          arranca el escenario (igual que doble clic en Toki.command)
+#   bash deploy/toki.sh escena          arranca el escenario (igual que doble clic en Myo.command)
 #   bash deploy/toki.sh rappi           abre el login oficial de Rappi (Colombia por defecto) y guarda la sesión local
 #   bash deploy/toki.sh llave "ssh-ed25519 AAAA… nombre"   autoriza la llave SSH de otra persona del equipo en la VPS
 set -euo pipefail
@@ -30,7 +30,7 @@ case "$cmd" in
   estado)
     en_vps 'for u in caddy toki-agente toki-puente wapi-gateway wapi-api wapi-worker; do printf "%-14s %s\n" "$u" "$(systemctl is-active $u)"; done
       set -a; . /opt/toki/puente.env; set +a
-      curl -s -m 5 -H "X-Woki-Token: $WOKI_API_TOKEN" 127.0.0.1:8788/api/wa/health | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"whatsapp      \", d[\"mode\"], d[\"session\"], \"· envíos hoy\", d[\"sentToday\"])" || echo "whatsapp       sin respuesta"
+      curl -s -m 5 -H "X-Myo-Token: $WOKI_API_TOKEN" 127.0.0.1:8788/api/wa/health | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"whatsapp      \", d[\"mode\"], d[\"session\"], \"· envíos hoy\", d[\"sentToday\"])" || echo "whatsapp       sin respuesta"
       curl -s -m 5 127.0.0.1:8790/api/salud | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"agente        \", d[\"usuaria\"], \"·\", d[\"personas\"], \"personas · uso hoy\", d[\"uso_hoy\"], \"·\", \" \".join(x[\"id\"]+\"=\"+x[\"estado\"] for x in d[\"disparadores\"]))" || echo "agente         sin respuesta"
       git -C /opt/toki/repo log --oneline -1 | sed "s/^/código         /"'
     ;;
@@ -47,7 +47,7 @@ case "$cmd" in
   rotar-token)
     en_vps 'set -e; T=$(openssl rand -hex 24); sed -i "s/^WOKI_API_TOKEN=.*/WOKI_API_TOKEN=$T/" /opt/toki/puente.env; unset T; echo "token nuevo guardado"'
     "$0" deploy "$(en_vps 'git -C /opt/toki/repo rev-parse --abbrev-ref HEAD')"
-    echo "Listo. El escenario lo toma solo la próxima vez que abras Toki.command."
+    echo "Listo. El escenario lo toma solo la próxima vez que abras Myo.command."
     ;;
   clave)
     en_vps 'cat /opt/toki/equipo.clave' | tr -d '\n' | pbcopy

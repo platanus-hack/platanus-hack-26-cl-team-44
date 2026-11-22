@@ -11,7 +11,7 @@ const run=async(expression,s=sessionId)=>{const r=await cdp('Runtime.evaluate',{
 async function until(fn,seconds=30){const end=Date.now()+seconds*1000;while(Date.now()<end){const r=await fn();if(r)return r;await sleep(300);}throw Error('Timed out');}
 try{
  await until(()=>run('!!window.TOKI_EXTERNAL'));
- console.log('Toki loaded'); await run("go('games')");await sleep(900);
+ console.log('Myo loaded'); await run("go('games')");await sleep(900);
  await run("activate(document.querySelector('[data-act=\"external:play:0\"]'),false)");
  await until(()=>run('TOKI_EXTERNAL.connected')); console.log('Bridge connected');
  const iframeTarget=await until(async()=> (await cdp('Target.getTargets')).targetInfos.find(t=>t.type==='iframe'&&t.url.includes('eyegazegames.com')));
@@ -27,9 +27,9 @@ try{
  const events=await run('bridgeEvents',inner);
  if(!events.some(e=>e.type==='mousemove'&&e.trusted)||!events.some(e=>e.type==='click'&&e.trusted))throw Error('Bridge did not deliver trusted pointer and dwell click');
  await run('clearInterval(window.testTracker);NOSE.on=false;setGaze(0,0)');
- console.log('PASS: cross-origin iframe receives trusted pointer movement and dwell click from Toki.');
+ console.log('PASS: cross-origin iframe receives trusted pointer movement and dwell click from Myo.');
  await run("activate(document.querySelector('[data-act=\"external:pause\"]'),false)");
- // Continue through the real external profile setup, then load a Unity game inside Toki.
+ // Continue through the real external profile setup, then load a Unity game inside Myo.
  await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0},sessionId); await run("location.href='https://www.eyegazegames.com/'",inner);await sleep(2000); await until(()=>run('!!document.querySelector("button[title=Spanish]")',inner)); await run('document.querySelector("button[title=Spanish]").click()',inner);await sleep(1000);
  await until(()=>run('document.body.innerText.includes("Crear usuario")',inner));
  await run('[...document.querySelectorAll("button")].find(b=>b.innerText.includes("Crear usuario")||b.title==="Crear usuario").click()',inner);
@@ -39,7 +39,7 @@ try{
  const golfTarget=await until(async()=> (await cdp('Target.getTargets')).targetInfos.find(t=>t.type==='iframe'&&t.url.includes('gamesource?id=gazey_golf')));
  const {sessionId:golf}=await cdp('Target.attachToTarget',{targetId:golfTarget.targetId,flatten:true});
  await until(()=>run('!!document.querySelector("canvas[tabindex]")',golf),60);
- console.log('PASS: Gazey Golf Unity canvas loaded inside Toki after real onboarding.');
+ console.log('PASS: Gazey Golf Unity canvas loaded inside Myo after real onboarding.');
  // Save evidence, then always release the browser (including on failed assertions).
  const shot=await cdp('Page.captureScreenshot',{format:'png'},sessionId);writeFileSync('/tmp/toki-external.png',Buffer.from(shot.data,'base64'));
  console.log('Screenshot: /tmp/toki-external.png');

@@ -127,11 +127,11 @@
     foodPager(items,perPage=3){if(items.length<=perPage)return '';return `<div class="food-pages">${this.btn('food-prev','← Anteriores',{disabled:!this.food.page})}<span>${items.length?`${this.food.page+1} / ${Math.ceil(items.length/perPage)}`:''}</span>${this.btn('food-next','Más →',{disabled:(this.food.page+1)*perPage>=items.length})}</div>`;}
     foodView(){
       const f=this.food,cards=(items,action,label)=>`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(item=>this.btn(action,rappiPhoto(item.image)+label(item),{value:item.id,className:'food-card',disabled:item.available===false})).join('')}${!items.length?'<p>No hay resultados disponibles. Vuelve y elige otra categoría.</p>':''}</div>`;
-      if(this.view==='food-stores')return this.header(f.plan?'Sugerencia de Toki':esc(f.category),f.plan?esc(f.plan.mensaje):'')+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
+      if(this.view==='food-stores')return this.header(f.plan?'Sugerencia de Myo':esc(f.category),f.plan?esc(f.plan.mensaje):'')+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
       if(this.view==='food-products')return this.header(esc(f.store?.name),'Productos encontrados · precios por confirmar al pedir')+cards(f.items,'food-product',p=>`<span><strong>${esc(p.name)}</strong><small>${this.foodPrice(p.price)}</small></span>`)+this.foodPager(f.items);
       if(this.view==='food-product'){
         const selection=f.selection,p=selection.product;
-        const note=selection.catalogOnly?'Solo consulta en Toki.':selection.canAdd?'Cantidad: 1.':'El carrito de restaurantes requiere una cuenta conectada.';
+        const note=selection.catalogOnly?'Solo consulta en Myo.':selection.canAdd?'Cantidad: 1.':'El carrito de restaurantes requiere una cuenta conectada.';
         const detail=`<div class="food-selection">${rappiPhoto(p.image,true)}<div><h2>${esc(p.name)}</h2><p>${this.foodPrice(p.price)}</p><p>${note}</p></div></div>`;
         const heading=this.header('Detalle del producto',esc(selection.store.name));
         if(selection.catalogOnly)return heading+detail;
@@ -157,7 +157,7 @@
       if(this.view==='food-review'){
         const c=f.cart||{},total=totalDe(c),servicio=Math.max(0,total-(c.productsTotal||0)-(c.shippingTotal||0)-(c.tip||0));
         const fila=(t,v,cls='')=>`<div class="pay-row ${cls}"><span>${t}</span><b>${this.foodPrice(v)}</b></div>`;
-        return pasos(3)+this.header('Revisa y paga',esc(f.status?.locationLabel?`Entrega en ${f.status.locationLabel}`:'Entrega en tu dirección de Rappi'))+`<div class="pay-box">${fila('Productos',c.productsTotal)}${fila('Envío',c.shippingTotal)}${servicio?fila('Servicio de Rappi',servicio):''}${fila('Propina',c.tip||0)}${fila('Total a pagar',total,'pay-total')}<p class="food-note">Pagas con la tarjeta guardada en tu cuenta de Rappi. Toki no reintenta si algo falla.</p></div><div class="food-actions">${this.btn('food-to-tip','← Propina')}${this.btn('food-pay',f.confirmOrder?`Elige otra vez para pagar ${this.foodPrice(total)}`:`Pagar ${this.foodPrice(total)}`,{className:'ta-primary pay-now '+(f.confirmOrder?'pay-confirm':''),disabled:!c.ticket})}</div>`;
+        return pasos(3)+this.header('Revisa y paga',esc(f.status?.locationLabel?`Entrega en ${f.status.locationLabel}`:'Entrega en tu dirección de Rappi'))+`<div class="pay-box">${fila('Productos',c.productsTotal)}${fila('Envío',c.shippingTotal)}${servicio?fila('Servicio de Rappi',servicio):''}${fila('Propina',c.tip||0)}${fila('Total a pagar',total,'pay-total')}<p class="food-note">Pagas con la tarjeta guardada en tu cuenta de Rappi. Myo no reintenta si algo falla.</p></div><div class="food-actions">${this.btn('food-to-tip','← Propina')}${this.btn('food-pay',f.confirmOrder?`Elige otra vez para pagar ${this.foodPrice(total)}`:`Pagar ${this.foodPrice(total)}`,{className:'ta-primary pay-now '+(f.confirmOrder?'pay-confirm':''),disabled:!c.ticket})}</div>`;
       }
       if(this.view==='food-track'){
         const o=f.order||{},t=f.track||{},step=t.step??(o.orderId?1:1);
@@ -185,16 +185,16 @@
         ? departments.map(d=>this.btn('food-department',esc(d.name),{value:d.id})).join('')+this.btn('food-query','Buscar por nombre')
         : (f.status?.categories||[]).map(categoryButton).join('');
       return this.header('Explorar Rappi',esc(f.status?.locationLabel||'Rappi'))+
-        (this.agente()?'<div class="food-actions">'+this.btn('food-suggest','💡 Sugerencia de Toki para el aniversario',{className:'ta-primary'})+'</div>':'')+
+        (this.agente()?'<div class="food-actions">'+this.btn('food-suggest','💡 Sugerencia de Myo para el aniversario',{className:'ta-primary'})+'</div>':'')+
         `<div class="ta-control-grid food-departments">${choices}</div><div class="food-actions">${this.btn('food-cart','Carrito de restaurantes',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div>`;
     }
     // Agente con memoria (VPS en el escenario): qué pedir y por qué. El token va en un header.
     agente(){return (typeof CFG!=='undefined'&&CFG.AGENTE_URL)||'';}
     async foodSuggest(){
-      if(this.busy)return;const f=this.food,epoch=this.epoch;this.busy=true;this.error='Toki está revisando la memoria…';this.render();
+      if(this.busy)return;const f=this.food,epoch=this.epoch;this.busy=true;this.error='Myo está revisando la memoria…';this.render();
       let plan=null;
       try{
-        const r=await fetch(this.agente()+'/api/pedido',{method:'POST',headers:{'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Woki-Token':CFG.WA_TOKEN}:{})},body:JSON.stringify({para:'juan',ocasion:'aniversario'}),signal:AbortSignal.timeout(30000)});
+        const r=await fetch(this.agente()+'/api/pedido',{method:'POST',headers:{'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Myo-Token':CFG.WA_TOKEN}:{})},body:JSON.stringify({para:'juan',ocasion:'aniversario'}),signal:AbortSignal.timeout(30000)});
         plan=await r.json();if(!r.ok)throw Error(plan.error||'El agente no respondió.');
       }catch(e){if(this.epoch===epoch){this.error='No pude pedir la sugerencia: '+e.message;}}
       finally{this.busy=false;}

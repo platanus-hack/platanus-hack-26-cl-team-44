@@ -62,7 +62,7 @@ class MonitorTest(unittest.TestCase):
             self.assertEqual(sorted(stream['frames'],key=lambda row: row[0]),stream['frames'])
             self.assertIsInstance(stream['age'],int)
             with urllib.request.urlopen(base) as r:
-                self.assertIn('TOKI / BANCO DE PRUEBA',r.read().decode())
+                self.assertIn('MYO / BANCO DE PRUEBA',r.read().decode())
             for route, content_type, marker in [
                 ('/woki-os.html','text/html','Calibrar gestos'),
                 ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
@@ -144,7 +144,7 @@ class TokiConfigTest(unittest.TestCase):
         requests = []
         class AppsFixture(BaseHTTPRequestHandler):
             def do_GET(self):
-                requests.append((self.path, self.headers.get('X-Woki-Token')))
+                requests.append((self.path, self.headers.get('X-Myo-Token')))
                 if self.path == '/web/model.json':
                     self.send_response(200)
                     self.end_headers()
@@ -173,7 +173,7 @@ class TokiConfigTest(unittest.TestCase):
             deadline = time.monotonic() + 5
             while True:
                 try:
-                    req = urllib.request.Request(base+'/web/model.json', headers={'X-Woki-Token': 'header-token'})
+                    req = urllib.request.Request(base+'/web/model.json', headers={'X-Myo-Token': 'header-token'})
                     with urllib.request.urlopen(req, timeout=1) as response:
                         self.assertEqual(response.headers.get_content_type(), 'application/json')
                         self.assertEqual(json.load(response), {'model': 'fixture'})

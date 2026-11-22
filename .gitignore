@@ -5,7 +5,7 @@ node_modules/
 # datos reales de contactos: copiar profile.example.json a profile.json en local
 software/whatsapp-bridge/profile.json
 
-# Toki: artefactos locales y datos de sensores
+# Myo: artefactos locales y datos de sensores
 __pycache__/
 *.py[cod]
 .venv/

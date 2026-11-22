@@ -1,1 +1,1 @@
-"""Memoria personal de Toki: SQLite, filtros duros, contexto y revisión de salida."""
+"""Memoria personal de Myo: SQLite, filtros duros, contexto y revisión de salida."""

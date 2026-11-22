@@ -58,7 +58,7 @@ test('the lobby server serves the bundled iPhone calibration presets', async t =
   }
 });
 
-test('MyoWare monitor uses the Woki origin and only proxies the two fixed local sensor feeds', async t => {
+test('MyoWare monitor uses the Myo origin and only proxies the two fixed local sensor feeds', async t => {
   const requests = [];
   const {base} = await setup(t, {myowareFetch: async (url, options) => {
     requests.push([url,options.redirect]);
@@ -66,7 +66,7 @@ test('MyoWare monitor uses the Woki origin and only proxies the two fixed local 
   }});
   const ui = await fetch(base + '/myoware/');
   assert.equal(ui.status, 200);
-  assert.match(await ui.text(), /Abrir Woki OS/);
+  assert.match(await ui.text(), /Abrir Myo OS/);
   assert.deepEqual(await (await fetch(base + '/emg/gestures')).json(), { age: 15, sequence: 20, frames: [] });
   assert.equal((await fetch(base + '/myoware/data')).status, 200);
   const foreign = await fetch(base + '/emg/gestures', { headers: { Origin: 'https://example.com' } });

@@ -1,4 +1,4 @@
-# URL pública de Toki: la TV pública (jueces), /equipo/ con contraseña, y /wa y /agente con token para el escenario.
+# URL pública de Myo: la TV pública (jueces), /equipo/ con contraseña, y /wa y /agente con token para el escenario.
 # El dominio sale de TOKI_DOMINIO (por ejemplo 179-66-157-161.sslip.io). Caddy saca el certificado HTTPS solo.
 # Solo HTTP/1.1 y HTTP/2: con HTTP/3 (QUIC por UDP) el navegador se colgaba si el UDP 443 no pasaba.
 {
@@ -18,7 +18,7 @@
 	}
 
 	# Puente de WhatsApp para la TV del escenario (127.0.0.1:8766): /wa/api/... → 127.0.0.1:8788/api/...
-	# Solo /api/*; el puente exige el header X-Woki-Token. /webhook/wapi no se publica: wapi llama a 127.0.0.1 directo.
+	# Solo /api/*; el puente exige el header X-Myo-Token. /webhook/wapi no se publica: wapi llama a 127.0.0.1 directo.
 	handle_path /wa/* {
 		handle /api/* {
 			reverse_proxy 127.0.0.1:8788 {
@@ -39,14 +39,14 @@
 		}
 		handle_path /agente/* {
 			reverse_proxy 127.0.0.1:8790 {
-				header_up X-Woki-Token {$TOKI_TOKEN}
+				header_up X-Myo-Token {$TOKI_TOKEN}
 				flush_interval -1
 			}
 		}
 		handle_path /wa/* {
 			handle /api/* {
 				reverse_proxy 127.0.0.1:8788 {
-					header_up X-Woki-Token {$TOKI_TOKEN}
+					header_up X-Myo-Token {$TOKI_TOKEN}
 					flush_interval -1
 				}
 			}

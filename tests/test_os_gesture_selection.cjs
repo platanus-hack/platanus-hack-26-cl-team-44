@@ -98,27 +98,27 @@ test('successful webcam setup enables saved MyoWare without a monitor link', () 
   const start = html.indexOf("  import { setupMyoWareGestures } from './myoware-click.js';");
   const module = html.slice(html.indexOf('\n', start), html.indexOf('</script>', start));
   function setup({ hasProfile = true, fromMonitor = false, mode = 'click', tabletComposer = false, trackerOnly = false } = {}) {
-    const CFG = { mode }, WOKI = {};
+    const CFG = { mode }, MYO = {};
     let selected = 0;
     const context = {
-      CFG, trackerOnly, tabletComposer, window: { WOKI }, URLSearchParams,
+      CFG, trackerOnly, tabletComposer, window: { MYO }, URLSearchParams,
       location: { search: fromMonitor ? '?myoware=1' : '' },
       receiveMyoWare() {}, setupMyoWareGestures: () => ({ enable: () => hasProfile }),
       iphonePointing: () => false, setMyoWareConfirmation: () => { selected++; },
     };
     vm.runInNewContext(module, context);
-    return { WOKI, get selected() { return selected; } };
+    return { MYO, get selected() { return selected; } };
   }
   const standard = setup();
-  assert.equal(standard.WOKI.resumeMyoWareForGaze(), true);
+  assert.equal(standard.MYO.resumeMyoWareForGaze(), true);
   assert.equal(standard.selected, 1);
   for (const options of [{ hasProfile: false }, { mode: 'dwell' }, { tabletComposer: true }, { trackerOnly: true }]) {
     const app = setup(options);
-    assert.equal(app.WOKI.resumeMyoWareForGaze(), false);
+    assert.equal(app.MYO.resumeMyoWareForGaze(), false);
     assert.equal(app.selected, 0);
   }
-  assert.equal(setup({ mode: 'dwell' }).WOKI.resumeMyoWareForGaze(true), true);
-  assert.equal(setup({ mode: 'dwell', fromMonitor: true }).WOKI.resumeMyoWareForGaze(), true);
+  assert.equal(setup({ mode: 'dwell' }).MYO.resumeMyoWareForGaze(true), true);
+  assert.equal(setup({ mode: 'dwell', fromMonitor: true }).MYO.resumeMyoWareForGaze(), true);
 });
 
 test('jaw, blocked UI, and release without a new detection do not confirm', () => {

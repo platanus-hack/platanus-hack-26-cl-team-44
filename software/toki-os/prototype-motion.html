@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Toki · Laboratorio de movimiento</title>
+<title>Myo · Laboratorio de movimiento</title>
 <style>
 /* =========================================================
-   Toki · Sistema visual
+   Myo · Sistema visual
    Materiales de vidrio, tipografía SF, foco con elevación (tvOS)
    y brillo que sigue la mirada (visionOS). Movimiento corto y
    preciso: la mirada se mueve todo el tiempo, así que lo frecuente
@@ -382,7 +382,7 @@ body.scan #gaze,body.calibrating #gaze{opacity:0}   /* en calibración no se mue
   <!-- CALIBRACIÓN (al inicio) -->
   <div class="overlay" id="calib">
     <div class="cal-card glass" id="calCard">
-      <div class="cal-logo">TOKI</div>
+      <div class="cal-logo">MYO</div>
       <div class="cal-title" id="calTitle">Hola, Emmy</div>
       <div class="cal-text" id="calText">Elige cómo vas a apuntar. La nariz es más estable a distancia; la mirada funciona mejor con la cámara cerca (50–80 cm).</div>
       <div class="cal-steps" id="calSteps"><span class="on">Centro</span><span>Esquinas</span><span>Prueba</span><span>Listo</span></div>
@@ -928,15 +928,15 @@ const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+
 /* inicio */
 renderTiles(); renderStatus(); updateLCD();
 if(location.hash.length>1) go(location.hash.slice(1));
-window.WOKI={S,CFG,mouse,gz};
-log('Toki OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');
+window.MYO={S,CFG,mouse,gz};
+log('Myo OS listo · mouse = mirada · Espacio = ceja · J = mandíbula');
 </script>
 
 <!-- ===================== Puntero con la nariz (MediaPipe) ===================== -->
 <script type="module">
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const W=window.WOKI, $=s=>document.querySelector(s);
+const W=window.MYO, $=s=>document.querySelector(s);
 
 /* filtro One Euro: suaviza el temblor sin agregar retraso cuando la cabeza se mueve rápido */
 class OneEuro{ constructor(minCut=1.2,beta=.015,dCut=1){Object.assign(this,{minCut,beta,dCut,x:null,dx:0,t:null})}

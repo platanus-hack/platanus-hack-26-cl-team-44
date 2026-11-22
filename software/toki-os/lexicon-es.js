@@ -1,4 +1,4 @@
-/* Diccionario base de la predicción de Toki OS (20000 palabras, por frecuencia).
+/* Diccionario base de la predicción de Myo OS (20000 palabras, por frecuencia).
  * Datos: hermitdave/FrequencyWords (OpenSubtitles 2018), CC BY-SA 4.0
  * https://github.com/hermitdave/FrequencyWords · Este archivo derivado se distribuye bajo CC BY-SA 4.0.
  * Generado con software/toki-os/tools/build-lexicon.mjs (sin palabras ofensivas en las sugerencias). */

@@ -1,4 +1,4 @@
-# Apps de Toki
+# Apps de Myo
 
 Desde la raíz de `toki`:
 
@@ -25,7 +25,7 @@ El control local usa `spogo --engine applescript`; búsqueda usa el motor `conne
 
 El paciente elige un preset, que aporta nombre y tareas sin formulario. El servicio consulta repositorios públicos en GitHub; los candidatos solo aparecen en la configuración del equipo. La API conserva la posibilidad de solicitudes personalizadas asistidas. Los resultados son pistas, no conectores validados. La solicitud queda pendiente del equipo para trabajar con `$adapt-app`. Spotify, BioBioChile y YouTube ya tienen adaptadores incluidos; el descubrimiento se usa cuando no existe uno registrado. Para fuentes RSS asistidas, el generador ya ejecuta adapt-app con Codex y produce un paquete declarativo; no descarga código de los resultados de GitHub. La skill está versionada en [`.agents/skills/adapt-app/SKILL.md`](../../.agents/skills/adapt-app/SKILL.md); el generador lee esa copia del repositorio, sin depender de una instalación personal.
 
-Solicitudes y avance se guardan en `~/Library/Application Support/Toki/apps/requests.json`. No se guardan allí credenciales ni búsquedas musicales. El servidor se limita a loopback, valida host/origen y exige un token temporal para la API. Solo ejecuta acciones explícitas con argumentos separados; no recibe comandos arbitrarios.
+Solicitudes y avance se guardan en `~/Library/Application Support/Myo/apps/requests.json`. No se guardan allí credenciales ni búsquedas musicales. El servidor se limita a loopback, valida host/origen y exige un token temporal para la API. Solo ejecuta acciones explícitas con argumentos separados; no recibe comandos arbitrarios.
 
 `TOKI_APPS_PORT` permite elegir puerto (las páginas en 8000 esperan 8790). `TOKI_APPS_STATE_DIR` permite aislar el registro para pruebas. Tras un reinicio, una preparación incompleta requiere reintento. Cancelar impide que una investigación tardía sobrescriba la cancelación. Los reintentos son explícitos, sin bucles de consumo.
 
@@ -74,7 +74,7 @@ La solicitud pasa por fuente comprobada → generación → prueba de listar/lee
 
 El resultado es **configuración validada para el lector compartido**, no JavaScript generado. El instalador fija fuente, dominio, acciones e interfaz; rechaza capacidades distintas de listar/leer. La fuente debe ser RSS público HTTPS sin redirecciones, con enlaces al mismo dominio. Se comprueba DNS público y se fija la dirección de conexión. Si hacen falta artículos completos, reproducción, cuentas o escritura en otro servicio, la solicitud queda pendiente de otra adaptación.
 
-Los paquetes se guardan por SHA-256 en `~/Library/Application Support/Toki/apps/packages/`, con índice activo atómico, versión, origen del generador y evidencia. Se validan al arrancar. El catálogo incorpora las apps instaladas y las solicitudes de lectores automáticamente, con hasta seis tarjetas por página. La fuente aparece con su nombre en titulares y extractos.
+Los paquetes se guardan por SHA-256 en `~/Library/Application Support/Myo/apps/packages/`, con índice activo atómico, versión, origen del generador y evidencia. Se validan al arrancar. El catálogo incorpora las apps instaladas y las solicitudes de lectores automáticamente, con hasta seis tarjetas por página. La fuente aparece con su nombre en titulares y extractos.
 
 Cooperativa fue generado con Codex y comprobado contra su fuente real el 21 de noviembre de 2026; queda `needs_test`. Instalar no acredita prueba personal. Aún no hay actualización ni rollback expuestos, instalación de CLIs externos, ni generación universal para WhatsApp, YouTube, Rappi o Mercado Libre; YouTube tiene un adaptador incluido para la selección pública.
 
@@ -83,7 +83,7 @@ Para verificar el catálogo dinámico: `playwright-cli -s=toki-apps-test run-cod
 
 ### YouTube: elegir, reproducir y pausar
 
-En [Servicios](http://127.0.0.1:8790/?start=apps), elige **Ver videos → Preparar YouTube → Probar app**. El catálogo muestra seis videos de Chile Travel con sus miniaturas. Toki comprueba el título y el canal con YouTube. Elige una y pulsa **Reproducir**; el mismo botón cambia a **Pausar** cuando el reproductor confirma reproducción. **Videos** vuelve a la selección y **Ver servicios** sale. Ambas acciones destruyen el reproductor y detienen el audio.
+En [Servicios](http://127.0.0.1:8790/?start=apps), elige **Ver videos → Preparar YouTube → Probar app**. El catálogo muestra seis videos de Chile Travel con sus miniaturas. Myo comprueba el título y el canal con YouTube. Elige una y pulsa **Reproducir**; el mismo botón cambia a **Pausar** cuando el reproductor confirma reproducción. **Videos** vuelve a la selección y **Ver servicios** sale. Ambas acciones destruyen el reproductor y detienen el audio.
 
 No requiere instalar un CLI ni introducir una clave de API para estos videos públicos. Usa el [reproductor oficial](https://developers.google.com/youtube/iframe_api_reference); bloqueos de reproducción integrada, red o navegador se muestran con recuperación. El catálogo inicial no equivale a búsqueda general de YouTube. El generador de paquetes continúa limitado a RSS.
 

@@ -1,8 +1,8 @@
-# Eye Gaze Games: integración desde Toki
+# Eye Gaze Games: integración desde Myo
 
 ## Alcance y veredicto
 
-**Construir de forma acotada.** Se puede mostrar el servicio original dentro de Toki; el control por cámara requiere un puente de entrada del navegador. No hay evidencia de una API pública de puntero para que una página padre transmita mirada mediante postMessage. No se copió el juego ni se eliminó su atribución.
+**Construir de forma acotada.** Se puede mostrar el servicio original dentro de Myo; el control por cámara requiere un puente de entrada del navegador. No hay evidencia de una API pública de puntero para que una página padre transmita mirada mediante postMessage. No se copió el juego ni se eliminó su atribución.
 
 Terreno: frontend interactivo (Svelte, juegos Unity/WebGL y juegos en iframe). Recon realizado con el catálogo desplegado, navegador y archivos JavaScript públicos; no mediante REA, que no estaba instalado.
 
@@ -15,7 +15,7 @@ Terreno: frontend interactivo (Svelte, juegos Unity/WebGL y juegos en iframe). R
 - `GET /gamesource?id=gazey_golf` carga Unity desde `https://assets.eyegazegames.io/prod/gazeygolf/Build/`. Se observó menú e instrucciones en español: elegir ángulo, elegir potencia y golpear; alternar controles. La selección del menú se completó por permanencia del puntero.
 - En `gamesource.svelte-ba4c50c7.js` se observa `createUnityInstance`, integración de usuario y configuración con `se_platform` y el servicio `io-server-test.fly.dev`.
 - En `game.svelte-19ba0387.js` se observa postMessage para configuración, pausa y estado. Eso NO demuestra un contrato público de entrada ocular.
-- El catálogo y sus imágenes se obtienen del servicio original. Las seis tarjetas de Toki son accesos a rutas originales; «Todos los juegos» abre su catálogo completo.
+- El catálogo y sus imágenes se obtienen del servicio original. Las seis tarjetas de Myo son accesos a rutas originales; «Todos los juegos» abre su catálogo completo.
 
 ## Fuentes de la investigación
 
@@ -36,27 +36,27 @@ Se buscaron documentación/API/SDK de Eye Gaze Games; no se encontró contrato o
 | Elegir Mole Miners y Jugar | Ruta /game, iframe prod.games | Contenedor abierto; juego sin contenido en esa prueba |
 | Abrir Gazey Golf | /gamesource, Unity loader/data/wasm | Menú y pantalla de instrucciones visibles |
 | Mantener puntero sobre Cómo se juega | Control de permanencia del juego | Pantalla con ángulo/potencia/golpe |
-| Incrustar catálogo en Toki | iframe con origen original | Selector de idioma dentro del SO |
+| Incrustar catálogo en Myo | iframe con origen original | Selector de idioma dentro del SO |
 
 ## Implementación del puente
 
-`software/browser-bridge/start.mjs` abre Chrome dedicado y usa CDP por pipes privados del proceso (sin puerto de depuración). Un servidor HTTP ligado a 127.0.0.1 acepta únicamente origen localhost:8000, token de sesión y dos acciones limitadas: movimiento y clic. El objetivo está fijado a la pestaña Toki creada por ese proceso. No mueve el cursor global del sistema.
+`software/browser-bridge/start.mjs` abre Chrome dedicado y usa CDP por pipes privados del proceso (sin puerto de depuración). Un servidor HTTP ligado a 127.0.0.1 acepta únicamente origen localhost:8000, token de sesión y dos acciones limitadas: movimiento y clic. El objetivo está fijado a la pestaña Myo creada por ese proceso. No mueve el cursor global del sistema.
 
-La UI transmite coordenadas CSS del viewport de Toki, por lo que Chrome resuelve la entrada en los iframes de otros orígenes. Se envía únicamente mientras la cámara está activa, el juego visible y el seguimiento disponible. La pausa suspende el control; no se afirma que pause internamente todos los juegos.
+La UI transmite coordenadas CSS del viewport de Myo, por lo que Chrome resuelve la entrada en los iframes de otros orígenes. Se envía únicamente mientras la cámara está activa, el juego visible y el seguimiento disponible. La pausa suspende el control; no se afirma que pause internamente todos los juegos.
 
-En el SO local, el reproductor abre el juego como página principal de un Chrome dedicado y muestra sus cuadros dentro de Toki. Mouse, Espacio y puntero por cámara usan el mismo perfil. Se verificó que Eye Drive reconoció el perfil al reabrirlo y que Espacio permitió elegir modo, circuito y nave.
+En el SO local, el reproductor abre el juego como página principal de un Chrome dedicado y muestra sus cuadros dentro de Myo. Mouse, Espacio y puntero por cámara usan el mismo perfil. Se verificó que Eye Drive reconoció el perfil al reabrirlo y que Espacio permitió elegir modo, circuito y nave.
 
 ## Por verificar
 
 - Precisión y comodidad con cámara real y pacientes: probar nariz, mirada y calibración con la persona.
 - Cada juego y sus modalidades: completar una partida en cada ruta; cargar un canvas no basta.
-- Ranking compartido: no se ha implementado una API de resultados ni clasificación Toki.
+- Ranking compartido: no se ha implementado una API de resultados ni clasificación Myo.
 - Derechos y soporte de distribución comercial: el iframe probado es evidencia técnica, no acuerdo comercial con SpecialEffect.
 
 Riesgo de mantenimiento: rutas, parámetros y juegos externos pueden cambiar sin un contrato de integración. Límites de tasa: no medidos; no se observaron cabeceras de cuota en las respuestas revisadas.
 
 ## Resultado del test del puente
 
-`node toki/tests/browser/external-games-check.mjs` pasó tras corregir el selector del test: el iframe real recibió `mousemove` y `click` con `isTrusted=true` a partir de coordenadas simuladas en `setGaze` y la permanencia de Toki. El clic eligió español dentro de la página externa. Captura en `/tmp/toki-external.png`. Esto demuestra el transporte de entrada entre orígenes; no demuestra precisión de la webcam ni una partida completa en cada juego.
+`node toki/tests/browser/external-games-check.mjs` pasó tras corregir el selector del test: el iframe real recibió `mousemove` y `click` con `isTrusted=true` a partir de coordenadas simuladas en `setGaze` y la permanencia de Myo. El clic eligió español dentro de la página externa. Captura en `/tmp/toki-external.png`. Esto demuestra el transporte de entrada entre orígenes; no demuestra precisión de la webcam ni una partida completa en cada juego.
 
-La prueba ampliada también completó la creación del perfil de prueba, cambió desde Toki a Gazey Golf y verificó el canvas Unity visible dentro del iframe. Esa ejecución pasó. No se completó una partida de golf ni se midió precisión física de cámara.
+La prueba ampliada también completó la creación del perfil de prueba, cambió desde Myo a Gazey Golf y verificó el canvas Unity visible dentro del iframe. Esa ejecución pasó. No se completó una partida de golf ni se midió precisión física de cámara.

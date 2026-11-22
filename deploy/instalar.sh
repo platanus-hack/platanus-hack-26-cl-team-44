@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala o actualiza Toki en la VPS. Se puede correr varias veces.
+# Instala o actualiza Myo en la VPS. Se puede correr varias veces.
 #   sudo TOKI_DOMINIO=179-66-157-161.sslip.io TOKI_RAMA=feat/agente-whatsapp bash deploy/instalar.sh
 set -euo pipefail
 

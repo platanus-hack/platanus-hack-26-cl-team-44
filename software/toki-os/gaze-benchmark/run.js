@@ -49,7 +49,7 @@ function viewportPoint(point, stage) {
 
 function createToki() {
   const frame = document.createElement('iframe');
-  frame.title = 'Calibración de Toki';
+  frame.title = 'Calibración de Myo';
   frame.allow = 'camera';
   frame.src = '/woki-os.html?entrada=teclado&controlGlobal=1&metodo=gaze&gazeEngine=ridge';
   let previous;
@@ -64,7 +64,7 @@ function createToki() {
           fn(value);
         };
         const cancel = () => finish(reject, signal.reason);
-        const timer = setTimeout(() => finish(reject, new Error('Toki no terminó de calibrar.')), 90_000);
+        const timer = setTimeout(() => finish(reject, new Error('Myo no terminó de calibrar.')), 90_000);
         const onMessage = ({ source, origin, data }) => {
           if (source !== frame.contentWindow || origin !== location.origin) return;
           if (data?.type === 'toki-control-ready' && data.mode === 'Mirada') finish(resolve);
@@ -78,7 +78,7 @@ function createToki() {
       frame.classList.add('scoring');
       frame.inert = true;
       frame.setAttribute('aria-hidden', 'true');
-      frame.contentWindow.WOKI.CFG.jitter = false;
+      frame.contentWindow.MYO.CFG.jitter = false;
       stop.focus({ preventScroll: true });
     },
     read() {
@@ -86,9 +86,9 @@ function createToki() {
       const cur = w.GAZE?.cur;
       if (!cur || previous === cur.t) return;
       previous = cur.t;
-      if (cur.blink || w.WOKI.S.gazeLost || w.performance.now() - w.NOSE.lastFace > 200) return { t: performance.now() };
+      if (cur.blink || w.MYO.S.gazeLost || w.performance.now() - w.NOSE.lastFace > 200) return { t: performance.now() };
       const stage = w.document.querySelector('#stage').getBoundingClientRect();
-      const { x, y } = w.WOKI.gz;
+      const { x, y } = w.MYO.gz;
       return { x: (x - stage.left) / stage.width, y: (y - stage.top) / stage.height, t: performance.now() };
     },
     device() { return frame.contentWindow.NOSE.stream?.getVideoTracks()[0]?.getSettings().deviceId; },
@@ -179,7 +179,7 @@ async function collectSamples(model, duration, signal, settle = 0) {
 
 function createRehearsalHome() {
   const frame = document.createElement('iframe');
-  frame.title = 'Inicio de Toki · solo ensayo visual';
+  frame.title = 'Inicio de Myo · solo ensayo visual';
   // The actual home renders without opening the access chooser or a second camera.
   frame.src = '/index.html?acceso=iman';
   frame.allow = "camera 'none'; microphone 'none'";
@@ -197,7 +197,7 @@ function createRehearsalHome() {
         await wait(40, signal);
       }
       if (!rehearsalOrder.every(id => tiles.some(tile => tile.dataset.open === id))) {
-        throw new Error('No se pudieron cargar las tarjetas de Inicio de Toki.');
+        throw new Error('No se pudieron cargar las tarjetas de Inicio de Myo.');
       }
       frame.classList.remove('scoring');
       trial.classList.add('rehearsal-view');
@@ -303,7 +303,7 @@ async function readWokiHome(frame, signal) {
     }
     await wait(40, signal);
   }
-  throw new Error('No se pudieron cargar las tarjetas de Inicio de Woki.');
+  throw new Error('No se pudieron cargar las tarjetas de Inicio de Myo.');
 }
 
 async function runCalibrationComparison() {
@@ -313,7 +313,7 @@ async function runCalibrationComparison() {
   const scores = get('calibration-scores');
   scores.replaceChildren();
   const frame = document.createElement('iframe');
-  frame.title = 'Inicio de Woki · solo prueba visual';
+  frame.title = 'Inicio de Myo · solo prueba visual';
   frame.src = '/woki-os.html?controlGlobal=1';
   frame.allow = "camera 'none'; microphone 'none'";
   frame.inert = true;
@@ -322,7 +322,7 @@ async function runCalibrationComparison() {
   trial.append(frame);
   let model, deviceId;
   try {
-    phase.textContent = 'Abriendo las tarjetas de Woki…';
+    phase.textContent = 'Abriendo las tarjetas de Myo…';
     const { stage, tiles } = await readWokiHome(frame, signal);
     const order = tiles.map((_, i) => tiles[i % 2 ? tiles.length - 1 - (i >> 1) : i >> 1].id);
     const rounds = Math.random() < .5 ? calibrationModes : [...calibrationModes].reverse();
@@ -392,7 +392,7 @@ async function runRehearsal() {
 }
 
 function showResult(toki, wet) {
-  get('scores').replaceChildren(...[['Toki actual', toki], ['WebEyeTrack', wet]].map(([label, score]) => {
+  get('scores').replaceChildren(...[['Myo actual', toki], ['WebEyeTrack', wet]].map(([label, score]) => {
     const row = document.createElement('tr');
     const cells = score ? [`${score.hits}/${score.total}`, score.missing, score.median === null ? '—' : `${Math.round(score.median)} ms`] : ['Pendiente', '—', '—'];
     for (const [i, text] of [label, ...cells].entries()) {
@@ -416,10 +416,10 @@ async function runComparison(reuse = false) {
   try {
     if (!reuse || !canReuseReference()) {
       reference = null;
-      phase.textContent = 'Toki · iniciando calibración…';
+      phase.textContent = 'Myo · iniciando calibración…';
       toki = createToki();
       await toki.ready(signal);
-      const score = await measure(toki, 'Toki', signal);
+      const score = await measure(toki, 'Myo', signal);
       reference = { score, deviceId: toki.device(), width: innerWidth, height: innerHeight };
       toki.close();
       toki = null;

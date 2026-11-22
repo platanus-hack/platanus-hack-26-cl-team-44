@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Toki OS · Prototipo</title>
+<title>Myo OS · Prototipo</title>
 <style>
 /* =========================================================
-   Toki · Sistema visual
+   Myo · Sistema visual
    Materiales de vidrio, tipografía SF, foco con elevación (tvOS)
    y brillo que sigue la mirada (visionOS). Movimiento corto y
    preciso: la mirada se mueve todo el tiempo, así que lo frecuente
@@ -543,7 +543,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
   </div>
   <div class="overlay" id="rest" role="dialog" aria-modal="true" aria-labelledby="restTitle"><div class="big" id="restClock"></div><div class="sub" id="restTitle">En descanso</div>
     <div class="rest-actions">
-      <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><svg aria-hidden="true"><use href="#i-back"/></svg><strong>Volver</strong><small>Continuar en Toki</small><span class="fill"></span></button>
+      <button type="button" class="t rest-wake" id="restWake" data-t data-act="wake" data-dwell="2000"><svg aria-hidden="true"><use href="#i-back"/></svg><strong>Volver</strong><small>Continuar en Myo</small><span class="fill"></span></button>
       <button type="button" class="t rest-sos" data-t data-act="sos" data-dwell="2000" aria-controls="alarm"><svg aria-hidden="true"><use href="#i-alert"/></svg><strong>SOS</strong><small>Pedir ayuda</small><span class="fill"></span></button>
     </div>
     <p class="rest-hint rest-dwell-label">Mira una opción durante 2 s o haz clic.</p>
@@ -712,7 +712,7 @@ const CFG = {
   EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
   WA_URL: REMOTO ? REMOTO+'/wa' : EQUIPO ? location.origin+'/equipo/wa' : LOCAL ? 'http://localhost:8788' : '', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
   AGENTE_URL: REMOTO ? REMOTO+'/agente' : EQUIPO ? location.origin+'/equipo/agente' : '',   // modo dev: agente de la VPS en vez del local
-  WA_TOKEN,              // header X-Woki-Token hacia el puente (también lo usa woki-voz.js)
+  WA_TOKEN,              // header X-Myo-Token hacia el puente (también lo usa woki-voz.js)
   EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
   WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)
   magnet: true,          // imán: si la mirada cae en un hueco, el foco va al objetivo más probable cercano (tecla I)
@@ -1012,7 +1012,7 @@ function waMention(ev){
 const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
 
 async function waApi(path,opts={}){
-  const r=await fetch(CFG.WA_URL+path,{...opts, headers: { ...(opts.body? {'Content-Type':'application/json'} : {}), ...(CFG.WA_TOKEN? {'X-Woki-Token':CFG.WA_TOKEN} : {}) }});
+  const r=await fetch(CFG.WA_URL+path,{...opts, headers: { ...(opts.body? {'Content-Type':'application/json'} : {}), ...(CFG.WA_TOKEN? {'X-Myo-Token':CFG.WA_TOKEN} : {}) }});
   let j={}; try{ j=await r.json(); }catch(_){}
   if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
   return j;
@@ -1105,7 +1105,7 @@ function waListen(){
       if(ev.status!=='connected') island('⚠️','WhatsApp se desconectó',true,5000);
     }
   };
-  tokiSSE(CFG.WA_URL+'/api/wa/events', CFG.WA_TOKEN? {'X-Woki-Token':CFG.WA_TOKEN} : {}, es);
+  tokiSSE(CFG.WA_URL+'/api/wa/events', CFG.WA_TOKEN? {'X-Myo-Token':CFG.WA_TOKEN} : {}, es);
 }
 
 /* ---- Panel del acompañante: elegir contactos principales ---- */
@@ -2136,8 +2136,8 @@ const LOG=[]; function log(m){ LOG.unshift(new Date().toTimeString().slice(0,8)+
 /* inicio */
 renderTiles(); renderStatus(); updateLCD(); waListen();
 if(screenFromUrl()!=='home') go(screenFromUrl(),false);
-window.WOKI={S,CFG,mouse,gz,myowareConfirming};
-log('Toki OS listo · mouse = mirada · Espacio = ceja');
+window.MYO={S,CFG,mouse,gz,myowareConfirming};
+log('Myo OS listo · mouse = mirada · Espacio = ceja');
 </script>
 
 <script type="module">
@@ -2167,17 +2167,17 @@ log('Toki OS listo · mouse = mirada · Espacio = ceja');
       if (myowareConfirming()) island('✓','Señal MyoWare recuperada');
     },
   });
-  window.WOKI.enableMyoWare = myoware.enable;
+  window.MYO.enableMyoWare = myoware.enable;
   function startMyoWareConfirmation() {
     if(!myoware.enable()) return false;
     fromMonitor=false;
     if(!iphonePointing()) setMyoWareConfirmation(true);
     return true;
   }
-  window.WOKI.resumeMyoWareHandoff = () => {
+  window.MYO.resumeMyoWareHandoff = () => {
     if(fromMonitor) startMyoWareConfirmation();
   };
-  window.WOKI.resumeMyoWareForGaze = requested => {
+  window.MYO.resumeMyoWareForGaze = requested => {
     if(trackerOnly || (!requested && !fromMonitor && (tabletComposer || CFG.mode==='dwell'))) return false;
     return startMyoWareConfirmation();
   };
@@ -2188,7 +2188,7 @@ log('Toki OS listo · mouse = mirada · Espacio = ceja');
 import { gazeCalibrationPoints, gazeValidationPoints, gazeValidation } from './gaze-calibration.js';
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const W=window.WOKI, $=s=>document.querySelector(s);
+const W=window.MYO, $=s=>document.querySelector(s);
 
 /* filtro One Euro: suaviza el temblor sin agregar retraso cuando la cabeza se mueve rápido */
 class OneEuro{ constructor(minCut=1.2,beta=.015,dCut=1){Object.assign(this,{minCut,beta,dCut,x:null,dx:0,t:null})}

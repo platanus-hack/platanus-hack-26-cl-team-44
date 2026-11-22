@@ -1,4 +1,4 @@
-// Motor de predicción de palabras de Toki OS. Ejecutar desde la raíz: node tests/test_predict.mjs
+// Motor de predicción de palabras de Myo OS. Ejecutar desde la raíz: node tests/test_predict.mjs
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);

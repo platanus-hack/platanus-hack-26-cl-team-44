@@ -1,4 +1,4 @@
-// woki-bridge/agente.ts — cliente del agente de Toki (software/agent/server.py).
+// woki-bridge/agente.ts — cliente del agente de Myo (software/agent/server.py).
 // El agente usa la memoria de la usuaria (privacidad por persona, límites, últimos encuentros).
 // Si el agente no está, falla o tarda, todo sigue como antes: sugerir.ts con `claude -p`.
 //   AGENT_URL  (por defecto http://127.0.0.1:8790) · AGENT=off lo apaga

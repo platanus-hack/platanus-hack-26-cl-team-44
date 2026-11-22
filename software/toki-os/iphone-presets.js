@@ -88,7 +88,7 @@ export function toFile(preset) {
 /** Lee un archivo descargado antes; lanza un error legible si no sirve. */
 export function fromFile(text) {
   let data;
-  try { data = JSON.parse(text); } catch { throw new Error("El archivo no es una calibración de Toki (JSON inválido)"); }
-  if (data?.kind !== FILE_KIND || !data.preset) throw new Error("El archivo no es una calibración de Toki");
+  try { data = JSON.parse(text); } catch { throw new Error("El archivo no es una calibración de Myo (JSON inválido)"); }
+  if (data?.kind !== FILE_KIND || !data.preset) throw new Error("El archivo no es una calibración de Myo");
   return cleanPreset(data.preset);
 }

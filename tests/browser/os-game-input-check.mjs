@@ -53,7 +53,7 @@ try {
     NOSE.on=true; NOSE.mode='nose'; NOSE.raw={dx:0,dy:0};
     window.tracking=true;
     window.feed=setInterval(()=>{if(tracking)NOSE.lastFace=performance.now();},30);
-    WOKI.mouse.x=1; WOKI.mouse.y=1;
+    MYO.mouse.x=1; MYO.mouse.y=1;
   });
   await page.waitForFunction(()=>document.querySelector('img#externalGame')?.naturalWidth>0 && TOKI_EXTERNAL.connected,null,{timeout:60000});
   const flag=player.locator('button[title="Spanish"]');
@@ -64,7 +64,7 @@ try {
   await page.waitForFunction(()=>!tabletGameInput().point);
   await page.evaluate(({x,y})=>{
     const r=document.querySelector('#externalGame').getBoundingClientRect();
-    WOKI.mouse.x=r.left+x*r.width; WOKI.mouse.y=r.top+y*r.height;
+    MYO.mouse.x=r.left+x*r.width; MYO.mouse.y=r.top+y*r.height;
   },{x,y});
   await page.waitForTimeout(3300);
   assert.ok(await flag.isVisible(),'tracking loss must cancel dwell');
@@ -117,7 +117,7 @@ try {
     // A brow movement can displace the pointer during the double-gesture window.
     // Move beyond the flag after confirmation so only the original coordinates can select it.
     await page.keyboard.press('Space');
-    await page.evaluate(()=>{WOKI.mouse.x+=90;});
+    await page.evaluate(()=>{MYO.mouse.x+=90;});
     await flag.waitFor({state:'hidden',timeout:2200}); // Before the 3 s dwell.
     assert.equal(clicks.length,1,'one explicit confirmation must produce exactly one click');
   }

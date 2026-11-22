@@ -1,4 +1,4 @@
--- Memoria personal de Toki. Tipos de docs/product/PLAN-ONBOARDING-MEMORIA.md.
+-- Memoria personal de Myo. Tipos de docs/product/PLAN-ONBOARDING-MEMORIA.md.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS personas (

@@ -36,11 +36,11 @@ export async function claimSession(directory, activate) {
     await new Promise((resolve,reject)=>{
      const client=net.createConnection(path);
      let reply='';
-     client.setTimeout(15000,()=>client.destroy(Error('La sesión Toki no responde')));
+     client.setTimeout(15000,()=>client.destroy(Error('La sesión Myo no responde')));
      client.once('connect',()=>client.write('activate\n'));
      client.on('data',data=>reply+=data);
      client.once('error',reject);
-     client.once('end',()=>reply==='ok\n'?resolve():reject(Error('No se pudo activar la sesión Toki existente')));
+     client.once('end',()=>reply==='ok\n'?resolve():reject(Error('No se pudo activar la sesión Myo existente')));
     });
     return null;
    }catch(e){
@@ -50,5 +50,5 @@ export async function claimSession(directory, activate) {
    }
   }
  }
- throw Error('No se pudo reservar la sesión Toki');
+ throw Error('No se pudo reservar la sesión Myo');
 }

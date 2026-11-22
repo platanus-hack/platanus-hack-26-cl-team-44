@@ -287,7 +287,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null, { launchO
       ? mode === 'active' ? 'Desactivar gestos' : 'Activar gestos'
       : mode === 'active' ? 'Detener prueba' : 'Probar gestos';
     if (openWoki) {
-      openWoki.textContent = saved ? 'Abrir Woki OS con esta calibración' : 'Abrir Woki OS sin activar el sensor';
+      openWoki.textContent = saved ? 'Abrir Myo OS con esta calibración' : 'Abrir Myo OS sin activar el sensor';
       if (launchOrigin) openWoki.href = `${launchOrigin}/woki-os.html${saved && !transfer ? '?myoware=1' : ''}`;
     }
     if (useWoki) useWoki.hidden = !saved || !enterWoki || mode !== 'off';
@@ -393,7 +393,7 @@ export function setupMyoWareGestures(onInput = null, enterWoki = null, { launchO
         const outage = retrySince === null ? 0 : performance.now() - retrySince;
         if (!valid && outage >= OUTAGE_NOTICE_MS && !warned) {
           warned = true;
-          const message = 'Sin señal MyoWare. Revisa la conexión; Woki seguirá intentando.';
+          const message = 'Sin señal MyoWare. Revisa la conexión; Myo seguirá intentando.';
           setStatus(message);
           onUnavailable?.(message);
         }

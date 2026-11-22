@@ -24,7 +24,7 @@ window.createTokiGameSurface = function(image, game, onReady, onError) {
   },{once:true});
   async function start() {
     const session = await fetch(base+'/api/session',{signal:controller.signal});
-    if (!session.ok) throw Error('No se pudo conectar con el servidor de Toki.');
+    if (!session.ok) throw Error('No se pudo conectar con el servidor de Myo.');
     headers = {'Content-Type':'application/json','x-toki-token':(await session.json()).token};
     // Before the first frame the image can be only as large as its alt text.
     // Use the panel's layout size, before the lobby scales it for the screen.

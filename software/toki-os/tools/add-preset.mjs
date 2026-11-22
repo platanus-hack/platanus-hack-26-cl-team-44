@@ -1,4 +1,4 @@
-// Agrega una calibración descargada desde Toki OS a los presets del repo.
+// Agrega una calibración descargada desde Myo OS a los presets del repo.
 // Uso (desde la raíz): node software/toki-os/tools/add-preset.mjs <archivo.json> [nombre-de-archivo.json]
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename } from "node:path";
