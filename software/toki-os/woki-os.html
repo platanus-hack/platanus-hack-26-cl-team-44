@@ -1959,7 +1959,7 @@ function tick(now){
       if (!onSuggestion || el !== S.focus) suggestionExitAt = null;
       if(hit?.id==='externalGame' && !S.quick) el=null;
       // The space between global actions stays neutral, including in iPhone gaze mode.
-      if (el?.matches('.sos-nav,.rest-nav') && !withinActionMargin(el)) el=null;
+      if (el?.matches('.sos-nav,.rest-nav') && (!controlPointFresh(now) || !withinActionMargin(el))) el=null;
       const inside = !!el && hit?.closest('[data-t]') === el;
       const dwellElapsed = S.quick ? 0 : menuDwell.sample(el, now, inside);
       if (!el || el !== S.focus) menuOutline.clear();
@@ -2018,6 +2018,11 @@ function setRest(on){
   next?.focus({preventScroll:true});
   log(on?'descanso':'despierta');
 }
+function controlPointFresh(now){
+  if(window.IPHONE?.active) return IPHONE.pointAt!=null && now-IPHONE.pointAt<250;
+  if(!window.NOSE?.on) return true;
+  return Boolean(NOSE.raw && now-NOSE.lastFace<250 && (NOSE.mode!=='gaze' || (window.GAZE?.cur && !GAZE.cur.blink)));
+}
 // A short approach margin helps aim while leaving a neutral strip between actions.
 function withinActionMargin(el){
   const r=el.getBoundingClientRect();
@@ -2029,7 +2034,7 @@ const restDwell=window.createPointerDwell();
 function restWakeTick(now){
   const direct=document.elementFromPoint(gz.x,gz.y)?.closest('#rest [data-t]') || null;
   const aim=CFG.magnet ? restMagnet.aim(gz,now,el=>Boolean(el)) : {target:direct};
-  const target=aim.target && withinActionMargin(aim.target) ? aim.target : null;
+  const target=aim.target && controlPointFresh(now) && withinActionMargin(aim.target) ? aim.target : null;
   if(target!==S.focus && S.focus) S.focus.style.setProperty('--p',0);
   setFocus(target);
   const inside=Boolean(target && target===direct);

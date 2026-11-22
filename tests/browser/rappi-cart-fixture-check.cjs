@@ -14,8 +14,9 @@ async page=>{
   else throw Error('Unexpected UI action: '+action);
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
  });
- await page.goto('http://127.0.0.1:8792/?start=apps');await page.waitForFunction(()=>window.TokiApps?.active?.online);
- await page.locator('[data-value="rappi"]').click();await page.locator('[data-app-action="open-adapter"]').click();
+ await page.goto('http://127.0.0.1:8792/woki-os.html#apps');
+ await page.locator('[data-c="mouse"]').click();await page.waitForFunction(()=>window.TokiApps?.active?.online);
+ await page.locator('[data-value="rappi"]').click();
  await page.locator('[data-app-action="food-search"]').click();await page.locator('[data-app-action="food-store"]').click();await page.locator('[data-app-action="food-product"]').click();
  await page.locator('[data-app-action="food-options"]').click();
  check(await page.locator('[data-app-action="food-options-next"]').isDisabled(),'Required option skipped');
@@ -25,10 +26,10 @@ async page=>{
  await page.waitForFunction(()=>TokiApps.active.view==='food-cart');check(writes===1,'Cart action repeated');
  for(const size of [{width:1280,height:800},{width:390,height:844}]){
   await page.setViewportSize(size);
-  const overflow=await page.locator('#lobbyApps').evaluate(root=>[root.querySelector('.ta-screen'),...root.querySelectorAll('button')].some(el=>{const r=el.getBoundingClientRect();return r.bottom>innerHeight+1||el.scrollHeight>el.clientHeight+2;}));
+  const overflow=await page.locator('#appsContent').evaluate(root=>[root.querySelector('.ta-screen'),...root.querySelectorAll('button')].some(el=>{const r=el.getBoundingClientRect();return r.bottom>innerHeight+1||el.scrollHeight>el.clientHeight+2;}));
   check(!overflow,'Cart overflow at '+size.width);
  }
- check(await page.locator('#lobbyApps').innerText().then(s=>s.includes('No se ha realizado ninguna compra')),'Misleading purchase status');
+ check(await page.locator('#appsContent').innerText().then(s=>s.includes('No se ha realizado ninguna compra')),'Misleading purchase status');
  check(await page.getByRole('button',{name:'Comprar',exact:true}).count()===0,'Unverified payment exposed');
  await page.unroute('**/api/apps/rappi/actions/**');
  return 'PASS: synthetic account/cart UI; required options, maximum selection, single write, desktop/mobile, no payment action. Not real cart evidence.';

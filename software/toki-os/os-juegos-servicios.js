@@ -18,11 +18,9 @@ function tabletGameInput() {
   const camera = Boolean(iphone || NOSE.on);
   const blocked = document.hidden || !document.hasFocus() || S.gazeLost || S.rest || S.alarm || S.quick ||
     document.body.classList.contains('panel') || $('#calib').classList.contains('on');
-  const tracked = iphone ? IPHONE.pointAt != null && now - IPHONE.pointAt < 250 :
-    NOSE.on && NOSE.raw && now - NOSE.lastFace < 250 && (NOSE.mode !== 'gaze' || (GAZE.cur && !GAZE.cur.blink));
   return {
     mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
-    point: blocked ? null : camera ? (tracked ? gz : null) : mouse,
+    point: blocked ? null : camera ? (controlPointFresh(now) ? gz : null) : mouse,
     dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
   };
 }
