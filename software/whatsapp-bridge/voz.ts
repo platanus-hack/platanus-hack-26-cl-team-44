@@ -118,6 +118,20 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       return true;
     }
 
+    // Escuchar la sala (Scribe v3 Live con diarización): token de un solo uso (15 min) para que la TV abra el
+    // WebSocket de ElevenLabs sin ver la llave. Parámetros medidos en pruebas: VAD con 0,6 s de silencio
+    // separa bien los turnos (~0,65 s de latencia); con TV de fondo media o alta los turnos se atrasan.
+    if (req.method === "POST" && p === "/api/voz/escucha") {
+      const r = await xi("/v1/single-use-token/realtime_scribe", { method: "POST" });
+      const j: any = await r.json().catch(() => ({}));
+      if (!r.ok || !j.token) { json(502, { ok: false, reason: `ElevenLabs no entregó el token (HTTP ${r.status})` }); return true; }
+      json(200, { ok: true, token: j.token, params: {
+        model_id: "scribe_v3_live", audio_format: "pcm_16000", diarize: "true", language_code: "es",
+        commit_strategy: "vad", vad_silence_threshold_secs: process.env.MYO_ESCUCHA_SILENCIO ?? "0.6",
+      } });
+      return true;
+    }
+
     // Texto → voz. Devuelve audio/mpeg en streaming (la TV lo reproduce apenas llegan los primeros bytes).
     if (req.method === "POST" && p === "/api/voz/tts") {
       const { text, emo, voiceId } = JSON.parse((await readBody(req, 4_000)) || "{}");

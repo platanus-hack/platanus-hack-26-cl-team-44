@@ -1,0 +1,746 @@
+{
+ "_nota": "Catálogo general de tarjetas por tema, igual para todo usuario. Sin nombres de personas. Las tarjetas propias de cada usuario (usuarios/<id>/tarjetas.json) ganan sobre estas. palabras: sin tildes, en minúsculas; una palabra de 5+ letras también calza como comienzo (duele -> dueles). privacidad: publico | salud | familia (igual que la memoria). solo_para: tipos de interlocutor que la ven. peso: multiplica el puntaje del tema (saludo y despedida pesan menos que el contenido).",
+ "version": 1,
+ "temas": [
+  {
+   "id": "saludo",
+   "nombre": "Saludo",
+   "palabras": [
+    "amanecio",
+    "amaneciste",
+    "bienvenida",
+    "bienvenido",
+    "buenas noches",
+    "buenas tardes",
+    "buenos dias",
+    "como amanecio",
+    "como amaneciste",
+    "como esta",
+    "como esta usted",
+    "como estas",
+    "hola buenas",
+    "llegue"
+   ],
+   "tarjetas": [
+    {
+     "id": "saludo-1",
+     "texto": "Hola, qué bueno verte",
+     "privacidad": "publico"
+    },
+    {
+     "id": "saludo-2",
+     "texto": "Bien, gracias, ¿y tú?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "saludo-3",
+     "texto": "Más o menos hoy",
+     "privacidad": "publico"
+    },
+    {
+     "id": "saludo-4",
+     "texto": "Siéntate un rato conmigo",
+     "privacidad": "publico"
+    },
+    {
+     "id": "saludo-5",
+     "texto": "¿Cómo te fue?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "saludo-6",
+     "texto": "Te estaba esperando",
+     "privacidad": "publico"
+    }
+   ],
+   "peso": 0.5
+  },
+  {
+   "id": "dolor",
+   "nombre": "Dolor y molestias",
+   "palabras": [
+    "arde",
+    "ardor",
+    "cabeza",
+    "dolor",
+    "duele",
+    "duelen",
+    "espalda",
+    "estomago",
+    "guata",
+    "incomoda",
+    "incomodo",
+    "malestar",
+    "molesta",
+    "molestia",
+    "pica",
+    "picor",
+    "rodilla"
+   ],
+   "tarjetas": [
+    {
+     "id": "dolor-1",
+     "texto": "Sí, me duele",
+     "privacidad": "publico"
+    },
+    {
+     "id": "dolor-2",
+     "texto": "No me duele nada",
+     "privacidad": "publico"
+    },
+    {
+     "id": "dolor-3",
+     "texto": "Me duele la espalda",
+     "privacidad": "publico"
+    },
+    {
+     "id": "dolor-4",
+     "texto": "Me duele la cabeza",
+     "privacidad": "publico"
+    },
+    {
+     "id": "dolor-5",
+     "texto": "Es un dolor suave",
+     "privacidad": "publico"
+    },
+    {
+     "id": "dolor-6",
+     "texto": "Es un dolor fuerte, ayúdame",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "postura",
+   "nombre": "Postura y cuerpo",
+   "palabras": [
+    "acomodar",
+    "acomodo",
+    "acostada",
+    "acostar",
+    "almohada",
+    "brazo",
+    "cama",
+    "comoda",
+    "comodo",
+    "cuello",
+    "girar",
+    "girarte",
+    "gire",
+    "giro",
+    "pierna",
+    "postura",
+    "sentada",
+    "sentado",
+    "sentar",
+    "silla",
+    "voltear",
+    "volteo",
+    "vuelta"
+   ],
+   "tarjetas": [
+    {
+     "id": "postura-1",
+     "texto": "Acomódame, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "postura-2",
+     "texto": "Súbeme la almohada",
+     "privacidad": "publico"
+    },
+    {
+     "id": "postura-3",
+     "texto": "Gírame de lado",
+     "privacidad": "publico"
+    },
+    {
+     "id": "postura-4",
+     "texto": "Así estoy bien",
+     "privacidad": "publico"
+    },
+    {
+     "id": "postura-5",
+     "texto": "Bájame un poco",
+     "privacidad": "publico"
+    },
+    {
+     "id": "postura-6",
+     "texto": "Muéveme las piernas",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "comida",
+   "nombre": "Comida",
+   "palabras": [
+    "almorzar",
+    "almuerzo",
+    "cena",
+    "cenar",
+    "comer",
+    "comida",
+    "desayunar",
+    "desayuno",
+    "fruta",
+    "galleta",
+    "hambre",
+    "once",
+    "pastel",
+    "plato",
+    "postre",
+    "queque",
+    "sopa",
+    "torta"
+   ],
+   "tarjetas": [
+    {
+     "id": "comida-1",
+     "texto": "Sí, tengo hambre",
+     "privacidad": "publico"
+    },
+    {
+     "id": "comida-2",
+     "texto": "Todavía no tengo hambre",
+     "privacidad": "publico"
+    },
+    {
+     "id": "comida-3",
+     "texto": "Algo suave, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "comida-4",
+     "texto": "Quiero el postre",
+     "privacidad": "publico"
+    },
+    {
+     "id": "comida-5",
+     "texto": "Ya comí, gracias",
+     "privacidad": "publico"
+    },
+    {
+     "id": "comida-6",
+     "texto": "¿Qué hay de comer?",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "bebida",
+   "nombre": "Bebida",
+   "palabras": [
+    "agua",
+    "beber",
+    "bebida",
+    "bombilla",
+    "cafe",
+    "jugo",
+    "leche",
+    "sed",
+    "tecito",
+    "tomar",
+    "un te",
+    "vaso"
+   ],
+   "tarjetas": [
+    {
+     "id": "bebida-1",
+     "texto": "Sí, quiero agua",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bebida-2",
+     "texto": "Ahora no, gracias",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bebida-3",
+     "texto": "Un café, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bebida-4",
+     "texto": "Con bombilla, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bebida-5",
+     "texto": "Un poco más",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bebida-6",
+     "texto": "Ya está bien",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "descanso",
+   "nombre": "Descanso y sueño",
+   "palabras": [
+    "cansada",
+    "cansado",
+    "cansancio",
+    "descansar",
+    "descanso",
+    "despertar",
+    "desperte",
+    "dormir",
+    "dormiste",
+    "siesta",
+    "sueno"
+   ],
+   "tarjetas": [
+    {
+     "id": "descanso-1",
+     "texto": "Quiero dormir",
+     "privacidad": "publico"
+    },
+    {
+     "id": "descanso-2",
+     "texto": "Dormí bien",
+     "privacidad": "publico"
+    },
+    {
+     "id": "descanso-3",
+     "texto": "Dormí mal",
+     "privacidad": "publico"
+    },
+    {
+     "id": "descanso-4",
+     "texto": "Estoy cansada",
+     "privacidad": "publico"
+    },
+    {
+     "id": "descanso-5",
+     "texto": "Apaga la luz, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "descanso-6",
+     "texto": "Déjame descansar un rato",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "bano",
+   "nombre": "Baño e higiene",
+   "palabras": [
+    "banar",
+    "bano",
+    "crema",
+    "dientes",
+    "ducha",
+    "duchar",
+    "lavar",
+    "limpiar",
+    "limpieza",
+    "orinar",
+    "panal",
+    "pañal",
+    "peinar",
+    "pelo"
+   ],
+   "tarjetas": [
+    {
+     "id": "bano-1",
+     "texto": "Necesito ir al baño",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bano-2",
+     "texto": "Ahora no",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bano-3",
+     "texto": "Quiero bañarme",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bano-4",
+     "texto": "Lávame los dientes, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bano-5",
+     "texto": "Péiname, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "bano-6",
+     "texto": "Ya estoy lista",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "salud",
+   "nombre": "Salud y tratamiento",
+   "palabras": [
+    "control",
+    "doctor",
+    "doctora",
+    "ejercicio",
+    "ejercicios",
+    "enfermera",
+    "examen",
+    "kine",
+    "kinesiologo",
+    "maquina",
+    "mascara",
+    "medicamento",
+    "medico",
+    "pastilla",
+    "presion",
+    "remedio",
+    "respiracion",
+    "respirar",
+    "terapia"
+   ],
+   "tarjetas": [
+    {
+     "id": "salud-1",
+     "texto": "Ya me tomé el remedio",
+     "privacidad": "publico"
+    },
+    {
+     "id": "salud-2",
+     "texto": "¿A qué hora es la terapia?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "salud-3",
+     "texto": "Hoy no quiero ejercicios",
+     "privacidad": "publico"
+    },
+    {
+     "id": "salud-4",
+     "texto": "Me cuesta respirar",
+     "privacidad": "publico"
+    },
+    {
+     "id": "salud-5",
+     "texto": "Revisa la máquina, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "salud-6",
+     "texto": "Estoy mejor que ayer",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "temperatura",
+   "nombre": "Temperatura",
+   "palabras": [
+    "abrigo",
+    "caliente",
+    "calor",
+    "cobija",
+    "estufa",
+    "frazada",
+    "fresco",
+    "frio",
+    "temperatura",
+    "ventana",
+    "ventilador"
+   ],
+   "tarjetas": [
+    {
+     "id": "temperatura-1",
+     "texto": "Tengo frío",
+     "privacidad": "publico"
+    },
+    {
+     "id": "temperatura-2",
+     "texto": "Tengo calor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "temperatura-3",
+     "texto": "Ponme la frazada",
+     "privacidad": "publico"
+    },
+    {
+     "id": "temperatura-4",
+     "texto": "Abre la ventana",
+     "privacidad": "publico"
+    },
+    {
+     "id": "temperatura-5",
+     "texto": "Prende el ventilador",
+     "privacidad": "publico"
+    },
+    {
+     "id": "temperatura-6",
+     "texto": "Así está bien",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "familia",
+   "nombre": "Familia y visitas",
+   "palabras": [
+    "domingo",
+    "esposa",
+    "esposo",
+    "familia",
+    "hermana",
+    "hermano",
+    "hija",
+    "hijo",
+    "llamar",
+    "llamo",
+    "nieta",
+    "nieto",
+    "nietos",
+    "te llamo",
+    "viene a verte",
+    "vienen",
+    "visita"
+   ],
+   "tarjetas": [
+    {
+     "id": "familia-1",
+     "texto": "Dile que venga",
+     "privacidad": "publico"
+    },
+    {
+     "id": "familia-2",
+     "texto": "¿Cómo está?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "familia-3",
+     "texto": "Mándale saludos",
+     "privacidad": "publico"
+    },
+    {
+     "id": "familia-4",
+     "texto": "Quiero verla",
+     "privacidad": "publico",
+     "solo_para": [
+      "familia"
+     ]
+    },
+    {
+     "id": "familia-5",
+     "texto": "¿Cuándo viene?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "familia-6",
+     "texto": "Llámala, por favor",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "entretencion",
+   "nombre": "Música, tele y deporte",
+   "palabras": [
+    "canal",
+    "cancion",
+    "equipo",
+    "futbol",
+    "gol",
+    "musica",
+    "noticias",
+    "partido",
+    "pelicula",
+    "programa",
+    "radio",
+    "serie",
+    "tele",
+    "television",
+    "volumen"
+   ],
+   "tarjetas": [
+    {
+     "id": "entretencion-1",
+     "texto": "Pon música, por favor",
+     "privacidad": "publico"
+    },
+    {
+     "id": "entretencion-2",
+     "texto": "Pon el partido",
+     "privacidad": "publico"
+    },
+    {
+     "id": "entretencion-3",
+     "texto": "Cambia de canal",
+     "privacidad": "publico"
+    },
+    {
+     "id": "entretencion-4",
+     "texto": "Sube el volumen",
+     "privacidad": "publico"
+    },
+    {
+     "id": "entretencion-5",
+     "texto": "Baja el volumen",
+     "privacidad": "publico"
+    },
+    {
+     "id": "entretencion-6",
+     "texto": "¿Quién va ganando?",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "emociones",
+   "nombre": "Emociones",
+   "palabras": [
+    "aburrida",
+    "aburrido",
+    "animo",
+    "contenta",
+    "contento",
+    "enojada",
+    "enojado",
+    "feliz",
+    "llorar",
+    "miedo",
+    "nerviosa",
+    "preocupada",
+    "sola",
+    "triste"
+   ],
+   "tarjetas": [
+    {
+     "id": "emociones-1",
+     "texto": "Estoy contenta",
+     "privacidad": "publico"
+    },
+    {
+     "id": "emociones-2",
+     "texto": "Estoy triste hoy",
+     "privacidad": "publico"
+    },
+    {
+     "id": "emociones-3",
+     "texto": "Me siento sola",
+     "privacidad": "publico"
+    },
+    {
+     "id": "emociones-4",
+     "texto": "Estoy aburrida",
+     "privacidad": "publico"
+    },
+    {
+     "id": "emociones-5",
+     "texto": "Quédate conmigo",
+     "privacidad": "publico",
+     "solo_para": [
+      "familia"
+     ]
+    },
+    {
+     "id": "emociones-6",
+     "texto": "Gracias por estar aquí",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "planes",
+   "nombre": "Planes del día",
+   "palabras": [
+    "a que hora",
+    "manana",
+    "pasado manana",
+    "paseo",
+    "plan",
+    "planes",
+    "que hacemos",
+    "salir"
+   ],
+   "tarjetas": [
+    {
+     "id": "planes-1",
+     "texto": "¿Qué hacemos hoy?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "planes-2",
+     "texto": "Quiero salir un rato",
+     "privacidad": "publico"
+    },
+    {
+     "id": "planes-3",
+     "texto": "Mejor mañana",
+     "privacidad": "publico"
+    },
+    {
+     "id": "planes-4",
+     "texto": "¿A qué hora?",
+     "privacidad": "publico"
+    },
+    {
+     "id": "planes-5",
+     "texto": "Me parece bien",
+     "privacidad": "publico"
+    },
+    {
+     "id": "planes-6",
+     "texto": "Hoy prefiero quedarme",
+     "privacidad": "publico"
+    }
+   ]
+  },
+  {
+   "id": "despedida",
+   "nombre": "Despedida",
+   "palabras": [
+    "adios",
+    "chao",
+    "cuidate",
+    "hasta luego",
+    "hasta manana",
+    "me voy",
+    "nos vemos",
+    "ya me voy"
+   ],
+   "tarjetas": [
+    {
+     "id": "despedida-1",
+     "texto": "Chao, cuídate",
+     "privacidad": "publico"
+    },
+    {
+     "id": "despedida-2",
+     "texto": "Vuelve pronto",
+     "privacidad": "publico"
+    },
+    {
+     "id": "despedida-3",
+     "texto": "Gracias por venir",
+     "privacidad": "publico"
+    },
+    {
+     "id": "despedida-4",
+     "texto": "Avísame cuando llegues",
+     "privacidad": "publico"
+    },
+    {
+     "id": "despedida-5",
+     "texto": "Nos vemos mañana",
+     "privacidad": "publico"
+    },
+    {
+     "id": "despedida-6",
+     "texto": "Que te vaya bien",
+     "privacidad": "publico"
+    }
+   ]
+  }
+ ]
+}

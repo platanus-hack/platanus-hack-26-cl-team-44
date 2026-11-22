@@ -44,6 +44,15 @@ case "$cmd" in
     en_vps 'cd /opt/toki/repo/software/agent && chown toki:toki data/semilla.json && chmod 600 data/semilla.json \
       && sudo -u toki /opt/toki/venv/bin/python scripts/semilla.py | tail -1 && systemctl restart toki-agente'
     ;;
+  tarjetas)
+    # Tarjetas propias de la usuaria (fuera de git). El agente las lee en cada pedido: no hace falta reiniciar.
+    f="$RAIZ/software/agent/data/tarjetas.json"
+    [ -f "$f" ] || { echo "No existe $f (las tarjetas propias no están en git)."; exit 1; }
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d.get('tarjetas'), list)" "$f" \
+      || { echo "$f no es válido: debe ser {\"tarjetas\": [...]}"; exit 1; }
+    scp -q "$f" "$VPS:/opt/toki/repo/software/agent/data/tarjetas.json"
+    en_vps 'chown toki:toki /opt/toki/repo/software/agent/data/tarjetas.json && chmod 600 /opt/toki/repo/software/agent/data/tarjetas.json && echo "tarjetas subidas"'
+    ;;
   rotar-token)
     en_vps 'set -e; T=$(openssl rand -hex 24); sed -i "s/^WOKI_API_TOKEN=.*/WOKI_API_TOKEN=$T/" /opt/toki/puente.env; unset T; echo "token nuevo guardado"'
     "$0" deploy "$(en_vps 'git -C /opt/toki/repo rev-parse --abbrev-ref HEAD')"

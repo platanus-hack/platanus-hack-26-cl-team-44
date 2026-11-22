@@ -3,7 +3,13 @@
     software/agent/.venv/bin/python software/agent/server.py        # http://127.0.0.1:8790
 
 Rutas para el puente (respuesta síncrona, el puente reenvía a la TV por su SSE):
-  POST /api/sugerir    {modo: "chat" | "voz" | "mencion", texto, telefono?, persona?, historial?: [str]}
+  POST /api/sugerir    {modo: "chat" | "voz" | "mencion", texto, telefono?, persona?, historial?: [str], hablantes?: [id | null]}
+                       hablantes: quiénes hablan en la sala (escucha con diarización). null = voz sin identificar.
+                       La privacidad es la del que ve menos; una voz sin identificar cuenta como desconocido.
+
+Tarjetas por tema (la TV, al escuchar; sin modelo, responden en milisegundos):
+  POST /api/tarjetas       {texto, historial?: [str], persona?, hablantes?: [id | null]} → {tema, tarjetas}
+  POST /api/tarjetas/uso   {tarjeta_id, tema, persona?}  (aprende el orden; sin texto de la conversación)
   POST /api/grupo      {id, grupo_jid, grupo_nombre, autor_tel, autor_nombre, texto, menciona}
 
 Disparadores (la TV los muestra y la usuaria los aprueba):
@@ -39,8 +45,11 @@ sys.path.insert(0, str(AGENT))
 
 import grupos  # noqa: E402
 import pedido  # noqa: E402
+import tarjetas  # noqa: E402
 from agente import MODELO, MODOS, run_agent  # noqa: E402
 from memoria import store  # noqa: E402
+from memoria.filtros import VISIBLE  # noqa: E402
+import hablantes  # noqa: E402
 
 PORT = int(os.environ.get("TOKI_AGENTE_PORT", "8790"))
 DATA = AGENT / "data"
@@ -230,7 +239,7 @@ class Handler(BaseHTTPRequestHandler):
             historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
             c = store.conectar(DB)
             try:
-                p = resolver_persona(c, body)
+                p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))   # sin persona = desconocido (lo más restringido)
                 r = ejecutar(c, p, texto, historial=historial, modo=modo)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})
@@ -239,6 +248,26 @@ class Handler(BaseHTTPRequestHandler):
             motivos = ", ".join(d["motivo"] for d in r["descartadas"]) or "ninguna"
             print(f"[sugerir] {modo} · {r['persona'] or 'desconocido'} · {r['origen']} · {r['meta'].get('ms_total')} ms · descartadas: {motivos}", flush=True)
             return self._json(200, r)
+
+        if self.path == "/api/tarjetas":
+            texto = str(body.get("texto", "")).strip()[:2000]
+            historial = [str(h)[:500] for h in (body.get("historial") or [])][-3:]
+            c = store.conectar(DB)
+            try:
+                p, efectivo = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
+            finally:
+                c.close()
+            presentes = [str(h) for h in (body.get("hablantes") or []) if h] or ([p["id"]] if p and p.get("id") else [])
+            turnos = [{"speaker": "partner", "text": h} for h in historial] + [{"speaker": "partner", "text": texto}]
+            r = tarjetas.ordenar(turnos, efectivo, set(VISIBLE[efectivo]), tarjetas.USUARIA, tarjetas.USO,
+                                 presentes, (p or {}).get("id"))
+            return self._json(200, {**r, "tipo_interlocutor": efectivo, "persona": (p or {}).get("id")})
+
+        if self.path == "/api/tarjetas/uso":
+            if not body.get("tarjeta_id"):
+                return self._json(400, {"error": "falta tarjeta_id"})
+            tarjetas.registrar_uso(str(body["tarjeta_id"]), str(body.get("tema") or ""), str(body.get("persona") or "") or None)
+            return self._json(200, {"ok": True})
 
         if self.path == "/api/pedido":
             # Pedido proactivo por Rappi: qué buscar según la memoria de la persona (pedido.py)
