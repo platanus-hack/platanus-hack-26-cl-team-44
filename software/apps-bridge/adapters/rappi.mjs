@@ -2,6 +2,9 @@ import {randomUUID} from 'node:crypto';
 import {createRappiClient,createRappiSession,createRappiGuest,RAPPI_DEFAULT_LOCATION,RAPPI_PAIS,rappiFault as fault} from '../connectors/rappi-client.mjs';
 import {createRappiLogin} from '../connectors/rappi-login.mjs';
 import {createRappiCheckout} from '../connectors/rappi-checkout.mjs';
+import {pedirPorApi} from '../connectors/rappi-checkout-api.mjs';
+// Checkout: 'api' (por defecto, solo llamadas, probado con cobro real el 22-nov) o 'web' (navegador oficial, respaldo).
+const CHECKOUT=process.env.TOKI_RAPPI_CHECKOUT==='web'?'web':'api';
 
 export const rappiCategories=[{id:'pizza',name:'Pizza'},{id:'hamburguesa',name:'Hamburguesas'},{id:'sushi',name:'Sushi'},{id:'empanadas',name:'Empanadas'}];
 const text=(s,n=150)=>typeof s==='string'?s.slice(0,n):'';
@@ -17,7 +20,7 @@ function image(value,prefix='products'){
  if(typeof value!=='string'||!value)return '';
  try{const url=new URL(value.startsWith('https:')?value:`https://${RAPPI_PAIS.images}/${prefix}/${value}`);return url.protocol==='https:'&&['images.rappi.cl','images.rappi.com'].includes(url.hostname)?url.href:'';}catch{return '';}
 }
-export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace por el checkout oficial de Rappi, con confirmación y tope; las verificaciones (CVV, 3DS) las completa una persona.']};
+export const rappiManifest={schemaVersion:1,id:'rappi',name:'Rappi',aliases:[RAPPI_PAIS.nombre],version:'0.1.0',interface:{kind:'food',entry:'food'},auth:{type:'local-session',optionalFor:['search','products','select']},dependencies:['Internet',`Cuenta ${RAPPI_PAIS.nombre} para carrito`],source:'https://github.com/crafter-station/rappi-cli/tree/5c4e5b03e7df8f275a6e4b0dbef74a589e842515',requiredEvidence:['search','products','select','cart','quote','order','tracking'],actions:[...['status','search','products','select','connect','connection','disconnect','cart','quote'].map(action=>({id:action,mutates:['connect','disconnect','quote'].includes(action),requiresAccount:['cart','quote'].includes(action)})),{id:'add',mutates:true,requiresAccount:true},{id:'order',mutates:true,requiresAccount:true}],limitations:['El pedido se hace con confirmación doble y tope. Si Rappi pide CVV o 3DS, lo completa una persona en la app.']};
 
 export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRappiSession(stateDir),login,now=Date.now}={}){
  const request=createRappiClient({fetcher});
@@ -145,7 +148,7 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
     if(firma!==cotizacion.firma||!actual.stores.some(s=>s.items.length))throw fault('El carrito cambió. Revísalo otra vez antes de pedir.',409);
     const tope=Number.isSafeInteger(payload.max)&&payload.max>0?payload.max:Math.ceil(cotizacion.total*1.3)+5000;   // envío, servicio y propina
     cotizacion=null;
-    const r=await pedir({maxTotal:tope,signal:ctx.signal});
+    const r=CHECKOUT==='web'?await pedir({maxTotal:tope,signal:ctx.signal}):await pedirPorApi({request,session,maxTotal:tope,signal:ctx.signal});
     ctx.evidence('order');
     return {...r,notice:r.orderId?`Pedido ${r.orderId} hecho. Revisa el cobro en la app de Rappi.`:'Pedido confirmado en Rappi después de la verificación.'};
    }

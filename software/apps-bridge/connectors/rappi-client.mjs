@@ -30,9 +30,10 @@ export function createRappiSession(stateDir){
  };
 }
 export function createRappiClient({fetcher=fetch}={}){
- return async function request(path,{method='GET',body,session,signal,deviceId,guestKey}={}){
+ return async function request(path,{method='GET',body,session,signal,deviceId,guestKey,headers:extra={},raw=false}={}){
   if(!path.startsWith('/')||path.startsWith('//')||path.includes('://'))throw rappiFault('Ruta de Rappi no válida.');
-  const response=await fetcher(RAPPI_ORIGIN+path,{method,redirect:'error',signal:AbortSignal.any([signal||new AbortController().signal,AbortSignal.timeout(15000)]),headers:{accept:'application/json','accept-language':RAPPI_PAIS.lang,origin:RAPPI_PAIS.web,referer:RAPPI_PAIS.web+'/',vendor:'rappi','x-application-id':'lite-mobile-web/2.0.0','app-version-name':'web_8.0.0',...(deviceId?{deviceid:deviceId}:{}),...(guestKey?{'x-guest-api-key':guestKey}:{}),...(session?{authorization:'Bearer '+session.token,deviceid:session.deviceId}:{}),...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const response=await fetcher(RAPPI_ORIGIN+path,{method,redirect:'error',signal:AbortSignal.any([signal||new AbortController().signal,AbortSignal.timeout(15000)]),headers:{accept:'application/json','accept-language':RAPPI_PAIS.lang,origin:RAPPI_PAIS.web,referer:RAPPI_PAIS.web+'/',vendor:'rappi','x-application-id':'lite-mobile-web/2.0.0','app-version-name':'web_8.0.0',...(deviceId?{deviceid:deviceId}:{}),...(guestKey?{'x-guest-api-key':guestKey}:{}),...(session?{authorization:'Bearer '+session.token,deviceid:session.deviceId}:{}),...(body===undefined?{}:{'content-type':'application/json'}),...extra},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  if(raw){const t=await response.text();let j=null;try{j=JSON.parse(t);}catch{}return {status:response.status,body:j,text:t.slice(0,500)};}
   if(response.status===401||response.status===403)throw rappiFault(`Conecta tu cuenta de ${RAPPI_PAIS.nombre} para continuar.`,401);
   if(response.status===429)throw rappiFault('Rappi pide esperar. Vuelve a intentarlo más tarde.',429);
   if(!response.ok)throw rappiFault('Rappi no pudo completar la consulta. Vuelve a intentarlo.',502);
