@@ -12,6 +12,7 @@
 #   TOKI_RAPPI_PAIS co (Bogotá, por defecto) o cl (Santiago), para apps-bridge (Rappi)
 #   TOKI_ESCUCHA    modo de escucha de la sala: siempre (por defecto), voz o manual
 #   TOKI_OIDO       0 = no arrancar el oído local (software/oido); la TV escucha en el navegador
+#   TOKI_KIOSCO     0 = abrir la TV en Chrome en vez del kiosco (software/kiosco)
 # El token nunca va en una URL: el monitor se lo entrega a la TV en /toki-config.js.
 # Funciona en macOS y Linux (el monitor usa termios: en Windows, correrlo dentro de WSL).
 set -uo pipefail
@@ -58,6 +59,13 @@ case "$ag" in *'"ok": true'*) ok "Agente con memoria en la VPS";; *) ko "El agen
 if [ -d /Applications/Spotify.app ]; then
   if osascript -e 'tell application "Spotify" to player state' >/dev/null 2>&1; then ok "Spotify: permiso para controlarlo"
   else ko "Spotify: falta permiso. Acepta el aviso de macOS, o Ajustes › Privacidad y seguridad › Automatización › Terminal › Spotify"; fi
+fi
+
+# 3b) Copia local de MediaPipe y WebEyeTrack (software/toki-os/vendor, sha256 fijado): la cámara funciona sin CDN.
+#     La primera vez baja ~41 MB; después solo verifica. Sin internet y sin copia, la TV usa la CDN como antes.
+if command -v node >/dev/null; then
+  if node "$RAIZ/software/toki-os/tools/vendor-assets.mjs" >/tmp/myo-vendor.log 2>&1; then ok "MediaPipe y WebEyeTrack con copia local verificada"
+  else ko "Sin copia local completa de MediaPipe (log: /tmp/myo-vendor.log): la cámara depende de la CDN"; fi
 fi
 
 # 4) apps-bridge local: Rappi (arma el carrito con la cuenta conectada; no paga) y los demás servicios
@@ -114,7 +122,8 @@ fi
 TOKI_APPS_URL="http://127.0.0.1:$APPS_PUERTO" TOKI_REMOTO="$REMOTO" TOKI_WA_TOKEN="$TOKEN" "${PY[@]}" "$RAIZ/software/myoware-monitor/server.py" --http-port "$PUERTO" "${ARGS[@]}" &
 MONITOR=$!
 unset TOKEN
-trap 'kill $MONITOR $APPS $OIDO 2>/dev/null' EXIT INT TERM
+KIOSCO=""
+trap 'kill $MONITOR $APPS $OIDO $KIOSCO 2>/dev/null' EXIT INT TERM
 listo=""
 for _ in $(seq 1 90); do   # la primera vez uv descarga Bleak
   kill -0 $MONITOR 2>/dev/null || break
@@ -125,18 +134,39 @@ if [ -n "$listo" ]; then ok "Monitor en http://127.0.0.1:$PUERTO"; else ko "El m
 sleep 1
 case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected": true'*|*'"connected":true'*) ok "Sensor enviando datos";; *) ko "El sensor no manda datos: sin MyoWare, usa Espacio = ceja y J = mandíbula (si es Bluetooth, revisa Ajustes › Privacidad › Bluetooth)";; esac
 
-# 6) Chrome con su propio perfil (guarda la calibración entre ensayos) y en pantalla completa
+# 6) La TV: kiosco (software/kiosco, Electron) o, si no está, Chrome con su propio perfil.
+#    El kiosco sirve MediaPipe desde la copia local, da cámara y micrófono solo a 127.0.0.1, no navega fuera
+#    y recarga la TV si se cae. Ctrl+Shift+Q lo cierra.
 URL="http://127.0.0.1:$PUERTO/woki-os.html${TOKI_ESCUCHA:+?escucha=$TOKI_ESCUCHA}"   # TOKI_ESCUCHA=voz|siempre|manual
-PERFIL="$HOME/.toki-chrome"
-# Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
-# Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.
-CHROME_FLAGS=(--use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required)
-if [ -d "/Applications/Google Chrome.app" ]; then
-  open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL"
-elif command -v google-chrome >/dev/null; then
-  google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL" >/dev/null 2>&1 &
-else
-  echo "  Abre en Chrome: $URL"
+KIOSCO_DIR="$RAIZ/software/kiosco"
+if [ "${TOKI_KIOSCO:-1}" != "0" ] && command -v npm >/dev/null; then
+  if [ ! -f "$KIOSCO_DIR/node_modules/electron/path.txt" ]; then
+    echo "  Instalando el kiosco (solo la primera vez, ~100 MB)…"
+    npm ci --silent --no-audit --no-fund --prefix "$KIOSCO_DIR" >/tmp/myo-kiosco-install.log 2>&1
+    [ -f "$KIOSCO_DIR/node_modules/electron/path.txt" ] || node "$KIOSCO_DIR/node_modules/electron/install.js" >>/tmp/myo-kiosco-install.log 2>&1
+  fi
+  if [ -f "$KIOSCO_DIR/node_modules/electron/path.txt" ]; then
+    "$KIOSCO_DIR/node_modules/.bin/electron" "$KIOSCO_DIR" --url "$URL" >/tmp/myo-kiosco.log 2>&1 &
+    KIOSCO=$!
+    sleep 2
+    if kill -0 $KIOSCO 2>/dev/null; then ok "TV en el kiosco (Ctrl+Shift+Q cierra; log: /tmp/myo-kiosco.log)"
+    else ko "El kiosco no arrancó (log: /tmp/myo-kiosco.log): abro Chrome"; KIOSCO=""; fi
+  else
+    ko "No se pudo instalar el kiosco (log: /tmp/myo-kiosco-install.log): abro Chrome"
+  fi
+fi
+if [ -z "$KIOSCO" ]; then
+  PERFIL="$HOME/.toki-chrome"
+  # Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
+  # Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.
+  CHROME_FLAGS=(--use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required)
+  if [ -d "/Applications/Google Chrome.app" ]; then
+    open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL"
+  elif command -v google-chrome >/dev/null; then
+    google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL" >/dev/null 2>&1 &
+  else
+    echo "  Abre en Chrome: $URL"
+  fi
 fi
 echo
 echo "Listo. Deja esta ventana abierta; Ctrl+C la cierra y apaga el monitor."

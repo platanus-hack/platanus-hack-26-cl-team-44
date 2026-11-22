@@ -1,0 +1,16 @@
+{
+  "name": "myo-kiosco",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "description": "La TV de Myo como app de pantalla completa, con MediaPipe local",
+  "scripts": {
+    "start": "electron .",
+    "ventana": "electron . --ventana",
+    "prueba": "electron . --prueba",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.10.2"
+  }
+}

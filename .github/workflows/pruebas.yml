@@ -37,6 +37,8 @@ jobs:
       - name: apps-bridge (Rappi, noticias, adaptadores)
         working-directory: software/apps-bridge
         run: npm ci --no-audit --no-fund && npm test
+      - name: Kiosco (copia local verificada de MediaPipe; sin Electron ni red)
+        run: node --test software/kiosco/tests/*.test.mjs
       - name: Puente de WhatsApp (tipos estrictos)
         working-directory: software/whatsapp-bridge
         run: npm ci --no-audit --no-fund && npx tsc --noEmit
