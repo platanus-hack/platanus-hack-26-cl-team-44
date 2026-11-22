@@ -3,7 +3,7 @@
 Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 3 piezas:
 
 - **Memoria mínima.** SQLite con los 5 tipos del plan de Emmy, filtro de privacidad por interlocutor, límites duros por persona y revisión de las opciones del modelo.
-- **Agente de 1 turno.** Recibe un mensaje y devuelve un resumen y 4 opciones con emoción y fuente. Usa `claude-agent-sdk` con la sesión de Claude Code de la máquina.
+- **Agente de 1 turno.** Recibe un mensaje y devuelve un resumen y 4 opciones con emoción y fuente. Llama al modelo con `llm.py`: la suscripción de Claude Code o una API key de Anthropic (ver «Suscripción o API key»).
 - **Servidor con SSE y modo dev en la TV.** Simula un mensaje del grupo o de la sala y muestra las opciones en la pantalla Hablar.
 
 - **Endpoints para el puente de WhatsApp.** `/api/sugerir` (modos `chat`, `mencion`, `voz`) y `/api/grupo` con disparadores que la usuaria aprueba. Ver `INTEGRACION-PUENTE.md`.
@@ -27,7 +27,7 @@ El acompañante aprieta «🎙 Escuchar» en Hablar. El puente entrega un token 
 En 2 terminales, desde la raíz del repo:
 
 ```bash
-# 1. Agente (necesita Claude Code con sesión)
+# 1. Agente (necesita Claude Code con sesión, o ANTHROPIC_API_KEY con TOKI_LLM=api)
 software/agent/.venv/bin/python software/agent/server.py
 # 2. TV
 python3 -m http.server 8000 --bind 127.0.0.1 --directory software/toki-os
@@ -53,7 +53,7 @@ El segundo comando muestra qué ve el agente, sin llamar a ningún modelo. Prueb
 
 ## Probar el agente
 
-Necesita Claude Code con sesión iniciada en la máquina. En un servidor sin navegador, `claude setup-token` da el valor de `CLAUDE_CODE_OAUTH_TOKEN`.
+Necesita Claude Code con sesión iniciada en la máquina. En un servidor sin navegador, `claude setup-token` da el valor de `CLAUDE_CODE_OAUTH_TOKEN`. Con una API key, ver «Suscripción o API key».
 
 ```bash
 python3 -m venv software/agent/.venv
@@ -62,7 +62,7 @@ software/agent/.venv/bin/python software/agent/scripts/probar_agente.py \
   --texto "Hola Anita, soy Pedrito. ¿Vamos al cumple de Tomi el sábado?"
 ```
 
-Si `ANTHROPIC_API_KEY` está definida, el SDK usa esa key y no la suscripción.
+En modo `suscripcion`, si `ANTHROPIC_API_KEY` también está definida, Claude Code usa esa key y no la suscripción.
 
 Variables opcionales:
 
@@ -73,6 +73,7 @@ Variables opcionales:
 | `TOKI_AGENTE_PORT` | `8790` | Puerto del servidor |
 | `TOKI_DATA` | `software/agent/data` | Carpeta de la memoria y sus archivos (otra instancia usa otra carpeta) |
 | `TOKI_DEMO` | vacío | Con `1`, modo demo: 403 en las rutas que escriben, las de voces y `/api/grupo`; exige un `TOKI_DATA` propio |
+| `TOKI_LLM` | según las credenciales | `suscripcion` o `api` (ver abajo) |
 
 Instancia demo local, con la memoria ficticia de la TV pública:
 
@@ -81,11 +82,39 @@ TOKI_DATA=/tmp/myo-demo python3 software/agent/scripts/semilla.py --semilla soft
 TOKI_DEMO=1 TOKI_DATA=/tmp/myo-demo TOKI_AGENTE_PORT=8792 python3 software/agent/server.py
 ```
 
+## Suscripción o API key
+
+`llm.py` hace todas las llamadas al modelo. `TOKI_LLM` elige el modo:
+
+| `TOKI_LLM` | Cómo llama | Credencial | Para quién |
+|---|---|---|---|
+| `suscripcion` | `claude-agent-sdk` (Claude Code) | `CLAUDE_CODE_OAUTH_TOKEN` o la sesión de Claude Code de la máquina | Una persona que corre Myo para sí misma |
+| `api` | SDK `anthropic` (Messages API) | `ANTHROPIC_API_KEY` | Un servicio que atiende a otras personas |
+
+- El modo `suscripcion` usa la suscripción de Claude de una persona. Es para uso personal: esa persona corre Myo para sí misma.
+- Si Myo atiende a otras personas o corre como servicio, usa el modo `api` con una API key de Anthropic (`ANTHROPIC_API_KEY`). Ese uso queda bajo los Términos Comerciales de Anthropic.
+- Sin `TOKI_LLM`, el agente elige así: `suscripcion` si existe `CLAUDE_CODE_OAUTH_TOKEN`; si no, `api` si existe `ANTHROPIC_API_KEY`; si no, `suscripcion` con la sesión de Claude Code de la máquina.
+- Los 2 modos mandan el mismo prompt de sistema, el mismo mensaje, el mismo esquema JSON y el mismo modelo (`TOKI_MODELO`), con `effort` bajo. El tope `TOKI_AGENTE_TOPE_S` es el mismo. Si la llamada falla, las opciones salen de reglas.
+- En modo `api`, el prompt de sistema lleva `cache_control`. La API lo guarda 5 minutos si tiene 512 tokens o más (Sonnet 5.5). `meta.uso.cache_read_input_tokens` muestra los tokens que salieron de la caché.
+- El servidor escribe el modo al arrancar: `toki-agent · ... · llm api · ...`.
+
+Para pasar la VPS al modo `api`:
+
+1. Instala el paquete `anthropic` en el venv. `deploy/instalar.sh` lo hace, porque está en `requirements.txt`.
+2. Pon la key en `/opt/toki/agente.env`. Es un archivo solo para root y fuera de git. El comando lo reemplaza entero:
+
+```bash
+read -s K && ssh toki-vps "umask 077 && printf 'TOKI_LLM=api\nANTHROPIC_API_KEY=%s\n' '$K' > /opt/toki/agente.env && systemctl restart toki-agente" && unset K
+ssh toki-vps "journalctl -u toki-agente -n 50 --no-pager | grep 'llm ' | tail -1"   # debe decir: llm api
+```
+
+Para volver a la suscripción, deja en el mismo archivo solo `CLAUDE_CODE_OAUTH_TOKEN` (ver `deploy/README.md`), o pon `TOKI_LLM=suscripcion`.
+
 ## Cómo funciona
 
 1. `memoria/filtros.py` saca las memorias que el interlocutor no puede ver: no aprobadas, privacidad fuera de su nivel o con un tema bloqueado para esa persona.
 2. `memoria/contexto.py` arma el contexto con todo lo visible y los últimos 3 encuentros con esa persona. Cada línea lleva su id (`[m9]`) como fuente.
-3. `agente.py` corre 1 turno sin herramientas (`tools=[]`, `setting_sources=[]`, `strict_mcp_config=True`) y con salida estructurada.
+3. `agente.py` corre 1 turno por `llm.py`, sin herramientas y con salida estructurada. En modo `suscripcion` va con `tools=[]`, `setting_sources=[]` y `strict_mcp_config=True`.
 4. `memoria/salida.py` quita las opciones que tocan un tema bloqueado, las de más de 15 palabras y las repetidas. Completa a 4 y deja "Después te respondo" al final.
 5. Si el modelo falla o pasa el tope de tiempo, las 4 opciones salen de reglas.
 
@@ -102,7 +131,7 @@ TOKI_DEMO=1 TOKI_DATA=/tmp/myo-demo TOKI_AGENTE_PORT=8792 python3 software/agent
 | Pedro pregunta por el cumpleaños | 9,0 s | 3,5 s |
 | El nieto pregunta si está enferma (tema `diagnostico` bloqueado) | 7,2 s | 5,9 s |
 
-La diferencia es el arranque del proceso de Claude Code en cada llamada.
+La diferencia es el arranque del proceso de Claude Code en cada llamada (modo `suscripcion`).
 
 ## Importar la memoria desde un chat de WhatsApp
 
@@ -118,7 +147,7 @@ $PY $A/scripts/importar_whatsapp.py chat.zip --yo "Emms" --nombre Emmy --persona
 |---|---|---|
 | Léxico | Palabras que ella usa más que la otra persona, en 5 días distintos o más; su risa y sus emojis | `lexico`, `publico` |
 | Estilo | Frases reales de 3 a 10 palabras, sin números, links, correos ni código | `estilo`, `familia` |
-| Perfil, episodios, rutinas, personas | `--resumir N`: los últimos N días van a Claude (suscripción) en trozos de 60.000 caracteres | `perfil` / `episodio` / `rutina` |
+| Perfil, episodios, rutinas, personas | `--resumir N`: los últimos N días van a Claude por `llm.py` en trozos de 60.000 caracteres | `perfil` / `episodio` / `rutina` |
 
 Todo queda en `propuesta`: el agente no lo usa hasta que la usuaria o su cuidadora lo aprueba (`"estado": "aprobada"`). `--aprobar` las deja aprobadas, solo para pruebas. Para cargar un archivo importado, ponlo en la semilla (`"importar": ["importado-juan.json"]`) y corre `scripts/semilla.py`.
 

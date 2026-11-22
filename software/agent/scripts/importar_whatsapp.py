@@ -26,6 +26,7 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(AGENT))
 
+import llm  # noqa: E402
 from memoria import importar  # noqa: E402
 
 DATA = AGENT / "data"
@@ -74,18 +75,7 @@ Reglas:
 
 
 async def _consultar(sistema: str, prompt: str) -> dict | None:
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-
-    opciones = ClaudeAgentOptions(
-        system_prompt=sistema, model=MODELO, tools=[], allowed_tools=[], setting_sources=[],
-        strict_mcp_config=True, max_turns=2, effort="low",
-        output_format={"type": "json_schema", "schema": ESQUEMA},
-        env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
-    )
-    datos = None
-    async for msg in query(prompt=prompt, options=opciones):  # sin return adentro: el SDK cierra solo
-        if isinstance(msg, ResultMessage):
-            datos = msg.structured_output
+    datos, _ = await llm.consultar(sistema, prompt, ESQUEMA, MODELO)
     return datos
 
 

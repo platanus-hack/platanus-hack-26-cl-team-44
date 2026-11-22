@@ -52,6 +52,7 @@ AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
 
 import grupos  # noqa: E402
+import llm  # noqa: E402
 import pedido  # noqa: E402
 import tarjetas  # noqa: E402
 from agente import MODELO, MODOS, run_agent  # noqa: E402
@@ -430,7 +431,11 @@ def main() -> None:
     threading.Thread(target=trabajador_dev, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     srv.daemon_threads = True
-    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · datos {DATA}{' · DEMO' if DEMO else ''}"
+    try:
+        modo_llm = llm.backend()
+    except llm.ErrorLLM as e:
+        modo_llm = str(e)
+    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · llm {modo_llm} · datos {DATA}{' · DEMO' if DEMO else ''}"
           f" · tope {MAX_DIA or 'sin tope'} · orígenes {', '.join(sorted(ORIGENES))}", flush=True)
     try:
         srv.serve_forever()

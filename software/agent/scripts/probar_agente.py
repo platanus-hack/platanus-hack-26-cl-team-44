@@ -1,4 +1,4 @@
-"""Prueba el agente de 1 turno desde la terminal, con la sesión de Claude Code de esta máquina.
+"""Prueba el agente de 1 turno desde la terminal. TOKI_LLM elige la suscripción de Claude Code o la API (llm.py).
 
     software/agent/.venv/bin/python software/agent/scripts/probar_agente.py \\
         --texto "Hola Anita, soy Pedrito. ¿Vamos al cumple de Tomi el sábado?"
@@ -14,6 +14,7 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(AGENT))
 
+import llm  # noqa: E402
 from agente import run_agent  # noqa: E402
 from memoria import store  # noqa: E402
 
@@ -25,8 +26,10 @@ def main() -> None:
     ap.add_argument("--persona")
     ap.add_argument("--texto", required=True)
     a = ap.parse_args()
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        print("Aviso: ANTHROPIC_API_KEY está definida; el SDK la usa en vez de la suscripción.")
+    modo = llm.backend()
+    print(f"llm: {modo}")
+    if modo == "suscripcion" and os.environ.get("ANTHROPIC_API_KEY"):
+        print("Aviso: ANTHROPIC_API_KEY está definida; en modo suscripcion, Claude Code la usa en vez de la suscripción.")
     if not DB.exists():
         sys.exit("Falta la base. Corre primero: python3 software/agent/scripts/semilla.py")
     c = store.conectar(DB)

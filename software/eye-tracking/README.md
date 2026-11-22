@@ -75,6 +75,28 @@ El análisis:
 - **vuelve a calibrar con el código actual** sobre tus datos reales, para medir cada mejora del modelo sin repetir la prueba;
 - da recomendaciones concretas.
 
+### Resumen anónimo para el repo
+
+Los logs siguen fuera de git (`.gitignore`: `software/eye-tracking/logs/`). Para que cualquiera pueda revisar la cifra de precisión, quien tiene los logs genera un resumen anónimo y lo sube:
+
+```bash
+node software/eye-tracking/tools/resumen.mjs              # lee software/eye-tracking/logs/
+node software/eye-tracking/tools/resumen.mjs ruta/a/logs  # otra carpeta o un solo log
+git add software/eye-tracking/resultados/
+```
+
+- Vuelve a calibrar cada calibración con el código actual, igual que `analyze.mjs`, con dos perfiles: `so` (Myo OS: solo plano lineal, sin corrección de cabeza) y `demo` (la demo web).
+- Escribe [`resultados/calibraciones.json`](resultados/) y `resultados/calibraciones.md`, e imprime la frase para el README raíz.
+- Cada fila guarda solo: id opaco de la sesión (hash del nombre del archivo con una sal fija), día, fuente, tipo, escala, número de puntos, modelo elegido y error en grados, quieto y con movimiento.
+- No guarda cuadros, puntos de la cara, fotos, nombres, navegador ni datos de la pantalla. Los tests lo comprueban con logs sintéticos (`web/tests/fixtures/logs/`).
+- Las sesiones del simulador quedan fuera.
+
+Sin los logs, cualquiera puede comprobar que el agregado y la tabla salen de las filas:
+
+```bash
+node software/eye-tracking/tools/resumen.mjs --verificar
+```
+
 Herramientas en la página:
 - **Ubícate › Medir estabilidad (E):** 3 s mirando un punto, que da tu temblor de mirada en grados. Pruébalo en cada ubicación (Abajo, Arriba…) y gana la de menor número (★).
 - **Foto de diagnóstico** (opcional): una foto con la webcam del Mac para revisar luz, reflejos y encuadre. Se guarda solo en `logs/`.
@@ -141,3 +163,5 @@ Requisitos: Modo desarrollador activado y el iPhone **desbloqueado** al instalar
 ```bash
 cd software/eye-tracking/web && npm test && npm run check
 ```
+
+Los logs de `web/tests/fixtures/logs/` son sintéticos (`synth.js` con semilla fija). Se regeneran con `node software/eye-tracking/web/tests/fixtures/generar-logs.mjs`.
