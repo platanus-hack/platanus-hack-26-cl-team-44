@@ -1144,7 +1144,9 @@ function waListen(){
       if(ev.status===0) island('⚠️','WhatsApp no pudo entregar el mensaje',true,4000); }
     if(ev.type==='session' && ev.status){
       ++revision; WA.session=ev.status; renderStatus();
-      if(ev.status!=='connected') island('⚠️','WhatsApp se desconectó',true,5000);
+      // Aviso solo si sigue desconectado a los 15 s: un reinicio del puente o de wapi se recupera en ~3 s.
+      clearTimeout(WA.avisoDesc);
+      if(ev.status!=='connected') WA.avisoDesc=setTimeout(()=>{ if(WA.session!=='connected') island('⚠️','WhatsApp se desconectó',true,5000); },15000);
     }
   };
   tokiSSE(CFG.WA_URL+'/api/wa/events', CFG.WA_TOKEN? {'X-Myo-Token':CFG.WA_TOKEN} : {}, es);

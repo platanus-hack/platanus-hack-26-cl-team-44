@@ -147,7 +147,12 @@ cp "$BASE/repo/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable -q --now toki-agente
 systemctl restart toki-agente
-for u in wapi-gateway wapi-api wapi-worker; do systemctl enable -q "$u"; systemctl restart "$u"; done
+# wapi solo se reinicia si está apagado o con TOKI_REINICIAR_WAPI=1: reiniciar el gateway corta WhatsApp unos segundos
+# y la TV muestra "WhatsApp se desconectó". Un deploy de Myo no cambia wapi.
+for u in wapi-gateway wapi-api wapi-worker; do
+  systemctl enable -q "$u"
+  if [ "${TOKI_REINICIAR_WAPI:-0}" = 1 ]; then systemctl restart "$u"; else systemctl start "$u"; fi
+done
 # Si la sesión ya está vinculada, el webhook queda apuntando al puente local (idempotente)
 if grep -q '^WAPI_SESSION_ID=' "$PUENTE_ENV"; then
   sleep 5
