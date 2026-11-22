@@ -127,7 +127,7 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     """Sin token configurado, o pedido local directo (sin proxy): pasa. Por el proxy: exige el token."""
     if not token or not headers.get("X-Forwarded-For"):
         return True
-    dado = headers.get("X-Myo-Token", "")   # solo header: el token nunca va en la URL
+    dado = headers.get("X-Myo-Token") or headers.get("X-Woki-Token") or ""   # solo header; X-Woki-Token es el nombre viejo
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
@@ -160,7 +160,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self._cors()
         self.send_header("Access-Control-Allow-Methods", "GET, POST")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Myo-Token")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Myo-Token, X-Woki-Token")
         self.end_headers()
 
     def do_GET(self):

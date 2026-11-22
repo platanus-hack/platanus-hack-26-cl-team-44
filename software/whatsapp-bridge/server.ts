@@ -218,7 +218,7 @@ const server = http.createServer(async (req, res) => {
   (res as any).cors = ORIGIN;
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Myo-Token" });
+    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Myo-Token, X-Woki-Token" });
     return res.end();
   }
 
@@ -239,7 +239,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 403, { ok: false, reason: "api solo local" });
     // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Myo-Token.
     if (API_TOKEN) {
-      const tok = String(h["x-woki-token"] ?? "");   // solo header: el token nunca va en la URL (la TV usa toki-sse.js)
+      const tok = String(h["x-myo-token"] ?? h["x-woki-token"] ?? "");   // solo header (X-Myo-Token; X-Woki-Token es el nombre viejo)
       if (!tok || !safeEqual(tok, API_TOKEN)) return json(res, 401, { ok: false, reason: "token inválido" });
     }
     // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
