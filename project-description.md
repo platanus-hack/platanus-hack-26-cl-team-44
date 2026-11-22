@@ -1,11 +1,16 @@
 # Myo
 
-**Prototipo de una interfaz accesible con entradas alternativas y sensores musculares.**
+**Myo devuelve las decisiones a personas con ELA. Se usa solo con la cara.**
 
-Myo explora cómo permitir comunicación y control de una interfaz a través de movimientos disponibles para cada persona. El repositorio reúne un MVP de SO con interacción por mouse, cabeza o mirada, un puente de mensajería y una prueba cableada con MyoWare y Arduino UNO.
+Con la ELA, una persona lo siente todo, pero pierde poco a poco la voz y el movimiento. Lo que más extraña no es moverse: es decidir.
 
-La prueba de hardware lee actividad eléctrica mediante electrodos de superficie y muestra las muestras en una gráfica local. Se verificó la comunicación USB; aún falta confirmar una respuesta muscular repetible, calibrar el control y conectarlo al SO.
+En Myo, la cara es el mouse. La mirada apunta, con una webcam o con la cámara Face ID de un iPhone. Un gesto de ceja o de mandíbula elige, leído por la cámara o por sensores musculares MyoWare. Con eso, la persona puede:
 
-El diseño físico contempla una banda con soporte desmontable y una caja para la electrónica. Los archivos CAD y las impresiones se documentarán cuando estén diseñados y probados.
+- **Hablar con su propia voz:** respuestas sugeridas según lo que le dicen, con tono y emoción, o un teclado por grupos que completa las palabras.
+- **Responder sin esperar a nadie:** WhatsApp con sus contactos principales.
+- **Elegir qué comer, qué ver y qué escuchar:** Rappi, YouTube, Spotify y las noticias de BioBioChile, adaptados para usarse con la mirada.
+- **Pedir ayuda de noche:** el SOS avisa a su red de cuidado y muestra quién viene.
 
-El nombre es provisional. Es un proyecto de hackathon: no tiene validación clínica y no debe usarse como sistema de emergencia. La URL pública y la identidad visual definitiva están pendientes.
+Myo no devuelve la movilidad. Devuelve las decisiones.
+
+Myo es un prototipo funcional y una primera versión prometedora. El siguiente paso es validarlo clínicamente con más personas; mientras tanto, acompaña a los cuidados y alarmas médicas, sin reemplazarlos. Demo pública: https://179-66-157-161.sslip.io
