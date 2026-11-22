@@ -6,7 +6,8 @@ Wants=network-online.target
 [Service]
 User=toki
 WorkingDirectory=/opt/toki/repo
-# CLAUDE_CODE_OAUTH_TOKEN (claude setup-token). Archivo solo para root, fuera de git.
+# CLAUDE_CODE_OAUTH_TOKEN (claude setup-token, uso personal) o ANTHROPIC_API_KEY + TOKI_LLM=api (servicio).
+# Archivo solo para root, fuera de git.
 EnvironmentFile=/opt/toki/agente.env
 EnvironmentFile=-/opt/toki/toki.env
 Environment=CLAUDE_CODE_DISABLE_AUTO_MEMORY=1

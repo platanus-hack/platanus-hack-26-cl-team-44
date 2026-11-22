@@ -38,3 +38,5 @@ Imprimir una unidad de cada STL. Importar en milímetros, a escala del 100 % y e
 ### Comprobación antes de usar
 
 Ambos STL se comprobaron como sólidos cerrados de un componente. Queda pendiente la prueba física: pasar la correa, comprobar las pestañas con el Uno y los cables enchufados, e introducir y retirar la batería sobre una mesa. Comprobar que sus 415 g no hacen girar el conjunto antes de llevarlo en el brazo.
+
+La impresión y la comprobación física de la consola y del brazalete se siguen en el [issue #65](https://github.com/platanus-hack/platanus-hack-26-cl-team-44/issues/65).

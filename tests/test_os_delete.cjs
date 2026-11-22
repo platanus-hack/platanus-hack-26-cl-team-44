@@ -1,14 +1,13 @@
 // "Borrar" que acelera (como la tecla de borrar del iPhone): letra → resto de la palabra → palabra a palabra.
 // Ejecutar desde la raíz: node tests/test_os_delete.cjs
 const fs = require("node:fs"), vm = require("node:vm"), assert = require("node:assert/strict");
-const html = fs.readFileSync("software/toki-os/woki-os.html", "utf8");
-const start = html.indexOf("function deleteStep(");
-assert.ok(start >= 0, "existe deleteStep");
-const code = html.slice(start, html.indexOf("\n}", start) + 2);
-const ctx = {};
-vm.createContext(ctx);
-vm.runInContext(code, ctx);
-const del = (t, s) => ctx.deleteStep(t, s);
+const source = fs.readFileSync("software/toki-os/os-keyboard.js", "utf8");
+const createKeyboard = vm.runInNewContext(`${source}\ncreateMyoKeyboard`, {
+  window: { TokiPredict: { createPredictor: () => ({ learn() {} }) } },
+  document: { getElementById: () => ({ innerHTML: "" }) },
+  localStorage: { getItem: () => null, setItem() {} },
+});
+const { deleteStep: del } = createKeyboard({ WORDS: [], RULES: [], DEFAULT: [], REACTS: [] });
 
 // 1.ª vez: una letra (corregir un error)
 assert.equal(del("Me duele la cabezz", 1), "Me duele la cabez");

@@ -1,0 +1,55 @@
+{
+  "_nota": "Memoria ficticia de la TV pública (agente demo, deploy/toki-agente-demo.service). Ningún dato es de una persona real. Los ids de personas son los del panel dev (toki-os/dev-agente.js).",
+  "usuaria": "Ana",
+  "variante": "español latino neutro, con tuteo",
+  "genero": "femenino",
+  "ajustes": {"pedido_para": "pedro", "pedido_ocasion": "su aniversario"},
+  "personas": [
+    {"id": "pedro", "nombre": "Pedro", "relacion": "esposo", "apodos": ["Pedrito"], "tipo_interlocutor": "familia", "trato": "tú"},
+    {"id": "sofi", "nombre": "Sofía", "relacion": "hija", "apodos": ["Sofi"], "tipo_interlocutor": "familia", "trato": "tú"},
+    {"id": "tomas", "nombre": "Tomás", "relacion": "nieto, 9 años", "apodos": ["Tomi"], "tipo_interlocutor": "familia", "trato": "tú"},
+    {"id": "dra_perez", "nombre": "Dra. Pérez", "relacion": "neuróloga", "apodos": ["doctora"], "tipo_interlocutor": "medico", "trato": "usted"},
+    {"id": "camila", "nombre": "Camila", "relacion": "cuidadora", "apodos": ["Cami"], "tipo_interlocutor": "familia", "trato": "tú"},
+    {"id": "luis", "nombre": "Luis", "relacion": "vecino", "apodos": [], "tipo_interlocutor": "desconocido", "trato": "tú"}
+  ],
+  "temas": {
+    "diagnostico": ["ela", "esclerosis", "diagnostico", "enferma", "enfermedad", "pronostico"],
+    "dinero": ["dinero", "plata", "sueldo", "deuda", "pension", "alquiler", "renta"],
+    "salud": ["dolor", "remedio", "medicamento", "respirar", "terapia", "fisioterapia", "pastilla", "dormir"]
+  },
+  "limites": [
+    {"persona_id": "tomas", "tema": "diagnostico", "motivo": "La familia prefiere no hablar del diagnóstico con el nieto"},
+    {"tipo_interlocutor": "desconocido", "tema": "dinero", "motivo": "Los temas de dinero solo en familia"}
+  ],
+  "memorias": [
+    {"tipo": "perfil", "subtipo": "identidad", "texto": "Se llama Ana, le dicen Anita. Tiene 61 años y fue maestra de primaria.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "personalidad", "texto": "Es bromista y directa. No le gusta que la traten como enferma.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Le encantan los girasoles.", "privacidad": "publico", "personas": ["pedro"]},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Le gustan los boleros y ver fútbol los domingos.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Su postre favorito es el flan de coco.", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Le gusta la pizza de champiñones y no le gusta la cebolla.", "privacidad": "familia"},
+    {"tipo": "perfil", "subtipo": "familia", "texto": "Pedro y Ana llevan 35 años casados.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "perfil", "subtipo": "salud", "texto": "Tiene ELA desde 2023. En la tarde le duele la espalda baja.", "privacidad": "salud", "temas": ["diagnostico", "salud"]},
+    {"tipo": "perfil", "subtipo": "dinero", "texto": "Le preocupa pagar el alquiler este mes.", "privacidad": "familia", "temas": ["dinero"]},
+    {"tipo": "rutina", "texto": "Fisioterapia los martes y jueves", "hora": "10:00", "dias": "mar,jue", "privacidad": "salud", "temas": ["salud"]},
+    {"tipo": "rutina", "texto": "Almuerzo familiar los domingos", "hora": "13:30", "dias": "dom", "privacidad": "familia", "personas": ["sofi", "tomas", "pedro"]},
+    {"tipo": "rutina", "texto": "Ve una película con Pedro los viernes en la noche", "dias": "vie", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "rutina", "texto": "Toma una siesta después de almorzar", "privacidad": "publico"},
+    {"tipo": "episodio", "fecha": "2026-11-20", "texto": "Fue al cine con Pedro a ver una comedia y se rieron mucho.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "episodio", "fecha": "2026-11-18", "texto": "Sofía contó que el cumpleaños de Tomás es el sábado.", "privacidad": "familia", "personas": ["sofi", "tomas"]},
+    {"tipo": "episodio", "fecha": "2026-11-15", "texto": "Tomás le mostró un dibujo de un dinosaurio verde.", "privacidad": "familia", "personas": ["tomas"]},
+    {"tipo": "episodio", "fecha": "2026-11-12", "texto": "La doctora ajustó la dosis del remedio para dormir.", "privacidad": "salud", "personas": ["dra_perez"], "temas": ["salud"]},
+    {"tipo": "episodio", "fecha": "2026-11-10", "texto": "Camila le enseñó un juego de palabras nuevo en la tableta.", "privacidad": "familia", "personas": ["camila"]},
+    {"tipo": "episodio", "fecha": "2026-11-08", "texto": "Luis le trajo mangos de su árbol.", "privacidad": "publico", "personas": ["luis"]},
+    {"tipo": "episodio", "fecha": "2026-11-05", "texto": "Pedro cocinó sopa de pollo y le quedó salada.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "estilo", "texto": "¡Claro que sí! Guárdame postre.", "privacidad": "publico"},
+    {"tipo": "estilo", "texto": "No me hagas reír que me ahogo.", "privacidad": "familia"},
+    {"tipo": "estilo", "texto": "Ay, qué bonito, gracias.", "privacidad": "publico"},
+    {"tipo": "estilo", "texto": "Mi amor, ven y me cuentas.", "privacidad": "familia", "personas": ["pedro"]},
+    {"tipo": "estilo", "texto": "Tomi, ¿me enseñas tu dibujo?", "privacidad": "familia", "personas": ["tomas"]},
+    {"tipo": "estilo", "texto": "Mañana lo hablamos con calma.", "privacidad": "publico"},
+    {"tipo": "estilo", "texto": "Eso estuvo buenísimo.", "privacidad": "publico"},
+    {"tipo": "lexico", "texto": "Palabras suyas: claro, mi amor, porfa, buenísimo, ¿sabes?", "privacidad": "publico"},
+    {"tipo": "perfil", "subtipo": "gusto", "texto": "Dato no aprobado todavía: le gusta el sushi.", "privacidad": "publico", "estado": "propuesta"}
+  ]
+}

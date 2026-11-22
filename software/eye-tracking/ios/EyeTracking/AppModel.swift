@@ -19,13 +19,11 @@ final class AppModel: ObservableObject {
     private let server = GazeServer()
     private let motion = CMMotionManager()
     private let motionQueue = OperationQueue()
-    private var requestedFPS = 60
-    private var thermalFPSCap = 60
+    private var frameRate = FrameRatePolicy()
     /// fps con los que corre ARKit ahora (0 = pausado). Evita reiniciar la cámara sin necesidad.
     private var appliedFPS = 0
     private var idleTask: Task<Void, Never>?
     private var isIdleThrottled = true
-    private static let idleFPS = 30
     private static let idleGrace: Duration = .seconds(20)
     private static let dimmedBrightness: CGFloat = 0.05
     private static let savedBrightnessKey = "eyetracking.savedBrightness"
@@ -138,23 +136,8 @@ final class AppModel: ObservableObject {
     private func applyThermalPolicy() {
         let state = ProcessInfo.processInfo.thermalState
         sensor.thermal.set(Float(state.rawValue))
-        switch state {
-        case .nominal:
-            thermalFPSCap = 60
-            thermalNote = nil
-        case .fair:
-            // Histéresis: desde 30/pausa no volvemos a 60 hasta estar en nominal (evita oscilar).
-            thermalFPSCap = thermalFPSCap == 60 ? 60 : 30
-            thermalNote = thermalFPSCap == 30 ? "iPhone tibio: sigo a 30 fps hasta que se enfríe." : nil
-        case .serious:
-            thermalFPSCap = 30
-            thermalNote = "iPhone caliente: bajé a 30 fps. Quítale la funda o aléjalo del sol."
-        case .critical:
-            thermalFPSCap = 0
-            thermalNote = "iPhone muy caliente: pausé el seguimiento para protegerlo."
-        @unknown default:
-            thermalFPSCap = 30
-        }
+        frameRate.updateThermalState(state)
+        thermalNote = frameRate.thermalNote
         reconcileSensor()
     }
 
@@ -162,8 +145,7 @@ final class AppModel: ObservableObject {
     /// Sin Mac conectado corre a 30 fps (solo sirve para ubicar el iPhone) y se enfría más.
     private func reconcileSensor() {
         guard isRunning else { return }
-        var fps = min(requestedFPS, thermalFPSCap)
-        if isIdleThrottled { fps = min(fps, Self.idleFPS) }
+        let fps = frameRate.effectiveFPS(isIdleThrottled: isIdleThrottled)
         guard fps != appliedFPS else { return }
         appliedFPS = fps
         if fps == 0 { sensor.pause() } else { sensor.run(fps: fps) }
@@ -243,8 +225,7 @@ final class AppModel: ObservableObject {
     }
 
     private func handle(command: String) {
-        guard command.hasPrefix("fps:"), let fps = Int(command.dropFirst(4)), [30, 60].contains(fps) else { return }
-        requestedFPS = fps
+        guard command.hasPrefix("fps:"), let fps = Int(command.dropFirst(4)), frameRate.request(fps) else { return }
         reconcileSensor()
     }
 }

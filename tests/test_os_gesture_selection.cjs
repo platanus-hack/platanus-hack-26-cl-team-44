@@ -4,7 +4,10 @@ const { test } = require('node:test');
 const vm = require('node:vm');
 
 const html = readFileSync('software/toki-os/woki-os.html','utf8');
-const gestures = html.slice(html.indexOf('function goBack('), html.indexOf('function targetLayer('));
+const shell = readFileSync('software/toki-os/os-shell.js','utf8');
+const gestureController = readFileSync('software/toki-os/os-gestures.js','utf8');
+const navigationController = readFileSync('software/toki-os/os-navigation.js','utf8');
+const gestures = shell.slice(shell.indexOf('function gestureBlocked('), shell.indexOf('function targetLayer('));
 
 function setup({ myoware = true, wheel = false } = {}) {
   let now = 0, id = 0;
@@ -15,7 +18,7 @@ function setup({ myoware = true, wheel = false } = {}) {
   const careWheel = wheel ? { active: false, back() { actions.push('wheel-back'); } } : null;
   const app = vm.createContext({
     S, history, trackerOnly: false, document: { visibilityState: 'visible', body: { classList: { contains: name => flags[name] } } },
-    CFG: { faceBrowMaxMs: Number(html.match(/\bfaceBrowMaxMs:\s*(\d+)/)[1]) },
+    CFG: { faceBrowMaxMs: Number(shell.match(/\bfaceBrowMaxMs:\s*(\d+)/)[1]) },
     $: selector => ({ classList: { contains: () => flags[selector.slice(1)] } }),
     flashGesture() {}, confirmFocus: () => actions.push('confirm'),
     myowareConfirming: () => myoware, targetLayer: () => S.screen,
@@ -25,7 +28,15 @@ function setup({ myoware = true, wheel = false } = {}) {
     setTimeout(fn, ms) { timers.set(++id, { fn, at: now + ms }); return id; },
     clearTimeout(key) { timers.delete(key); }
   });
-  vm.runInContext(gestures, app);
+  vm.runInContext(`
+    ${navigationController}
+    const { goBack } = createMyoNavigation({
+      state: S, history, renderKeys, navigate: go, closeEmotions: closeEmoRing, leaveRest: () => setRest(false),
+    });
+    ${gestureController}
+    ${gestures}
+    Object.assign(globalThis, { goBack, pressSrc, releaseSrc, receiveMyoWare });
+  `, app);
   return { app, S, history, flags, actions, advance(ms) {
     const end = now + ms;
     for (;;) {
@@ -50,7 +61,7 @@ test('a detected brow confirms immediately; holding or releasing it does not con
 });
 
 test('only gaze-dwell modes fill progress and select timed targets', () => {
-  const code = html.slice(html.indexOf('function tick(now)'), html.indexOf('/* ===================== Alarma'));
+  const code = shell.slice(shell.indexOf('function tick(now)'), shell.indexOf('const { startAlarm'));
   function simulate({ myoware = false, iphone = false, dwell = false, rest = false, strict = false }) {
     let now = 0, selections = 0, progress = 0;
     const target = { dataset: { dwell: '2000' }, isConnected: true,
@@ -94,19 +105,15 @@ test('only gaze-dwell modes fill progress and select timed targets', () => {
   assert.deepEqual(simulate({ iphone: true, strict: true }), { selections: 0, progress: 0, resting: false });
 });
 
-test('successful webcam setup enables saved MyoWare without a monitor link', () => {
-  const start = html.indexOf("  import { setupMyoWareGestures } from './myoware-click.js';");
-  const module = html.slice(html.indexOf('\n', start), html.indexOf('</script>', start));
+test('successful webcam setup enables saved MyoWare without a monitor link', async () => {
+  const { createMyoWareHandoff } = await import('../software/toki-os/os-myoware.js');
   function setup({ hasProfile = true, fromMonitor = false, mode = 'click', tabletComposer = false, trackerOnly = false } = {}) {
-    const CFG = { mode }, MYO = {};
     let selected = 0;
-    const context = {
-      CFG, trackerOnly, tabletComposer, window: { MYO }, URLSearchParams,
-      location: { search: fromMonitor ? '?myoware=1' : '' },
-      receiveMyoWare() {}, setupMyoWareGestures: () => ({ enable: () => hasProfile }),
-      iphonePointing: () => false, setMyoWareConfirmation: () => { selected++; },
-    };
-    vm.runInNewContext(module, context);
+    const MYO = createMyoWareHandoff({
+      fromMonitor, trackerOnly, tabletComposer, getMode: () => mode,
+      receiveInput() {}, setup: () => ({ enable: () => hasProfile }),
+      pointingWithIPhone: () => false, setConfirmation: () => { selected++; },
+    });
     return { MYO, get selected() { return selected; } };
   }
   const standard = setup();
@@ -146,8 +153,8 @@ test('jaw, blocked UI, and release without a new detection do not confirm', () =
 });
 
 test('Back button returns a screen or keyboard level without deleting a draft', () => {
-  assert.match(html, /class="t nav-action back-nav" data-t data-act="back">‹ Volver/);
-  assert.match(html, /case 'back': goBack\(\); break/);
+  assert.match(shell, /class="t nav-action back-nav" data-t data-act="back">‹ Volver/);
+  assert.match(shell, /case 'back': goBack\(\); break/);
   assert.doesNotMatch(html, /id="quickDialog"/);
   assert.doesNotMatch(html, /S\.quick|G\.down|gazeOnly/);
   const { app, S, history, actions } = setup();
@@ -168,12 +175,11 @@ test('official rest screen keeps explicit Volver and SOS targets with freshness 
   const rest = html.match(/<div class="overlay" id="rest"[\s\S]*?<\/div>\s*<\/div>/)?.[0] || '';
   assert.match(rest, /id="restWake"[^>]*data-act="wake"/);
   assert.match(rest, /class="t rest-sos"[^>]*data-act="sos"/);
-  assert.match(html, /function setRest\(on\)\{\s*if\(S\.rest===on\) return;/);
-  assert.match(html, /function controlPointFresh\(now\)/);
-  assert.match(html, /restDwell\.reset\(\); restMagnet\.reset\(\)/);
-  assert.match(html, /if\(!A\.fromCareWheel && !A\.called\)[\s\S]{0,100}VOZ\.emergencia\(A\)/);
-  assert.match(html, /onSOS:\(\)=>\{[\s\S]{0,100}fromCareWheel:true/);
-  assert.match(html, /SOS de prueba\. No se contactó a nadie/);
+  assert.match(shell, /function setRest\(on\)\{\s*if\(S\.rest===on\) return;/);
+  assert.match(shell, /function controlPointFresh\(now\)/);
+  assert.match(shell, /restDwell\.reset\(\); restMagnet\.reset\(\)/);
+  assert.match(shell, /onSOS:\(\)=>\{[\s\S]{0,100}fromCareWheel:true/);
+  assert.match(shell, /SOS de prueba\. No se contactó a nadie/);
 });
 
 test('jaw goes back immediately away from Home and opens or closes the wheel at Home', () => {

@@ -1,0 +1,21 @@
+[Unit]
+Description=Myo · agente demo de la TV pública, con memoria ficticia (software/agent/server.py)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=toki
+WorkingDirectory=/opt/toki/repo
+# Las mismas credenciales del modelo que toki-agente (agente.env, solo root, fuera de git).
+EnvironmentFile=/opt/toki/agente.env
+# Lo propio de la demo, después para que gane: TOKI_DEMO=1, puerto 8792, TOKI_DATA, tope diario y su token.
+# Sin este archivo el servicio no arranca: así nunca corre con la memoria real. Lo escribe deploy/instalar.sh.
+EnvironmentFile=/opt/toki/toki-demo.env
+Environment=CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/toki/venv/bin/python software/agent/server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

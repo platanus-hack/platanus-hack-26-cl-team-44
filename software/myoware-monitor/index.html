@@ -36,6 +36,7 @@
 <footer>Mac solo a batería, sin cargador, dock ni monitor conectado. No cambies conexiones mientras esté alimentado. Datos locales; el panel conserva hasta 60 segundos para diagnóstico.</footer>
 <script>
 let data = [], lastNow = 0, latest = [];
+const signalTimeoutSeconds = 1.5;
 const $ = id => document.getElementById(id);
 const monitorInToki = /^\/myoware\/?$/.test(location.pathname);
 const canvas = $('plot'), ctx = canvas.getContext('2d');
@@ -93,18 +94,19 @@ function draw() {
     ctx.strokeStyle = color;
     ctx.setLineDash(dash);
     ctx.beginPath();
-    let started = false;
+    let previousTime = null;
     for (const row of data) {
-      if (row[0] < since) continue;
+      const [time] = row;
+      if (time < since) continue;
       const value = row[column];
       if (value == null) {
-        started = false;
+        previousTime = null;
         continue;
       }
-      const x = left + (row[0] - since) / 10 * (w - left);
-      if (started) ctx.lineTo(x, y(value));
+      const x = left + (time - since) / 10 * (w - left);
+      if (previousTime !== null && time >= previousTime && time - previousTime < signalTimeoutSeconds) ctx.lineTo(x, y(value));
       else ctx.moveTo(x, y(value));
-      started = true;
+      previousTime = time;
     }
     ctx.stroke();
   }
@@ -123,7 +125,7 @@ async function poll() {
     const ble = transport === 'ble';
     data = samples;
     lastNow = now;
-    const fresh = connected && last > 0 && now - last < 1.5;
+    const fresh = connected && last > 0 && now - last < signalTimeoutSeconds;
     latest = fresh ? data.at(-1) : [];
     status.textContent = fresh ? '● Recibiendo señal' : connected
       ? 'Conectado · esperando datos compatibles' : ble ? 'MyoWare BLE no disponible' : 'Arduino no disponible';

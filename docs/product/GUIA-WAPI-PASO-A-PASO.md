@@ -45,7 +45,7 @@ Tu celular ──(QR, dispositivo vinculado)──► servidor de wapi ◄──
 | **Session key** (`WAPI_API_KEY`) | La clave de **una** sesión. Sirve para enviar mensajes y leer contactos. Empieza con `wapi_sk_` | Va en `.env`, nunca en el HTML |
 | **PAT** (`WAPI_PAT`) | Personal Access Token: la clave de **tu cuenta**. Sirve para crear o configurar sesiones. Se muestra **una sola vez** | Página **Tokens** del dashboard |
 | **Webhook** | Cuando llega un mensaje a tu número, wapi hace un POST a una URL tuya para avisarte. wapi **no** tiene otra forma de entregarte los mensajes entrantes | `https://xxxx.trycloudflare.com/webhook/wapi` |
-| **Webhook secret** (`WAPI_WEBHOOK_SECRET`) | Clave para comprobar que el aviso viene de wapi y no de un tercero. Viaja en el header `X-Webhook-Signature` | — |
+| **Webhook secret** (`WAPI_WEBHOOK_SECRET`) | Clave para comprobar que el aviso viene de wapi y no de un tercero. En el header `X-Webhook-Signature` viaja el HMAC-SHA256 del cuerpo en hex; el puente rechaza el secreto en texto plano (lo que wapi manda por defecto). En wapi propio se activa con `webhook_hmac = true` en `whatsapp_sessions` (lo hacen `deploy/instalar.sh` y `deploy/vincular-whatsapp.sh`) | — |
 | **Túnel** | Da una URL pública a tu Mac para que wapi pueda alcanzarlo. Usamos `cloudflared` | `cloudflared tunnel --url http://localhost:8787` |
 | **Sandbox** | Un número **falso** en un WhatsApp falso que ofrece wapi. Mismas rutas y mismos avisos que uno real. Sirve para probar sin arriesgar ningún número | Números que empiezan con `+999` |
 | **JID** | Cómo WhatsApp identifica a alguien: `56912345678@s.whatsapp.net`. Un grupo termina en `@g.us` | — |
@@ -338,8 +338,9 @@ function json(res: http.ServerResponse, code: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 const safeEqual = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
+// Solo HMAC-SHA256 del cuerpo en hex (wapi con webhook_hmac = true). El secreto en texto plano no vale como firma.
 const verify = (raw: string, sig?: string) =>
-  !!SECRET && !!sig && (safeEqual(sig, SECRET) || safeEqual(sig, createHmac("sha256", SECRET).update(raw).digest("hex")));
+  !!SECRET && /^[0-9a-f]{64}$/i.test(sig ?? "") && timingSafeEqual(createHmac("sha256", SECRET).update(raw).digest(), Buffer.from(sig!, "hex"));
 
 // ---------- rutas ----------
 const server = http.createServer(async (req, res) => {

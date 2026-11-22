@@ -6,8 +6,11 @@
 
 export const FRAME_VERSION = 2;
 export const FRAME_FLOATS = 56; // v2: + cuaternión de la cabeza (47–50)
-export const FRAME_BYTES = FRAME_FLOATS * 4;
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+export const FRAME_BYTES = FRAME_FLOATS * FLOAT_BYTES;
 const V1_FLOATS = 48; // compatibilidad con la app anterior (sin cuaternión)
+const V1_BYTES = V1_FLOATS * FLOAT_BYTES;
+const nativeLittleEndian = new Uint8Array(Uint16Array.of(1).buffer)[0] === 1;
 
 export const IDX = Object.freeze({
   version: 0,
@@ -44,10 +47,10 @@ const GEOMETRY = [IDX.leftEyePos, IDX.leftEyeDir, IDX.rightEyePos, IDX.rightEyeD
  */
 export function decodeFrame(buf) {
   if (!(buf instanceof ArrayBuffer)) return null;
-  const f = new Float32Array(buf);
-  const isV2 = buf.byteLength === FRAME_BYTES && f[IDX.version] === 2;
-  const isV1 = buf.byteLength === V1_FLOATS * 4 && f[IDX.version] === 1;
-  if (!isV2 && !isV1) return null;
+  const isV2 = buf.byteLength === FRAME_BYTES;
+  if (!isV2 && buf.byteLength !== V1_BYTES) return null;
+  const f = readFloats(buf);
+  if (f[IDX.version] !== (isV2 ? FRAME_VERSION : 1)) return null;
   const q = isV2 ? [f[IDX.headQuat], f[IDX.headQuat + 1], f[IDX.headQuat + 2], f[IDX.headQuat + 3]] : null;
   const quatOk = q && q.every(Number.isFinite) && Math.abs(Math.hypot(...q) - 1) < 0.05;
   const geometryOk = GEOMETRY.every((i) => Number.isFinite(f[i]) && Number.isFinite(f[i + 1]) && Number.isFinite(f[i + 2]));
@@ -70,9 +73,17 @@ export function decodeFrame(buf) {
     fps: f[IDX.fps],
     gravity: vec3(f, IDX.gravity),
     battery: f[IDX.battery],
-    rescues: isV2 || isV1 ? f[IDX.rescues] : 0,
+    rescues: f[IDX.rescues],
     headQuat: quatOk ? Object.freeze(q) : null, // null en v1: el modelo 3D no está disponible
     // blendshapes crudos de los ojos (0–1): fuente de lo que ARKit cree que hace cada ojo
     look: Object.freeze([f[IDX.lookUpL], f[IDX.lookDownL], f[IDX.lookInL], f[IDX.lookOutL], f[IDX.lookUpR], f[IDX.lookDownR], f[IDX.lookInR], f[IDX.lookOutR]]),
   });
+}
+
+function readFloats(buffer) {
+  if (nativeLittleEndian) return new Float32Array(buffer);
+  const view = new DataView(buffer);
+  const floats = new Float32Array(buffer.byteLength / FLOAT_BYTES);
+  for (let i = 0; i < floats.length; i++) floats[i] = view.getFloat32(i * FLOAT_BYTES, true);
+  return floats;
 }

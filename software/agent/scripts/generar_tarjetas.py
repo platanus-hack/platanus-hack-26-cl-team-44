@@ -8,7 +8,7 @@
   de familia, 6 por cada persona de familia. Cada pedido ve solo las memorias que ese destinatario puede ver
   (memoria/filtros.py): las tarjetas generales solo usan memorias públicas.
 - Cada tarjeta guarda sus fuentes (ids de memoria) y toma la privacidad más estricta de esas memorias.
-- Usa la suscripción de Claude Code de la máquina (claude-agent-sdk), como el agente. Modelo: TOKI_MODELO.
+- Llama al modelo con llm.py, como el agente (TOKI_LLM: suscripción de Claude Code o API). Modelo: TOKI_MODELO.
 
 --temas-extra: {"temas": [{"id", "nombre", "palabras": [...]}]}   (datos de la usuaria: va en data/, fuera de git)
 """
@@ -25,6 +25,7 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(AGENT))
 
+import llm  # noqa: E402
 import tarjetas  # noqa: E402
 from agente import MODELO  # noqa: E402
 from memoria import contexto, store  # noqa: E402
@@ -52,19 +53,12 @@ Reglas:
 
 
 async def pedir(c, tema: dict, persona: dict | None, sem: asyncio.Semaphore) -> list[dict]:
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
     ctx = contexto.armar(c, persona)
     para = f"{persona['nombre']} ({persona['relacion']}, trato {persona['trato']})" if persona else "cualquier persona (sin datos privados)"
     prompt = (contexto.a_texto(ctx) + f"\n\nTema: {tema['nombre']} (palabras: {', '.join(tema['palabras'][:12])}).\n"
               f"Destinatario: {para}.\nEscribe {N} tarjetas que ella podría decir cuando le hablan de este tema.")
-    op = ClaudeAgentOptions(system_prompt=sistema(c), model=MODELO, tools=[], allowed_tools=[], setting_sources=[],
-                            strict_mcp_config=True, max_turns=2, effort="low",
-                            output_format={"type": "json_schema", "schema": ESQUEMA}, env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"})
     async with sem:
-        datos = None
-        async for msg in query(prompt=prompt, options=op):
-            if isinstance(msg, ResultMessage):
-                datos = msg.structured_output
+        datos, _ = await llm.consultar(sistema(c), prompt, ESQUEMA, MODELO)
     privs = {f"m{m['id']}": m["privacidad"] for ms in ctx["memorias"].values() for m in ms}
     out = []
     for i, t in enumerate((datos or {}).get("tarjetas") or []):

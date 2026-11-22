@@ -27,6 +27,11 @@ Modo dev de la TV:
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
 Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Myo-Token.
 Nunca en la URL: la TV lee el SSE con fetch (toki-sse.js). El puente local entra sin token.
+
+Otra instancia con el mismo código (por ejemplo, la TV pública con memoria ficticia):
+  TOKI_AGENTE_PORT  puerto (8790 por defecto)
+  TOKI_DATA         carpeta de la memoria y sus archivos (software/agent/data por defecto)
+  TOKI_DEMO=1       modo demo: rechaza con 403 las rutas de RUTAS_FUERA_DE_DEMO. Exige un TOKI_DATA propio.
 """
 from __future__ import annotations
 
@@ -47,7 +52,9 @@ AGENT = Path(__file__).resolve().parent
 sys.path.insert(0, str(AGENT))
 
 import grupos  # noqa: E402
+import llm  # noqa: E402
 import pedido  # noqa: E402
+import solicitudes  # noqa: E402
 import tarjetas  # noqa: E402
 from agente import MODELO, MODOS, run_agent  # noqa: E402
 from memoria import store  # noqa: E402
@@ -55,8 +62,19 @@ from memoria.filtros import VISIBLE  # noqa: E402
 import hablantes  # noqa: E402
 
 PORT = int(os.environ.get("TOKI_AGENTE_PORT", "8790"))
-DATA = AGENT / "data"
+DATA_REAL = AGENT / "data"
+DATA = Path(os.environ.get("TOKI_DATA") or DATA_REAL)
 DB = DATA / "memoria.db"
+DEMO = os.environ.get("TOKI_DEMO", "") == "1"
+# Modo demo: rutas que escriben en disco, usan las huellas de voz (el servicio de voces es uno solo y guarda
+# voces reales) o vienen del puente de WhatsApp. Las que solo leen la memoria y sugieren siguen igual.
+RUTAS_FUERA_DE_DEMO = (
+    "/api/voces/",                # registrar, borrar, quién habla: huellas de voz reales (lista responde vacía)
+    "/api/tarjetas/uso",          # escribe tarjetas_uso.jsonl (aprende el orden)
+    "/api/seleccion",             # escribe selecciones.jsonl
+    "/api/disparadores/estado",   # escribe disparadores.json y avisa a todas las TV
+    "/api/grupo",                 # la llama el puente de WhatsApp; guarda el contexto del grupo
+)
 DISPARADORES = grupos.Disparadores(DATA / "disparadores.json")
 ORIGENES = {o.strip() for o in os.environ.get(
     "TOKI_ORIGENES", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8766,http://127.0.0.1:8766").split(",")}
@@ -143,6 +161,12 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
+def fuera_de_demo(path: str, demo: bool = DEMO) -> bool:
+    """En modo demo, True si la ruta está en RUTAS_FUERA_DE_DEMO (una que termina en / cubre todo lo de abajo)."""
+    path = urlparse(path).path
+    return demo and any(path.startswith(r) if r.endswith("/") else path == r for r in RUTAS_FUERA_DE_DEMO)
+
+
 VOCES_URL = os.environ.get("TOKI_VOCES_URL", "http://127.0.0.1:8791")
 
 
@@ -197,12 +221,16 @@ class Handler(BaseHTTPRequestHandler):
         if not autorizado(self.headers, self.path):
             return self._json(401, {"error": "falta el token"})
         self.path = urlparse(self.path).path
+        if fuera_de_demo(self.path):
+            if self.path == "/api/voces/lista":   # la demo no tiene voces registradas; no le pregunta al servicio de voces
+                return self._json(200, {"ok": True, "personas": []})
+            return self._json(403, {"ok": False, "error": "no disponible en la demo pública"})
         if self.path.startswith("/api/voces/"):
             return self._json(*a_voces("GET", self.path))
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "genero": store.meta(c, "genero", ""), "personas": len(store.personas(c)), "modelo": MODELO,
-                    "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None,
+                    "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None, "demo": DEMO,
                     "modos": list(MODOS), "disparadores": [{k: d.get(k) for k in ("id", "grupo_nombre", "estado")}
                                                           for d in DISPARADORES.listar()]}
             c.close()
@@ -248,6 +276,8 @@ class Handler(BaseHTTPRequestHandler):
         o = self.headers.get("Origin")
         if o and o not in ORIGENES:
             return self._json(403, {"error": "origen no permitido"})
+        if fuera_de_demo(self.path):
+            return self._json(403, {"ok": False, "error": "no disponible en la demo pública"})
         if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
             return self._json(415, {"error": "solo application/json"})
         body = self._body()
@@ -259,16 +289,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(*a_voces("POST", self.path, body))
 
         if self.path == "/api/sugerir":
-            texto = str(body.get("texto", "")).strip()[:2000]
+            texto = solicitudes.texto(body, 2000)
             modo = body.get("modo") if body.get("modo") in MODOS else "chat"
             if not texto:
                 return self._json(400, {"error": "falta el texto"})
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
+            historial = solicitudes.historial(body)
             c = store.conectar(DB)
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))   # sin persona = desconocido (lo más restringido)
-                excluir = [str(x)[:200] for x in (body.get("excluir") or [])][:20]
-                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=excluir, traza=body.get("traza") is True)
+                no_incluir = solicitudes.excluir(body)
+                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=no_incluir, traza=body.get("traza") is True)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})
             finally:
@@ -278,8 +308,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, r)
 
         if self.path == "/api/tarjetas":
-            texto = str(body.get("texto", "")).strip()[:2000]
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-3:]
+            texto = solicitudes.texto(body, 2000)
+            historial = solicitudes.historial(body, 3)
             c = store.conectar(DB)
             try:
                 p, efectivo = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
@@ -292,11 +322,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {**r, "tipo_interlocutor": efectivo, "persona": (p or {}).get("id")})
 
         if self.path == "/api/iniciales":
-            ini = "".join(ch for ch in str(body.get("iniciales", "")).lower() if ch.isalnum())[:16]
-            texto = str(body.get("texto", "")).strip()[:2000]
+            ini = solicitudes.iniciales(body)
+            texto = solicitudes.texto(body, 2000)
             if not ini:
                 return self._json(400, {"error": "faltan las iniciales"})
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
+            historial = solicitudes.historial(body)
             c = store.conectar(DB)
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
@@ -378,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, d)
 
         if self.path == "/api/simular":
-            texto = str(body.get("texto", "")).strip()[:1000]
+            texto = solicitudes.texto(body, 1000)
             canal = body.get("canal") if body.get("canal") in CANALES else "grupo"
             if not texto:
                 return self._json(400, {"error": "falta el texto"})
@@ -391,15 +421,23 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if DEMO and DATA.resolve() == DATA_REAL.resolve():
+        sys.exit("TOKI_DEMO=1 necesita su propia carpeta TOKI_DATA: la demo nunca usa la memoria de software/agent/data")
     if not DB.exists():
-        sys.exit("Falta la base. Corre primero: python3 software/agent/scripts/semilla.py --ejemplo")
-    if not DISPARADORES.path.exists():
+        sys.exit(f"Falta la base {DB}. Corre primero: python3 software/agent/scripts/semilla.py --ejemplo"
+                 " (con TOKI_DATA si usas otra carpeta)")
+    if not DEMO and not DISPARADORES.path.exists():   # la demo no tiene disparadores: no hay grupos de WhatsApp
         shutil.copy(AGENT / "ejemplos" / "disparadores.example.json", DISPARADORES.path)
-        print(f"Copié el disparador de ejemplo a {DISPARADORES.path.relative_to(AGENT)} (estado pendiente)")
+        print(f"Copié el disparador de ejemplo a {DISPARADORES.path} (estado pendiente)")
     threading.Thread(target=trabajador_dev, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     srv.daemon_threads = True
-    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · orígenes {', '.join(sorted(ORIGENES))}", flush=True)
+    try:
+        modo_llm = llm.backend()
+    except llm.ErrorLLM as e:
+        modo_llm = str(e)
+    print(f"toki-agent · http://127.0.0.1:{PORT} · modelo {MODELO} · llm {modo_llm} · datos {DATA}{' · DEMO' if DEMO else ''}"
+          f" · tope {MAX_DIA or 'sin tope'} · orígenes {', '.join(sorted(ORIGENES))}", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

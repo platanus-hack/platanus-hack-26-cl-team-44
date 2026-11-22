@@ -1,6 +1,6 @@
 """Agente de 1 turno: recibe un mensaje y devuelve un resumen y opciones de respuesta.
 
-Usa claude-agent-sdk con la sesión de Claude Code de la máquina (suscripción).
+Llama al modelo con llm.py: suscripción de Claude Code o API de Anthropic, según TOKI_LLM.
 Sin herramientas: el código arma el contexto (memoria filtrada) y el modelo solo redacta.
 Si falla o pasa el tope de tiempo, devuelve opciones de reglas.
 
@@ -17,6 +17,7 @@ import re
 import sqlite3
 import time
 
+import llm
 from memoria import contexto, salida, store
 
 EMOS = ["ironica", "alegre", "carinosa", "susurro", "seria", "entusiasta"]
@@ -121,27 +122,7 @@ def _prompt(ctx: dict, texto: str, historial: list[str] | None) -> str:
 
 
 async def _consultar(sistema: str, prompt: str, pedir: int) -> tuple[dict | None, dict]:
-    from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-
-    opciones = ClaudeAgentOptions(
-        system_prompt=sistema,
-        model=MODELO,
-        tools=[],                    # sin herramientas integradas (Bash, archivos, web)
-        allowed_tools=[],
-        setting_sources=[],          # sin CLAUDE.md, hooks ni ajustes de la máquina
-        strict_mcp_config=True,      # sin conectores externos
-        max_turns=2,
-        effort="low",
-        output_format={"type": "json_schema", "schema": _esquema(pedir)},
-        env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
-    )
-    datos, meta = None, {}
-    async for msg in query(prompt=prompt, options=opciones):
-        if isinstance(msg, ResultMessage):
-            datos = msg.structured_output
-            meta = {"subtype": msg.subtype, "duration_ms": msg.duration_ms, "num_turns": msg.num_turns,
-                    "cost_usd_estimado": msg.total_cost_usd, "error": msg.is_error}
-    return datos, meta
+    return await llm.consultar(sistema, prompt, _esquema(pedir), MODELO)
 
 
 def armar_traza(ctx: dict, opciones: list[dict], fuera: list[dict], origen: str, modo: str,

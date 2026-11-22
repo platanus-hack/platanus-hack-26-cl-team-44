@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import unicodedata
 from collections import Counter
 from pathlib import Path
@@ -29,8 +30,9 @@ from memoria import salida
 
 AGENT = Path(__file__).resolve().parent
 CATALOGO = AGENT / "catalogo" / "temas.json"
-USUARIA = AGENT / "data" / "tarjetas.json"
-USO = AGENT / "data" / "tarjetas_uso.jsonl"
+DATA = Path(os.environ.get("TOKI_DATA") or AGENT / "data")   # otra instancia (la demo) usa su propia carpeta
+USUARIA = DATA / "tarjetas.json"
+USO = DATA / "tarjetas_uso.jsonl"
 N_TARJETAS = 6
 
 
