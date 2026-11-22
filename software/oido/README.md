@@ -2,7 +2,13 @@
 
 Servicio local que escucha la sala. Abre el micrófono, separa las voces con ElevenLabs Scribe v3 Live y le entrega a la TV turnos con hablante: `{texto, hablante: "S2", persona: "juan"}`.
 
-Corre en el computador que tiene el micrófono, no en la VPS. Es la fase 1 de sacar la escucha del navegador: hoy la hace `toki-os/myo-escucha.js` dentro de la pestaña. En esta rama la TV todavía no lo usa.
+Corre en el computador que tiene el micrófono, no en la VPS.
+
+**Con la TV.** Al abrirse, la TV (`toki-os/myo-escucha.js`) consulta `http://127.0.0.1:8792`:
+
+- **Si el oído responde,** no abre el micrófono. Recibe los turnos por SSE, avisa cuándo habla Myo y manda las asignaciones de voz.
+- **Si no responde,** la escucha sigue en el navegador como antes.
+- **Si el oído se cae con la TV abierta,** el indicador dice «El oído no responde» y la TV se reconecta cuando launchd o systemd lo vuelve a levantar.
 
 ## Qué cambia frente a la escucha en el navegador
 
@@ -22,6 +28,9 @@ Se mantienen igual: los tres modos (`siempre`, `voz`, `manual`), el audio previo
 cd software/oido
 uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python -m unittest discover -s tests -v          # 33 pruebas, sin micrófono y sin red
+
+# Ensayo de la TV sin micrófono ni ElevenLabs (Scribe falso con guion): abrir http://127.0.0.1:18000/woki-os.html
+.venv/bin/python tests/ensayo_tv.py
 
 # Ensayo sin micrófono: un WAV de 16 kHz mono hace de micrófono
 OIDO_FUENTE=archivo:/ruta/audio.wav ELEVENLABS_API_KEY=… .venv/bin/python server.py

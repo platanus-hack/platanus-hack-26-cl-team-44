@@ -10,6 +10,10 @@
  *   cuenta como desconocido.
  * - Mientras Myo habla, al micrófono se le manda silencio: no se transcribe su propia voz.
  *
+ * Con el oído local (software/oido, http://127.0.0.1:8792) el micrófono, Scribe, las huellas y quién es cada voz viven
+ * en ese servicio: la TV recibe sus eventos por SSE, le avisa cuándo habla Myo y le manda las asignaciones. Si el oído
+ * no responde al abrir la TV, todo sigue aquí en el navegador como antes. Ensayo: software/oido/tests/ensayo_tv.py.
+ *
  * No toca la lógica de la TV: usa window.MYO.S, CFG y las funciones globales go(), setCtx(), renderCards(), log().
  * Medido (pruebas con voces sintéticas): sin ruido de fondo, 100 % de turnos con el hablante correcto y ~0,65 s de
  * latencia; con la TV del cuarto a volumen medio o alto los turnos se atrasan 8-14 s. Aviso de privacidad: en el plan
@@ -35,6 +39,11 @@
   const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0, usuaria: '',
               pool: [], inicio: 0, pidiendoMas: false, ini: { ini: '', p: null, list: null } };
   const SALA_MS = 15 * 60 * 1000;   // modo sala: hubo un turno escuchado en los últimos 15 min
+  // Oído local (software/oido): si responde al abrir la TV, él tiene el micrófono, Scribe y quién es cada voz; la TV
+  // solo recibe sus eventos. Si no responde, la escucha sigue en el navegador como antes.
+  const URL_OIDO = C.OIDO_URL ?? (LOCAL ? 'http://127.0.0.1:8792' : '');
+  const OIDO = { activo: false, estado: 'apagado', sse: null };
+  const postOido = (ruta, body = {}) => post(URL_OIDO, '/api/oido/' + ruta, body);
   try { E.hablantes = JSON.parse(sessionStorage.getItem('myo.hablantes') || '{}'); } catch (_) {}
 
   // ---------- modos de escucha (se comparan en el ensayo; queda uno) ----------
@@ -79,11 +88,23 @@
   const devbar = document.getElementById('devbar');
   if (devbar) { ind.classList.add('dbtn', 'en-barra'); devbar.prepend(ind); } else document.body.appendChild(ind);
   function pintarInd() {
+    if (OIDO.activo) return pintarIndOido();
     const vivo = !!(ws && ws.readyState === 1);
     ind.classList.toggle('vivo', E.on && vivo);
     ind.classList.toggle('oye', E.on && !vivo);
     ind.lastChild.textContent = !E.on ? 'Escucha apagada · ' + NOMBRE_MODO[modo]
       : vivo ? 'Escuchando' : modo === 'voz' ? 'Esperando voz' : 'Conectando…';
+  }
+  const TEXTO_OIDO = { escuchando: 'Escuchando', esperando_voz: 'Esperando voz', conectando: 'Conectando…', reconectando: 'Reconectando…',
+                       sin_conexion: 'Sin internet · reintentando', sin_microfono: 'Sin micrófono', sin_servicio: 'El oído no responde' };
+  function pintarIndOido() {
+    const vivo = OIDO.estado === 'escuchando';
+    ind.classList.toggle('vivo', E.on && vivo);
+    ind.classList.toggle('oye', !vivo && (E.on || OIDO.estado === 'sin_servicio'));
+    ind.lastChild.textContent = OIDO.estado === 'sin_servicio' ? TEXTO_OIDO.sin_servicio
+      : !E.on ? (OIDO.estado === 'sin_microfono' ? 'Sin micrófono' : 'Escucha apagada · ' + NOMBRE_MODO[modo])
+      : TEXTO_OIDO[OIDO.estado] || OIDO.estado;
+    btn.classList.toggle('on', E.on); btn.textContent = E.on ? '● Escuchando' : '🎙 Escuchar';
   }
   const bar = Object.assign(document.createElement('div'), { id: 'escuchaBar' });
   bar.setAttribute('aria-live', 'polite');
@@ -116,6 +137,7 @@
   }
 
   function asignar(h, pid) {
+    if (OIDO.activo) postOido('asignar', { hablante: h, persona: pid || '' }).catch((e) => say('oído: ' + e.message));
     if (pid) E.hablantes[h] = pid; else delete E.hablantes[h];
     try { sessionStorage.setItem('myo.hablantes', JSON.stringify(E.hablantes)); } catch (_) {}
     pintarBarra();
@@ -593,7 +615,60 @@
     actx && actx.close(); actx = null; buf = new Float32Array(0);
   }
 
+  // ---------- con el oído local ----------
+  async function probarOido() {
+    if (!URL_OIDO) return null;
+    try {
+      const r = await fetch(URL_OIDO + '/api/oido/estado', { headers: hdr(), signal: AbortSignal.timeout(800), cache: 'no-store' });
+      return r.ok ? await r.json() : null;
+    } catch (_) { return null; }
+  }
+  function alEstadoOido(ev) {
+    OIDO.estado = ev.estado; E.on = !!ev.on;
+    if (MODOS.includes(ev.modo)) modo = ev.modo;
+    pintarInd();
+  }
+  function alEventoOido(ev) {
+    switch (ev.tipo) {
+      case 'estado': alEstadoOido(ev); break;
+      case 'parcial': if (ev.texto && !enChat()) { const i = document.getElementById('ctxIn'); if (i) i.placeholder = '… ' + ev.texto.slice(-80); } break;
+      case 'turno':
+        if (ev.hablantes) E.hablantes = { ...ev.hablantes };
+        if (ev.reconocida && ev.hablante && ev.persona) VOCES.auto[ev.hablante] = ev.persona;
+        turno(ev.texto, { hablante: ev.hablante || '', persona: ev.hablante ? '' : (ev.persona || '') });
+        break;
+      case 'hablantes': E.hablantes = { ...(ev.hablantes || {}) }; pintarBarra(); break;
+      case 'fusion':
+        E.turnos.forEach((t) => { if (t.hablante === ev.de) t.hablante = ev.a; });
+        E.hablantes = { ...(ev.hablantes || {}) }; pintarBarra();
+        break;
+      case 'error': say('oído: ' + ev.error); break;
+    }
+  }
+  function usarOido(est) {
+    OIDO.activo = true;
+    E.hablantes = { ...(est.hablantes || {}) };
+    Object.assign(VOCES.auto, est.reconocidas || {});
+    alEstadoOido(est);
+    // ?escucha=… en la URL (escena.sh) manda sobre el modo del servicio
+    try { const q = new URLSearchParams(location.search).get('escucha'); if (MODOS.includes(q) && q !== est.modo) postOido('modo', { modo: q }).catch(() => {}); } catch (_) {}
+    OIDO.sse = tokiSSE(URL_OIDO + '/api/oido/eventos', hdr(), {
+      onmessage: (m) => { try { alEventoOido(JSON.parse(m.data)); } catch (_) {} },
+      onerror: () => { OIDO.estado = 'sin_servicio'; pintarInd(); },   // tokiSSE reconecta solo; launchd/systemd levanta el servicio
+    });
+    // Mientras Myo habla (ElevenLabs o voz del sistema), el oído manda silencio a Scribe: se le avisa cada cambio.
+    let antes = false;
+    setInterval(() => {
+      const ahora = !!callado();
+      if (ahora === antes) return;
+      antes = ahora;
+      postOido('habla', ahora ? { hablando: true, max_s: 30 } : { hablando: false }).catch(() => {});
+    }, 150);
+    say('usando el oído local (' + URL_OIDO + ')');
+  }
+
   async function encender() {
+    if (OIDO.activo) { postOido('encender').catch((e) => say('oído: ' + e.message)); return; }
     if (E.on) return;
     if (!URL_PUENTE) { say('falta la URL del puente (CFG.WA_URL)'); return; }
     E.on = true; btn.classList.add('on'); btn.textContent = '● Escuchando';
@@ -607,6 +682,7 @@
     } catch (e) { say('no se pudo escuchar: ' + e.message); apagar(); }
   }
   function apagar() {
+    if (OIDO.activo) { postOido('apagar').catch((e) => say('oído: ' + e.message)); return; }
     E.on = false; cerrar(); V.previo = []; btn.classList.remove('on'); btn.textContent = '🎙 Escuchar'; pintarInd();
     const i = document.getElementById('ctxIn'); if (i) i.placeholder = 'El acompañante escribe y aprieta Enter';
   }
@@ -614,6 +690,11 @@
   function cambiarModo() {
     modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
     try { localStorage.setItem('myo.escucha.modo', modo); } catch (_) {}
+    if (OIDO.activo) {
+      postOido('modo', { modo }).catch((e) => say('oído: ' + e.message));
+      try { island('🎙', 'Escucha: ' + NOMBRE_MODO[modo]); } catch (_) {}
+      return;
+    }
     const estaba = E.on; apagar();
     if (estaba && modo !== 'manual') encender();
     try { island('🎙', 'Escucha: ' + NOMBRE_MODO[modo]); } catch (_) {}
@@ -629,11 +710,15 @@
   const reanudar = () => { if (actx && actx.state === 'suspended') actx.resume().catch(() => {}); };
   addEventListener('pointerdown', reanudar, true); addEventListener('keydown', reanudar, true);
   getJ(URL_AGENTE, '/api/personas').then((p) => { E.personas = p; pintarBarra(); }).catch(() => {})
-    .finally(() => { pintarInd(); if (modo !== 'manual') encender(); });   // sin botón: escucha sola al abrir la TV
+    .finally(async () => {
+      const est = await probarOido();
+      if (est && est.ok !== false && typeof tokiSSE === 'function') { usarOido(est); return; }   // el servicio decide si arranca escuchando
+      pintarInd(); if (modo !== 'manual') encender();   // sin oído local: escucha sola en el navegador al abrir la TV
+    });
 
   // Para probar sin micrófono: MYO_ESCUCHA.turno("¿Le duele la espalda?", {hablante: "S2"}); MYO_ESCUCHA.asignar("S2", "juan")
   window.MYO_ESCUCHA = { encender, apagar, turno, asignar, mas, enSala,
-    modo: () => modo, cambiarModo,
+    modo: () => modo, cambiarModo, oido: () => ({ activo: OIDO.activo, estado: OIDO.estado, url: URL_OIDO }),
     gasto: () => ({ modo, sesiones: ST.sesiones, segundos: Math.round((ST.msConectado + (ST.desde ? Date.now() - ST.desde : 0)) / 1000) }),
     estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes }, pool: E.pool.map((c) => c.text), inicio: E.inicio }) };
 })();
