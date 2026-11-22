@@ -190,7 +190,7 @@
         ? departments.map(d=>this.btn('food-department',esc(d.name),{value:d.id})).join('')+this.btn('food-query','Buscar por nombre')
         : (f.status?.categories||[]).map(categoryButton).join('');
       return this.header('Explorar Rappi',esc(f.status?.locationLabel||'Rappi'))+
-        (this.agente()?'<div class="food-actions">'+this.btn('food-suggest','💡 Sugerencia de Myo para el aniversario',{className:'ta-primary'})+'</div>':'')+
+        (this.agente()?'<div class="food-actions">'+this.btn('food-suggest','💡 Sugerencia de Myo',{className:'ta-primary'})+'</div>':'')+
         `<div class="ta-control-grid food-departments">${choices}</div><div class="food-actions">${this.btn('food-cart','Carrito de restaurantes',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div>`;
     }
     // Agente con memoria (VPS en el escenario): qué pedir y por qué. El token va en un header.
@@ -199,7 +199,7 @@
       if(this.busy)return;const f=this.food,epoch=this.epoch;this.busy=true;this.error='Myo está revisando la memoria…';this.render();
       let plan=null;
       try{
-        const r=await fetch(this.agente()+'/api/pedido',{method:'POST',headers:{'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Myo-Token':CFG.WA_TOKEN}:{})},body:JSON.stringify({para:'juan',ocasion:'aniversario'}),signal:AbortSignal.timeout(30000)});
+        const r=await fetch(this.agente()+'/api/pedido',{method:'POST',headers:{'Content-Type':'application/json',...(CFG.WA_TOKEN?{'X-Myo-Token':CFG.WA_TOKEN}:{})},body:JSON.stringify({}),signal:AbortSignal.timeout(30000)});
         plan=await r.json();if(!r.ok)throw Error(plan.error||'El agente no respondió.');
       }catch(e){if(this.epoch===epoch){this.error='No pude pedir la sugerencia: '+e.message;}}
       finally{this.busy=false;}
@@ -216,7 +216,7 @@
       try{
         const favs=(await (await fetch(CFG.WA_URL+'/api/wa/favorites',{headers:h})).json()).contacts||[];
         const c=favs.find(x=>(x.name||'').toLowerCase().startsWith(quien.toLowerCase()));if(!c)return;
-        const text=`${f.plan.nota||'Feliz aniversario ✨'} Te va a llegar una sorpresa 🎁`;
+        const text=`${f.plan.nota?f.plan.nota+' ':''}Te va a llegar una sorpresa 🎁`;
         const r=await fetch(CFG.WA_URL+'/api/wa/send',{method:'POST',headers:h,body:JSON.stringify({contactId:c.id,text,idemKey:'rappi-'+f.order.orderId})});
         f.aviso=r.ok?`💬 Le avisé a ${c.name} por WhatsApp`:'';if(this.view==='food-track')this.render();
       }catch{}
