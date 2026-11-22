@@ -1,0 +1,4 @@
+# Python 3.12 (torch todavía no tiene ruedas para 3.14). torch desde https://download.pytorch.org/whl/cpu
+torch
+resemblyzer==0.1.4
+webrtcvad-wheels

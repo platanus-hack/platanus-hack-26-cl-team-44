@@ -28,7 +28,7 @@ case "$cmd" in
       && tail -2 /tmp/instalar.log || { echo 'Falló el instalador. Últimas líneas:'; tail -20 /tmp/instalar.log; exit 1; }"
     ;;
   estado)
-    en_vps 'for u in caddy toki-agente toki-puente wapi-gateway wapi-api wapi-worker; do printf "%-14s %s\n" "$u" "$(systemctl is-active $u)"; done
+    en_vps 'for u in caddy toki-agente toki-voces toki-puente wapi-gateway wapi-api wapi-worker; do printf "%-14s %s\n" "$u" "$(systemctl is-active $u)"; done
       set -a; . /opt/toki/puente.env; set +a
       curl -s -m 5 -H "X-Myo-Token: $WOKI_API_TOKEN" 127.0.0.1:8788/api/wa/health | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"whatsapp      \", d[\"mode\"], d[\"session\"], \"· envíos hoy\", d[\"sentToday\"])" || echo "whatsapp       sin respuesta"
       curl -s -m 5 127.0.0.1:8790/api/salud | python3 -c "import json,sys; d=json.load(sys.stdin); print(\"agente        \", d[\"usuaria\"], \"·\", d[\"personas\"], \"personas · uso hoy\", d[\"uso_hoy\"], \"·\", \" \".join(x[\"id\"]+\"=\"+x[\"estado\"] for x in d[\"disparadores\"]))" || echo "agente         sin respuesta"

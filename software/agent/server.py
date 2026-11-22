@@ -143,6 +143,24 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
+VOCES_URL = os.environ.get("TOKI_VOCES_URL", "http://127.0.0.1:8791")
+
+
+def a_voces(metodo: str, path: str, body: dict | None = None) -> tuple[int, dict]:
+    """Reenvía /api/voces/* al servicio de huellas de voz (software/voces), que solo escucha en 127.0.0.1."""
+    import urllib.error
+    import urllib.request
+    datos = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(VOCES_URL + path, data=datos, method=metodo, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status, json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read() or b"{}")
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return 503, {"ok": False, "error": "el servicio de voces no responde"}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -179,6 +197,8 @@ class Handler(BaseHTTPRequestHandler):
         if not autorizado(self.headers, self.path):
             return self._json(401, {"error": "falta el token"})
         self.path = urlparse(self.path).path
+        if self.path.startswith("/api/voces/"):
+            return self._json(*a_voces("GET", self.path))
         if self.path == "/api/salud":
             c = store.conectar(DB)
             body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
@@ -233,6 +253,10 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         if body is None:
             return self._json(400, {"error": "JSON inválido"})
+        if self.path.startswith("/api/voces/"):
+            if self.path == "/api/voces/registrar" and not store.persona(store.conectar(DB), str(body.get("persona", ""))):
+                return self._json(400, {"ok": False, "error": "esa persona no está en la memoria"})
+            return self._json(*a_voces("POST", self.path, body))
 
         if self.path == "/api/sugerir":
             texto = str(body.get("texto", "")).strip()[:2000]
