@@ -14,6 +14,7 @@ import {dirname, join, extname, resolve} from 'node:path';
 import {homedir} from 'node:os';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {createWebEyeTrackAssetHandler} from '../toki-os/tools/webeyetrack-assets.mjs';
+import {VENDOR_DIR} from '../toki-os/tools/vendor-assets.mjs';
 import {createMyoWareRoutes} from './myoware-routes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,7 +25,7 @@ const fault = (message, code = 400) => Object.assign(new Error(message), {status
 export {safeMessage, runSpogo, normalizeTracks} from './adapters/spotify.mjs';
 
 export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, renderGame, readerFetch = publicFetch, myowareFetch = fetch} = {}) {
-  const gazeAsset = createWebEyeTrackAssetHandler();
+  const gazeAsset = createWebEyeTrackAssetHandler(fetch, {vendorDir: process.env.TOKI_VENDOR_DIR || VENDOR_DIR});
   const myoware = createMyoWareRoutes(myowareFetch);
   const gameSessions = createGameSessions(stateDir, renderGame);
   const registry = createAdapterRegistry(adapters || [createSpotifyAdapter({run,installed,hasSpotify}),createBioBioAdapter({fetcher}),createYouTubeAdapter({fetcher}),createRappiAdapter({stateDir,fetcher})]);

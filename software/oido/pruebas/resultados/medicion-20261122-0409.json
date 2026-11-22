@@ -1,0 +1,1195 @@
+{
+ "fecha": "2026-11-22 04:09",
+ "repeticiones": 3,
+ "config": {
+  "modelo": "scribe_v3_live",
+  "vad_s": "0.6",
+  "diarize": true
+ },
+ "corridas": [
+  {
+   "repeticion": 1,
+   "escenario": "con_tele",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 17.88
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 17.88
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 17.88
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 17.88
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 17.88
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 17.88
+    },
+    {
+     "texto": "Perfecto. Y en una hora le",
+     "hablante": "S1",
+     "t": 17.88
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 17.88
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nuev",
+     "hablante": "S1",
+     "t": 17.88
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 3,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 85,
+   "latencias": [
+    14.92,
+    10.86,
+    7.04,
+    3.4
+   ],
+   "latencia_mediana": 8.95,
+   "latencia_max": 14.92,
+   "extra": 1,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 1,
+   "escenario": "con_tele_baja",
+   "salida": [
+    {
+     "texto": "Mamá, ¿tienes frío? Te traje la frazada",
+     "hablante": "S1",
+     "t": 3.85
+    },
+    {
+     "texto": "La temperatura del cuarto está bien, 22 grados",
+     "hablante": "S2",
+     "t": 7.84
+    },
+    {
+     "texto": "Igual se la pongo.",
+     "hablante": "S3",
+     "t": 11.64
+    },
+    {
+     "texto": "Siempre tiene las manos heladas.",
+     "hablante": "S1",
+     "t": 11.64
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S3",
+     "t": 15.29
+    },
+    {
+     "texto": "una hora",
+     "hablante": "S2",
+     "t": 15.29
+    },
+    {
+     "texto": "le",
+     "hablante": "S3",
+     "t": 15.29
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S2",
+     "t": 15.29
+    },
+    {
+     "texto": "El Gobierno anunció nue-",
+     "hablante": "S3",
+     "t": 18.09
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 91,
+   "latencias": [
+    0.89,
+    0.82,
+    0.8,
+    0.81
+   ],
+   "latencia_mediana": 0.81,
+   "latencia_max": 0.89,
+   "extra": 3,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 1,
+   "escenario": "con_tele_media",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 18.1
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 18.1
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 18.1
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 18.1
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 18.1
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 18.1
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S1",
+     "t": 18.1
+    },
+    {
+     "texto": "1 hora",
+     "hablante": "S3",
+     "t": 18.1
+    },
+    {
+     "texto": "le",
+     "hablante": "S1",
+     "t": 18.1
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 18.1
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nue-",
+     "hablante": "S1",
+     "t": 18.1
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 84,
+   "latencias": [
+    15.14,
+    11.08,
+    7.26,
+    3.62
+   ],
+   "latencia_mediana": 9.17,
+   "latencia_max": 15.14,
+   "extra": 3,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 1,
+   "escenario": "dos_mujeres",
+   "salida": [
+    {
+     "texto": "Hola, Emmy. ¿Quieres que te acomode la almohada?",
+     "hablante": "S1",
+     "t": 3.65
+    },
+    {
+     "texto": "Espera, primero le damos el remedio del AC5.",
+     "hablante": "S2",
+     "t": 7.87
+    },
+    {
+     "texto": "Tienes razón. ¿Lo tomas con agua o con jugo?",
+     "hablante": "S1",
+     "t": 11.49
+    },
+    {
+     "texto": "Con agua. El jugo le cae mal a esta hora.",
+     "hablante": "S2",
+     "t": 14.9
+    },
+    {
+     "texto": "Listo. Después vemos la teleserie juntas.",
+     "hablante": "S1",
+     "t": 18.55
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 96,
+   "latencias": [
+    0.6,
+    0.66,
+    0.65,
+    0.79,
+    0.8
+   ],
+   "latencia_mediana": 0.66,
+   "latencia_max": 0.8,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "marcela",
+    "S2": "silvana"
+   }
+  },
+  {
+   "repeticion": 1,
+   "escenario": "hombre_mujer",
+   "salida": [
+    {
+     "texto": "Hola, mamá. ¿Cómo dormiste anoche?",
+     "hablante": "S1",
+     "t": 3.35
+    },
+    {
+     "texto": "Buenas tardes, señora Emmy. Vengo a revisar su espalda.",
+     "hablante": "S2",
+     "t": 7.2
+    },
+    {
+     "texto": "Le duele más en la mañana, sobre todo al despertar.",
+     "hablante": "S1",
+     "t": 11.23
+    },
+    {
+     "texto": "Entonces, hoy hacemos los ejercicios suaves.",
+     "hablante": "S2",
+     "t": 14.62
+    },
+    {
+     "texto": "¿Te traigo un café con leche después?",
+     "hablante": "S1",
+     "t": 17.28
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 100,
+   "latencias": [
+    0.76,
+    0.65,
+    0.8,
+    0.74,
+    0.78
+   ],
+   "latencia_mediana": 0.76,
+   "latencia_max": 0.8,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 1,
+   "escenario": "tres_voces",
+   "salida": [
+    {
+     "texto": "¿Tú has visto el partido del Colo anoche?",
+     "hablante": "S1",
+     "t": 3.43
+    },
+    {
+     "texto": "Ganaron dos a uno. Fue un partidazo.",
+     "hablante": "S2",
+     "t": 7.1
+    },
+    {
+     "texto": "Tomás, deja que la tata descanse un poco.",
+     "hablante": "S3",
+     "t": 10.88
+    },
+    {
+     "texto": "Bueno, pero después me cuentas qué te pareció.",
+     "hablante": "S1",
+     "t": 14.31
+    },
+    {
+     "texto": "¿Quieren que ponga música mientras tanto?",
+     "hablante": "S2",
+     "t": 17.49
+    },
+    {
+     "texto": "Sí, unos boleros. Le encantan.",
+     "hablante": "S3",
+     "t": 21.31
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 6,
+   "turnos": 6,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 3,
+   "texto": 85,
+   "latencias": [
+    0.79,
+    0.73,
+    0.69,
+    0.61,
+    0.71,
+    0.8
+   ],
+   "latencia_mediana": 0.72,
+   "latencia_max": 0.8,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "camila",
+    "S2": "daniel",
+    "S3": "andrea"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "con_tele",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 18.03
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 18.03
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 18.03
+    },
+    {
+     "texto": "Perfecto. Y en una hora le",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 18.03
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nuev",
+     "hablante": "S1",
+     "t": 18.03
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 3,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 85,
+   "latencias": [
+    15.07,
+    11.01,
+    7.19,
+    3.55
+   ],
+   "latencia_mediana": 9.1,
+   "latencia_max": 15.07,
+   "extra": 1,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "con_tele_baja",
+   "salida": [
+    {
+     "texto": "Mamá, ¿tienes frío? Te traje la frazada.",
+     "hablante": "S1",
+     "t": 3.83
+    },
+    {
+     "texto": "La temperatura del cuarto está bien, 22 grados.",
+     "hablante": "S2",
+     "t": 7.81
+    },
+    {
+     "texto": "Igual se la pongo.",
+     "hablante": "S3",
+     "t": 11.67
+    },
+    {
+     "texto": "Siempre tiene las manos heladas.",
+     "hablante": "S1",
+     "t": 11.67
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S3",
+     "t": 17.86
+    },
+    {
+     "texto": "una hora",
+     "hablante": "S2",
+     "t": 17.86
+    },
+    {
+     "texto": "le",
+     "hablante": "S3",
+     "t": 17.86
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S2",
+     "t": 17.86
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 97,
+   "latencias": [
+    0.87,
+    0.79,
+    0.83,
+    3.38
+   ],
+   "latencia_mediana": 0.85,
+   "latencia_max": 3.38,
+   "extra": 2,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "con_tele_media",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 18.06
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 18.06
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 18.06
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 18.06
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 18.06
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 18.06
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S1",
+     "t": 18.06
+    },
+    {
+     "texto": "una hora",
+     "hablante": "S3",
+     "t": 18.06
+    },
+    {
+     "texto": "le",
+     "hablante": "S1",
+     "t": 18.06
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 18.06
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nuev",
+     "hablante": "S1",
+     "t": 18.06
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 85,
+   "latencias": [
+    15.1,
+    11.04,
+    7.22,
+    3.58
+   ],
+   "latencia_mediana": 9.13,
+   "latencia_max": 15.1,
+   "extra": 3,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "dos_mujeres",
+   "salida": [
+    {
+     "texto": "Hola, Emmy. ¿Quieres que te acomode la almohada?",
+     "hablante": "S1",
+     "t": 3.61
+    },
+    {
+     "texto": "Espera, primero le damos el remedio del AC5.",
+     "hablante": "S2",
+     "t": 8.03
+    },
+    {
+     "texto": "Tienes razón. ¿Lo tomas con agua o con jugo?",
+     "hablante": "S1",
+     "t": 11.64
+    },
+    {
+     "texto": "Con agua. El jugo le cae mal a esta hora.",
+     "hablante": "S2",
+     "t": 15.05
+    },
+    {
+     "texto": "Listo. Después vemos la teleserie juntas.",
+     "hablante": "S1",
+     "t": 18.48
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 96,
+   "latencias": [
+    0.56,
+    0.82,
+    0.8,
+    0.94,
+    0.73
+   ],
+   "latencia_mediana": 0.8,
+   "latencia_max": 0.94,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "marcela",
+    "S2": "silvana"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "hombre_mujer",
+   "salida": [
+    {
+     "texto": "Hola, mamá. ¿Cómo dormiste anoche?",
+     "hablante": "S1",
+     "t": 3.46
+    },
+    {
+     "texto": "Buenas tardes, señora Emmy. Vengo a revisar su espalda.",
+     "hablante": "S2",
+     "t": 7.26
+    },
+    {
+     "texto": "Le duele más en la mañana, sobre todo al despertar.",
+     "hablante": "S1",
+     "t": 11.12
+    },
+    {
+     "texto": "Entonces, hoy hacemos los ejercicios suaves.",
+     "hablante": "S2",
+     "t": 14.75
+    },
+    {
+     "texto": "¿Te traigo un café con leche después?",
+     "hablante": "S1",
+     "t": 17.35
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 100,
+   "latencias": [
+    0.87,
+    0.71,
+    0.69,
+    0.87,
+    0.85
+   ],
+   "latencia_mediana": 0.85,
+   "latencia_max": 0.87,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 2,
+   "escenario": "tres_voces",
+   "salida": [
+    {
+     "texto": "¿Tú has visto el partido del Colo anoche?",
+     "hablante": "S1",
+     "t": 3.35
+    },
+    {
+     "texto": "Ganaron dos a uno. Fue un partidazo.",
+     "hablante": "S2",
+     "t": 6.99
+    },
+    {
+     "texto": "Tomás, deja que la tata descanse un poco.",
+     "hablante": "S3",
+     "t": 10.77
+    },
+    {
+     "texto": "Bueno, pero después me cuentas qué te pareció.",
+     "hablante": "S1",
+     "t": 14.43
+    },
+    {
+     "texto": "¿Quieren que ponga música mientras tanto?",
+     "hablante": "S2",
+     "t": 17.6
+    },
+    {
+     "texto": "Sí, unos boleros. Le encantan.",
+     "hablante": "S3",
+     "t": 21.23
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 6,
+   "turnos": 6,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 3,
+   "texto": 85,
+   "latencias": [
+    0.71,
+    0.62,
+    0.58,
+    0.73,
+    0.82,
+    0.72
+   ],
+   "latencia_mediana": 0.71,
+   "latencia_max": 0.82,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "camila",
+    "S2": "daniel",
+    "S3": "andrea"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "con_tele",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 18.03
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 18.03
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 18.03
+    },
+    {
+     "texto": "Perfecto. Y en una hora le",
+     "hablante": "S1",
+     "t": 18.03
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 18.03
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nuev",
+     "hablante": "S1",
+     "t": 18.03
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 3,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 85,
+   "latencias": [
+    15.07,
+    11.01,
+    7.19,
+    3.55
+   ],
+   "latencia_mediana": 9.1,
+   "latencia_max": 15.07,
+   "extra": 1,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "con_tele_baja",
+   "salida": [
+    {
+     "texto": "Mamá, ¿tienes frío? Te traje la frazada.",
+     "hablante": "S1",
+     "t": 3.74
+    },
+    {
+     "texto": "La temperatura del cuarto está bien, 22 grados.",
+     "hablante": "S2",
+     "t": 7.76
+    },
+    {
+     "texto": "Igual se la pongo.",
+     "hablante": "S3",
+     "t": 11.57
+    },
+    {
+     "texto": "Siempre tiene las manos heladas.",
+     "hablante": "S1",
+     "t": 11.57
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S3",
+     "t": 17.93
+    },
+    {
+     "texto": "una hora",
+     "hablante": "S2",
+     "t": 17.93
+    },
+    {
+     "texto": "le",
+     "hablante": "S3",
+     "t": 17.93
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S2",
+     "t": 17.93
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 97,
+   "latencias": [
+    0.78,
+    0.74,
+    0.73,
+    3.45
+   ],
+   "latencia_mediana": 0.76,
+   "latencia_max": 3.45,
+   "extra": 2,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "con_tele_media",
+   "salida": [
+    {
+     "texto": "Mamá,",
+     "hablante": "S1",
+     "t": 17.97
+    },
+    {
+     "texto": "¿tienes frío?",
+     "hablante": "S2",
+     "t": 17.97
+    },
+    {
+     "texto": "Te traje la frazada.",
+     "hablante": "S1",
+     "t": 17.97
+    },
+    {
+     "texto": "La temperatura del cuarto está bien,",
+     "hablante": "S3",
+     "t": 17.97
+    },
+    {
+     "texto": "22 grados. Igual se la pongo. Siempre",
+     "hablante": "S1",
+     "t": 17.97
+    },
+    {
+     "texto": "tiene las manos heladas.",
+     "hablante": "S2",
+     "t": 17.97
+    },
+    {
+     "texto": "Perfecto. Y en",
+     "hablante": "S1",
+     "t": 17.97
+    },
+    {
+     "texto": "una hora",
+     "hablante": "S3",
+     "t": 17.97
+    },
+    {
+     "texto": "le",
+     "hablante": "S1",
+     "t": 17.97
+    },
+    {
+     "texto": "toca la terapia.",
+     "hablante": "S3",
+     "t": 17.97
+    },
+    {
+     "texto": "En las noticias de hoy, el gobierno anunció nuev",
+     "hablante": "S1",
+     "t": 17.97
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 4,
+   "turnos": 4,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 2,
+   "texto": 85,
+   "latencias": [
+    15.01,
+    10.95,
+    7.13,
+    3.49
+   ],
+   "latencia_mediana": 9.04,
+   "latencia_max": 15.01,
+   "extra": 3,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S3": "brian"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "dos_mujeres",
+   "salida": [
+    {
+     "texto": "Hola, Emmy. ¿Quieres que te acomode la almohada?",
+     "hablante": "S1",
+     "t": 3.55
+    },
+    {
+     "texto": "Espera, primero le damos el remedio del AC5.",
+     "hablante": "S2",
+     "t": 7.97
+    },
+    {
+     "texto": "Tienes razón. ¿Lo tomas con agua o con jugo?",
+     "hablante": "S1",
+     "t": 11.59
+    },
+    {
+     "texto": "Con agua. El jugo le cae mal a esta hora.",
+     "hablante": "S2",
+     "t": 15.0
+    },
+    {
+     "texto": "Listo. Después vemos la teleserie juntas.",
+     "hablante": "S1",
+     "t": 18.45
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 96,
+   "latencias": [
+    0.5,
+    0.76,
+    0.75,
+    0.89,
+    0.7
+   ],
+   "latencia_mediana": 0.75,
+   "latencia_max": 0.89,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "marcela",
+    "S2": "silvana"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "hombre_mujer",
+   "salida": [
+    {
+     "texto": "Hola, mamá. ¿Cómo dormiste anoche?",
+     "hablante": "S1",
+     "t": 3.41
+    },
+    {
+     "texto": "Buenas tardes, señora Emmy. Vengo a revisar su espalda.",
+     "hablante": "S2",
+     "t": 7.26
+    },
+    {
+     "texto": "Le duele más en la mañana, sobre todo al despertar.",
+     "hablante": "S1",
+     "t": 11.07
+    },
+    {
+     "texto": "Entonces, hoy hacemos los ejercicios suaves.",
+     "hablante": "S2",
+     "t": 14.73
+    },
+    {
+     "texto": "¿Te traigo un café con leche después?",
+     "hablante": "S1",
+     "t": 17.33
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 5,
+   "turnos": 5,
+   "base": 3,
+   "voces": 2,
+   "voces_reales": 2,
+   "texto": 100,
+   "latencias": [
+    0.82,
+    0.71,
+    0.64,
+    0.85,
+    0.83
+   ],
+   "latencia_mediana": 0.82,
+   "latencia_max": 0.85,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "olivia",
+    "S2": "brian"
+   }
+  },
+  {
+   "repeticion": 3,
+   "escenario": "tres_voces",
+   "salida": [
+    {
+     "texto": "¿Tú has visto el partido del Colo anoche?",
+     "hablante": "S1",
+     "t": 3.3
+    },
+    {
+     "texto": "Ganaron dos a uno. Fue un partidazo.",
+     "hablante": "S2",
+     "t": 6.97
+    },
+    {
+     "texto": "Tomás, deja que la tata descanse un poco.",
+     "hablante": "S3",
+     "t": 10.76
+    },
+    {
+     "texto": "Bueno, pero después me cuentas qué te pareció.",
+     "hablante": "S1",
+     "t": 14.4
+    },
+    {
+     "texto": "¿Quieren que ponga música mientras tanto?",
+     "hablante": "S2",
+     "t": 17.56
+    },
+    {
+     "texto": "Sí, unos boleros. Le encantan.",
+     "hablante": "S3",
+     "t": 21.22
+    }
+   ],
+   "errores": [],
+   "sesiones": 1,
+   "turnos_ok": 6,
+   "turnos": 6,
+   "base": 2,
+   "voces": 3,
+   "voces_reales": 3,
+   "texto": 85,
+   "latencias": [
+    0.66,
+    0.6,
+    0.57,
+    0.7,
+    0.78,
+    0.71
+   ],
+   "latencia_mediana": 0.68,
+   "latencia_max": 0.78,
+   "extra": 0,
+   "sin_llegar": 0,
+   "mapa": {
+    "S1": "camila",
+    "S2": "daniel",
+    "S3": "andrea"
+   }
+  }
+ ]
+}

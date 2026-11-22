@@ -1,0 +1,62 @@
+# Pruebas de Myo en cada push y PR. Sin red hacia servicios externos, sin hardware y sin llaves:
+# todo usa datos sintéticos, servidores falsos en 127.0.0.1 o pseudoterminales.
+name: pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node (SO, mirada, apps, puente)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Myo OS (gestos, predicción, iPhone, juegos)
+        run: |
+          set -e
+          for f in tests/test_*.cjs tests/test_*.mjs; do echo "▶ $f"; node "$f"; done
+      - name: Myo OS en navegador simulado (vm)
+        # game-renderer-input necesita Chrome + playwright-core: queda para una corrida con navegador
+        run: node --test $(ls tests/browser/*.test.mjs | grep -v game-renderer-input)
+      - name: Motor de mirada
+        working-directory: software/eye-tracking/web
+        run: npm run check && npm test
+      - name: apps-bridge (Rappi, noticias, adaptadores)
+        working-directory: software/apps-bridge
+        run: npm ci --no-audit --no-fund && npm test
+      - name: Kiosco (copia local verificada de MediaPipe; sin Electron ni red)
+        run: node --test software/kiosco/tests/*.test.mjs
+      - name: Puente de WhatsApp (tipos estrictos)
+        working-directory: software/whatsapp-bridge
+        run: npm ci --no-audit --no-fund && npx tsc --noEmit
+
+  python:
+    name: Python (agente, monitor MyoWare, oído)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Agente con memoria
+        run: python -m unittest discover -s software/agent/tests -v
+      - name: Monitor MyoWare (serie y BLE con datos sintéticos)
+        run: python -m unittest discover -s tests -v
+      - name: Oído local (Scribe falso, sin micrófono)
+        run: |
+          python -m pip install -q "numpy>=1.26,<3" "websockets>=13,<16"
+          python -W ignore::ResourceWarning -m unittest discover -s software/oido/tests -v

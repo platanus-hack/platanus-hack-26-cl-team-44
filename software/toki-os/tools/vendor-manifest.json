@@ -1,0 +1,19 @@
+{
+  "_": "Archivos que la TV baja de internet al iniciar. vendor-assets.mjs los copia a software/toki-os/vendor/ (fuera de git) y verifica cada sha256. El kiosco (software/kiosco) los sirve desde ahí sin tocar el HTML; apps-bridge usa los de WebEyeTrack.",
+  "archivos": [
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs", "tipo": "text/javascript", "sha256": "e77f281f9619150d937023c355bae170e9120e3b9e43f1e23a2a7bee07197669" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/vision_wasm_internal.js", "tipo": "text/javascript", "sha256": "9440cf0cc0cea21800e31581ec32aeedcc5fbf9df4509796bbc7d3f99e52ab9c" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/vision_wasm_internal.wasm", "tipo": "application/wasm", "sha256": "f82a8e6c05e08a44cc9f9e7ec5f845935bcbb1b1500ebe8c2f4812fb4e2917dc" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/vision_wasm_nosimd_internal.js", "tipo": "text/javascript", "sha256": "abe9b6fbeaf86fcb53a5edce3926c82ccb0619e18fed4d9d9ce561ee7f55e054" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/vision_wasm_nosimd_internal.wasm", "tipo": "application/wasm", "sha256": "38b61feab2fd7934e05cbe9f68baa308978a5e3b7f85c1913bb8ae89b8ef8b97" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_wasm_internal.js", "tipo": "text/javascript", "sha256": "6a73602a14484297690e69d716e683341b62a5fde8f5debde78de2651cb69bbe" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_wasm_internal.wasm", "tipo": "application/wasm", "sha256": "3431f70071f3980bf13e638551e9bb333335223e35542ee768db06501f7a26f2" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_wasm_nosimd_internal.js", "tipo": "text/javascript", "sha256": "ece9ac1f41b93340b08682514ca291431ff7084c858caf6455e65b0c6c3eb717" },
+    { "url": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_wasm_nosimd_internal.wasm", "tipo": "application/wasm", "sha256": "4d54739714db6b3d0fbdd0608c2824c4ccceaaf279aa4ba160f2eab2663b30f2" },
+    { "url": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", "tipo": "application/octet-stream", "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff" },
+    { "url": "https://cdn.jsdelivr.net/npm/webeyetrack@0.0.2/dist/index.js", "tipo": "text/javascript", "sha256": "11075aa7e0abf971ecbba41dbca935f39d283b2d4b9169070d2d33eb94f79c18" },
+    { "url": "https://cdn.jsdelivr.net/npm/webeyetrack@0.0.2/dist/index.js.LICENSE.txt", "tipo": "text/plain", "sha256": "28e9b8f472f45d6b19c1eb4b01cc8e31adccd95ad52fb59c1edde51c57d4539f" },
+    { "url": "https://raw.githubusercontent.com/RedForestAI/WebEyeTrack/5c0a7548df1c70a6739debadd1e16ab795d1b5ee/js/example-app/public/web/model.json", "tipo": "application/json", "sha256": "a214f074ccd4724cf4ebf008814a05485e7eaa5faf5aaeb85e66b24a1af55688" },
+    { "url": "https://raw.githubusercontent.com/RedForestAI/WebEyeTrack/5c0a7548df1c70a6739debadd1e16ab795d1b5ee/js/example-app/public/web/group1-shard1of1.bin", "tipo": "application/octet-stream", "sha256": "c030a762a2d21ac0f3c59700a723b2d8790f2003b3f8e72fbe31129fcb234e58" }
+  ]
+}

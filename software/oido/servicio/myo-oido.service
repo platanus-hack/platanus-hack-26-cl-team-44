@@ -1,0 +1,19 @@
+# Oído de Myo en Linux (Raspberry Pi de la consola). Servicio de usuario: el micrófono es del usuario con sesión.
+#   cp software/oido/servicio/myo-oido.service ~/.config/systemd/user/ && systemctl --user enable --now myo-oido
+# Cambiar RUTA_REPO. Llave en software/oido/.env (fuera de git).
+[Unit]
+Description=Myo · oído (software/oido/server.py, 127.0.0.1:8792)
+After=network-online.target sound.target
+
+[Service]
+WorkingDirectory=RUTA_REPO/software/oido
+EnvironmentFile=RUTA_REPO/software/oido/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=RUTA_REPO/software/oido/.venv/bin/python server.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

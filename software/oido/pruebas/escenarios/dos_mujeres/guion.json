@@ -1,0 +1,37 @@
+{
+ "escenario": "dos_mujeres",
+ "duracion_s": 20.15,
+ "turnos": [
+  {
+   "hablante": "marcela",
+   "texto": "Hola Emmy, ¿quieres que te acomode la almohada?",
+   "inicio": 0.5,
+   "fin": 3.05
+  },
+  {
+   "hablante": "silvana",
+   "texto": "Espera, primero le damos el remedio de las cinco.",
+   "inicio": 3.95,
+   "fin": 7.21
+  },
+  {
+   "hablante": "marcela",
+   "texto": "Tienes razón. ¿Lo tomas con agua o con jugo?",
+   "inicio": 8.11,
+   "fin": 10.84
+  },
+  {
+   "hablante": "silvana",
+   "texto": "Con agua, el jugo le cae mal a esta hora.",
+   "inicio": 11.74,
+   "fin": 14.11
+  },
+  {
+   "hablante": "marcela",
+   "texto": "Listo. Después vemos la teleserie juntas.",
+   "inicio": 15.01,
+   "fin": 17.75
+  }
+ ],
+ "fondo": []
+}

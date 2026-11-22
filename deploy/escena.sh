@@ -11,6 +11,8 @@
 #   TOKI_WA_TOKEN   token del puente; si falta, se lee de la VPS con 'ssh toki-vps'
 #   TOKI_RAPPI_PAIS co (Bogotá, por defecto) o cl (Santiago), para apps-bridge (Rappi)
 #   TOKI_ESCUCHA    modo de escucha de la sala: siempre (por defecto), voz o manual
+#   TOKI_OIDO       0 = no arrancar el oído local (software/oido); la TV escucha en el navegador
+#   TOKI_KIOSCO     0 = abrir la TV en Chrome en vez del kiosco (software/kiosco)
 # El token nunca va en una URL: el monitor se lo entrega a la TV en /toki-config.js.
 # Funciona en macOS y Linux (el monitor usa termios: en Windows, correrlo dentro de WSL).
 set -uo pipefail
@@ -59,6 +61,13 @@ if [ -d /Applications/Spotify.app ]; then
   else ko "Spotify: falta permiso. Acepta el aviso de macOS, o Ajustes › Privacidad y seguridad › Automatización › Terminal › Spotify"; fi
 fi
 
+# 3b) Copia local de MediaPipe y WebEyeTrack (software/toki-os/vendor, sha256 fijado): la cámara funciona sin CDN.
+#     La primera vez baja ~41 MB; después solo verifica. Sin internet y sin copia, la TV usa la CDN como antes.
+if command -v node >/dev/null; then
+  if node "$RAIZ/software/toki-os/tools/vendor-assets.mjs" >/tmp/myo-vendor.log 2>&1; then ok "MediaPipe y WebEyeTrack con copia local verificada"
+  else ko "Sin copia local completa de MediaPipe (log: /tmp/myo-vendor.log): la cámara depende de la CDN"; fi
+fi
+
 # 4) apps-bridge local: Rappi (arma el carrito con la cuenta conectada; no paga) y los demás servicios
 APPS=""
 if command -v node >/dev/null; then
@@ -71,6 +80,38 @@ else
   ko "Falta Node: sin Rappi ni servicios"
 fi
 
+# 4b) Oído local (software/oido): el micrófono de la sala lo abre este computador, no la pestaña.
+#     Si no arranca (sin llave, sin uv), la TV escucha en el navegador como antes: nada se rompe.
+#     Llave de ElevenLabs: software/oido/.env, o la del puente en la VPS (solo en memoria, nunca en disco).
+OIDO=""
+OIDO_DIR="$RAIZ/software/oido"
+if [ "${TOKI_OIDO:-1}" != "0" ]; then
+  if [ ! -x "$OIDO_DIR/.venv/bin/python" ] && command -v uv >/dev/null; then
+    uv venv -q --python 3.13 "$OIDO_DIR/.venv" >/dev/null 2>&1 && uv pip install -q --python "$OIDO_DIR/.venv/bin/python" -r "$OIDO_DIR/requirements.txt" >/dev/null 2>&1
+  fi
+  XI_KEY=""
+  [ -f "$OIDO_DIR/.env" ] && XI_KEY="$(grep '^ELEVENLABS_API_KEY=' "$OIDO_DIR/.env" | cut -d= -f2-)"
+  [ -n "$XI_KEY" ] || XI_KEY="$(ssh -o ConnectTimeout=8 toki-vps "grep '^ELEVENLABS_API_KEY=' /opt/toki/puente.env | cut -d= -f2-" 2>/dev/null || true)"
+  if [ ! -x "$OIDO_DIR/.venv/bin/python" ]; then ko "Oído local: falta uv para instalarlo. La TV escucha en el navegador"
+  elif [ -z "$XI_KEY" ]; then ko "Oído local: sin ELEVENLABS_API_KEY (software/oido/.env o la VPS). La TV escucha en el navegador"
+  else
+    ELEVENLABS_API_KEY="$XI_KEY" OIDO_MODO="${TOKI_ESCUCHA:-siempre}" TOKI_WA_TOKEN="$TOKEN" \
+      TOKI_AGENTE_URL="$REMOTO/agente" TOKI_VOCES_URL="$REMOTO/agente" \
+      "$OIDO_DIR/.venv/bin/python" "$OIDO_DIR/server.py" >/tmp/myo-oido.log 2>&1 &
+    OIDO=$!
+    for _ in $(seq 1 20); do curl -s -o /dev/null -H 'Host: 127.0.0.1:8792' http://127.0.0.1:8792/api/oido/estado && break; sleep 0.5; done
+    sleep 2   # da tiempo a abrir la sesión con ElevenLabs: así una llave rechazada se ve aquí y no en la demo
+    est="$(curl -s -m 3 -H 'Host: 127.0.0.1:8792' http://127.0.0.1:8792/api/oido/estado || true)"
+    case "$est" in
+      *'"estado": "reconectando"'*|*'"estado": "sin_conexion"'*) ko "Oído local sin ElevenLabs (¿llave o internet?). Sigue reintentando; log: /tmp/myo-oido.log";;
+      *'"estado": "sin_microfono"'*) ko "Oído local sin micrófono: revisa Ajustes › Privacidad › Micrófono (log: /tmp/myo-oido.log)";;
+      *'"ok": true'*) ok "Oído local en http://127.0.0.1:8792 (micrófono de este computador)";;
+      *) ko "El oído local no arrancó (log: /tmp/myo-oido.log). La TV escucha en el navegador"; OIDO="";;
+    esac
+  fi
+  unset XI_KEY
+fi
+
 # 5) Monitor MyoWare: sirve la TV y los gestos
 # Bluetooth necesita Bleak. Si el python3 del sistema no lo tiene, uv lo trae sin instalar nada global.
 PY=(python3)
@@ -81,7 +122,8 @@ fi
 TOKI_APPS_URL="http://127.0.0.1:$APPS_PUERTO" TOKI_REMOTO="$REMOTO" TOKI_WA_TOKEN="$TOKEN" "${PY[@]}" "$RAIZ/software/myoware-monitor/server.py" --http-port "$PUERTO" "${ARGS[@]}" &
 MONITOR=$!
 unset TOKEN
-trap 'kill $MONITOR $APPS 2>/dev/null' EXIT INT TERM
+KIOSCO=""
+trap 'kill $MONITOR $APPS $OIDO $KIOSCO 2>/dev/null' EXIT INT TERM
 listo=""
 for _ in $(seq 1 90); do   # la primera vez uv descarga Bleak
   kill -0 $MONITOR 2>/dev/null || break
@@ -92,18 +134,39 @@ if [ -n "$listo" ]; then ok "Monitor en http://127.0.0.1:$PUERTO"; else ko "El m
 sleep 1
 case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected": true'*|*'"connected":true'*) ok "Sensor enviando datos";; *) ko "El sensor no manda datos: sin MyoWare, usa Espacio = ceja y J = mandíbula (si es Bluetooth, revisa Ajustes › Privacidad › Bluetooth)";; esac
 
-# 6) Chrome con su propio perfil (guarda la calibración entre ensayos) y en pantalla completa
+# 6) La TV: kiosco (software/kiosco, Electron) o, si no está, Chrome con su propio perfil.
+#    El kiosco sirve MediaPipe desde la copia local, da cámara y micrófono solo a 127.0.0.1, no navega fuera
+#    y recarga la TV si se cae. Ctrl+Shift+Q lo cierra.
 URL="http://127.0.0.1:$PUERTO/woki-os.html${TOKI_ESCUCHA:+?escucha=$TOKI_ESCUCHA}"   # TOKI_ESCUCHA=voz|siempre|manual
-PERFIL="$HOME/.toki-chrome"
-# Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
-# Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.
-CHROME_FLAGS=(--use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required)
-if [ -d "/Applications/Google Chrome.app" ]; then
-  open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL"
-elif command -v google-chrome >/dev/null; then
-  google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL" >/dev/null 2>&1 &
-else
-  echo "  Abre en Chrome: $URL"
+KIOSCO_DIR="$RAIZ/software/kiosco"
+if [ "${TOKI_KIOSCO:-1}" != "0" ] && command -v npm >/dev/null; then
+  if [ ! -f "$KIOSCO_DIR/node_modules/electron/path.txt" ]; then
+    echo "  Instalando el kiosco (solo la primera vez, ~100 MB)…"
+    npm ci --silent --no-audit --no-fund --prefix "$KIOSCO_DIR" >/tmp/myo-kiosco-install.log 2>&1
+    [ -f "$KIOSCO_DIR/node_modules/electron/path.txt" ] || node "$KIOSCO_DIR/node_modules/electron/install.js" >>/tmp/myo-kiosco-install.log 2>&1
+  fi
+  if [ -f "$KIOSCO_DIR/node_modules/electron/path.txt" ]; then
+    "$KIOSCO_DIR/node_modules/.bin/electron" "$KIOSCO_DIR" --url "$URL" >/tmp/myo-kiosco.log 2>&1 &
+    KIOSCO=$!
+    sleep 2
+    if kill -0 $KIOSCO 2>/dev/null; then ok "TV en el kiosco (Ctrl+Shift+Q cierra; log: /tmp/myo-kiosco.log)"
+    else ko "El kiosco no arrancó (log: /tmp/myo-kiosco.log): abro Chrome"; KIOSCO=""; fi
+  else
+    ko "No se pudo instalar el kiosco (log: /tmp/myo-kiosco-install.log): abro Chrome"
+  fi
+fi
+if [ -z "$KIOSCO" ]; then
+  PERFIL="$HOME/.toki-chrome"
+  # Escucha sin botón: el perfil de Myo acepta solo el micrófono y la cámara (sin aviso) y el audio arranca sin esperar un clic.
+  # Solo este perfil (.toki-chrome) lleva estas banderas; el Chrome normal no cambia.
+  CHROME_FLAGS=(--use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required)
+  if [ -d "/Applications/Google Chrome.app" ]; then
+    open -na "Google Chrome" --args --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL"
+  elif command -v google-chrome >/dev/null; then
+    google-chrome --user-data-dir="$PERFIL" --no-first-run --start-fullscreen "${CHROME_FLAGS[@]}" "$URL" >/dev/null 2>&1 &
+  else
+    echo "  Abre en Chrome: $URL"
+  fi
 fi
 echo
 echo "Listo. Deja esta ventana abierta; Ctrl+C la cierra y apaga el monitor."
