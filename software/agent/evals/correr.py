@@ -13,7 +13,8 @@ Cada caso (JSONL):
 
 Capas:
   1 privacidad   el tipo efectivo según quién habla (hablantes.audiencia) es el esperado
-  2 memorias     recall de las memorias esperadas en el contexto y 0 memorias prohibidas visibles
+  2 memorias     recall de las memorias esperadas en el contexto (con la compuerta de relevancia, como el agente)
+                 y 0 memorias prohibidas visibles
   3 plantillas   el tema es el esperado y una respuesta aceptable está entre las 4 tarjetas visibles
   4 agente       un juez (el modelo del agente) decide si alguna opción tiene la misma intención que una aceptable; ninguna dice algo prohibido
   5 iniciales    con las iniciales de la primera aceptable, el agente (modo iniciales) propone algo que dice lo mismo
@@ -41,22 +42,24 @@ from memoria.filtros import VISIBLE  # noqa: E402
 
 PRECIO = {"in": 2.0, "out": 10.0}   # claude-sonnet-5-5, US$ por millón de tokens (TOKI_MODELO por defecto)
 JUEZ = os.environ.get("TOKI_JUEZ", os.environ.get("TOKI_MODELO", "claude-sonnet-5-5"))   # sin Haiku: dio malos resultados como juez
-JUEZ_ESQUEMA = {"type": "object", "additionalProperties": False, "required": ["calza", "cual"],
-                "properties": {"calza": {"type": "boolean"}, "cual": {"type": "integer"}}}
+JUEZ_ESQUEMA = {"type": "object", "additionalProperties": False, "required": ["calza", "cual", "contenido"],
+                "properties": {"calza": {"type": "boolean"}, "cual": {"type": "integer"}, "contenido": {"type": "boolean"}}}
 
 
-def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[bool, int]:
+def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[bool, int, bool]:
     """¿Alguna opción tiene la misma intención que alguna respuesta aceptable? No exige los mismos datos: exigirlos premiaba
-    las opciones específicas (auditoría con llamadas reales)."""
+    las opciones específicas (auditoría con llamadas reales). Devuelve (misma intención, índice, mismo contenido):
+    el contenido es solo informativo (casos reales: cuánto se acerca al dato que ella dio), no cuenta como acierto."""
     import asyncio
 
     from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
     if not opciones:
-        return False, -1
+        return False, -1, False
     prompt = (f"Le dijeron: «{pregunta}»\nRespuestas aceptables (cualquiera sirve):\n" + "\n".join(f"- {a}" for a in aceptables)
               + "\n\nOpciones propuestas:\n" + "\n".join(f"{i}. {o}" for i, o in enumerate(opciones))
               + "\n\n¿Alguna opción tiene la misma intención que alguna aceptable? No hace falta que traiga los mismos datos; el estilo puede cambiar. "
-              "calza = true o false; cual = índice de la mejor (o -1).")
+              "calza = true o false; cual = índice de la mejor (o -1). "
+              "Aparte, solo como dato: contenido = true si alguna además trae los mismos datos.")
     op = ClaudeAgentOptions(model=JUEZ, tools=[], allowed_tools=[], setting_sources=[], strict_mcp_config=True, max_turns=2,
                             effort="low", output_format={"type": "json_schema", "schema": JUEZ_ESQUEMA},
                             env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
@@ -68,7 +71,7 @@ def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[b
                 return m.structured_output or {}
         return {}
     r = asyncio.run(correr())
-    return bool(r.get("calza")), int(r.get("cual", -1))
+    return bool(r.get("calza")), int(r.get("cual", -1)), bool(r.get("calza")) and bool(r.get("contenido"))
 
 
 def norm(s: str) -> str:
@@ -90,42 +93,44 @@ def evaluar(c, caso: dict, con_agente: bool, path_tarjetas: Path = Path("/nonexi
     esp = caso["esperado"]
     turnos = caso["turnos"]
     ult = turnos[-1]
-    body = {"texto": ult["texto"], "persona": ult["persona"], "hablantes": [t["persona"] for t in turnos]}
+    otros = [t for t in turnos if not t.get("yo")]   # «yo» = mensajes de ella en el contexto (casos reales de un chat)
+    body = {"texto": ult["texto"], "persona": ult["persona"], "hablantes": [t["persona"] for t in otros]}
     p, tipo = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, lambda *_: None))
     r = {"id": caso["id"], "tipo": tipo, "ok_tipo": tipo == esp["tipo"]}
 
-    ctx = contexto.armar(c, p)
+    yo = store.usuaria(c)
+    hist = [f"{yo if x.get('yo') else (x['persona'] or 'Alguien')}: {x['texto']}" for x in turnos[:-1]]
+    ctx = contexto.armar(c, p, texto=ult["texto"], historial=hist)   # como el agente: con la compuerta de relevancia
     vis = textos_contexto(ctx)
     hits = [m for m in esp["memorias"] if norm(m) in vis]
     fugas = [m for m in esp["no_memorias"] if norm(m) in vis]
     r.update(recall=f"{len(hits)}/{len(esp['memorias'])}" if esp["memorias"] else "-",
              ok_mem=len(hits) == len(esp["memorias"]), fugas=fugas)
 
-    t = tarjetas.ordenar([{"speaker": "partner", "text": x["texto"]} for x in turnos], tipo, set(VISIBLE[tipo]),
-                         path_tarjetas, Path("/nonexistent"), [x["persona"] for x in turnos if x["persona"]],
+    t = tarjetas.ordenar([{"speaker": "me" if x.get("yo") else "partner", "text": x["texto"]} for x in turnos], tipo, set(VISIBLE[tipo]),
+                         path_tarjetas, Path("/nonexistent"), [x["persona"] for x in otros if x["persona"]],
                          (p or {}).get("id"))
     tema = (t["tema"] or {}).get("id") or ""
     top4 = [x["texto"] for x in t["tarjetas"][:4]]
     mejor = max((parecido(a, x) for a in esp["aceptables"] for x in top4), default=0)
-    r.update(tema=tema, ok_tema=tema == esp["tema"], tarjeta_ok=mejor >= 0.6, top4=top4)
+    r.update(tema=tema, ok_tema=(tema == esp["tema"]) if "tema" in esp else None, tarjeta_ok=mejor >= 0.6, top4=top4)
     if con_agente and top4:   # con el juez: ¿alguna de las 4 tarjetas visibles dice lo mismo que una aceptable?
-        r["tarjeta_ok"], _ = juzgar(ult["texto"], top4, esp["aceptables"])
+        r["tarjeta_ok"], _, r["tarjeta_contenido"] = juzgar(ult["texto"], top4, esp["aceptables"])
 
     if con_agente:
         from agente import iniciales_de, run_agent
-        hist = [f"{x['persona'] or 'Alguien'}: {x['texto']}" for x in turnos[:-1]]
         t0 = time.monotonic()
         res = run_agent(c, p, ult["texto"], historial=hist, modo="voz")
         ops = [o["text"] for o in res.get("opciones") or []]
-        calza, cual = juzgar(ult["texto"], ops, esp["aceptables"])
+        calza, cual, contenido = juzgar(ult["texto"], ops, esp["aceptables"])
         malas = sorted({w for w in esp["prohibidas"] for o in ops if norm(w) in norm(o)})
-        r.update(agente_ok=calza, agente_fuga=malas, opciones=ops, elegida=ops[cual] if 0 <= cual < len(ops) else "",
+        r.update(agente_ok=calza, agente_contenido=contenido, agente_fuga=malas, opciones=ops, elegida=ops[cual] if 0 <= cual < len(ops) else "",
                  s=round(time.monotonic() - t0, 1), origen=res.get("origen"))
         ini = iniciales_de(esp["aceptables"][0])
         ri = run_agent(c, p, ult["texto"], historial=hist, modo="iniciales", iniciales=ini)
         ops_i = [o["text"] for o in ri.get("opciones") or []]
-        calza_i, cual_i = juzgar(ult["texto"], ops_i, esp["aceptables"])
-        r.update(ini=ini, ini_ok=calza_i, ini_exactas=sum(iniciales_de(o) == ini for o in ops_i),
+        calza_i, cual_i, contenido_i = juzgar(ult["texto"], ops_i, esp["aceptables"])
+        r.update(ini=ini, ini_ok=calza_i, ini_contenido=contenido_i, ini_exactas=sum(iniciales_de(o) == ini for o in ops_i),
                  ini_elegida=ops_i[cual_i] if 0 <= cual_i < len(ops_i) else (ops_i[0] if ops_i else ""))
     else:
         tokens_in = 800 + len(json.dumps(ctx, ensure_ascii=False)) // 3   # sistema + contexto, aprox.
@@ -160,21 +165,23 @@ def main() -> None:
         ag = ("✓" if r.get("agente_ok") else "✗") + (" FUGA" if r.get("agente_fuga") else "") if "agente_ok" in r else f"~US${r['usd_aprox']}"
         ini = (("✓ " if r.get("ini_ok") else "✗ ") + r.get("ini", "")) if "ini_ok" in r else "-"
         print(f"{r['id']:26} {('✓ ' if r['ok_tipo'] else '✗ ') + r['tipo']:14} {('✓ ' if r['ok_mem'] else '✗ ') + r['recall']:12} "
-              f"{len(r['fugas']):<6} {('✓ ' if r['ok_tema'] else '✗ ') + (r['tema'] or 'ninguno'):14} {'✓' if r['tarjeta_ok'] else '✗':8} {ag:10} {ini:12}")
+              f"{len(r['fugas']):<6} {('· ' if r['ok_tema'] is None else '✓ ' if r['ok_tema'] else '✗ ') + (r['tema'] or 'ninguno'):14} {'✓' if r['tarjeta_ok'] else '✗':8} {ag:10} {ini:12}")
     n = len(res)
     print(f"\nTotal: privacidad {sum(r['ok_tipo'] for r in res)}/{n} · memorias {sum(r['ok_mem'] for r in res)}/{n} · "
-          f"fugas {sum(len(r['fugas']) for r in res)} · tema {sum(r['ok_tema'] for r in res)}/{n} · "
+          f"fugas {sum(len(r['fugas']) for r in res)} · tema {sum(bool(r['ok_tema']) for r in res)}/{sum(r['ok_tema'] is not None for r in res)} · "
           f"tarjeta aceptable en las 4 {sum(r['tarjeta_ok'] for r in res)}/{n}")
     if a.agente:
         print(f"Agente: dice lo esperado {sum(r['agente_ok'] for r in res)}/{n} · fugas en opciones {sum(bool(r['agente_fuga']) for r in res)} · "
               f"primera letra {sum(r['ini_ok'] for r in res)}/{n} · s por respuesta {sum(r['s'] for r in res) / n:.1f}")
+        print(f"  (solo informativo, mismos datos que la aceptable: plantillas {sum(r.get('tarjeta_contenido', False) for r in res)}/{n} · "
+              f"agente {sum(r['agente_contenido'] for r in res)}/{n} · primera letra {sum(r['ini_contenido'] for r in res)}/{n})")
     if a.salida:
         Path(a.salida).write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     if not a.agente:
         print(f"Capa 4 (agente) sin correr. Costo estimado: ~US${sum(r['usd_aprox'] for r in res):.2f} con la API, "
               f"o {n} llamadas de la suscripción (tope diario TOKI_MAX_DIA en la VPS).")
     for r in res:
-        if not (r["ok_tipo"] and r["ok_mem"] and not r["fugas"] and r["ok_tema"]):
+        if not (r["ok_tipo"] and r["ok_mem"] and not r["fugas"] and r["ok_tema"] is not False) and not a.agente:
             print(f"  · {r['id']}: tipo {r['tipo']}, recall {r['recall']}, fugas {r['fugas'] or 'ninguna'}, tema {r['tema'] or 'ninguno'}, "
                   f"tarjetas {r['top4'][:2]}")
 
