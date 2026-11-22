@@ -236,7 +236,7 @@
     reading(){
       if(!this.article)return this.news();
       const titlePages=this.article.titlePages||[this.article.title],pages=[...titlePages,...this.article.pages],isTitle=this.articlePage<titlePages.length;
-      return this.header(isTitle?'Titular':'Extracto de la noticia',esc(this.article.source||this.adapter?.name||'Noticias')+' · '+(this.article.publishedAt?new Date(this.article.publishedAt).toLocaleDateString('es-CL'):''))+`<article class="news-reading"><p>${esc(pages[this.articlePage])}</p></article><div class="news-pagebar">${this.btn('article-prev','← Anterior',{disabled:this.articlePage===0})}<span>${this.articlePage+1} de ${pages.length}</span>${this.btn('article-next','Continuar →',{disabled:this.articlePage+1>=pages.length})}</div>`;
+      return this.header(isTitle?'Titular':'Noticia',esc(this.article.source||this.adapter?.name||'Noticias')+' · '+(this.article.publishedAt?new Date(this.article.publishedAt).toLocaleDateString('es-CL'):''))+`<article class="news-reading"><p>${esc(pages[this.articlePage])}</p></article><div class="news-pagebar">${this.btn('article-prev','← Anterior',{disabled:this.articlePage===0})}<span>${this.articlePage+1} de ${pages.length}</span>${this.btn('article-next','Continuar →',{disabled:this.articlePage+1>=pages.length})}</div>`;
     }
     get job(){return this.jobs.find(j=>j.id===this.id);}
     get catalog(){
