@@ -25,7 +25,7 @@ try {
   await page.locator('[data-c="mouse"]').click();
   const game=page.locator('[data-act="external:play:0"]');
   await game.click();
-  await page.locator('iframe#externalGame').waitFor();
+  await page.locator('img#externalGame').waitFor();
 
   // Supply nose samples to the official OS at the same boundary used by the camera.
   await page.evaluate(()=>{
@@ -35,7 +35,7 @@ try {
     WOKI.mouse.x=1; WOKI.mouse.y=1;
   });
   await page.waitForFunction(()=>document.querySelector('img#externalGame')?.naturalWidth>0 && TOKI_EXTERNAL.connected,null,{timeout:60000});
-  const flag=player.frameLocator('iframe').locator('button[title="Spanish"]');
+  const flag=player.locator('button[title="Spanish"]');
   await flag.waitFor({timeout:60000});
   const box=await flag.boundingBox(), viewport=player.viewportSize();
   const x=(box.x+box.width/2)/viewport.width, y=(box.y+box.height/2)/viewport.height;

@@ -13,20 +13,22 @@ const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.j
 assert.ok(order.every((i) => i > 0), "Woki OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
-// 2. El SO declara las siete tarjetas en su orden de lectura y usa la rejilla de cuatro columnas.
+// 2. El SO declara seis tarjetas y el SOS global.
 {
   const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
-    "go:talk", "go:keyboard", "sos", "go:contacts",
+    "go:talk", "go:keyboard", "go:contacts",
     "go:apps", "go:games", "go:settings",
   ]);
-  assert.match(html, /class="grid4x2" id="tiles"/);
+  assert.match(html, /class="grid3x2" id="tiles"/);
   assert.match(fs.readFileSync(dir + "layout.css", "utf8"), /\.grid4x2 \{ grid-template-columns: var\(--edge\) 1fr 1fr var\(--edge\)/);
 }
 
 // 3. Juegos abre el catálogo externo directamente. La partida permite volver al catálogo.
 assert.match(html, /home-nav" data-t data-act="go:home"/);
+assert.match(html, /sos-nav" data-t data-act="sos" data-dwell="2000"/);
+assert.match(html, /rest-sos" data-t data-act="sos" data-dwell="2000"/);
 assert.match(html, /rest-nav" data-t data-act="rest"/);
 assert.match(external, /if\(name==='games'\)catalog\(\)/);
 assert.match(external, /b\('catalog','← Juegos'\)/);
@@ -44,7 +46,7 @@ assert.match(glue, /SERVICE_LOGOS = \['spotify', 'rappi', 'biobio', 'mercadolibr
 for (const [, cover] of external.matchAll(/image:'([^']+)'/g)) {
   assert.ok(fs.existsSync(dir + 'game-covers/' + cover + '.webp'), cover);
 }
-assert.match(external, /Primera vez: toca la bandera de España y luego «Crear usuario»\./);
+assert.match(external, /Apunta y confirma con Espacio/);
 assert.ok(!/if\(window\.TOKI_OS_SHELL\)\{[^]*?Si aparece la bienvenida[^]*?return;\n  \}/.test(external), "dentro del SO no aparece el aviso largo");
 assert.match(glue, /if \(name !== 'games'\) \$\('#externalGame'\)\?\.remove\(\);/);
 const css = fs.readFileSync(dir + "os-juegos-servicios.css", "utf8");
@@ -71,4 +73,4 @@ assert.match(html, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océan
 assert.match(html, /localStorage\.getItem\('woki\.palette'\)/, "el color se aplica antes de pintar");
 assert.match(html, /case 'look':/);
 
-console.log("Juegos y Servicios en Toki OS: módulos del equipo, 7 tarjetas y descanso global, salidas grandes, sin elección en cadena y colores.");
+console.log("Juegos y Servicios en Toki OS: módulos del equipo, 6 tarjetas y SOS y descanso globales, salidas grandes, sin elección en cadena y colores.");

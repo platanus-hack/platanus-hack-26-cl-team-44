@@ -28,9 +28,10 @@ window.createMagneticPointer = function (selector) {
   const hit = (x, y) => document.elementFromPoint(x, y)?.closest(selector);
   let previous;
   function reset() { previous = null; }
-  function aim(p, now, eligible) {
+  function aim(p, now, eligible, assisted = true) {
     const direct = hit(p.x, p.y);
     let target = eligible(direct) ? direct : null;
+    if (!assisted) { reset(); return {...p,target,inside:Boolean(target)}; }
     let edge;
     if (!direct) {
       let best = reach;
@@ -102,13 +103,13 @@ window.createMenuPointer = function () {
   const magnet = window.createMagneticPointer('[data-t]');
   let lastActivation;
   function reset() { magnet.reset(); lastActivation = null; }
-  function resolve(point, now, layer, cursor, sensor, gaze) {
+  function resolve(point, now, layer, cursor, sensor, gaze, assisted = true) {
     if (document.hidden || (sensor?.on && (!sensor.raw || now-sensor.lastFace>240 ||
         (sensor.mode === 'gaze' && (!gaze?.cur || gaze.cur.blink))))) {
       reset();
       return {target:null};
     }
-    const aim = magnet.aim(point, now, el => el?.isConnected && layer?.contains(el) && !el.disabled && !el.closest('[hidden],[inert],[aria-disabled="true"]'));
+    const aim = magnet.aim(point, now, el => el?.isConnected && layer?.contains(el) && !el.disabled && !el.closest('[hidden],[inert],[aria-disabled="true"]'), assisted);
     cursor.style.transform = 'translate('+aim.x+'px,'+aim.y+'px)';
     if (lastActivation) {
       if (aim.target === lastActivation.target || Math.hypot(point.x-lastActivation.x, point.y-lastActivation.y)<24) {

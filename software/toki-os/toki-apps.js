@@ -14,12 +14,25 @@
     if(!['spotify','whatsapp','youtube','biobio','rappi','mercadolibre','cooperativa'].includes(id))return '<span aria-hidden="true">▤</span>';
     return `<img class="service-logo logo-${id}" src="brands/${id}.svg" alt="" draggable="false">`;
   }
+  function rappiPhoto(original, detail=false) {
+    if (!safeImage(original)) return '';
+    const image = new URL(original);
+    if (!['images.rappi.cl','images.rappi.com'].includes(image.hostname)) return '';
+    const variant = size => {
+      image.searchParams.set('e','webp');
+      image.searchParams.set('d',size+'x'+size);
+      image.searchParams.set('q','75');
+      return esc(image.href);
+    };
+    const size = detail ? 384 : 128;
+    return `<img class="rappi-photo" src="${variant(size)}" srcset="${variant(size)} 1x, ${variant(size*2)} 2x" data-original="${esc(original)}" alt="" width="${size}" height="${size}" decoding="async" draggable="false">`;
+  }
   const catalog = [
     {id:'spotify',name:'Spotify',category:'Música',intent:'Escuchar música',tasks:'Buscar canciones, elegir, reproducir y pausar.',description:'Elegir música, escuchar y pausar.'},
     {id:'whatsapp',name:'WhatsApp',category:'Mensajes',intent:'Hablar con alguien',tasks:'Elegir un contacto, leer y enviar mensajes con confirmación.',description:'Elegir un contacto y enviar mensajes.'},
     {id:'youtube',name:'YouTube',category:'Videos',intent:'Ver videos',tasks:'Elegir videos, reproducir y pausar.',description:'Elegir videos, reproducir y pausar.'},
     {id:'biobio',name:'BioBioChile',category:'Noticias',intent:'Leer noticias',tasks:'Elegir titulares de BioBioChile y leer extractos RSS por páginas.',description:'Elegir titulares y leer sus extractos por partes.'},
-    {id:'rappi',name:'Rappi',category:'Comida',intent:'Elegir comida',tasks:'Elegir comida, revisar el pedido y confirmar antes de comprar.',description:'Elegir comida y revisar antes de pedir.'},
+    {id:'rappi',name:'Rappi',category:'Tiendas y restaurantes',intent:'Explorar Rappi',tasks:'Buscar en tiendas y restaurantes y revisar productos y precios.',description:'Explorar productos, tiendas y restaurantes.'},
     {id:'mercadolibre',name:'Mercado Libre Chile',category:'Compras',intent:'Buscar productos',tasks:'Elegir productos, revisar precio y confirmar antes de comprar.',description:'Elegir productos y revisar antes de comprar.'}
   ];
   const music = [['Música chilena','Los Jaivas'],['Para relajarme','música relajante'],['Clásicos','clásicos en español'],['Algo alegre','cumbia chilena']];
@@ -102,14 +115,20 @@
       finally{if(this.epoch===epoch){this.openingEpoch=null;if(!this.maybeOpen())this.render();}}
     }
     foodPrice(value){return typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(value):'Por confirmar';}
-    foodPager(items,perPage=3){return `<div class="food-pages">${this.btn('food-prev','← Anteriores',{disabled:!this.food.page})}<span>${items.length?`${this.food.page+1} / ${Math.ceil(items.length/perPage)}`:''}</span>${this.btn('food-next','Más →',{disabled:(this.food.page+1)*perPage>=items.length})}</div>`;}
+    foodPager(items,perPage=3){if(items.length<=perPage)return '';return `<div class="food-pages">${this.btn('food-prev','← Anteriores',{disabled:!this.food.page})}<span>${items.length?`${this.food.page+1} / ${Math.ceil(items.length/perPage)}`:''}</span>${this.btn('food-next','Más →',{disabled:(this.food.page+1)*perPage>=items.length})}</div>`;}
     foodView(){
-      const f=this.food,photo=url=>url?`<img src="${esc(url)}" alt="" draggable="false">`:'',cards=(items,action,label)=>`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(item=>this.btn(action,photo(item.image)+label(item),{value:item.id,className:'food-card',disabled:item.available===false})).join('')}${!items.length?'<p>No hay resultados disponibles. Vuelve y elige otra categoría.</p>':''}</div>`;
-      if(this.view==='food-stores')return this.header('Elige un restaurante',esc(f.category))+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
+      const f=this.food,cards=(items,action,label)=>`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(item=>this.btn(action,rappiPhoto(item.image)+label(item),{value:item.id,className:'food-card',disabled:item.available===false})).join('')}${!items.length?'<p>No hay resultados disponibles. Vuelve y elige otra categoría.</p>':''}</div>`;
+      if(this.view==='food-stores')return this.header(esc(f.category),'Tiendas con resultados')+cards(f.stores,'food-store',s=>`<span><strong>${esc(s.name)}</strong><small>${esc(s.eta)}</small></span>`)+this.foodPager(f.stores);
       if(this.view==='food-products')return this.header(esc(f.store?.name),'Productos encontrados · precios por confirmar al pedir')+cards(f.items,'food-product',p=>`<span><strong>${esc(p.name)}</strong><small>${this.foodPrice(p.price)}</small></span>`)+this.foodPager(f.items);
       if(this.view==='food-product'){
         const selection=f.selection,p=selection.product;
-        return this.header('Tu elección',esc(selection.store.name))+`<div class="food-selection">${photo(p.image)}<div><h2>${esc(p.name)}</h2><p>${this.foodPrice(p.price)}</p><p>${selection.canAdd?'Una unidad · todavía no estás comprando.':'Puedes elegir opciones. Falta conectar la cuenta para el carrito.'}</p></div></div><div class="food-actions">${selection.groups.length?this.btn('food-options','Elegir opciones',{className:'ta-primary'}):selection.canAdd?this.btn('food-add','Añadir al carrito',{className:'ta-primary'}):this.btn('food-check','Comprobar conexión')}${this.btn('food-cart','Ver carrito')}</div>`;
+        const note=selection.catalogOnly?'Solo consulta en Toki.':selection.canAdd?'Cantidad: 1.':'El carrito de restaurantes requiere una cuenta conectada.';
+        const detail=`<div class="food-selection">${rappiPhoto(p.image,true)}<div><h2>${esc(p.name)}</h2><p>${this.foodPrice(p.price)}</p><p>${note}</p></div></div>`;
+        const heading=this.header('Detalle del producto',esc(selection.store.name));
+        if(selection.catalogOnly)return heading+detail;
+        const primary=selection.groups.length?this.btn('food-options','Elegir opciones',{className:'ta-primary'}):
+          selection.canAdd?this.btn('food-add','Añadir al carrito',{className:'ta-primary'}):this.btn('food-check','Comprobar conexión');
+        return heading+detail+`<div class="food-actions">${primary}${this.btn('food-cart','Ver carrito',{disabled:!f.status?.connected})}</div>`;
       }
       if(this.view==='food-options'){
         const group=f.selection.groups[f.group],count=group.items.filter(t=>f.options.includes(t.id)).length;
@@ -117,9 +136,24 @@
       }
       if(this.view==='food-cart'){
         const items=(f.cart?.stores||[]).flatMap(s=>s.items),cart=f.cart;
-        return this.header('Tu carrito','No se ha realizado ninguna compra')+`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(p=>`<div class="food-card food-cart-item"><strong>${esc(p.name)}</strong><span>${esc(p.quantity)} × ${this.foodPrice(p.price)}</span></div>`).join('')}${items.length?'':'<p>Tu carrito está vacío.</p>'}</div>`+this.foodPager(items)+`<p class="food-note">Productos: ${this.foodPrice(cart?.productsTotal)} · Envío: ${this.foodPrice(cart?.shippingTotal)}. Compra y pago aún pendientes de habilitar.</p><div class="food-actions">${this.btn('food-cart','Actualizar carrito')}${this.btn('food-quote','Revisar importes',{disabled:!items.length})}</div>`;
+        return this.header('Carrito de restaurantes','No se ha realizado ninguna compra')+`<div class="food-list">${items.slice(f.page*3,f.page*3+3).map(p=>`<div class="food-card food-cart-item"><strong>${esc(p.name)}</strong><span>${esc(p.quantity)} × ${this.foodPrice(p.price)}</span></div>`).join('')}${items.length?'':'<p>El carrito está vacío.</p>'}</div>`+this.foodPager(items)+`<p class="food-note">Productos: ${this.foodPrice(cart?.productsTotal)} · Envío: ${this.foodPrice(cart?.shippingTotal)}. Compra y pago aún pendientes de habilitar.</p><div class="food-actions">${this.btn('food-cart','Actualizar carrito')}${this.btn('food-quote','Revisar importes',{disabled:!items.length})}</div>`;
       }
-      return this.header('¿Qué te gustaría comer?',esc(f.status?.locationLabel||'Rappi Chile'))+`<div class="ta-control-grid">${(f.status?.categories||[]).map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('')}</div><div class="food-actions">${this.btn('food-cart','Ver carrito',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div><p class="food-note">${f.status?.connected?'Cuenta conectada.':'Puedes explorar; la cuenta se conecta desde la configuración del equipo.'} Compra y pago aún pendientes.</p>`;
+      if(this.view==='food-query'){
+        return this.header('Buscar en Rappi','Nombre de un producto o una tienda')+
+          `<input aria-label="Producto o tienda" data-app-field="rappiQuery" value="${esc(this.rappiQuery)}" maxlength="160" autocomplete="off">`+
+          this.keyboard('rappiQuery')+this.btn('food-submit','Buscar',{className:'ta-primary'});
+      }
+      if(this.view==='food-department'){
+        const categories=f.status.categories.filter(c=>c.department===f.department.id);
+        return this.header(esc(f.department.name),'Búsquedas frecuentes')+
+          `<div class="ta-control-grid">${categories.map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('')}</div>`;
+      }
+      const departments=f.status?.departments;
+      const choices=departments
+        ? departments.map(d=>this.btn('food-department',esc(d.name),{value:d.id})).join('')+this.btn('food-query','Buscar por nombre')
+        : (f.status?.categories||[]).map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('');
+      return this.header('Explorar Rappi',esc(f.status?.locationLabel||'Rappi Chile'))+
+        `<div class="ta-control-grid food-departments">${choices}</div><div class="food-actions">${this.btn('food-cart','Carrito de restaurantes',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div>`;
     }
     async foodAction(action,payload={},next){
       if(this.busy)return;const epoch=this.epoch;this.busy=true;this.error='';this.render();
@@ -127,7 +161,7 @@
         const result=await this.appAction(action,payload);
         if(this.epoch!==epoch||this.destroyed)return;
         const f=this.food;f.page=0;
-        if(action==='status'){f.status=result;if(this.view==='food-product'&&result.connected){f.selection=null;this.view='food';this.error='Cuenta conectada. Vuelve a elegir la comida con tu dirección.';}}
+        if(action==='status'){f.status=result;if(this.view==='food-product'&&result.connected){f.selection=null;this.view='food';this.error='Cuenta conectada. Selecciona el producto para la dirección de entrega activa.';}}
         if(action==='search'){f.stores=result.stores;f.category=result.category;}
         if(action==='products'){f.items=result.items;f.store=result.store;}
         if(action==='select'){f.selection=result;f.options=[];f.group=0;}
@@ -135,7 +169,7 @@
         if(action==='connect')this.error=result.state==='connected'?'Cuenta conectada. Comprueba la conexión.':result.state==='error'?'No se pudo abrir Chrome. Reintenta la conexión.':'Inicia sesión en la ventana oficial de Rappi Chile.';
         if(action==='disconnect'){f.status=null;f.selection=null;f.cart=null;this.error='Sesión local desconectada.';}
         if(next)this.view=next;
-        const data=await this.api('/api/jobs');this.jobs=data.jobs;
+        // Periodic sync refreshes job evidence independently of the catalog photos.
       }catch(e){if(this.epoch===epoch)this.error=e.message;}
       finally{this.busy=false;if(!this.destroyed)this.render();}
     }
@@ -144,7 +178,20 @@
       if(action==='food-connect')return this.foodAction('connect');
       if(action==='food-disconnect')return this.foodAction('disconnect');
       if(action==='food-check')return this.foodAction('status');
-      if(action==='food-search')return this.foodAction('search',{category:value},'food-stores');
+      if(action==='food-query'){this.rappiQuery='';this.group='';this.view='food-query';this.epoch++;this.render();return;}
+      if(action==='food-submit'){
+        if(!this.rappiQuery.trim()){this.error='Escribe el nombre del producto o la tienda.';this.render();return;}
+        f.searchFrom=this.view;
+        return this.foodAction('search',{query:this.rappiQuery.trim()},'food-stores');
+      }
+      if(action==='food-department'){
+        f.department=f.status.departments.find(d=>d.id===value);
+        this.view='food-department';this.epoch++;this.render();return;
+      }
+      if(action==='food-search'){
+        f.searchFrom=this.view;
+        return this.foodAction('search',{category:value},'food-stores');
+      }
       if(action==='food-store')return this.foodAction('products',{storeId:Number(value)},'food-products');
       if(action==='food-product')return this.foodAction('select',{storeId:f.store.id,productId:Number(value)},'food-product');
       if(action==='food-cart')return this.foodAction('cart',{},'food-cart');
@@ -218,7 +265,8 @@
     }
     header(title,sub){return `<div class="ta-heading"><h1>${title}</h1><p>${sub}</p></div>`;}
     nav(){
-      if(this.view.startsWith('food'))return `<nav class="ta-nav" aria-label="Navegación de comida">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
+      if(this.view==='food')return `<nav class="ta-nav" aria-label="Navegación de Rappi">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
+      if(this.view.startsWith('food'))return `<nav class="ta-nav" aria-label="Navegación de Rappi">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
       if(this.view==='video-player')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('back','← Videos')}${this.btn('store','Ver '+this.catalogLabel)}</nav>`;
       if(this.view==='videos')return `<nav class="ta-nav ta-video-nav" aria-label="Navegación de videos">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
       if(this.view==='news')return `<nav class="ta-nav spotify-nav" aria-label="Navegación de noticias">${this.btn('store','← Volver a '+this.catalogLabel)}</nav>`;
@@ -239,7 +287,8 @@
         if(this.catalogPage===0)return false;
         this.catalogPage--;
       }
-      else if(this.view==='food-stores')this.view='food';
+      else if(this.view==='food-stores')this.view=this.food.searchFrom||'food';
+      else if(this.view==='food-department'||this.view==='food-query')this.view='food';
       else if(this.view==='food-products'){this.view='food-stores';this.food.page=0;}
       else if(this.view==='food-product'||this.view==='food-options'){this.view='food-products';this.food.page=0;}
       else if(this.view==='food-cart')this.view='food';
@@ -266,7 +315,7 @@
       });
       return `<div class="ta-catalog" role="group" aria-label="Catálogo de ${this.catalogLabel}">${cards.join('')}</div>`;
     }
-    detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':a.id==='rappi'?'Explora comida real en Santiago. Para preparar el carrito, conecta tu cuenta y dirección. La compra todavía está pendiente.':a.id==='youtube'?'Elige entre videos de Chile Travel y controla reproducción y pausa. La disponibilidad depende de YouTube.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
+    detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':a.id==='rappi'?'Tiendas y restaurantes disponibles según la dirección de entrega. El carrito de restaurantes requiere una cuenta conectada.':a.id==='youtube'?'Elige entre videos de Chile Travel y controla reproducción y pausa. La disponibilidad depende de YouTube.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
     progress(){
       if(this.admin)return this.adminProgress();
       const j=this.job,a=this.preset,name=esc(j?.name||a.name),logo=`<span class="ta-detail-symbol" aria-hidden="true">${brandLogo(this.adapter?.id||a.id,a.sourceUrl)}</span>`;
@@ -402,7 +451,7 @@
       let next = '';
       if (j.status === 'needs_connection' && j.app==='spotify') next = `<div class="ta-connect"><h2>Conecta tu cuenta</h2><p>Abre Spotify Web e inicia sesión. Después elige ese navegador para usar su sesión de Spotify en este computador.</p><a class="ta-link" href="https://open.spotify.com" target="_blank" rel="noopener noreferrer">Abrir Spotify Web ↗</a><div class="ta-actions">${['chrome','safari','firefox'].map(b=>this.btn('browser',b[0].toUpperCase()+b.slice(1),{value:b,className:this.browser===b?'ta-selected':''})).join('')}</div>${this.btn('connect','Usar mi sesión de Spotify',{className:'ta-primary'})}<p class="ta-note">macOS puede pedir acceso al llavero. La sesión se guarda localmente; el generador no recibe tu contraseña.</p>${this.btn('player','Ver controles locales',{className:'ta-quiet'})}</div>`;
       if (['needs_test','ready'].includes(j.status)) next = this.btn('open-adapter',j.status==='ready'?'Abrir app →':'Probar adaptación →',{className:'ta-primary'}) + (j.app!=='spotify'?this.adminReview():'');
-      if(j.app==='rappi'&&['needs_connection','needs_test','ready'].includes(j.status))next=this.btn('open-adapter','Explorar comida',{className:'ta-primary'})+this.btn('food-connect','Conectar Rappi Chile')+this.btn('food-check','Comprobar sesión')+this.btn('food-disconnect','Desconectar Rappi')+'<p>La sesión se guarda solo en este computador. Compra y pago pendientes de verificación.</p>';
+      if(j.app==='rappi'&&['needs_connection','needs_test','ready'].includes(j.status))next=this.btn('open-adapter','Explorar Rappi',{className:'ta-primary'})+this.btn('food-connect','Conectar Rappi Chile')+this.btn('food-check','Comprobar sesión')+this.btn('food-disconnect','Desconectar Rappi')+'<p>La sesión se guarda solo en este computador. Compra y pago pendientes de verificación.</p>';
       if (j.status === 'needs_adapter') next = `<div class="ta-connect"><h2>Solicitud en manos del equipo</h2><p>La búsqueda está hecha. Falta comprobar una integración y construir la interfaz.</p>${(j.candidates||[]).map(c=>`<p><a class="ta-link" href="${/^https:\/\/github\.com\//.test(c.url)?esc(c.url):'#'}" target="_blank" rel="noopener noreferrer">${esc(c.name)} ↗</a></p>`).join('')}</div>`;
       return this.header(esc(j.name), titles[j.status] || 'Preparación') + `<div class="ta-progress-panel"><div class="ta-progress-caption"><strong>${stage} de 5 etapas completadas</strong><span>${j.status === 'preparing' ? 'Trabajando…' : 'Tu avance está guardado'}</span></div><div class="ta-progress" role="progressbar" aria-label="Preparación de la adaptación" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${stage}" aria-valuetext="${stage} de 5 etapas completadas"><span style="width:${stage*20}%"></span></div><ol class="ta-steps">${phaseLabels.map((label,i)=>`<li class="${i<stage?'done':i===stage?'current':''}"><span>${i<stage?'✓':String(i+1).padStart(2,'0')}</span>${label}</li>`).join('')}</ol><p class="ta-stage-message" role="status">${esc(j.message)}</p>${next}<div class="ta-actions">${['cancelled','error','interrupted'].includes(j.status) ? this.btn('retry','Reintentar',{className:'ta-primary'}) : j.status !== 'ready' ? this.btn('cancel','Cancelar preparación',{className:'ta-quiet'}) : ''}${this.btn('home','Volver al inicio',{className:'ta-quiet'})}</div></div>`;
     }
@@ -424,6 +473,15 @@
       const focus=document.activeElement?.dataset;this.options.beforePaint?.();
       const content=this.view.startsWith('food')?this.foodView():({store:()=>this.store(),detail:()=>this.detail(),progress:()=>this.progress(),player:()=>this.player(),music:()=>this.music(),results:()=>this.results(),news:()=>this.news(),reading:()=>this.reading(),videos:()=>this.videos(),'video-player':()=>this.videoPlayer()}[this.view]||(()=>this.store()))();
       this.root.innerHTML=`<div class="ta-screen">${content}</div><div class="ta-feedback" role="status" aria-live="polite">${this.busy?'Un momento…':esc(this.error)||(!this.online?'Sin conexión con la preparación local.':'')}</div>${this.nav()}`;
+      for(const img of this.root.querySelectorAll('.rappi-photo')){
+        img.addEventListener('error',()=>{
+          if(img.dataset.original){
+            img.removeAttribute('srcset');
+            img.src=img.dataset.original;
+            delete img.dataset.original;
+          }else{img.style.visibility='hidden';}
+        });
+      }
       for(const img of this.root.querySelectorAll('img.news-thumb'))img.addEventListener('error',()=>{img.closest('.news-card')?.classList.remove('has-thumb');img.remove();},{once:true});
       this.paintPlayback();this.mountVideo();
       this.options.afterPaint?.(this.root,this);

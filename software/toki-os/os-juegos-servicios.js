@@ -22,7 +22,7 @@ function tabletGameInput() {
     NOSE.on && NOSE.raw && now - NOSE.lastFace < 250 && (NOSE.mode !== 'gaze' || (GAZE.cur && !GAZE.cur.blink));
   return {
     mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
-    point: tracked && !blocked ? gz : null,
+    point: blocked ? null : camera ? (tracked ? gz : null) : mouse,
     dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
   };
 }

@@ -146,6 +146,8 @@
 /* ---------- Servicios · comida (Rappi, vistas food-* de toki-apps.js) ----------
    toki-apps.css trae tamaños de tablet (vw/clamp, notas de 16 px, imagen en vh) y colores fijos;
    aquí se llevan al lienzo de 1920: tarjetas ≥ 120 px, texto ≥ 28 px y colores del tema. */
+#s-apps .food-departments { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#s-apps .food-selection:has(> div:only-child) { grid-template-columns:1fr; }
 #s-apps .food-list { gap: 20px; }
 #s-apps .food-list > p { font-size: 32px; color: var(--txt2); align-self: center; text-align: center; }
 #s-apps .food-card { justify-content: flex-start; text-align: left; gap: 28px; padding: 14px 40px; min-height: 120px; }
