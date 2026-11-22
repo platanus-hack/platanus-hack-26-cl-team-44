@@ -6,6 +6,9 @@
   const phaseLabels = ['Encontrar conexión', 'Preparar interfaz', 'Conectar cuenta', 'Comprobar funciones', 'Revisar contigo'];
   const groups = ['ABCDE', 'FGHIJ', 'KLMNÑ', 'OPQRS', 'TUVWXYZ', '0123456789'];
   const servicesPerPage = 6;
+  const usable = job => ['needs_connection','needs_test','ready'].includes(job?.status);
+  const failedJob = job => ['cancelled','error','interrupted'].includes(job?.status);
+  const safeImage = url => typeof url === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(url) ? url : '';
   function brandLogo(id, sourceUrl = '') {
     if (/^https:\/\/(?:www\.)?cooperativa\.cl\//i.test(sourceUrl)) id = 'cooperativa';
     if(!['spotify','whatsapp','youtube','biobio','rappi','mercadolibre','cooperativa'].includes(id))return '<span aria-hidden="true">▤</span>';
@@ -51,6 +54,7 @@
         const changed=JSON.stringify(jobs)!==JSON.stringify(this.jobs)||!this.online||JSON.stringify(manifest.adapters)!==JSON.stringify(this.adapters);
         this.jobs=jobs;if(manifest)this.adapters=manifest.adapters;this.online=true;
         if(this.view==='video-player'&&(!['needs_test','ready'].includes(this.job?.status)||this.videoSelection?.generation!==this.job?.generation)){this.view='progress';this.epoch++;}
+        if(this.maybeOpen())return;
         if(changed&&!this.busy)this.render();
       }catch{if(this.online){this.online=false;this.render();}}
     }
@@ -65,6 +69,37 @@
       if(entry==='videos'){this.view='videos';this.epoch++;this.render();await this.loadVideos();return;}
       if(entry==='player'){this.view='player';this.epoch++;this.render();void this.refreshPlayback();return;}
       if(entry==='news'){this.view='news';this.epoch++;this.newsPage=0;this.article=null;this.newsItems=[];this.newsInfo=null;this.render();await this.loadNews();}
+    }
+    // Sin pasos intermedios: elegir una app la abre; si hace falta prepararla, se prepara sola y luego se abre.
+    needsLogin(job){const a=this.adapter;return job?.status==='needs_connection'&&a?.interface.entry!=='food'&&a?.auth.type!=='none';}
+    maybeOpen(){
+      const j=this.job;
+      if(!this.autoOpen||this.view!=='progress'||!this.adapter||!usable(j)||this.needsLogin(j))return false;
+      this.autoOpen=false;void this.openAdapter();return true;
+    }
+    async waitForJob(epoch,until){
+      for(let i=0;i<150&&this.epoch===epoch&&!this.destroyed;i++){
+        await new Promise(r=>setTimeout(r,400));
+        if(this.epoch!==epoch||this.destroyed)return;
+        try{const before=JSON.stringify(this.job);this.jobs=(await this.api('/api/jobs')).jobs;this.online=true;if(this.epoch!==epoch)return;if(JSON.stringify(this.job)!==before&&!until())this.render();}catch{}
+        if(until())return;
+      }
+    }
+    async openApp(value){
+      this.selected=value;const epoch=++this.epoch;let j=this.existing(this.preset);this.id=j?.id||null;this.error='';
+      if(!j&&!this.adapter){this.view='detail';this.render();return;}
+      this.view='progress';this.autoOpen=true;
+      if(this.maybeOpen())return;
+      this.render();
+      if(j?.status==='needs_adapter'||(usable(j)&&this.needsLogin(j))){this.autoOpen=false;return;}
+      this.openingEpoch=epoch;
+      try{
+        if(!j){const a=this.preset;j=(await this.api('/api/jobs',{name:a.name,tasks:a.tasks,...(a.sourceUrl?{sourceUrl:a.sourceUrl}:{})})).job;if(this.epoch!==epoch)return;this.id=j.id;this.jobs=[j,...this.jobs.filter(x=>x.id!==j.id)];}
+        else if(failedJob(j)){await this.api(`/api/jobs/${j.id}/retry`,{});}
+        if(this.epoch!==epoch)return;
+        await this.waitForJob(epoch,()=>!['queued','preparing'].includes(this.job?.status));
+      }catch(e){if(this.epoch===epoch)this.error=/fetch|Network|timeout|abort/i.test(e.message)?'No respondió el servicio. Vuelve a intentarlo.':e.message;}
+      finally{if(this.epoch===epoch){this.openingEpoch=null;if(!this.maybeOpen())this.render();}}
     }
     foodPrice(value){return typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(value):'Por confirmar';}
     foodPager(items,perPage=3){return `<div class="food-pages">${this.btn('food-prev','← Anteriores',{disabled:!this.food.page})}<span>${items.length?`${this.food.page+1} / ${Math.ceil(items.length/perPage)}`:''}</span>${this.btn('food-next','Más →',{disabled:(this.food.page+1)*perPage>=items.length})}</div>`;}
@@ -131,7 +166,8 @@
       const cards=this.videoItems.map(video=>this.btn('choose-video',
         `<img src="${esc(video.thumbnail)}" alt="" draggable="false"><strong>${esc(video.label)}</strong>`,
         {value:video.id,className:'video-card'})).join('');
-      return this.header('Videos','YouTube · Chile Travel')+`<div class="video-choices">${cards || this.btn('reload-videos','Cargar videos')}</div>`;
+      const empty=this.busy?'<div class="ta-center"><p role="status">Cargando videos…</p></div>':`<div class="ta-center"><p>No se pudieron mostrar los videos.</p>${this.btn('reload-videos','Reintentar',{className:'ta-primary'})}</div>`;
+      return this.header('Videos','YouTube · Chile Travel')+(cards?`<div class="video-choices">${cards}</div>`:empty);
     }
     videoPlayer(){return `<section class="ta-video-player"><h2>${esc(this.videoSelection?.video.label||'YouTube')}</h2><div class="ta-video-frame"><div id="toki-video-frame"></div></div><p class="ta-video-status" role="status">Conectando con YouTube…</p><div class="ta-video-controls">${this.btn('video-toggle','Reproducir',{disabled:true})}${this.btn('retry-video','Reintentar video')}</div></section>`;}
     mountVideo(){
@@ -157,7 +193,7 @@
     news(){
       const info=this.newsInfo,stamp=info?.publishedAt?new Date(info.publishedAt).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'';
       const label=info?.stale?'La fuente está atrasada':stamp?'Fuente actualizada: '+stamp:'Titulares y extractos del medio';
-      return this.header('Noticias',`${esc(info?.source||this.adapter?.name||this.preset.name)} · ${label}`)+`<div class="news-list">${this.newsItems.slice(this.newsPage*2,this.newsPage*2+2).map(item=>this.btn('read-news',`<strong>${esc(item.title)}</strong><small>${item.publishedAt?new Date(item.publishedAt).toLocaleDateString('es-CL'):''}</small>`,{value:item.id,className:'news-card'})).join('')}${!this.newsItems.length?`<div class="ta-center"><p>${this.busy?'Cargando noticias…':'No hay noticias cargadas.'}</p>${this.btn('reload-news','Volver a cargar')}</div>`:''}</div><div class="news-pagebar">${this.btn('news-prev','← Anteriores',{disabled:!this.newsPage})}<span>${this.newsItems.length?`${this.newsPage+1} de ${Math.ceil(this.newsItems.length/2)}`:''}</span>${this.btn('news-next','Más noticias →',{disabled:(this.newsPage+1)*2>=this.newsItems.length})}</div>`;
+      return this.header('Noticias',`${esc(info?.source||this.adapter?.name||this.preset.name)} · ${label}`)+`<div class="news-list">${this.newsItems.slice(this.newsPage*2,this.newsPage*2+2).map(item=>this.btn('read-news',`<span class="news-text"><strong>${esc(item.title)}</strong><small>${item.publishedAt?new Date(item.publishedAt).toLocaleDateString('es-CL'):''}</small></span>${safeImage(item.image)?`<img class="news-thumb" src="${esc(item.image)}" alt="" draggable="false">`:''}`,{value:item.id,className:'news-card'+(safeImage(item.image)?' has-thumb':'')})).join('')}${!this.newsItems.length?`<div class="ta-center"><p>${this.busy?'Cargando noticias…':'No hay noticias cargadas.'}</p>${this.btn('reload-news','Volver a cargar')}</div>`:''}</div><div class="news-pagebar">${this.btn('news-prev','← Anteriores',{disabled:!this.newsPage})}<span>${this.newsItems.length?`${this.newsPage+1} de ${Math.ceil(this.newsItems.length/2)}`:''}</span>${this.btn('news-next','Más noticias →',{disabled:(this.newsPage+1)*2>=this.newsItems.length})}</div>`;
     }
     reading(){
       if(!this.article)return this.news();
@@ -193,7 +229,7 @@
         const next = this.catalogPage + 1 < pages ? this.btn('catalog-next','Siguiente →') : '';
         return `<nav class="ta-nav ta-pagination" aria-label="Páginas de servicios">${home}${previous}<span>Página ${this.catalogPage+1} de ${pages}</span>${next}</nav>`;
       }
-      if (this.view === 'player' && !this.admin && this.options.shellHome) return '';
+      if (this.view === 'player' && !this.admin && (this.options.shellHome || this.spotifyBlocked())) return '';
       if (this.view === 'player' && !this.admin) return `<nav class="ta-nav spotify-nav" aria-label="Navegación de servicios">${this.btn('store','← Volver a servicios')}</nav>`;
       return `<nav class="ta-nav" aria-label="Navegación de servicios">${this.btn('back','← Volver')}<span></span>${this.btn('store','Ver servicios')}</nav>`;
     }
@@ -220,7 +256,9 @@
       const start = this.catalogPage * servicesPerPage;
       const cards = this.catalog.slice(start, start + servicesPerPage).map(app => {
         const job = this.existing(app);
-        const status = job ? titles[job.status] : this.adapters.some(a => a.id === app.id) ? 'Disponible para probar' : 'Adaptación por preparar';
+        const available = this.adapters.some(a => a.id === app.id) || usable(job);
+        const status = this.admin ? (job ? titles[job.status] : available ? 'Disponible para probar' : 'Adaptación por preparar')
+          : available ? app.category : 'Aún no disponible';
         return this.btn('preset', `<span class="ta-app-icon" aria-hidden="true">${brandLogo(app.id, app.sourceUrl)}</span>
           <strong>${esc(app.intent)}</strong><span class="ta-brand">${esc(app.name)}</span><small>${esc(status)}</small>`,
           {value:app.id, className:`ta-app-card ta-${esc(app.id)}`});
@@ -230,13 +268,39 @@
     detail(){const a=this.preset,j=this.existing(a);return this.header(esc(a.name),esc(a.description))+`<div class="ta-center"><span class="ta-detail-symbol" aria-hidden="true">${brandLogo(a.id, a.sourceUrl)}</span><p>${a.id==='spotify'?'Puedes controlar Spotify en este computador. Elegir canciones requiere conectar tu cuenta.':a.id==='rappi'?'Explora comida real en Santiago. Para preparar el carrito, conecta tu cuenta y dirección. La compra todavía está pendiente.':a.id==='youtube'?'Elige entre videos de Chile Travel y controla reproducción y pausa. La disponibilidad depende de YouTube.':this.adapter?.auth.type==='none'?'Esta app se puede preparar sin cuenta. Leerás titulares y extractos del medio.':'Esta adaptación todavía no está disponible. Puedes pedir que la preparemos.'}</p>${this.btn(j?'job':'prepare',j?'Ver mi app':`Preparar ${esc(a.name)}`,{value:j?.id,className:'ta-primary',disabled:!j&&!this.online})}</div>`;}
     progress(){
       if(this.admin)return this.adminProgress();
-      const j=this.job;if(!j)return this.store();const stage=j.stage||0;
-      const messages={needs_connection:'Falta conectar tu cuenta para elegir canciones. Los controles locales se pueden probar.',needs_test:'Falta probar esta adaptación contigo antes de marcarla lista.',needs_adapter:'Tu solicitud quedó guardada. El equipo todavía debe preparar esta app.',preparing:'Puedes volver a tus apps. La preparación sigue en segundo plano.',queued:'Tu solicitud está guardada.',ready:'Tu app está lista.',cancelled:'Puedes prepararla de nuevo cuando quieras.',error:'Puedes volver a intentarlo.',interrupted:'Puedes continuar la preparación.'};
-      const canPlay=this.adapter&&['needs_connection','needs_test','ready'].includes(j.status);
-      return this.header(esc(j.name),titles[j.status]||'Preparando')+`<div class="ta-center"><p class="ta-progress-caption">${stage} de 5 etapas completadas</p><div class="ta-progress" role="progressbar" aria-label="Preparación de la adaptación" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${stage}" aria-valuetext="${stage} de 5 etapas completadas"><span style="width:${stage*20}%"></span></div><p>${j.app==='rappi'?esc(j.message):messages[j.status]||'Tu avance está guardado.'}</p><div class="ta-actions">${canPlay?this.btn('open-adapter',j.status==='ready'?'Abrir app':'Probar app',{className:'ta-primary'}):''}${['cancelled','error','interrupted'].includes(j.status)?this.btn('retry','Volver a preparar',{disabled:!this.online}):j.status!=='ready'?this.btn('cancel','Cancelar preparación'):''}</div></div>`;
+      const j=this.job,a=this.preset,name=esc(j?.name||a.name),logo=`<span class="ta-detail-symbol" aria-hidden="true">${brandLogo(this.adapter?.id||a.id,a.sourceUrl)}</span>`;
+      const panel=(sub,text,actions='')=>this.header(name,sub)+`<div class="ta-center">${logo}<p role="status">${text}</p>${actions}</div>`;
+      if(j?.status==='needs_adapter')return panel('Aún no disponible','Esta app todavía no está lista. El equipo debe prepararla.');
+      if(usable(j)&&this.needsLogin(j))return panel('Falta conectar la cuenta','Para usar esta app hay que conectar la cuenta. Pídeselo a tu acompañante.');
+      if(this.openingEpoch!==this.epoch&&(failedJob(j)||(!j&&this.error)))return panel('No se pudo abrir',`No se pudo preparar ${name}. Revisa la conexión a Internet y vuelve a intentarlo.`,this.btn('retry','Reintentar',{className:'ta-primary',disabled:!this.online&&!!j}));
+      return panel(j&&!usable(j)?'Preparando…':'Abriendo…',`Abriendo ${name}…`);
+    }
+    spotifyProblem(j){
+      if(['queued','preparing'].includes(j.status)||this.openingEpoch===this.epoch)return null;
+      if(/conector/i.test(j.message||''))return 'Falta instalar el conector de Spotify en este computador. Pídeselo a tu acompañante.';
+      if(/Spotify\.app/i.test(j.message||''))return 'Falta instalar la app de Spotify en este computador. Pídeselo a tu acompañante.';
+      if(j.status==='needs_adapter')return 'Spotify todavía no está disponible en este computador. Pídeselo a tu acompañante.';
+      return 'No se pudo preparar Spotify. Vuelve a intentarlo.';
+    }
+    spotifyBlocked(){const j=this.job;return !this.admin&&this.view==='player'&&!!j&&(['error','needs_adapter','interrupted','cancelled','queued','preparing'].includes(j.status)||this.openingEpoch===this.epoch);}
+    spotifyUnavailable(){
+      const j=this.job,problem=this.spotifyProblem(j);
+      return `<section class="sp-unavailable" aria-label="Spotify">
+        <div class="sp-brand">${brandLogo('spotify')}<strong>Spotify</strong></div>
+        <p class="sp-problem" role="status">${problem?esc(problem):'Preparando Spotify…'}</p>
+        <div class="ta-actions">${problem?this.btn('spotify-retry','Reintentar',{className:'ta-primary'}):''}${this.btn('store','Ver servicios')}</div>
+      </section>`;
+    }
+    async retrySpotify(){
+      const j=this.job;if(!j)return this.openSpotify();
+      const epoch=this.epoch;this.openingEpoch=epoch;this.error='';this.render();
+      try{await this.api(`/api/jobs/${j.id}/retry`,{});if(this.epoch===epoch)await this.waitForJob(epoch,()=>!['queued','preparing'].includes(this.job?.status));}
+      catch(e){if(this.epoch===epoch)this.error=/fetch|Network|timeout|abort/i.test(e.message)?'No respondió el servicio. Vuelve a intentarlo.':e.message;}
+      finally{if(this.epoch===epoch){this.openingEpoch=null;this.render();if(!this.spotifyBlocked())void this.refreshPlayback();}}
     }
     player(){
       if(this.admin)return this.adminPlayer();
+      if(this.spotifyBlocked())return this.spotifyUnavailable();
       const canSearch = ['ready','needs_test'].includes(this.job?.status);
       return `<section class="sp-player" aria-label="Reproductor Spotify">
         <div class="sp-brand">${brandLogo('spotify')}<strong>Spotify</strong></div>
@@ -359,6 +423,7 @@
       const focus=document.activeElement?.dataset;this.options.beforePaint?.();
       const content=this.view.startsWith('food')?this.foodView():({store:()=>this.store(),detail:()=>this.detail(),progress:()=>this.progress(),player:()=>this.player(),music:()=>this.music(),results:()=>this.results(),news:()=>this.news(),reading:()=>this.reading(),videos:()=>this.videos(),'video-player':()=>this.videoPlayer()}[this.view]||(()=>this.store()))();
       this.root.innerHTML=`<div class="ta-screen">${content}</div><div class="ta-feedback" role="status" aria-live="polite">${this.busy?'Un momento…':esc(this.error)||(!this.online?'Sin conexión con la preparación local.':'')}</div>${this.nav()}`;
+      for(const img of this.root.querySelectorAll('img.news-thumb'))img.addEventListener('error',()=>{img.closest('.news-card')?.classList.remove('has-thumb');img.remove();},{once:true});
       this.paintPlayback();this.mountVideo();
       this.options.afterPaint?.(this.root,this);
       if (['catalog-prev','catalog-next'].includes(focus?.appAction)) {
@@ -376,7 +441,10 @@
       if(action==='home')return this.options.home?.();
       if(action==='back'){if(!this.back())this.options.home?.();return;}
       if(['store','catalog-prev','catalog-next'].includes(action)){this.epoch++;this.view='store';if(action!=='store')this.catalogPage += action==='catalog-next' ? 1 : -1;this.render();return;}
-      if(action==='preset'){if(value==='spotify'&&!this.admin)return this.openSpotify();this.selected=value;const j=this.existing(this.preset);this.id=j?.id||null;this.view=j?'progress':'detail';this.epoch++;if(j?.status==='ready')return this.openAdapter();this.render();return;}
+      if(action==='preset'&&!this.admin)return value==='spotify'?this.openSpotify():this.openApp(value);
+      if(action==='retry'&&!this.admin)return this.openApp(this.selected);
+      if(action==='spotify-retry')return this.retrySpotify();
+      if(action==='preset'){this.selected=value;const j=this.existing(this.preset);this.id=j?.id||null;this.view=j?'progress':'detail';this.epoch++;if(j?.status==='ready')return this.openAdapter();this.render();return;}
       if(action==='job'){this.id=value;if(this.job?.status==='ready')return this.openAdapter();this.view='progress';this.render();return;}
       if(['progress','player','music'].includes(action)){this.view=action;this.epoch++;this.render();return;}
       if(action==='open-adapter')return this.openAdapter();

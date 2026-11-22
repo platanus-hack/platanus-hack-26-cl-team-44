@@ -61,7 +61,9 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 2. En la pantalla de inicio elige **Mirada con iPhone (Face ID)** (o tecla `I`), escribe la dirección que muestra el iPhone (por ejemplo `192.168.1.23:8788`) y **Conectar y calibrar**.
 3. Sigue 13 puntos con los ojos y luego 5 de comprobación (~45 s). `Esc` cancela.
 
-- **Cómo se elige:** manteniendo la mirada sobre el objetivo hasta que se llena (1,2 s por defecto; Ajustes › Tiempo de mirada: 0,8 · 1 · 1,2 · 1,5 s, se recuerda). No hace falta ceja ni EMG. Al cambiar de puntero vuelve el modo anterior.
+- **Cómo se elige (Ajustes › Confirmar con, se recuerda):**
+  - **Mirada** (por defecto): mantener la mirada hasta que se llena (1,2 s; Ajustes › Tiempo de mirada: 0,8 · 1 · 1,2 · 1,5 s), o una ceja. No hace falta ceja ni EMG.
+  - **Ceja:** la ceja elige lo enfocado al instante y mirar solo enfoca, para no elegir sin querer al mirar. De respaldo, mantener la mirada **3 s** también elige, así nadie queda sin forma de elegir si la ceja o el sensor fallan. Al cambiar de puntero vuelve el modo anterior.
 - **Dónde va el iPhone:** abajo, centrado bajo la pantalla, acostado (horizontal), a 40–60 cm de la cara, en un soporte (no sobre las teclas).
 - **Cambiar de puntero:** Ajustes › Puntero recorre Mouse → Nariz → Mirada → iPhone. La calibración queda guardada y se reusa con **Usar la calibración guardada**.
 - **Si se pierde la cara o la señal 1,5 s,** el SO pasa a escaneo con EMG, igual que con la nariz.
@@ -75,7 +77,7 @@ Cuarto puntero, además de mouse, nariz y mirada por webcam. Usa el iPhone como 
 Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una **ceja corta** sobre la opción enfocada. En la rueda de atajos, mantener la mirada no elige automáticamente.
 
 - **Siempre hay salida:** Hablar (Escribir · Volver), Escribir (Volver en ambos niveles, palabra sugerida como tecla), Reacciones (Más · Volver), selector de emociones (Volver), Descanso (mirar "Volver" 2 s), Mensajes (Cancelar). Enviar se confirma siguiendo con la mirada en el botón.
-- **Ajustes no deja atrapada a la persona:** "Confirmar con" y "Puntero" quedan fijos; "Calibrar" recalibra con la mirada y vuelve solo.
+- **Ajustes no deja atrapada a la persona:** "Puntero" queda fijo; "Confirmar con" cambia entre Mirada y Ceja (con el respaldo de 3 s); "Calibrar" recalibra con la mirada y vuelve solo.
 - **Sin cara o sin señal:** escaneo con la ceja, igual que con la nariz.
 - **Imán y huecos:** el cursor se acerca al centro de la tarjeta enfocada y la mirada en el hueco entre tarjetas toma la más cercana.
 - **Sin elecciones en cadena:** tras elegir, 0,7 s sin cargar; mirar fijo una tarjeta no la repite.
@@ -101,6 +103,24 @@ Se elige de **dos formas**: manteniendo la mirada hasta que se llena, o con una 
 - **Ajustes › Teclado** elige entre **Sugerencias fijas** (la fila de arriba, 1 mirada) y **Sugerencias en lista** (un solo botón que abre la lista, 2 miradas, tarjetas más altas). Se recuerda.
 - **Por qué así:** una fila fija junto al teclado es lo que mejor rinde en tecleo por mirada (MacKenzie y Zhang, ETRA 2008) y el ahorro casi no crece más allá de ~6 sugerencias (Adhikary et al. 2022). Las variantes sin tilde poco frecuentes ("unico") no se muestran; "como/cómo" sí.
 - **Diccionario base** (`lexicon-es.js`): se genera con `tools/build-lexicon.mjs` desde `es_50k.txt` de [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (CC BY-SA 4.0). Sin generar, se usa una lista mínima de respaldo.
+
+## Juegos y Servicios en Woki OS
+
+Woki OS incluye los Juegos y los Servicios del inicio de la tablet, con el estilo y los recuadros grandes de Woki. Para probarlo con Servicios funcionando, ábrelo desde el servidor de apps: `npm start --prefix software/apps-bridge` y http://127.0.0.1:8790/woki-os.html.
+
+- **Inicio con 10 tarjetas (5×2):** se agregan **Servicios** (con los logos reales) y **Juegos** sin quitar nada. Las columnas de los bordes son 1,2× más anchas. Con el error medido del iPhone (mediana de 2,2° en el centro y ~2,7° en los bordes), cada tarjeta mide más de 2× el error de su zona: unos 4,9 × 6,5 cm en el centro y 5,9 cm de ancho en los bordes, en un portátil de 13".
+- **Juegos:** se entra a los **Juegos de Toki** (Constelaciones, Parejas y récords), que funcionan con cualquier puntero, incluido el iPhone. **Eye Gaze Games** abre el catálogo de SpecialEffect, con etiquetas legibles. Dentro de una partida externa, la mirada solo controla el juego con el puente del navegador (`software/browser-bridge`); sin él se juega con el mouse. Al jugar, el juego ocupa casi toda la pantalla y arriba solo queda una línea: "Primera vez: toca la bandera de España y luego «Crear usuario»" (así es la bienvenida real del sitio). Al salir de Juegos la partida se cierra.
+- **Servicios:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
+- **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
+
+  ```bash
+  brew install steipete/tap/spogo
+  ```
+
+  Después reinicia el servidor (`npm start --prefix software/apps-bridge`) y abre Spotify.app. Para buscar canciones también hay que conectar la sesión de Spotify Web (ver [apps-bridge](../apps-bridge/README.md#spotify)).
+- **Siempre hay salida:** "‹ Inicio" en la barra, "← Inicio" en Juegos, "← Juegos" en el catálogo e "Inicio"/"Volver" en Servicios. Con el iPhone, tras elegir hay 0,7 s de bloqueo, igual que en el resto del SO.
+- **Ajustes › Tema y color:** **Oscuro** o **Claro**, y cinco fondos: **Noche** (el de siempre), **Bosque**, **Océano**, **Atardecer** y **Lavanda**. Se recuerdan en el navegador (`woki.theme` y `woki.palette`).
+- **Código:** `os-juegos-servicios.js` y `os-juegos-servicios.css` conectan los módulos del equipo sin copiarlos. `os-colores.css` define los fondos. Los módulos solo cambian su comportamiento dentro de Woki OS (`window.TOKI_OS_SHELL`); la tablet queda igual.
 
 ## Tema y atajos
 

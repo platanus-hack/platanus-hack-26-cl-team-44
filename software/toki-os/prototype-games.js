@@ -12,9 +12,17 @@ window.addEventListener('load', () => {
   let state = null, paused = false, suspended = false, inputPending = false, latch = null;
   const content = document.querySelector('#gameContent');
   const KEY = 'toki.games.records.v1';
-  const records = () => { try { const r = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(r) ? r.filter(x => ['stars','memory'].includes(x.kind) && Number.isFinite(x.score)).slice(0,20) : []; } catch { return []; } };
+  const records = () => { try { const r = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(r) ? r.filter(x => ['stars','memory'].includes(x.kind) && Number.isFinite(x.score) && (x.time===undefined || Number.isFinite(x.time))).slice(0,20) : []; } catch { return []; } };
+  const secs = t => `${t.toLocaleString('es',{minimumFractionDigits:1,maximumFractionDigits:1})} s`;
+  const bestTime = () => Math.min(...records().filter(x=>x.kind==='stars'&&Number.isFinite(x.time)).map(x=>x.time));
+  // El reloj de Constelaciones no cuenta las pausas (ni la pausa automática al perder la cara).
+  function clock(s, now=performance.now()) {
+    if(paused && s.pauseAt==null) s.pauseAt=now;
+    if(!paused && s.pauseAt!=null) { s.pausedMs+=now-s.pauseAt; s.pauseAt=null; }
+    return (now-s.startedAt-s.pausedMs-(s.pauseAt!=null?now-s.pauseAt:0))/1000;
+  }
   function mode() { return NOSE.on ? (NOSE.mode === 'gaze' ? 'Mirada' : 'Nariz') : 'Mouse'; }
-  function inputControls() { return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
+  function inputControls() { if (window.TOKI_OS_SHELL) return `<p class="game-note">Mantén la mirada sobre una opción para elegirla. El puntero se cambia en Ajustes.</p>`; return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
   function paint(html) {
     const blockedAction=S.blocked?.dataset.act;
     clearFocus(); content.innerHTML=html; decorate(content);
@@ -22,15 +30,16 @@ window.addEventListener('load', () => {
     const replacement=[...content.querySelectorAll('[data-t]')].find(el=>el.dataset.act===blockedAction);
     if(replacement) { setFocus(replacement); S.blocked=replacement; replacement.classList.add('blocked'); }
   }
+  const art = (kind, fallback) => window.TOKI_GAME_ART?.[kind] || `<span class="game-art">${fallback}</span>`;
   function lobby() {
     state = null; paused = false;
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin cronómetro</span></div>${inputControls()}<div class="game-catalog">${button('stars','<span class="game-art">✦</span><strong>Constelaciones</strong><small>Encuentra 10 estrellas con tu puntero.</small>')}${button('memory','<span class="game-art">▦</span><strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external','<span class="game-art">↗</span><strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">UN MOMENTO PARA TI</p><h1>Juega a tu ritmo.</h1></div><span>Sin límite de tiempo</span></div>${inputControls()}<div class="game-catalog">${button('stars',art('stars','✦')+'<strong>Constelaciones</strong><small>Encuentra 10 estrellas y mejora tu tiempo.</small>')}${button('memory',art('memory','▦')+'<strong>Parejas</strong><small>Descubre tres parejas. Sin prisa.</small>')}${button('external',art('external','↗')+'<strong>Eye Gaze Games</strong><small>Explora los juegos de SpecialEffect.</small>')}</div><div class="game-footer">${window.TOKI_OS_SHELL?button('home','← Inicio'):''}${button('records','Ver récords locales')}<p>Juegos individuales · Los récords se guardan solo en este navegador.</p></div>`);
   }
   function start(kind) {
     paused = false;
     const deck = ['☀','☀','☂','☂','♫','♫'];
     for (let i=deck.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
-    state = {kind, count:0, target:Math.floor(Math.random()*6), deck, open:[], matched:[], attempts:0, done:false, input:mode()};
+    state = {kind, count:0, target:Math.floor(Math.random()*6), deck, open:[], matched:[], attempts:0, done:false, input:mode(), startedAt:performance.now(), pausedMs:0, pauseAt:null, flipBack:[], lastMatch:false};
     renderGame();
   }
   function renderGame() {
@@ -38,27 +47,33 @@ window.addEventListener('load', () => {
     const title=s.kind==='stars'?'Constelaciones':'Parejas';
     const progress=s.kind==='stars'?`${s.count} / 10 estrellas`:`${s.matched.length/2} / 3 parejas · ${s.attempts} intentos`;
     const revealed=s.open.length===2;
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">${progress}</p><h1>${title}</h1></div>${button('pause',paused?'Continuar':'Pausa')}</div><p class="game-instruction" aria-live="polite">${paused?'Descansa. La partida te espera.':s.kind==='stars'?'Mira la estrella y mantén el puntero sobre ella.':revealed?'Observa las dos figuras. Cuando quieras, continúa.':'Elige dos tarjetas para encontrar una pareja.'}</p>${paused?'<div class="game-pause">☾</div>':`<div class="game-board">${Array.from({length:6},(_,i)=> {
+    if(s.kind==='stars') clock(s);
+    const flip=s.flipBack; s.flipBack=[];
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">${progress}</p><h1>${title}</h1></div>${button('pause',paused?'Continuar':'Pausa')}</div><p class="game-instruction" aria-live="polite">${paused?'Descansa. La partida te espera.':s.kind==='stars'?'Mira la estrella y mantén el puntero sobre ella.':revealed?'No son iguales. Se dan vuelta solas.':s.lastMatch?'¡Pareja! Sigue buscando.':'Elige dos tarjetas para encontrar una pareja.'}</p>${paused?'<div class="game-pause">☾</div>':`<div class="game-board">${Array.from({length:6},(_,i)=> {
       if(s.kind==='stars') return i===s.target?button('pick:'+i,'✦',`aria-label="Recoger estrella"`):'<div class="game-empty" aria-hidden="true">·</div>';
       if(s.matched.includes(i)) return `<div class="game-matched" aria-label="Pareja encontrada">${s.deck[i]}<small>✓</small></div>`;
       if(s.open.includes(i)) return `<div class="game-revealed">${s.deck[i]}</div>`;
-      return revealed?'<div class="game-empty">?</div>':button('pick:'+i,'?',`aria-label="Tarjeta ${i+1}"`);
-    }).join('')}</div>`}<div class="game-footer">${button('lobby','← Juegos')}${!paused&&s.kind==='memory'&&revealed?button('next','Continuar'):''}<p>${s.kind==='stars'?'Sin fallos ni penalizaciones.':'Cada pareja vale 100 puntos. Los intentos extra descuentan 10.'}</p></div>`);
+      // Mientras se ven dos tarjetas distintas no se puede elegir otra; luego vuelven a girar.
+      return revealed?'<div class="game-empty">?</div>':button('pick:'+i,'?',`aria-label="Tarjeta ${i+1}"${flip.includes(i)?' data-flip="1"':''}`);
+    }).join('')}</div>`}<div class="game-footer">${button('lobby','← Juegos')}<p>${s.kind==='stars'?'Sin fallos ni penalizaciones. En pausa el tiempo se detiene.':'Cada pareja vale 100 puntos. Los intentos extra descuentan 10.'}</p></div>`);
   }
   function finish() {
     if(state.done) return; state.done=true;
     const score=state.kind==='stars'?100:Math.max(0,300-Math.max(0,state.attempts-3)*10);
+    const time=state.kind==='stars'?Math.round(clock(state)*10)/10:undefined, best=bestTime();
     let stored=true;
-    try { localStorage.setItem(KEY,JSON.stringify([{kind:state.kind,score,input:state.input,date:new Date().toISOString()},...records()].slice(0,20))); } catch { stored=false; }
-    paint(`<div class="game-finish"><p class="game-eyebrow">PARTIDA COMPLETADA</p><h1>¡Lo conseguiste!</h1><div class="game-score">${score}<small>puntos</small></div><p>${stored?'Récord guardado en este navegador.':'No se pudo guardar el récord en este navegador.'}</p><div class="game-inputs">${button(state.kind,'Otra partida')}${button('records','Ver récords')}${button('lobby','← Juegos')}</div></div>`);
+    try { localStorage.setItem(KEY,JSON.stringify([{kind:state.kind,score,time,input:state.input,date:new Date().toISOString()},...records()].slice(0,20))); } catch { stored=false; }
+    const result=time===undefined?`${score}<small>puntos</small>`:`${secs(time)}<small>${!Number.isFinite(best)||time<best?'¡Nuevo récord de tiempo!':'Tu mejor tiempo: '+secs(best)}</small>`;
+    paint(`<div class="game-finish"><p class="game-eyebrow">PARTIDA COMPLETADA</p><h1>¡Lo conseguiste!</h1><div class="game-score">${result}</div><p>${stored?'Récord guardado en este navegador.':'No se pudo guardar el récord en este navegador.'}</p><div class="game-inputs">${button(state.kind,'Otra partida')}${button('records','Ver récords')}${button('lobby','← Juegos')}</div></div>`);
   }
   function showRecords() {
     const rows=records();
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">SOLO EN ESTE NAVEGADOR</p><h1>Tus récords</h1></div>${button('lobby','← Juegos')}</div><p class="game-note">Aún no hay clasificación pública ni sincronización con otras laptops.</p><div class="game-records">${['stars','memory'].map(kind=>`<article><h2>${kind==='stars'?'Constelaciones':'Parejas'}</h2><ol>${rows.filter(x=>x.kind===kind).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>`<li><strong>${x.score} puntos</strong><span>${['Mouse','Nariz','Mirada'].includes(x.input)?x.input:'Puntero'}</span></li>`).join('')||'<li>Todavía no hay partidas.</li>'}</ol></article>`).join('')}</div>`);
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">SOLO EN ESTE NAVEGADOR</p><h1>Tus récords</h1></div>${button('lobby','← Juegos')}</div><p class="game-note">Aún no hay clasificación pública ni sincronización con otras laptops.</p><div class="game-records">${['stars','memory'].map(kind=>`<article><h2>${kind==='stars'?'Constelaciones':'Parejas'}</h2><ol>${rows.filter(x=>x.kind===kind).sort((a,b)=>kind==='stars'?(a.time??Infinity)-(b.time??Infinity):b.score-a.score).slice(0,5).map(x=>`<li><strong>${kind==='stars'&&Number.isFinite(x.time)?secs(x.time):x.score+' puntos'}</strong><span>${['Mouse','Nariz','Mirada'].includes(x.input)?x.input:'Puntero'}</span></li>`).join('')||'<li>Todavía no hay partidas.</li>'}</ol></article>`).join('')}</div>`);
   }
   function external() {
     paint(`<div class="game-heading"><div><p class="game-eyebrow">SPECIALEFFECT</p><h1>Eye Gaze Games</h1></div>${button('lobby','← Juegos')}</div><div class="game-external"><p>Una colección externa de juegos accesibles, con sus propios ajustes de control.</p><p>El puntero de mirada o nariz de Toki funciona dentro de esta página. No controla automáticamente la web de SpecialEffect.</p><p>Para probar tu cámara con Toki, vuelve a Constelaciones o Parejas. Para los juegos externos necesitarás configurar allí un método compatible.</p>${button('visit','Abrir Eye Gaze Games ↗')}<p class="game-note">Abre en esta pestaña. Puedes regresar con el botón Atrás del navegador.</p></div>`);
   }
+  window.TOKI_GAMES={lobby};
   const baseActivate=activate;
   activate=function(el, calibrate=true) {
     if(!el?.dataset.act?.startsWith('game:')) return baseActivate(el,calibrate);
@@ -67,9 +82,10 @@ window.addEventListener('load', () => {
     latch={action:el.dataset.act, rect:el.getBoundingClientRect()};
     const [,act,arg]=el.dataset.act.split(':');
     if(act==='lobby') return lobby();
+    if(act==='home') return go('home');
     if(act==='stars'||act==='memory') return start(act);
     if(act==='records') return showRecords();
-    if(act==='external') return external();
+    if(act==='external') return window.TOKI_EXTERNAL?.catalog ? window.TOKI_EXTERNAL.catalog() : external();
     if(act==='visit') { location.href='https://www.eyegazegames.com/'; return; }
     if(['nose','gaze','mouse'].includes(act)) {
       inputPending=true;
@@ -79,7 +95,6 @@ window.addEventListener('load', () => {
     if(!state||state.done) return;
     if(act==='pause') {paused=!paused; renderGame();return;}
     if(paused) return;
-    if(act==='next'&&state.open.length===2) {state.open=[]; renderGame();return;}
     if(act==='pick') {
       const i=Number(arg); if(!Number.isInteger(i)||i<0||i>5) return;
       if(state.kind==='stars') {
@@ -88,8 +103,15 @@ window.addEventListener('load', () => {
         state.target=(i+1+Math.floor(Math.random()*5))%6;
       } else {
         if(state.open.length===2||state.open.includes(i)||state.matched.includes(i)) return;
-        state.open.push(i);
-        if(state.open.length===2) {state.attempts++; if(state.deck[state.open[0]]===state.deck[i]) state.matched.push(...state.open);}
+        state.open.push(i); state.lastMatch=false;
+        if(state.open.length===2) {
+          state.attempts++;
+          if(state.deck[state.open[0]]===state.deck[i]) { state.matched.push(...state.open); state.open=[]; state.lastMatch=true; }
+          else {
+            const s=state, pair=[...s.open];
+            setTimeout(()=>{ if(state!==s||s.done) return; s.open=[]; s.flipBack=pair; renderGame(); }, 1200);
+          }
+        }
         if(state.matched.length===6) return finish();
       }
       renderGame();
@@ -107,7 +129,7 @@ window.addEventListener('load', () => {
     if(blocked&&!suspended) {
       suspended=true; clearFocus();
       content.querySelectorAll('[data-t]').forEach(el=>{el.removeAttribute('data-t');el.dataset.gameSuspended='true';});
-      if(state&&!state.done) paused=true;
+      if(state&&!state.done) { paused=true; if(state.pauseAt==null) state.pauseAt=performance.now(); }
     } else if(!blocked&&suspended) {
       suspended=false;
       if(state&&!state.done) renderGame();
