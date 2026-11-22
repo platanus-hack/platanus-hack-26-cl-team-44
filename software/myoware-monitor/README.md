@@ -35,7 +35,7 @@ El modo BLE recibe números ASCII `0–4095` en la característica ENV del sketc
 ## Qué muestra
 
 - Últimos 10 segundos y lectura actual de A0 y A3 en cuentas ADC 0–1023.
-- Estado de conexión y ausencia de datos recientes (más de 1,5 segundos).
+- Estado de conexión y ausencia de datos recientes. A partir de 1,5 s sin muestras, el gráfico deja un hueco en vez de unir los puntos. Si falta un canal, tampoco se dibuja como cero.
 - Un umbral manual por canal; no detecta por sí mismo intención ni contracción.
 - Exportación CSV de los últimos 1500 registros en memoria: `unix_seconds,a0_env_adc,a3_env_adc`. No sube datos a ningún servidor externo.
 - Para diagnóstico, `/data?seconds=60` conserva hasta 60 segundos en memoria (máximo 6000 pares). No se guardan al cerrar el monitor.
@@ -47,6 +47,12 @@ Confirma que ambos selectores físicos estén en ENV. El servidor no configura n
 Para distinguir gestos, usa **Prueba de gestos** con A0 en la mandíbula y A3 en la frente. Calibra ambos y observa el último gesto y los contadores: A3 solo cuenta como ceja; A0, aun cuando A3 también se active, cuenta como mandíbula. Esto no activa ni envía acciones.
 
 Selecciona **Abrir Myo OS con esta calibración** en el monitor. En escenario, Myo conserva el origen y su configuración de voz y servicios; el monitor pide los archivos de WebEyeTrack al Apps Bridge local. Si abriste el monitor independiente en `8766` sin configuración de escenario, el enlace transfiere el perfil al Myo de `8790`. En la bienvenida, elige **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
+
+## Ejemplos de señal
+
+**Captura real del 21 de noviembre de 2026:** el monitor recibió 1.500 muestras de A0 en 63,2 s, entre 484 y 562 cuentas ADC, con dos intervalos sin datos. La [gráfica y el registro de banco](../../docs/validation/MYOWARE.md#registro-real-del-canal-a0) documentan la recepción de datos. La captura no tiene A3 ni marcas de contracción, así que no sirve para medir precisión de gestos ni fijar umbrales.
+
+**CSV de ejemplo:** [`senal-env-sintetica.csv`](examples/senal-env-sintetica.csv) usa las mismas columnas que exporta **Señal muscular en vivo**. Los tiempos se generaron desde cero (en capturas reales son segundos Unix) y las filas están espaciadas para hacer visible el ejemplo, no para simular la frecuencia del sensor. Hay un pico en A0 cerca de 1,25 s, otro en A3 cerca de 3 s y un hueco de 2 s sin muestras. Tras el hueco solo hay A0: una celda A3 vacía significa **sin lectura**, no cero. Los valores son sintéticos; puedes abrir el CSV en una hoja de cálculo para ver esos casos sin conectar hardware.
 
 ## Diagnóstico
 
