@@ -8,9 +8,11 @@ window.createTokiGameSurface = function(image, game, onReady, onError) {
     const session = await fetch(base+'/api/session',{signal:controller.signal});
     if (!session.ok) throw Error('No se pudo conectar con el servidor de Toki.');
     headers = {'Content-Type':'application/json','x-toki-token':(await session.json()).token};
-    const rect = image.getBoundingClientRect();
+    // Before the first frame the image can be only as large as its alt text.
+    // Use the panel's layout size, before the lobby scales it for the screen.
+    const {clientWidth:width, clientHeight:height} = image.parentElement;
     const response = await fetch(base+'/api/games/play', {method:'POST',headers,signal:controller.signal,
-      body:JSON.stringify({game,owner:tokiGameOwner,width:Math.max(1,Math.round(rect.width)),height:Math.max(1,Math.round(rect.height))})});
+      body:JSON.stringify({game,owner:tokiGameOwner,width,height})});
     if (!response.ok) throw Error((await response.json()).error || 'No se pudo abrir la partida.');
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer='', ready=false;

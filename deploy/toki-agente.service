@@ -1,0 +1,19 @@
+[Unit]
+Description=Toki · agente con memoria (software/agent/server.py)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=toki
+WorkingDirectory=/opt/toki/repo
+# CLAUDE_CODE_OAUTH_TOKEN (claude setup-token). Archivo solo para root, fuera de git.
+EnvironmentFile=/opt/toki/agente.env
+EnvironmentFile=-/opt/toki/toki.env
+Environment=CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/toki/venv/bin/python software/agent/server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

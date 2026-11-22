@@ -9,8 +9,8 @@ const account = new WapiClient({ apiKey: process.env.WAPI_PAT!, baseUrl: process
 const s = await account.sessions.update(sessionId, {
   webhook_url: `${tunnel.replace(/\/$/, "")}/webhook/wapi`,
   webhook_enabled: true,
-  webhook_events: ["messages.received", "session.status"],
+  webhook_events: ["messages.received", "message.sent", "session.status"], // recibidos, enviados (historial) y conexión
   account_protection: true,   // 1 envío cada 5 s desde wapi
-  ignore_groups: true,        // WOKI no lee grupos
+  ignore_groups: false,       // grupos llegan solo para detectar menciones; el puente descarta el resto
 });
 console.log(`Webhook de la sesión ${s.id} → ${s.webhook_url}`);
