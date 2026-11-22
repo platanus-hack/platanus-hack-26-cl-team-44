@@ -75,7 +75,12 @@
   V.emergencia = async function(A){
     const sub = document.getElementById('alSub');
     const set = t => { if(S.alarm===A && !A.ack && sub) sub.textContent = t; };
-    if(!V.llamadaLista){ set('Teléfono sin configurar · luz roja · bandera arriba'); return; }
+    if(!V.llamadaLista) return;   // sin llamada configurada (URL pública, sin Twilio): la alarma sigue siendo una simulación y lo dice
+    // Llamada real: la pantalla deja de decir "simulación".
+    A.real = true;
+    const big = document.getElementById('alBig'), cerrar = document.getElementById('alDismiss');
+    if(big) big.textContent = 'Pidiendo ayuda';
+    if(cerrar) cerrar.textContent = 'Cerrar alarma';
     set('📞 Llamando al contacto de emergencia…');
     try{
       const j = await api('/api/emergencia/llamar', { alarmId:String(A.t0), motivo:'activó la alarma de emergencia' });
@@ -112,7 +117,8 @@
     $('#alarm').classList.add('ack'); $('#alSym').innerHTML = '<svg><use href="#i-check"/></svg>';
     $('#alBig').textContent = `${quien} viene en camino`;
     $('#alSub').textContent = respuesta ? `“${respuesta}” · respondió por teléfono en ${secs} s` : `Confirmó por teléfono en ${secs} s`;
-    $('#alTl').style.display = 'none'; $('#alCancel').textContent = 'Toque del llavero = resuelto';
+    const tl = $('#alTl'); if(tl) tl.style.display = 'none';   // la línea de tiempo no existe en todas las versiones de la TV
+    $('#alCancel').textContent = 'Toque del llavero = resuelto';
     if(typeof log==='function') log(`emergencia: ${quien} confirmó por teléfono (${secs} s)`);
     if(typeof beep==='function'){ beep(660,160,.08); setTimeout(()=>beep(880,220,.08),180); }
     // Aviso hablado con la voz del sistema (no con la de Marta: es WOKI quien le avisa).
