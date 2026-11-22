@@ -6,9 +6,17 @@
   const phaseLabels = ['Encontrar conexión', 'Preparar interfaz', 'Conectar cuenta', 'Comprobar funciones', 'Revisar contigo'];
   const groups = ['ABCDE', 'FGHIJ', 'KLMNÑ', 'OPQRS', 'TUVWXYZ', '0123456789'];
   const servicesPerPage = 6;
+  const foodIcons = {pizza:'🍕', hamburguesa:'🍔', sushi:'🍣', empanadas:'🥟'};   // ícono de cada categoría de comida
   const usable = job => ['needs_connection','needs_test','ready'].includes(job?.status);
   const failedJob = job => ['cancelled','error','interrupted'].includes(job?.status);
   const safeImage = url => typeof url === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(url) ? url : '';
+  // Spotify se consulta cada 5 s; entre consultas, la línea de tiempo avanza sola si está sonando.
+  function playbackElapsed(state, sinceMs) {
+    const duration = Number(state?.item?.duration_ms) || 0;
+    const base = Number(state?.progress_ms) || 0;
+    const running = state?.is_playing && sinceMs > 0 ? sinceMs : 0;
+    return Math.max(0, Math.min(duration, base + running));
+  }
   function brandLogo(id, sourceUrl = '') {
     if (/^https:\/\/(?:www\.)?cooperativa\.cl\//i.test(sourceUrl)) id = 'cooperativa';
     if(!['spotify','whatsapp','youtube','biobio','rappi','mercadolibre','cooperativa'].includes(id))return '<span aria-hidden="true">▤</span>';
@@ -53,9 +61,10 @@
       root.addEventListener('click',this.click);root.addEventListener('input',this.input);
       this.render();void this.sync();
       this.playbackTimer = setInterval(() => { if (!document.hidden) void this.refreshPlayback(); }, 5000);
+      this.clockTimer = setInterval(() => { if (!document.hidden && this.view === 'player' && this.playback?.is_playing) this.paintClock(); }, 500);
       this.timer=setInterval(()=>{if(!root.isConnected)this.destroy();else if(!document.hidden&&!this.busy)void this.sync();},2500);
     }
-    destroy(){this.videoController?.destroy();this.videoController=null;this.destroyed=true;this.epoch++;clearInterval(this.timer);clearInterval(this.playbackTimer);this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);}
+    destroy(){this.videoController?.destroy();this.videoController=null;this.destroyed=true;this.epoch++;clearInterval(this.timer);clearInterval(this.playbackTimer);clearInterval(this.clockTimer);this.root.removeEventListener('click',this.click);this.root.removeEventListener('input',this.input);}
     async api(path,body){
       if(!this.token){const r=await fetch(this.base+'/api/session',{signal:AbortSignal.timeout(4000)});if(!r.ok)throw Error('No se pudo conectar con el servicio local.');this.token=(await r.json()).token;}
       const r=await fetch(this.base+path,{method:body===undefined?'GET':'POST',headers:{'x-toki-token':this.token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(45000)});
@@ -79,7 +88,7 @@
     async openAdapter(){
       const entry=this.adapter?.interface.entry;
       if(entry==='food'){this.view='food';this.epoch++;this.render();await this.foodAction('status');return;}
-      if(entry==='videos'){this.view='videos';this.epoch++;this.render();await this.loadVideos();return;}
+      if(entry==='videos'){this.view='videos';this.videoPage=0;this.epoch++;this.render();await this.loadVideos();return;}
       if(entry==='player'){this.view='player';this.epoch++;this.render();void this.refreshPlayback();return;}
       if(entry==='news'){this.view='news';this.epoch++;this.newsPage=0;this.article=null;this.newsItems=[];this.newsInfo=null;this.render();await this.loadNews();}
     }
@@ -143,15 +152,20 @@
           `<input aria-label="Producto o tienda" data-app-field="rappiQuery" value="${esc(this.rappiQuery)}" maxlength="160" autocomplete="off">`+
           this.keyboard('rappiQuery')+this.btn('food-submit','Buscar',{className:'ta-primary'});
       }
+      const categoryButton=c=>{
+        const icon=foodIcons[c.id];
+        const label=(icon?`<span class="food-cat-icon" aria-hidden="true">${icon}</span>`:'')+`<span>${esc(c.name)}</span>`;
+        return this.btn('food-search',label,{value:c.id,className:'food-cat'});
+      };
       if(this.view==='food-department'){
         const categories=f.status.categories.filter(c=>c.department===f.department.id);
         return this.header(esc(f.department.name),'Búsquedas frecuentes')+
-          `<div class="ta-control-grid">${categories.map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('')}</div>`;
+          `<div class="ta-control-grid">${categories.map(categoryButton).join('')}</div>`;
       }
       const departments=f.status?.departments;
       const choices=departments
         ? departments.map(d=>this.btn('food-department',esc(d.name),{value:d.id})).join('')+this.btn('food-query','Buscar por nombre')
-        : (f.status?.categories||[]).map(c=>this.btn('food-search',esc(c.name),{value:c.id})).join('');
+        : (f.status?.categories||[]).map(categoryButton).join('');
       return this.header('Explorar Rappi',esc(f.status?.locationLabel||'Rappi Chile'))+
         `<div class="ta-control-grid food-departments">${choices}</div><div class="food-actions">${this.btn('food-cart','Carrito de restaurantes',{disabled:!f.status?.connected})}${this.btn('food-check',f.status?.connected?'Comprobar dirección':'Comprobar conexión')}</div>`;
     }
@@ -210,11 +224,13 @@
       finally{this.busy=false;if(this.epoch===epoch)this.render();}
     }
     videos(){
-      const cards=this.videoItems.map(video=>this.btn('choose-video',
+      const perPage=6,pages=Math.ceil(this.videoItems.length/perPage),page=Math.min(this.videoPage||0,Math.max(0,pages-1));
+      const pager=pages>1?`<div class="food-pages">${this.btn('video-prev','← Anteriores',{disabled:!page})}<span>${page+1} / ${pages}</span>${this.btn('video-next','Más →',{disabled:page+1>=pages})}</div>`:'';
+      const cards=this.videoItems.slice(page*perPage,page*perPage+perPage).map(video=>this.btn('choose-video',
         `<img src="${esc(video.thumbnail)}" alt="" draggable="false"><strong>${esc(video.label)}</strong>`,
         {value:video.id,className:'video-card'})).join('');
       const empty=this.busy?'<div class="ta-center"><p role="status">Cargando videos…</p></div>':`<div class="ta-center"><p>No se pudieron mostrar los videos.</p>${this.btn('reload-videos','Reintentar',{className:'ta-primary'})}</div>`;
-      return this.header('Videos','YouTube · Chile Travel')+(cards?`<div class="video-choices">${cards}</div>`:empty);
+      return this.header('Videos','YouTube · Chile Travel')+(cards?`<div class="video-choices">${cards}</div>${pager}`:empty);
     }
     videoPlayer(){return `<section class="ta-video-player"><h2>${esc(this.videoSelection?.video.label||'YouTube')}</h2><div class="ta-video-frame"><div id="toki-video-frame"></div></div><p class="ta-video-status" role="status">Conectando con YouTube…</p><div class="ta-video-controls">${this.btn('video-toggle','Reproducir',{disabled:true})}${this.btn('retry-video','Reintentar video')}</div></section>`;}
     mountVideo(){
@@ -394,6 +410,7 @@
         const state = await this.appAction('status');
         if (current()) {
           this.playback = state;
+          this.playbackAt = performance.now();
           this.playbackUnavailable = false;
         }
       } catch {
@@ -426,18 +443,27 @@
           cover.src = url;
         }
       } else { cover.hidden = true; cover.removeAttribute('src'); }
-      const duration = Number(track?.duration_ms) || 0;
-      const elapsed = Math.max(0,Math.min(duration,Number(state?.progress_ms) || 0));
-      const time = ms => Math.floor(ms/60000) + ':' + String(Math.floor(ms/1000)%60).padStart(2,'0');
-      panel.querySelector('[data-time]').hidden = !duration;
-      const bar = panel.querySelector('progress');
-      bar.max = duration || 1; bar.value = elapsed;
-      set('elapsed',time(elapsed)); set('duration',time(duration));
+      this.paintClock();
       const toggle = panel.querySelector('[data-app-action="transport"]');
       const label = state?.is_playing ? 'Pausar' : 'Reproducir';
       if (toggle.textContent !== label) toggle.textContent = label;
       toggle.classList.toggle('is-playing',!!state?.is_playing);
       for (const button of panel.querySelectorAll('[data-app-action="transport"],[data-app-action="next"]')) button.disabled = this.busy || !state;
+    }
+    paintClock() {
+      const panel = this.root.querySelector('.sp-player');
+      if (!panel) return;
+      const state = this.playback;
+      const duration = Number(state?.item?.duration_ms) || 0;
+      const elapsed = playbackElapsed(state, performance.now() - (this.playbackAt || 0));
+      const time = ms => Math.floor(ms/60000) + ':' + String(Math.floor(ms/1000)%60).padStart(2,'0');
+      panel.querySelector('[data-time]').hidden = !duration;
+      const bar = panel.querySelector('progress');
+      bar.max = duration || 1; bar.value = elapsed;
+      for (const [key, text] of [['elapsed', time(elapsed)], ['duration', time(duration)]]) {
+        const el = panel.querySelector(`[data-${key}]`);
+        if (el.textContent !== text) el.textContent = text;
+      }
     }
     music(){
       if(this.job?.status==='needs_connection')return this.header('Elegir música','Falta conectar tu cuenta de Spotify.')+'<div class="ta-center"><p>La conexión se prepara una sola vez desde la configuración del equipo. Puedes volver y usar reproducir o pausar.</p></div>';
@@ -510,6 +536,7 @@
       if(action.startsWith('food-'))return this.foodEvent(action,value);
       if(action==='video-toggle'){this.videoController?.toggle();return;}
       if(action==='reload-videos')return this.loadVideos();
+      if(action==='video-prev'||action==='video-next'){this.videoPage=Math.max(0,(this.videoPage||0)+(action==='video-next'?1:-1));this.epoch++;this.render();return;}
       if(action==='reload-news')return this.loadNews();
       if(action==='news-prev'||action==='news-next'){this.newsPage+=action==='news-next'?1:-1;this.render();return;}
       if(action==='article-prev'||action==='article-next'){this.articlePage+=action==='article-next'?1:-1;this.render();return;}
@@ -548,5 +575,5 @@
       finally{this.busy=false;this.render();}
     }
   }
-  window.TokiApps={mount:(root,options)=>new Apps(root,options),get active(){return active;},brandLogo,catalog};
+  window.TokiApps={mount:(root,options)=>new Apps(root,options),get active(){return active;},brandLogo,catalog,playbackElapsed};
 })();

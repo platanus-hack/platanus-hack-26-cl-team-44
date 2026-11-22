@@ -105,7 +105,7 @@ final class GazeServer {
 
             guard let port = NWEndpoint.Port(rawValue: Self.port) else { return }
             let listener = try NWListener(using: parameters, on: port)
-            listener.service = NWListener.Service(name: "Eye Tracking", type: Self.serviceType)
+            listener.service = NWListener.Service(name: "Myo", type: Self.serviceType)
             // Se compara por identidad: un callback tardío de un listener viejo no debe tocar el nuevo.
             listener.stateUpdateHandler = { [weak self, weak listener] state in
                 guard let self, let listener else { return }
@@ -128,7 +128,7 @@ final class GazeServer {
             onState?("Listo en el puerto \(Self.port)")
         case .waiting(let error):
             if case .dns(let code) = error, code == Self.policyDenied {
-                onState?("Falta el permiso de Red local. Actívalo en Ajustes › Eye Tracking › Red local.")
+                onState?("Falta el permiso de Red local. Actívalo en Ajustes › Myo › Red local.")
             } else {
                 onState?("Esperando red: \(error.localizedDescription).")
             }
