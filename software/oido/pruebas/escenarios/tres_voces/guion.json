@@ -1,0 +1,43 @@
+{
+ "escenario": "tres_voces",
+ "duracion_s": 22.91,
+ "turnos": [
+  {
+   "hablante": "camila",
+   "texto": "Tata, ¿viste el partido del Colo anoche?",
+   "inicio": 0.5,
+   "fin": 2.64
+  },
+  {
+   "hablante": "daniel",
+   "texto": "Ganaron dos a uno, fue un partidazo.",
+   "inicio": 3.54,
+   "fin": 6.37
+  },
+  {
+   "hablante": "andrea",
+   "texto": "Tomás, deja que la Tata descanse un poco.",
+   "inicio": 7.27,
+   "fin": 10.19
+  },
+  {
+   "hablante": "camila",
+   "texto": "Bueno, pero después me cuentas qué te pareció.",
+   "inicio": 11.09,
+   "fin": 13.7
+  },
+  {
+   "hablante": "daniel",
+   "texto": "¿Quieren que ponga música mientras tanto?",
+   "inicio": 14.6,
+   "fin": 16.78
+  },
+  {
+   "hablante": "andrea",
+   "texto": "Sí, unos boleros, le encantan.",
+   "inicio": 17.68,
+   "fin": 20.51
+  }
+ ],
+ "fondo": []
+}

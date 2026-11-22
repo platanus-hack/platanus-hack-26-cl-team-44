@@ -1,0 +1,37 @@
+{
+ "escenario": "con_tele_baja",
+ "duracion_s": 16.88,
+ "turnos": [
+  {
+   "hablante": "olivia",
+   "texto": "Mamá, ¿tienes frío? Te traje la frazada.",
+   "inicio": 0.5,
+   "fin": 2.96
+  },
+  {
+   "hablante": "brian",
+   "texto": "La temperatura del cuarto está bien, veintidós grados.",
+   "inicio": 3.86,
+   "fin": 7.02
+  },
+  {
+   "hablante": "olivia",
+   "texto": "Igual se la pongo, siempre tiene las manos heladas.",
+   "inicio": 7.92,
+   "fin": 10.84
+  },
+  {
+   "hablante": "brian",
+   "texto": "Perfecto, y en una hora le toca la terapia.",
+   "inicio": 11.74,
+   "fin": 14.48
+  }
+ ],
+ "fondo": [
+  {
+   "fuente": "tele",
+   "texto": "En las noticias de hoy, el gobierno anunció nuevas medidas para el transporte público. Los usuarios del metro podrán pagar con el celular desde el próximo mes. En deportes, la selección se prepara para el partido del martes.",
+   "ganancia": 0.05
+  }
+ ]
+}

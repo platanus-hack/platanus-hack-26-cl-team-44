@@ -27,7 +27,7 @@ Se mantienen igual: los tres modos (`siempre`, `voz`, `manual`), el audio previo
 ```bash
 cd software/oido
 uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt
-.venv/bin/python -m unittest discover -s tests -v          # 33 pruebas, sin micrófono y sin red
+.venv/bin/python -m unittest discover -s tests -v          # 39 pruebas, sin micrófono y sin red
 
 # Ensayo de la TV sin micrófono ni ElevenLabs (Scribe falso con guion): abrir http://127.0.0.1:18000/woki-os.html
 .venv/bin/python tests/ensayo_tv.py
@@ -76,4 +76,4 @@ En el navegador, `getUserMedia` cancelaba el eco solo. Aquí no hay cancelación
 
 - Sin internet no hay transcripción: el estado pasa a `sin_conexion` y se reintenta. El respaldo local con whisper.cpp está pendiente.
 - ElevenLabs registra el audio en el plan actual (no Enterprise). Hay que avisarlo a quien esté en la sala.
-- La separación de voces es de Scribe. Medido solo con voces sintéticas: 16/16 turnos sin ruido de fondo, y con la TV del cuarto encendida baja a 2–4 de 4. Prueba en vivo de esta rama: 5 de 5 turnos con el hablante correcto (audio sintético, dos voces, sin ruido).
+- La separación de voces es de Scribe. Medida con este oído (voces sintéticas, 3 repeticiones): 48/48 turnos sin ruido, con ~0,75 s de latencia. Con la TV media o alta los turnos se atrasan 9–15 s. Detalle y cómo repetirlo en [`pruebas/RESULTADOS.md`](pruebas/RESULTADOS.md) (`medir.py`).

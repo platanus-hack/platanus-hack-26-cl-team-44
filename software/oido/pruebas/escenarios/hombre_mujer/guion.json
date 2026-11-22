@@ -1,0 +1,37 @@
+{
+ "escenario": "hombre_mujer",
+ "duracion_s": 18.9,
+ "turnos": [
+  {
+   "hablante": "olivia",
+   "texto": "Hola mamá, ¿cómo dormiste anoche?",
+   "inicio": 0.5,
+   "fin": 2.59
+  },
+  {
+   "hablante": "brian",
+   "texto": "Buenas tardes, señora Emmy. Vengo a revisar su espalda.",
+   "inicio": 3.49,
+   "fin": 6.55
+  },
+  {
+   "hablante": "olivia",
+   "texto": "Le duele más en la mañana, sobre todo al despertar.",
+   "inicio": 7.45,
+   "fin": 10.43
+  },
+  {
+   "hablante": "brian",
+   "texto": "Entonces hoy hacemos los ejercicios suaves.",
+   "inicio": 11.33,
+   "fin": 13.88
+  },
+  {
+   "hablante": "olivia",
+   "texto": "¿Te traigo un café con leche después?",
+   "inicio": 14.78,
+   "fin": 16.5
+  }
+ ],
+ "fondo": []
+}

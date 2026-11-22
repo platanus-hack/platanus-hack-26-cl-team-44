@@ -493,3 +493,37 @@ class HttpTokenTest(HttpTest):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------- la métrica de medir.py (que el número signifique lo que dice) ----------
+class MetricaTest(unittest.TestCase):
+    GUION = {"turnos": [{"hablante": "ana", "texto": "Hola mamá, ¿cómo dormiste?", "inicio": 0, "fin": 2},
+                        {"hablante": "beto", "texto": "Vengo a revisar su espalda.", "inicio": 3, "fin": 5},
+                        {"hablante": "ana", "texto": "Le duele más en la mañana.", "inicio": 6, "fin": 8}]}
+
+    def salida(self, *etq, t=1.0):
+        return [{"texto": r["texto"], "hablante": e, "t": r["fin"] + t} for r, e in zip(self.GUION["turnos"], etq)]
+
+    def ev(self, salida):
+        from medir import evaluar
+        return evaluar(self.GUION, salida)
+
+    def test_perfecto_aunque_las_etiquetas_sean_otras(self):
+        r = self.ev(self.salida("S7", "S3", "S7"))
+        self.assertEqual((r["turnos_ok"], r["voces"], r["texto"], r["latencia_mediana"]), (3, 2, 100, 1.0))
+
+    def test_todo_con_la_misma_etiqueta_da_la_base(self):
+        r = self.ev(self.salida("S1", "S1", "S1"))
+        self.assertEqual((r["turnos_ok"], r["base"]), (2, 2))
+
+    def test_sin_hablante_y_turno_perdido_cuentan_como_mal(self):
+        r = self.ev(self.salida("S1", "")[:2])
+        self.assertEqual((r["turnos_ok"], r["sin_llegar"]), (1, 1))
+
+    def test_la_tele_cuenta_como_extra(self):
+        r = self.ev(self.salida("S1", "S2", "S1") + [{"texto": "En deportes, la selección se prepara para el martes", "hablante": "S3", "t": 9}])
+        self.assertEqual((r["turnos_ok"], r["extra"]), (3, 1))
+
+    def test_frase_partida_en_dos_turnos(self):
+        s = [{"texto": "Hola mamá,", "hablante": "S1", "t": 1.5}, {"texto": "¿cómo dormiste?", "hablante": "S1", "t": 2.5}] + self.salida("S1", "S2", "S1")[1:]
+        self.assertEqual(self.ev(s)["turnos_ok"], 3)

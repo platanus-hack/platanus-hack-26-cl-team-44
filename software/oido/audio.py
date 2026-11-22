@@ -121,6 +121,7 @@ class FuenteArchivo:
                 raise ValueError("el WAV debe ser 16 kHz, mono, 16 bits")
             self._datos = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").copy()
         self._pos, self._t0 = 0, time.monotonic()
+        self.t0_reloj = time.time()   # hora en que empezó a «sonar» el archivo (para medir latencias)
 
     def cerrar(self) -> None:
         pass
