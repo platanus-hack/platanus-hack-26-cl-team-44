@@ -10,7 +10,7 @@ const colors = fs.readFileSync(dir + "os-colores.css", "utf8");
 
 // 1. Los módulos del equipo se cargan tal cual y la conexión va después de ellos.
 const order = ["toki-apps.js", "prototype-games.js", "prototype-external-games.js", "os-juegos-servicios.js"].map((f) => html.indexOf(`<script src="${f}"`));
-assert.ok(order.every((i) => i > 0), "Myo OS carga los tres módulos y la conexión");
+assert.ok(order.every((i) => i > 0), "Toki OS carga los tres módulos y la conexión");
 assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos primero, conexión al final");
 
 // 2. El SO declara seis tarjetas y el SOS global.
@@ -33,13 +33,21 @@ assert.match(html, /rest-nav" data-t data-act="rest"/);
 assert.match(external, /if\(name==='games'\)catalog\(\)/);
 assert.match(external, /b\('catalog','← Juegos'\)/);
 assert.doesNotMatch(external, /external:toki|b\('toki'/);
+assert.match(games, /baseGo\(name, \.\.\.args\)/, "el envoltorio conserva argumentos de historial");
+assert.match(external, /oldGo\(name,\.\.\.args\)/, "el envoltorio externo conserva argumentos de historial");
 
 // 4. Dentro del SO el puntero se elige en Ajustes (no hay botones Nariz/Mirada/Mouse que apaguen el iPhone).
 assert.match(games, /if \(window\.TOKI_OS_SHELL\) return `<p class="game-note">/);
 assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 
 // 5. Con el iPhone nada se elige en cadena en Juegos y Servicios (mismo bloqueo que el resto del SO).
-assert.match(glue, /if \(gazeOnly\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /if \(iphoneDwell\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
+assert.match(glue, /return innerActivate\(el, calibrate, immediate\)/);
+assert.match(external, /oldActivate\(el,calibrate,immediate\)/, "el control externo conserva activación inmediata");
+assert.match(glue, /confirming: Boolean\(G\.brow\)/, "la confirmación usa el estado de ceja vigente");
+assert.match(glue, /careWheel\?\.active/, "la rueda de cuidado suspende el control del juego");
+assert.match(glue, /controlPointFresh\(now\)/, "la entrada de cámara solo usa puntos frescos");
+assert.match(external, /!shared\?\.confirming && !shared\?\.muscle/, "la ceja o el modo MyoWare desactivan el clic automático");
 
 // 5b. Miniaturas del inicio y navegación en la partida.
 assert.match(glue, /SERVICE_LOGOS = \['spotify', 'rappi', 'biobio', 'mercadolibre'\]/);

@@ -1,6 +1,7 @@
 // Contrato de la integración "Mirada con iPhone" en Toki OS. Ejecutar desde la raíz: node tests/test_os_iphone.mjs
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 
 const OS = "software/toki-os";
 const html = readFileSync(`${OS}/woki-os.html`, "utf8");
@@ -10,17 +11,18 @@ const adapter = readFileSync(`${OS}/iphone-gaze.js`, "utf8");
 assert.ok(html.includes('<script type="module" src="iphone-gaze.js"></script>'), "woki-os.html carga iphone-gaze.js");
 assert.ok(html.includes('data-c="iphone"'), "botón 'Mirada con iPhone' en la pantalla de inicio");
 assert.ok(html.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhone");
-assert.ok(/W\.CFG\.mode = window\.iphoneConfirm\?\.\(\) === "click" \? "click" : "dwell";/.test(adapter), "con el iPhone se elige manteniendo la mirada (dwell) salvo que se elija Ceja en Ajustes");
+assert.ok(/W\.CFG\.mode = window\.iphoneConfirm\?\.\(\) === "dwell" \? "dwell" : "click";/.test(adapter), "el iPhone elige con ceja por defecto y usa permanencia solo si se selecciona");
+assert.ok(/W\.enableMyoWare\?\.\(\)/.test(adapter), "al activar el iPhone se reutiliza la calibración MyoWare guardada");
 assert.ok(html.includes('id="themeToggle"') && html.includes('id="legendToggle"'), "interruptor de tema y pestaña de atajos");
-assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa .ring (el OS la oculta con opacity:0)");
+assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa la clase de progreso de las tarjetas");
 assert.ok(/!Number\.isFinite\(validation\.meanPx\)/.test(adapter), "una calibración sin precisión medible (NaN) se rechaza");
 
-// 1b. Modo solo mirada (iPhone): ninguna pantalla sin salida y sin depender de ceja/mandíbula.
+// 1b. Modo iPhone: la mirada enfoca, la ceja elige y todas las pantallas tienen salida.
 const fn = (name) => { const i = html.indexOf(`function ${name}(`); assert.ok(i >= 0, `existe ${name}`); return html.slice(i, html.indexOf("\n}", i)); };
 assert.ok(/data-act="go:home"/.test(fn("renderCards")), "Hablar tiene 'Volver'");
 assert.ok(/data-act="go:keyboard"/.test(fn("renderCards")), "Hablar tiene 'Escribir' (antes solo con ceja ×2)");
 assert.ok(/data-act="go:home"/.test(fn("renderKeys")) && /kb:back/.test(fn("renderKeys")), "Escribir tiene 'Volver' en ambos niveles");
-assert.ok(/kb:sug/.test(fn("renderKeys")) && /data-act="sug:\$\{i\}"/.test(fn("renderKeys")), "las sugerencias se abren y eligen con la mirada (antes: mandíbula)");
+assert.ok(/kb:sug/.test(fn("renderKeys")) && /data-act="sug:\$\{i\}"/.test(fn("renderKeys")), "las sugerencias son objetivos seleccionables");
 assert.ok(/kb\.level===3[\s\S]*kb:back/.test(fn("renderKeys")), "la pantalla de sugerencias tiene 'Volver'");
 assert.ok(/CFG\.sugMode==='lista'/.test(fn("renderKeys")) && /set:sugmode/.test(fn("renderSettings")), "Ajustes › Teclado elige sugerencias fijas o en lista");
 assert.ok(/set:theme/.test(fn("renderSettings")), "el tema también se cambia desde Ajustes (con la mirada)");
@@ -28,14 +30,15 @@ const layoutCss = readFileSync(`${OS}/layout.css`, "utf8");
 assert.ok(/--edge: 1\.2fr/.test(layoutCss) && /grid4x2 \{ grid-template-columns: var\(--edge\)/.test(layoutCss), "columnas de los extremos más anchas (esquinas: más error)");
 assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
 assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
-assert.ok(html.includes('id="restWake"') && /restWakeTick/.test(html), "del descanso se sale con la mirada");
-assert.ok(!/function pressSrc\(src\)\{ if\(gazeOnly\(\)/.test(html) && !/gesto ignorado/.test(html), "ceja y mandíbula funcionan también con el iPhone");
-assert.ok(/const cejaYa = gazeOnly\(\) && S\.blocked!==f;/.test(fn("confirmFocus")), "con el iPhone la ceja elige al instante (además de mantener la mirada)");
-assert.ok(/gazeOnly\(\) && \(arg==='pointer' \|\| arg==='faceclick'\)/.test(html), "Ajustes no permite cambiar el puntero con la mirada (no deja a la persona sin forma de elegir)");
-// "Confirmar con" sí se cambia con el iPhone: Ceja elige al instante y, de respaldo, mirar 3 s también elige.
-assert.ok(/const cejaFirst = gazeOnly\(\) && CFG\.mode === 'click' && !forced;/.test(html) && /CEJA_FALLBACK_MS = 3000/.test(html), "modo Ceja con respaldo de mirada larga");
-assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(html), "la elección se recuerda para el iPhone");
-assert.ok(/document\.body\.classList\.add\("gaze-only"\)/.test(adapter) && /document\.body\.classList\.remove\("gaze-only"\)/.test(adapter), "el iPhone activa y desactiva el modo solo mirada");
+assert.ok(html.includes('id="restWake"'), "el descanso tiene un objetivo Volver");
+assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(html), "Ajustes permite elegir y conserva la preferencia del iPhone");
+assert.ok(/document\.body\.classList\.add\("iphone-pointer"\)/.test(adapter) && /document\.body\.classList\.remove\("iphone-pointer", "iphone-hold"\)/.test(adapter), "la apariencia del foco queda limitada al modo iPhone");
+assert.ok(/body\.iphone-pointer:not\(\.iphone-hold\).* :is\(\.ring, \.badge, \.rest-actions \.fill, \.rest-dwell-label\) \{ display: none; \}/.test(layoutCss), "el modo Ceja oculta los indicadores de carga");
+const confirmSource = html.match(/^window\.iphoneConfirm = .*$/m)?.[0];
+assert.ok(confirmSource);
+for (const [saved, expected] of [[null, "click"], ["click", "click"], ["dwell", "dwell"]]) {
+  assert.equal(runInNewContext(`${confirmSource}\nwindow.iphoneConfirm()`, { window: {}, localStorage: { getItem: () => saved } }), expected);
+}
 
 // 2. Motor compartido con la demo (un solo código, no una copia que se desincronice).
 assert.equal(realpathSync(`${OS}/eye-engine`), realpathSync("software/eye-tracking/web/js"), "eye-engine apunta al motor de la demo");

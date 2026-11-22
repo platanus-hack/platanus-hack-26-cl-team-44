@@ -13,6 +13,8 @@ import {readFile} from 'node:fs/promises';
 import {dirname, join, extname, resolve} from 'node:path';
 import {homedir} from 'node:os';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+import {createWebEyeTrackAssetHandler} from '../toki-os/tools/webeyetrack-assets.mjs';
+import {createMyoWareRoutes} from './myoware-routes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, '../toki-os');
@@ -21,7 +23,9 @@ const phases = ['Integración encontrada', 'Interfaz preparada', 'Cuenta conecta
 const fault = (message, code = 400) => Object.assign(new Error(message), {status: code});
 export {safeMessage, runSpogo, normalizeTracks} from './adapters/spotify.mjs';
 
-export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, renderGame, readerFetch = publicFetch} = {}) {
+export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, installed, hasSpotify, adapters, generate, renderGame, readerFetch = publicFetch, myowareFetch = fetch} = {}) {
+  const gazeAsset = createWebEyeTrackAssetHandler();
+  const myoware = createMyoWareRoutes(myowareFetch);
   const gameSessions = createGameSessions(stateDir, renderGame);
   const registry = createAdapterRegistry(adapters || [createSpotifyAdapter({run,installed,hasSpotify}),createBioBioAdapter({fetcher}),createYouTubeAdapter({fetcher}),createRappiAdapter({stateDir,fetcher})]);
   mkdirSync(stateDir, {recursive: true, mode: 0o700});
@@ -121,6 +125,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
     const url = new URL(req.url, `http://${req.headers.host}`);
     const send = (data, status = 200) => { res.writeHead(status, {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}); res.end(JSON.stringify(data)); };
     try {
+      if (await myoware(req, res, url)) return;
       if (url.pathname.startsWith('/api/')) {
         if (url.pathname === '/api/session' && req.method === 'GET') return send({token});
         if (req.headers['x-toki-token'] !== token) throw fault('Vuelve a abrir Apps para conectar el servicio local.', 401);
@@ -169,6 +174,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       }
       if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
       if (req.method !== 'GET' && req.method !== 'HEAD') throw fault('Método no permitido.', 405);
+      if (await gazeAsset(req, res, url.pathname)) return;
       if ((url.pathname === '/' || url.pathname === '/index.html') && !url.search) {
         res.writeHead(302, {Location: '/woki-os.html', 'Cache-Control': 'no-store'});
         res.end();

@@ -30,13 +30,14 @@
   <button type="button" id="myoware-toggle" hidden>Probar gestos</button>
   <p id="myoware-status" role="status">Confirma que los dos sensores estén en modo ENV.</p>
   <p id="myoware-result" role="status">Último gesto: —</p>
-  <p><a id="myoware-open-woki" href="/woki-os.html" style="color:#9fe3b2">Abrir Myo OS sin activar el sensor</a></p>
+  <p><a id="myoware-open-woki" href="/woki-os.html" style="color:#9fe3b2">Abrir Woki OS sin activar el sensor</a></p>
   <small>Los umbrales manuales del gráfico no cambian la detección calibrada.</small>
 </section>
 <footer>Mac solo a batería, sin cargador, dock ni monitor conectado. No cambies conexiones mientras esté alimentado. Datos locales; el panel conserva hasta 60 segundos para diagnóstico.</footer>
 <script>
 let data = [], lastNow = 0, latest = [];
 const $ = id => document.getElementById(id);
+const monitorInToki = /^\/myoware\/?$/.test(location.pathname);
 const canvas = $('plot'), ctx = canvas.getContext('2d');
 const channels = ['a0', 'a3'].map((id, index) => ({
   column: index + 1,
@@ -116,7 +117,7 @@ for (const { threshold } of channels) {
 async function poll() {
   const status = $('status'), hint = $('hint');
   try {
-    const response = await fetch('/data');
+    const response = await fetch(monitorInToki ? '/myoware/data' : '/data');
     if (!response.ok) throw Error();
     const { samples, now, last, connected, unrecognized, transport, error } = await response.json();
     const ble = transport === 'ble';
@@ -156,7 +157,12 @@ $('download').onclick = () => {
 };
 poll();
 </script>
+<script src="/toki-config.js"></script>
 <script type="module">
-  import { setupMyoWareGestures } from './myoware-click.js';
-  setupMyoWareGestures();
+  import { setupMyoWareGestures } from '/myoware-click.js';
+  const standaloneMonitor = location.port === '8766' && !monitorInToki && !window.TOKI_ENV?.remoto && !window.TOKI_ENV?.apps;
+  setupMyoWareGestures(null, null, {
+    launchOrigin: standaloneMonitor ? 'http://127.0.0.1:8790' : location.origin,
+    transfer: standaloneMonitor,
+  });
 </script></html>

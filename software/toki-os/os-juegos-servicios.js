@@ -14,15 +14,16 @@ window.TOKI_OS_SHELL = true;
 const tabletAccess = null;
 function tabletGameInput() {
   const now = performance.now();
-  const iphone = window.IPHONE?.active;
+  const iphone = iphonePointing();
   const camera = Boolean(iphone || NOSE.on);
-  const blocked = document.hidden || !document.hasFocus() || S.gazeLost || S.rest || S.alarm || S.quick ||
-    document.body.classList.contains('panel') || $('#calib').classList.contains('on');
+  const blocked = document.hidden || !document.hasFocus() || S.gazeLost || S.rest || S.alarm ||
+    careWheel?.active || document.body.classList.contains('panel') || $('#calib').classList.contains('on');
   return {
     mode: iphone ? 'iPhone' : NOSE.label(), camera, blocked,
     point: blocked ? null : camera ? (controlPointFresh(now) ? gz : null) : mouse,
     dwellEnabled: CFG.mode === 'dwell',
-    confirming: Boolean(G.down.ceja || G.tap),
+    confirming: Boolean(G.brow),
+    muscle: myowareConfirming(),
     dwellMs: CFG.mode === 'click' ? CEJA_FALLBACK_MS : CFG.dwellMs,
   };
 }
@@ -94,13 +95,21 @@ window.addEventListener('load', () => {
     if (name !== 'apps') { app?.destroy(); app = null; latch = null; }
   };
   const innerActivate = activate;
-  activate = function (el, calibrate = true) {
+  activate = function (el, calibrate = true, immediate = false) {
     const act = el?.dataset.act || '';
-    if (!OWN.test(act)) return innerActivate(el, calibrate);
+    // Música: acceso directo al reproductor de Spotify de Servicios (antes era un aviso simulado).
+    if (act === 'music') {
+      press(el);
+      if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
+      go('apps');
+      void app?.openSpotify();
+      return;
+    }
+    if (!OWN.test(act)) return innerActivate(el, calibrate, immediate);
     // Igual que el resto del SO: se ve la pulsación y, con el iPhone, nada se elige en cadena.
     press(el);
-    if (gazeOnly()) S.lockUntil = performance.now() + LOCKOUT_MS;
-    if (!act.startsWith('apps:')) return innerActivate(el, calibrate);
+    if (iphoneDwell()) S.lockUntil = performance.now() + LOCKOUT_MS;
+    if (!act.startsWith('apps:')) return innerActivate(el, calibrate, immediate);
     if (!app || S.screen !== 'apps' || el.disabled || unavailable() || (app.paused && el.dataset.appAction !== 'input-pause')) return;
     if (calibrate && latch) return;   // al repintar, la mirada quieta no elige otra cosa
     latch = el.getBoundingClientRect();

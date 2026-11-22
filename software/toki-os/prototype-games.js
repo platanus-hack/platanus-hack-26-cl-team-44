@@ -24,7 +24,8 @@ window.addEventListener('load', () => {
     return (now-s.startedAt-s.pausedMs-(s.pauseAt!=null?now-s.pauseAt:0))/1000;
   }
   function mode() { return NOSE.on ? (NOSE.mode === 'gaze' ? 'Mirada' : 'Nariz') : 'Mouse'; }
-  function inputControls() { if (window.TOKI_OS_SHELL) return `<p class="game-note">Mantén la mirada sobre una opción para elegirla. El puntero se cambia en Ajustes.</p>`; return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
+  const browClick = () => Boolean(window.TOKI_OS_SHELL && window.myowareConfirming?.());
+  function inputControls() { if (window.TOKI_OS_SHELL) return `<p class="game-note">${browClick()?'Apunta a una opción y levanta la ceja para elegir.':'Mantén la mirada sobre una opción para elegirla.'} El puntero se cambia en Ajustes.</p>`; return `<div class="game-inputs">${button('nose','👃 Nariz')}${button('gaze','👁 Mirada')}${button('mouse','Mouse')}${button('calibrate','Calibrar')}</div><p class="game-note" id="gameInputStatus">Control: ${mode()}. Mantén el puntero 1,1 s sobre una opción. También puedes hacer clic.</p>`; }
   function paint(html) {
     const blockedAction=S.blocked?.dataset.act;
     clearFocus(); content.innerHTML=html; decorate(content);
@@ -51,7 +52,8 @@ window.addEventListener('load', () => {
     const revealed=s.open.length===2;
     if(s.kind==='stars') clock(s);
     const flip=s.flipBack; s.flipBack=[];
-    paint(`<div class="game-heading"><div><p class="game-eyebrow">${progress}</p><h1>${title}</h1></div>${button('pause',paused?'Continuar':'Pausa')}</div><p class="game-instruction" aria-live="polite">${paused?'Descansa. La partida te espera.':s.kind==='stars'?'Mira la estrella y mantén el puntero sobre ella.':revealed?'No son iguales. Se dan vuelta solas.':s.lastMatch?'¡Pareja! Sigue buscando.':'Elige dos tarjetas para encontrar una pareja.'}</p>${paused?'<div class="game-pause">☾</div>':`<div class="game-board">${Array.from({length:6},(_,i)=> {
+    const starHint = browClick() ? 'Apunta a la estrella y levanta la ceja para recogerla.' : 'Mira la estrella y mantén el puntero sobre ella para recogerla.';
+    paint(`<div class="game-heading"><div><p class="game-eyebrow">${progress}</p><h1>${title}</h1></div>${button('pause',paused?'Continuar':'Pausa')}</div><p class="game-instruction" aria-live="polite">${paused?'Descansa. La partida te espera.':s.kind==='stars'?starHint:revealed?'No son iguales. Se dan vuelta solas.':s.lastMatch?'¡Pareja! Sigue buscando.':'Elige dos tarjetas para encontrar una pareja.'}</p>${paused?'<div class="game-pause">☾</div>':`<div class="game-board">${Array.from({length:6},(_,i)=> {
       if(s.kind==='stars') return i===s.target?button('pick:'+i,'✦',`aria-label="Recoger estrella"`):'<div class="game-empty" aria-hidden="true">·</div>';
       if(s.matched.includes(i)) return `<div class="game-matched" aria-label="Pareja encontrada">${s.deck[i]}<small>✓</small></div>`;
       if(s.open.includes(i)) return `<div class="game-revealed">${s.deck[i]}</div>`;
@@ -77,8 +79,8 @@ window.addEventListener('load', () => {
   }
   window.TOKI_GAMES={lobby};
   const baseActivate=activate;
-  activate=function(el, calibrate=true) {
-    if(!el?.dataset.act?.startsWith('game:')) return baseActivate(el,calibrate);
+  activate=function(el, calibrate=true, immediate=false) {
+    if(!el?.dataset.act?.startsWith('game:')) return baseActivate(el,calibrate,immediate);
     if(S.screen!=='games'||S.rest||S.alarm||document.querySelector('#calib').classList.contains('on')||suspended||inputPending) return;
     if(calibrate && latch?.action===el.dataset.act) return;
     latch={action:el.dataset.act, rect:el.getBoundingClientRect()};

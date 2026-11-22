@@ -139,21 +139,22 @@ const IPHONE = {
     if (!this.model || !this.source) return;
     if (window.NOSE?.on || window.NOSE?.starting) NOSE.stop();
     this.active = true;
-    // Clic manteniendo la mirada (dwell, como en la demo): el anillo se llena y se elige. No hace
-    // falta ceja ni EMG. Se restaura el modo anterior al cambiar de puntero.
+    // The default is eyebrow confirmation; dwell is available only when selected.
     if (this.prevMode === null) this.prevMode = W.CFG.mode;
-    // Por defecto "dwell". En Ajustes › Confirmar con se puede pasar a "Ceja" (window.iphoneConfirm, se recuerda).
-    W.CFG.mode = window.iphoneConfirm?.() === "click" ? "click" : "dwell";
-    // Modo mirada con iPhone: mantener la mirada O ceja (al instante); mandíbula y escaneo como siempre;
-    // imán, huecos y relleno de progreso en las tarjetas (ver gazeOnly() en woki-os.html y layout.css).
-    document.body.classList.add("gaze-only");
+    W.CFG.mode = window.iphoneConfirm?.() === "dwell" ? "dwell" : "click";
+    document.body.classList.add("iphone-pointer");
+    document.body.classList.toggle("iphone-hold", W.CFG.mode === "dwell");
+    clearFocus();
+    const gesturesEnabled = !trackerOnly && W.enableMyoWare?.();
     if (W.S.screen === "agent") sendBtn(false);
     this.filter = createOneEuro2D(SMOOTHING);
     this.lastFaceAt = performance.now();
     try { localStorage.setItem("woki.ptr", "iphone"); } catch { /* no crítico */ }
     const moved = this.viewport && (this.viewport.w !== innerWidth || this.viewport.h !== innerHeight);
     if (moved) island("↺", "Cambió el tamaño de la pantalla: recalibra el iPhone (Ajustes › Calibrar)", true, 4000);
-    else island("📱", `Mirada con iPhone · mantén la mirada ${(W.CFG.dwellMs / 1000).toLocaleString("es")} s para elegir`);
+    else if (!trackerOnly) island("📱", W.CFG.mode === "dwell" ? "Mantén la mirada sobre la opción para elegir" : gesturesEnabled
+      ? "Mira una opción y levanta la ceja para elegir"
+      : "Para elegir con la ceja, calibra MyoWare desde el monitor");
     log("puntero: mirada con iPhone");
     renderStatus();
     if (W.S.screen === "settings") renderSettings();
@@ -162,7 +163,8 @@ const IPHONE = {
     if (!this.active && !this.source) return;
     this.active = false;
     if (this.prevMode !== null) { W.CFG.mode = this.prevMode; this.prevMode = null; }
-    document.body.classList.remove("gaze-only");
+    document.body.classList.remove("iphone-pointer", "iphone-hold");
+    clearFocus();
     renderStatus();
     if (W.S.screen === "agent") sendBtn(false);
     if (W.S.gazeLost) setGazeLost(false);

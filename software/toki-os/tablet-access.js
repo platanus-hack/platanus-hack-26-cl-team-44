@@ -26,7 +26,7 @@
     const blocked = document.hidden || !document.hasFocus() || !rest.hidden || !panel.hidden ||
       (!layer.inert && !layer.hidden) || paused;
     const camera = pointing !== 'Mouse';
-    const p = camera && !blocked ? currentPoint() : null;
+    const p = camera && !blocked ? currentPoint(true) : null;
     let point = null;
     if (p && document.elementFromPoint(p.x,p.y) === game) {
       const r = game.getBoundingClientRect();
@@ -242,11 +242,15 @@
       resetAim();
     }
   },true);
-  function currentPoint() {
+  function currentPoint(continuous = false) {
     if(pointing==='Mouse') return pointer;
     const w=frame?.contentWindow, n=w?.NOSE;
     if(!n?.on || !n.raw || w.WOKI.S.gazeLost || w.performance.now()-n.lastFace>240) return null;
-    if(n.mode==='gaze' && (!w.GAZE.cur || w.GAZE.cur.blink)) return null;
+    if(n.mode==='gaze' && !w.GAZE.hasPoint(w.performance.now())) return null;
+    if(continuous && n.mode==='gaze' && w.GAZE.webActive){
+      const p=w.GAZE.point(w.performance.now(),false);
+      return p ? {x:Math.max(1,Math.min(innerWidth-2,p.x*innerWidth)),y:Math.max(1,Math.min(innerHeight-2,p.y*innerHeight))} : null;
+    }
     const stage=w.document.querySelector('#stage');
     if (!stage) return null;
     const r=stage.getBoundingClientRect(), p=w.WOKI.gz;
@@ -280,8 +284,10 @@
       document.body.classList.remove('keyboard-nav');
     }
     const assisted = magnetic;
+    const webGaze = !!frame?.contentWindow?.GAZE?.webActive;
     const direct = !assisted && document.elementFromPoint(p.x, p.y)?.closest(selector);
-    const aim = assisted ? magnet.aim(p, now, eligible) :
+    const gazeBounds = webGaze ? { left: 0, top: 0, width: innerWidth, height: innerHeight } : undefined;
+    const aim = assisted ? magnet.aim(p, now, eligible, { gazeBounds }) :
       {...p, target:eligible(direct) ? direct : null, inside:eligible(direct)};
     // Re-arm after leaving a used button. A newly painted view also requires
     // deliberate travel, so it cannot accept a second action at the old point.
@@ -297,7 +303,7 @@
     cursor.hidden = overGame || (!rest.hidden && el !== resume);
     document.body.classList.toggle('draws-mouse', pointing === 'Mouse' && !cursor.hidden);
     if (!cursor.hidden) {
-      const tau = pointing === 'Mouse' ? 38 : 58;
+      const tau = pointing === 'Mouse' ? 38 : webGaze ? 36 : 58;
       const ease = !assisted || document.body.classList.contains('reduced') ? 1 : 1-Math.exp(-dt/tau);
       shown = shown ? {x:shown.x+(aim.x-shown.x)*ease, y:shown.y+(aim.y-shown.y)*ease} : {...aim};
       cursor.style.transform = 'translate('+shown.x+'px,'+shown.y+'px)';

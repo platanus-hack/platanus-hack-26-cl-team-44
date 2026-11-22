@@ -11,7 +11,7 @@
 
 > Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
 
-Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir, volver o activar el SOS. En modo de prueba, el SOS se simula. Con la llamada configurada, intenta llamar al contacto de emergencia. Toki no es un dispositivo médico ni una alarma de emergencia validada.
+Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir el control enfocado, incluido **Volver**. La acción SOS normal intenta llamar al contacto de emergencia si está configurado. El SOS de la rueda de cuidados es solo una prueba simulada: no llama ni envía mensajes. Toki no es un dispositivo médico ni una alarma de emergencia validada.
 
 ## Probarlo
 

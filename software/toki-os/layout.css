@@ -73,7 +73,7 @@
   transition: border-color 150ms ease-out, background-color 150ms ease-out;
 }
 .official-os :is(#tiles .tile,.nav-action)::before,
-.official-os.gaze-only :is(#tiles .tile,.nav-action)::after { display: none; }
+.official-os.iphone-hold :is(#tiles .tile,.nav-action)::after { display: none; }
 .official-os :is(#tiles .tile,.nav-action).focus { border-color: var(--card-focus); background-color: var(--glass-hi); }
 .official-os :is(#tiles .tile,.nav-action).armed { border-color: var(--card-ready); }
 .official-os :is(#tiles .tile,.nav-action).pressed { background-color: color-mix(in srgb,var(--blue) 16%,var(--glass-hi)); }
@@ -125,64 +125,6 @@
 #emoRing .t { position: relative; width: auto; height: auto; margin: 0; font-size: 48px; gap: 10px; }
 #emoRing .t span { font-size: 112px; }
 
-/* Quick menu: fixed positions and native modal focus. */
-#quickDialog {
-  --quick-focus:#91e7ff;
-  width:min(94vw, 1040px); max-width:none; max-height:calc(100dvh - 16px);
-  margin:auto; padding:0; border:0; border-radius:24px; background:transparent; color:var(--txt);
-}
-#quickDialog::backdrop { background:rgb(2 5 12 / .74); }
-.quick-surface {
-  position:relative; display:grid; gap:clamp(12px, 2.4vh, 24px);
-  padding:clamp(12px, 3vw, 36px); border:1px solid #768198; border-radius:inherit;
-  background:#111827; color:#f5f7ff;
-}
-.quick-heading { text-align:center; }
-.quick-kicker { color:#a7bedc; font-size:clamp(10px, 1.8vw, 15px); font-weight:700; letter-spacing:.12em; }
-#quickTitle { margin:4px 0; font-size:clamp(25px, 5vw, 52px); line-height:1.05; }
-#quickTitle:focus { outline:none; }
-#quickHint { margin:8px 0 0; color:#cfdaeb; font-size:clamp(14px, 2vw, 20px); min-height:2.4em; }
-.quick-wheel {
-  position:relative; isolation:isolate; display:grid; align-items:stretch;
-  grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:minmax(clamp(58px, 15dvh, 152px),auto);
-  gap:clamp(4px, 1.4vw, 16px);
-}
-.quick-wheel::before {
-  content:""; position:absolute; z-index:-1; inset:0; margin:auto; width:68%; height:98%;
-  border:1px solid #52617a; border-radius:50%; background:#1c2840; pointer-events:none;
-}
-.quick-wheel .t {
-  display:grid; align-content:center; justify-items:center; gap:4px;
-  padding:clamp(4px, 1vw, 12px); border:1px solid #8291a9; border-radius:clamp(10px, 2vw, 20px);
-  background:#26364f; color:#f5f7ff; font:inherit; cursor:pointer;
-  text-align:center; text-wrap:balance; overflow-wrap:anywhere; transform:none; transition:none;
-}
-.quick-wheel .t:hover { background:#354b68; }
-.quick-wheel .t:focus-visible,.quick-wheel .t.focus {
-  outline:3px solid var(--quick-focus); outline-offset:2px; background:#1d4c65;
-}
-.quick-wheel .t.armed { box-shadow:inset 0 0 0 2px var(--quick-focus); }
-.quick-option span { font-size:clamp(16px, 4vw, 40px); color:#b9ecff; line-height:1; }
-.quick-option b { font-size:clamp(14px, 2.7vw, 30px); line-height:1.12; }
-.quick-option:nth-child(1) { grid-area:1 / 2; }
-.quick-option:nth-child(2) { grid-area:2 / 3; }
-.quick-option:nth-child(3) { grid-area:3 / 2; }
-.quick-option:nth-child(4) { grid-area:2 / 1; }
-.quick-wheel .quick-close {
-  grid-area:2 / 2; place-self:center; min-width:min(100%, 112px); min-height:44px;
-  background:#111827; font-size:clamp(14px, 2vw, 22px); font-weight:650;
-}
-.gesture-hold {
-  position:absolute; z-index:35; inset:auto 0 86px; margin-inline:auto; width:max-content; max-width:92%;
-  padding:12px 24px; border:1px solid #8ba5c8; border-radius:16px; background:#121d30; color:#fff;
-  text-align:center; font-size:28px; font-weight:650; pointer-events:none;
-}
-.quick-surface .gesture-hold { bottom:10px; font-size:clamp(14px, 2vw, 20px); }
-.gesture-hold progress { display:block; width:100%; height:12px; margin-top:4px; accent-color:#91e7ff; }
-@media (forced-colors:active) {
-  .quick-wheel .t:focus-visible,.quick-wheel .t.focus { outline-color:Highlight; }
-}
-
 /* Descanso: dos objetivos estables y una sola indicación de uso. */
 .rest-actions { margin-top:36px; display:grid; grid-template-columns:530px 410px; gap:56px; }
 .rest-actions .t {
@@ -203,17 +145,87 @@
 .rest-hint { margin:10px 0 0; color:var(--txt2); font-size:26px; }
 /* ---------- modo solo mirada (iPhone): sin gestos de ceja ni mandíbula ---------- */
 /* las pistas de gestos no aplican: se ocultan y las tarjetas ganan esa altura */
-body.gaze-only .hint { display: none; }
+body.iphone-hold .hint { display: none; }
 /* relleno de fondo mientras se mantiene la mirada (como en la demo): más visible que el anillo */
-body.gaze-only .t.focus::after {
+body.iphone-hold .t.focus::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
   background: rgba(10, 132, 255, .2); transform: scaleX(var(--p, 0)); transform-origin: left;
 }
-:root[data-theme="light"] body.gaze-only .t.focus::after { background: rgba(0, 122, 255, .14); }
-body.gaze-only .badge { display: none; }
+:root[data-theme="light"] body.iphone-hold .t.focus::after { background: rgba(0, 122, 255, .14); }
+body.iphone-hold .badge { display: none; }
+
+/* iPhone focus is a static highlight, not a selection timer. */
+:is(body.iphone-pointer:not(.iphone-hold), body.myoware-confirm:not(.iphone-pointer)) :is(.ring, .badge, .rest-actions .fill, .rest-dwell-label) { display: none; }
+body:not(.myoware-confirm) #myoware-shortcuts, body.iphone-pointer #myoware-shortcuts { display: none; }
+
+#care-wheel {
+  color: #f1f6ff;
+  background: #172131;
+  border: 1px solid #526379;
+  border-radius: 24px;
+  padding: clamp(16px, 3vmin, 28px);
+  width: min(680px, calc(100% - 32px));
+  max-height: calc(100% - 24px);
+  box-sizing: border-box;
+  text-align: center;
+  font: 500 16px/1.4 system-ui, sans-serif;
+}
+#care-open { min-height: 44px; }
+#care-open[hidden] { display: none; }
+#care-wheel::backdrop { background: rgb(7 13 25 / .76); }
+#care-wheel h2 { margin: 0; font-size: clamp(1.4rem, 4vmin, 2rem); }
+#care-wheel p { margin: 6px auto 14px; color: #c6d2e2; }
+#care-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(64px, 1fr));
+  grid-template-areas: ". north ." "west center east" ". south .";
+  gap: 8px;
+  padding: 10px;
+  min-height: clamp(215px, 45vmin, 330px);
+  background: radial-gradient(circle closest-side, transparent 68%, #526379 69% 70%, #243248 71% 98%, transparent 99%);
+}
+#care-choices[data-view="urgent"] {
+  grid-template-rows: repeat(2, minmax(64px, auto));
+  grid-template-areas: ". north ." ". center .";
+  min-height: 0;
+  background: none;
+}
+#care-wheel button {
+  border: 1px solid #63768e;
+  border-radius: 14px;
+  color: #f1f6ff;
+  background: #23344b;
+  font: 650 clamp(1rem, 2.5vmin, 1.25rem)/1.25 system-ui, sans-serif;
+  text-wrap: balance;
+  cursor: pointer;
+  padding: 8px;
+}
+#care-choices [data-slot="north"] { grid-area: north; }
+#care-choices [data-slot="east"] { grid-area: east; }
+#care-choices [data-slot="south"] { grid-area: south; }
+#care-choices [data-slot="west"] { grid-area: west; }
+#care-choices [data-slot="center"] { grid-area: center; }
+#care-choices:not([data-view="phrases"]) [data-slot="north"]:not([data-scanned]) { background: #542e3a; }
+#care-choices [data-scanned] { color: #102231; background: #d8f197; border-color: #d8f197; outline: 2px solid #d8f197; outline-offset: 2px; }
+#care-wheel button:focus-visible { outline: 3px solid #a8d6ff; outline-offset: 4px; }
+#care-wheel footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+#care-wheel footer button { min-height: 44px; font-size: .875rem; }
+#care-current { text-align: start; color: #d8f197; }
+@media (max-width: 520px) {
+  #care-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "north east" "west south" "center center";
+    background: none;
+  }
+  #care-choices[data-view="urgent"] { grid-template-areas: "north north" "center center"; }
+}
+body.iphone-pointer:not(.iphone-hold) .t.focus { transform: none; }
+body.iphone-pointer:not(.iphone-hold) .t.focus::before { opacity: 0; }
+
 
 @media (prefers-reduced-motion: reduce) {
-  body.gaze-only .t.focus::after { transform: none; opacity: var(--p, 0); }
+  body.iphone-hold .t.focus::after { transform: none; opacity: var(--p, 0); }
 }
 
 /* escribir (opción A): fila fija de sugerencias + letras + acciones, en una sola cuadrícula de 20 columnas

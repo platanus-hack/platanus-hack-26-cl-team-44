@@ -101,8 +101,8 @@ window.addEventListener('load',()=>{
  }
  function pause(value){if(value)leaveSurface();paused=value;anchor=null;document.querySelector('#externalCurtain')?.toggleAttribute('hidden',!paused);const e=document.querySelector('[data-act="external:pause"]');if(e)e.firstChild.textContent=paused?'Continuar control':'Pausar control';}
  go=function(name,...args){if(S.screen==='games'){stopSurface();frame=null;paused=true;document.body.classList.remove('external-playing');}oldGo(name,...args);if(name==='games')catalog();};
- activate=function(el,calibrate=true){
-  if(!el?.dataset.act?.startsWith('external:'))return oldActivate(el,calibrate);
+ activate=function(el,calibrate=true,immediate=false){
+  if(!el?.dataset.act?.startsWith('external:'))return oldActivate(el,calibrate,immediate);
   const [,act,arg]=el.dataset.act.split(':');
   if(act==='catalog')return catalog();
   if(act==='play'){const g=games[Number(arg)];if(g)return open(g.id);}
@@ -167,7 +167,8 @@ window.addEventListener('load',()=>{
   } else {
    if(!anchor || Math.hypot(x-anchor.x,y-anchor.y)>28){anchor={x,y,t:now};didClick=false;}
    const dwellEnabled = !localPlayer || shared?.camera || shared?.dwellEnabled;
-   if(autoClick && dwellEnabled && !shared?.confirming && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
+   const myowareConfirming = Boolean(window.WOKI?.myowareConfirming?.());
+   if(autoClick && dwellEnabled && !myowareConfirming && !shared?.confirming && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
    if(type==='move' && lastPoint && Math.hypot(x-lastPoint.x,y-lastPoint.y)<.7) return;
    lastPoint={x,y};pointerInGame=true;
   }

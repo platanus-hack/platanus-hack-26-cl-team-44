@@ -23,15 +23,41 @@ window.createPointerDwell = function () {
 // Pull towards the near edge on approach, then towards the center after entry.
 // Sensor coordinates remain authoritative for dwell and switching to a neighbor.
 window.createMagneticPointer = function (selector) {
-  const reach = 24;
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const hit = (x, y) => document.elementFromPoint(x, y)?.closest(selector);
+  function extendEdge(value, start, size) {
+    const fraction = (value - start) / size;
+    if (fraction < 0 || fraction > 1) return value;
+    const shift = Math.abs(.5 - fraction);
+    const outer = Math.max(0, (shift - .26) / .24);
+    return start + clamp(fraction + Math.sign(fraction - .5) * .10 * outer ** 1.35, 0, 1) * size;
+  }
+  function nearest(point, rect) {
+    const x = clamp(point.x, rect.left, rect.right), y = clamp(point.y, rect.top, rect.bottom);
+    return {x, y, distance: Math.hypot(x-point.x, y-point.y), from: point};
+  }
   let previous;
   function reset() { previous = null; }
-  function aim(p, now, eligible, assisted = true) {
-    const direct = hit(p.x, p.y);
+  function aim(raw, now, eligible, { magnetic = true, gazeBounds } = {}) {
+    let p = raw, direct = hit(raw.x, raw.y);
+    if (!magnetic) {
+      reset();
+      const target = eligible(direct) ? direct : null;
+      return { ...raw, target, inside: !!target };
+    }
+    const gaze = gazeBounds?.width > 0 && gazeBounds?.height > 0;
+    const reach = gaze ? clamp(.08 * Math.min(gazeBounds.width, gazeBounds.height), 32, 68) : 24;
+    // Never steal a direct hit. A webcam point stopped short of the frame
+    // edge gets a little more travel; the center of the screen is unchanged.
+    if (gaze && !direct && raw.x >= gazeBounds.left && raw.x < gazeBounds.left + gazeBounds.width &&
+        raw.y >= gazeBounds.top && raw.y < gazeBounds.top + gazeBounds.height) {
+      p = {
+        x: Math.min(gazeBounds.left + gazeBounds.width - 1, extendEdge(raw.x, gazeBounds.left, gazeBounds.width)),
+        y: Math.min(gazeBounds.top + gazeBounds.height - 1, extendEdge(raw.y, gazeBounds.top, gazeBounds.height)),
+      };
+      direct = hit(p.x, p.y);
+    }
     let target = eligible(direct) ? direct : null;
-    if (!assisted) { reset(); return {...p,target,inside:Boolean(target)}; }
     let edge;
     if (!direct) {
       let best = reach;
@@ -39,25 +65,30 @@ window.createMagneticPointer = function (selector) {
         if (!eligible(el)) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) continue;
-        const x = clamp(p.x, r.left, r.right), y = clamp(p.y, r.top, r.bottom);
-        const distance = Math.hypot(x - p.x, y - p.y);
+        let approach = nearest(p, r);
+        if (p !== raw) {
+          const original = nearest(raw, r);
+          if (original.distance < approach.distance) approach = original;
+        }
+        const {x, y, distance} = approach;
         const score = distance - (el === previous ? 4 : 0);
         if (distance >= reach || score >= best) continue;
         if (hit(clamp(x,r.left+1,r.right-1), clamp(y,r.top+1,r.bottom-1)) !== el) continue;
         best = score;
         target = el;
-        edge = {x, y, distance};
+        edge = approach;
       }
     }
     previous = target;
     if (!target) return {...p, target:null, inside:false};
     if (edge) {
       const pull = .85 * (1 - edge.distance / reach);
-      return {x:p.x+(edge.x-p.x)*pull, y:p.y+(edge.y-p.y)*pull, target, inside:false};
+      const from = edge.from;
+      return {x:from.x+(edge.x-from.x)*pull, y:from.y+(edge.y-from.y)*pull, target, inside:false};
     }
     const r = target.getBoundingClientRect();
     const dx = r.left + r.width / 2 - p.x, dy = r.top + r.height / 2 - p.y;
-    const strength = Math.min(.48, 58 / (Math.hypot(dx, dy) || 1));
+    const strength = Math.min(gaze ? .72 : .48, (gaze ? 100 : 58) / (Math.hypot(dx, dy) || 1));
     return {x:p.x+dx*strength, y:p.y+dy*strength, target, inside:true};
   }
   return {aim, reset};
@@ -103,13 +134,14 @@ window.createMenuPointer = function () {
   const magnet = window.createMagneticPointer('[data-t]');
   let lastActivation;
   function reset() { magnet.reset(); lastActivation = null; }
-  function resolve(point, now, layer, cursor, sensor, gaze, assisted = true) {
+  function resolve(point, now, layer, cursor, sensor, gaze, options) {
+    const gazeReady = gaze?.hasPoint ? gaze.hasPoint(now) : !!gaze?.cur && !gaze.cur.blink;
     if (document.hidden || (sensor?.on && (!sensor.raw || now-sensor.lastFace>240 ||
-        (sensor.mode === 'gaze' && (!gaze?.cur || gaze.cur.blink))))) {
+        (sensor.mode === 'gaze' && !gazeReady)))) {
       reset();
       return {target:null};
     }
-    const aim = magnet.aim(point, now, el => el?.isConnected && layer?.contains(el) && !el.disabled && !el.closest('[hidden],[inert],[aria-disabled="true"]'), assisted);
+    const aim = magnet.aim(point, now, el => el?.isConnected && layer?.contains(el) && !el.disabled && !el.closest('[hidden],[inert],[aria-disabled="true"]'), options);
     cursor.style.transform = 'translate('+aim.x+'px,'+aim.y+'px)';
     if (lastActivation) {
       if (aim.target === lastActivation.target || Math.hypot(point.x-lastActivation.x, point.y-lastActivation.y)<24) {
