@@ -15,7 +15,7 @@ Capas:
   1 privacidad   el tipo efectivo según quién habla (hablantes.audiencia) es el esperado
   2 memorias     recall de las memorias esperadas en el contexto y 0 memorias prohibidas visibles
   3 plantillas   el tema es el esperado y una respuesta aceptable está entre las 4 tarjetas visibles
-  4 agente       un juez (Haiku) decide si alguna opción dice lo mismo que una aceptable; ninguna dice algo prohibido
+  4 agente       un juez (el modelo del agente) decide si alguna opción tiene la misma intención que una aceptable; ninguna dice algo prohibido
   5 iniciales    con las iniciales de la primera aceptable, el agente (modo iniciales) propone algo que dice lo mismo
 Los casos reales (con memorias de la usuaria) van en data/, fuera de git.
 """
@@ -23,6 +23,7 @@ Los casos reales (con memorias de la usuaria) van en data/, fuera de git.
 from __future__ import annotations
 
 import argparse
+import os
 import difflib
 import json
 import sys
@@ -39,13 +40,14 @@ from memoria import contexto, store  # noqa: E402
 from memoria.filtros import VISIBLE  # noqa: E402
 
 PRECIO = {"in": 2.0, "out": 10.0}   # claude-sonnet-5-5, US$ por millón de tokens (TOKI_MODELO por defecto)
-JUEZ = "claude-haiku-5-5"
+JUEZ = os.environ.get("TOKI_JUEZ", os.environ.get("TOKI_MODELO", "claude-sonnet-5-5"))   # sin Haiku: dio malos resultados como juez
 JUEZ_ESQUEMA = {"type": "object", "additionalProperties": False, "required": ["calza", "cual"],
                 "properties": {"calza": {"type": "boolean"}, "cual": {"type": "integer"}}}
 
 
 def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[bool, int]:
-    """¿Alguna opción dice lo mismo (misma intención y datos) que alguna respuesta aceptable? Con Haiku, barato."""
+    """¿Alguna opción tiene la misma intención que alguna respuesta aceptable? No exige los mismos datos: exigirlos premiaba
+    las opciones específicas (auditoría con llamadas reales)."""
     import asyncio
 
     from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
@@ -53,7 +55,7 @@ def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[b
         return False, -1
     prompt = (f"Le dijeron: «{pregunta}»\nRespuestas aceptables (cualquiera sirve):\n" + "\n".join(f"- {a}" for a in aceptables)
               + "\n\nOpciones propuestas:\n" + "\n".join(f"{i}. {o}" for i, o in enumerate(opciones))
-              + "\n\n¿Alguna opción dice lo mismo que alguna aceptable (misma intención y mismos datos; el estilo puede cambiar)? "
+              + "\n\n¿Alguna opción tiene la misma intención que alguna aceptable? No hace falta que traiga los mismos datos; el estilo puede cambiar. "
               "calza = true o false; cual = índice de la mejor (o -1).")
     op = ClaudeAgentOptions(model=JUEZ, tools=[], allowed_tools=[], setting_sources=[], strict_mcp_config=True, max_turns=2,
                             effort="low", output_format={"type": "json_schema", "schema": JUEZ_ESQUEMA},

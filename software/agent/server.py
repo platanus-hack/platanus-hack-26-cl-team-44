@@ -312,6 +312,17 @@ class Handler(BaseHTTPRequestHandler):
                                                     for o in r["opciones"]], "origen": r["origen"], "persona": r["persona"],
                                     **({"traza": r["traza"]} if "traza" in r else {})})
 
+        if self.path == "/api/seleccion":
+            # Qué opción eligió la usuaria: origen, memorias, posición y si la editó. Sin el texto (data/selecciones.jsonl).
+            fila = {"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "canal": str(body.get("canal") or "")[:20],
+                    "origen": str(body.get("origen") or "")[:20], "posicion": body.get("posicion") if isinstance(body.get("posicion"), int) else None,
+                    "fuentes": [str(f)[:8] for f in (body.get("fuentes") or [])][:5], "tipos": [str(f)[:10] for f in (body.get("tipos") or [])][:5],
+                    "editada": body.get("editada") is True, "opciones": body.get("opciones") if isinstance(body.get("opciones"), int) else None,
+                    "palabras": body.get("palabras") if isinstance(body.get("palabras"), int) else None}
+            with open(DATA / "selecciones.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps(fila, ensure_ascii=False) + "\n")
+            return self._json(200, {"ok": True})
+
         if self.path == "/api/tarjetas/uso":
             if not body.get("tarjeta_id"):
                 return self._json(400, {"error": "falta tarjeta_id"})

@@ -301,12 +301,24 @@
     };
   }
 
+  // Registro de cada frase elegida (sin el texto): de qué origen sale, qué memorias cita, en qué posición estaba
+  // y si se dijo tal cual o editada/escrita. Así cada cambio de prompt se mide contra lo que ella elige de verdad.
+  function seleccion(text, canal) {
+    const cards = W.S.cards || [], i = cards.findIndex((x) => x.text === text), c = cards[i];
+    const t = (c && c.traza) || {};
+    post(URL_AGENTE, '/api/seleccion', { canal, origen: c ? (t.origen || 'local') : 'escrita', posicion: c ? i : null, opciones: cards.length,
+      fuentes: (t.fuentes || []).map((f) => f.id), tipos: (t.fuentes || []).map((f) => f.tipo).filter(Boolean),
+      editada: !c, palabras: String(text || '').split(/\s+/).filter(Boolean).length }).catch(() => {});
+  }
+  window.MYO_SELECCION = seleccion;
+
   // Aprender: cuando Myo dice una tarjeta del tema, el agente lo anota (id, tema y persona; sin texto).
   if (typeof window.speak === 'function') {
     const orig = window.speak;
     window.speak = function (text, emo) {
       const c = (W.S.cards || []).find((x) => x.tarjeta && x.text === text);
       if (c) post(URL_AGENTE, '/api/tarjetas/uso', { tarjeta_id: c.tarjeta.id, tema: c.tarjeta.tema, persona: c.tarjeta.persona || undefined }).catch(() => {});
+      seleccion(text, 'sala');
       return orig.apply(this, arguments);
     };
   }

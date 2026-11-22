@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 export type Sug = { text: string; tone: string; emo: string; traza?: Record<string, unknown> };
 export type Line = { dir: "in" | "out"; text: string };
 
-const MODEL = process.env.SUGGEST_MODEL ?? "haiku";
+const MODEL = process.env.SUGGEST_MODEL ?? "sonnet";   // respaldo sin memoria; sin Haiku (dio malos resultados)
 export const sugOn = process.env.SUGGEST !== "off";
 const EMOS = ["seria", "alegre", "carinosa", "ironica", "susurro", "entusiasta"];
 

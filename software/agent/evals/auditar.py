@@ -120,7 +120,9 @@ def correr_caso(db: str, caso: dict, limites: list[dict], juez: bool) -> dict:
     t0 = time.monotonic()
     r = agente.run_agent(c, p, caso["texto"], historial=hist, modo=modo, iniciales=caso.get("iniciales", ""), traza=True)
     ms = int((time.monotonic() - t0) * 1000)
-    visibles = {i for ids in r["traza"]["memorias_en_contexto"].values() for i in ids} | set(r["traza"]["ultimos_encuentros"])
+    en_prompt = {i for ids in r["traza"]["memorias_en_contexto"].values() for i in ids} | set(r["traza"]["ultimos_encuentros"])
+    # Fuga = algo que la privacidad no deja ver. Lo que la compuerta dejó fuera sí es visible para esta persona.
+    visibles = set(r["traza"].get("visibles_por_privacidad") or []) or en_prompt
     ocultas = {k: v for k, v in todas.items() if k not in visibles}
     dicho = palabras(caso["texto"] + " " + " ".join(hist))
     dicho_conc = {norm(x) for x in concretos(caso["texto"] + " " + " ".join(hist))} | {norm(nombre)}
@@ -151,6 +153,7 @@ def correr_caso(db: str, caso: dict, limites: list[dict], juez: bool) -> dict:
     return {"id": caso["id"], "rol": caso.get("rol"), "persona": p["id"] if p else None, "modo": caso["modo"], "trampa": caso.get("trampa"),
             "texto": caso["texto"], "esperada": caso.get("esperada"), "origen": r["origen"], "ms": ms,
             "contexto": {t: len(v) for t, v in r["traza"]["memorias_en_contexto"].items()},
+            "hechos_en_prompt": len(en_prompt), "compuerta": (r["traza"].get("compuerta") or {}).get("pasan"),
             "fuera_por_privacidad": r["traza"]["fuera_por_privacidad"], "descartadas": r["traza"]["descartadas"], "opciones": ops}
 
 
@@ -196,6 +199,8 @@ def resumen(res: list[dict]) -> str:
         "",
         "| Métrica (opciones del agente) | Valor |", "|---|---|",
         f"| Citan al menos una memoria | {len(con_mem)} ({pct(len(con_mem))}%) |",
+        f"| Citan un hecho (perfil, episodio o rutina) | {sum(1 for _, o in agente_ops if set(o['tipos']) & {'perfil', 'episodio', 'rutina'})} ({pct(sum(1 for _, o in agente_ops if set(o['tipos']) & {'perfil', 'episodio', 'rutina'}))}%) |",
+        f"| Hechos en el prompt por turno (promedio) | {statistics.mean(r.get('hechos_en_prompt', 0) for r in res):.1f} |",
         f"| Usan palabras de una memoria que el turno no mencionó | {len(con_det)} ({pct(len(con_det))}%) |",
         f"| Citas inventadas (memoria fuera de su contexto) | {sum(len(o['inventadas']) for _, o in agente_ops)} |",
         f"| Nombres o números sin respaldo (ni turno ni memoria) | {sum(bool(o['sin_respaldo']) for _, o in agente_ops)} |",
