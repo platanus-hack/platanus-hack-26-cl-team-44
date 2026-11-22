@@ -171,7 +171,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 
 /* ---------- reacciones ---------- */
 .react{display:flex;align-items:center;justify-content:center;gap:30px;font-size:80px;font-weight:700;letter-spacing:-.03em}
-.react span{font-size:96px}
+.react span:not(.badge){font-size:96px}
 
 /* ---------- agente ---------- */
 .plan{flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:30px}
@@ -200,7 +200,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 #emoRing.on .c{transform:none}
 #emoRing .mid{position:absolute;inset:300px;border-radius:50%;display:grid;place-items:center;text-align:center;font-size:30px;font-weight:600;color:var(--txt2);padding:34px;line-height:1.3}
 #emoRing .t{position:absolute;width:270px;height:176px;margin:-88px -135px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:32px;font-weight:650}
-#emoRing .t span{font-size:72px}
+#emoRing .t span:not(.badge){font-size:72px}
 #emoRing.on .t{animation:rise 320ms var(--ease-out) backwards;animation-delay:calc(var(--i)*30ms)}
 
 #alarm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:42px;text-align:center;
@@ -1438,7 +1438,7 @@ function renderKeys(){
   const kb=S.kb; let html='';
   if(kb.mode==='ini' && kb.level===1){
     html=GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('')+
-      `<div class="t key small act" data-t data-act="kb:del">Borrar</div><div class="t key small act" data-t data-act="kb:expand">Completar</div><div class="t key small act" data-t data-act="kb:exit">Volver</div>`;
+      `<div class="t key small act" data-t data-act="kb:del">Borrar</div>${completarKey()}<div class="t key small act" data-t data-act="kb:exit">Volver</div>`;
   } else if (tabletComposer && kb.level === 1) {
     html = GROUPS.map((g,i)=>`<div class="t key" data-t data-act="grp:${i}">${g}</div>`).join('') +
       `<div class="t key small act" data-t data-act="kb:space">Espacio</div><div class="t key small act" data-t data-act="kb:del">${delLabel()}</div><div class="t key small act" data-t data-act="kb:say">Decir</div>`;
@@ -1473,7 +1473,9 @@ function renderKeys(){
   } else {
     const L=GROUPS[kb.group].split('');
     html=L.map(c=>`<div class="t key" data-t data-act="chr:${c}">${c}</div>`).join('');
-    for(let i=L.length;i<7;i++) html+='<div></div>';
+    const extra = kb.mode==='ini' && (kb.ini||'') && L.length<7 ? completarKey() : '';   // las frases a 1 mirada también desde aquí
+    if(extra) html+=extra;
+    for(let i=L.length+(extra?1:0);i<7;i++) html+='<div></div>';
     html+=`<div class="t key small act" data-t data-act="kb:back">Volver</div>`;
   }
   $('#keys').className = (kb.mode==='ini' || tabletComposer || kb.level!==1)? 'grid4x2' : CFG.sugMode==='fila'? 'kbrows' : 'grid5x2';
@@ -1482,6 +1484,12 @@ function renderKeys(){
   $('#keys').innerHTML=html; stagger($('#keys')); decorate($('#keys'));
   if(kb.mode==='ini') iniAsk();
   renderKbText(); markLikelyKeys();
+}
+// «Completar» con la frase más probable a la vista: la persona ve qué va a obtener antes de elegirla.
+function completarKey(){
+  const c=(S.kb.ini||'') ? iniCandidates()[0] : null;
+  return c ? `<div class="t key small act best completar" data-t data-act="kb:expand">✨ Completar<small>${esc(c.text)}</small></div>`
+           : `<div class="t key small act completar" data-t data-act="kb:expand">✨ Completar<small>elige letras primero</small></div>`;
 }
 const KBHINT0=document.getElementById('kbHint').innerHTML;
 function renderKbText(){
@@ -1495,7 +1503,9 @@ function renderKbText(){
     const cand=iniCandidates().slice(0,3), ai=S.kb.ai;
     const top=cand.map(c=>(c.ai?'<span class="ai">✨</span>':'')+esc(c.text));
     const wait= ai && ai.ini===(S.kb.ini||'') && !ai.list ? ' <span class="ai-wait">· ✨ Claude pensando…</span>' : '';
-    $('#kbPred').innerHTML= top.length? 'Podría ser: '+top.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+wait+' — usa «Completar»' : 'Ejemplo: S · M · P · B → «Sí, me parece bien»';
+    const ck=document.querySelector('#keys .completar small'), best=cand[0];   // la frase de «Completar» sigue a Claude
+    if(ck){ ck.textContent= best? best.text : 'elige letras primero'; ck.parentElement.classList.toggle('best', !!best); }
+    $('#kbPred').innerHTML= top.length? 'Podría ser: '+top.map((x,i)=>i?x:`<b>${x}</b>`).join(' · ')+wait+' · mira <b>✨ Completar</b> para elegir una' : 'Ejemplo: S · M · P · B → «Sí, me parece bien»';
     return;
   }
   const p=preds(), w=curWord();

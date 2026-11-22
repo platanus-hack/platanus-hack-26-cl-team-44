@@ -1,11 +1,22 @@
 """Etapa 4 de la capa determinista: revisa las opciones del modelo antes de mostrarlas."""
 from __future__ import annotations
 
+import re
 import sqlite3
 
 from . import filtros, store
 
 MAX_PALABRAS = 15
+# Palabras que la familia pidió no mostrar, con su reemplazo. "shi" (por "sí") viene del léxico del chat (m1).
+REEMPLAZOS = {"shi": "sí"}
+
+
+def limpiar(texto: str) -> str:
+    """Cambia las palabras de REEMPLAZOS, con la mayúscula del original."""
+    def cambio(m: re.Match) -> str:
+        nuevo = REEMPLAZOS[m.group(0).lower()]
+        return nuevo[:1].upper() + nuevo[1:] if m.group(0)[:1].isupper() else nuevo
+    return re.sub(r"\b(" + "|".join(REEMPLAZOS) + r")\b", cambio, texto, flags=re.IGNORECASE)
 N_OPCIONES = 4
 NEUTRAL = {"text": "Después te respondo", "tone": "neutral", "emo": "seria", "fuentes": [], "origen": "regla"}
 RELLENO = [
@@ -27,7 +38,7 @@ def validar(c: sqlite3.Connection, opciones: list[dict], persona: dict | None, n
     tms = store.temas(c)
     ok, fuera, vistos = [], [], set()
     for o in opciones or []:
-        texto = str(o.get("text", "")).strip()
+        texto = limpiar(str(o.get("text", "")).strip())
         clave = store.norm(texto)
         if not texto:
             continue
