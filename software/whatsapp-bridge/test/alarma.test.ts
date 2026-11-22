@@ -102,3 +102,12 @@ test("regla de los 75 s: 'initiated' pasa a 'failed'", () => {
   assert.equal(estadoLlamada("done", at, at + 10 * INICIADA_MAX_MS), "done");
   assert.equal(INICIADA_MAX_MS, 75_000);
 });
+
+test("un id repetido después de 10 min es una alarma nueva (la TV recargó)", async () => {
+  const { EstadoAlarma, REPETIDA_MS } = await import("../alarma.ts");
+  const { mkdtempSync } = await import("node:fs"); const { join } = await import("node:path"); const { tmpdir } = await import("node:os");
+  const e = new EstadoAlarma(join(mkdtempSync(join(tmpdir(), "alarma-")), "e.json"), 60_000);
+  e.iniciar("123.4", "10:00", "casa", 1_000);
+  assert.equal(e.revisar("123.4", 1_000 + 30_000), "repetida");
+  assert.equal(e.revisar("123.4", 1_000 + REPETIDA_MS + 1), "ok");
+});

@@ -9,6 +9,7 @@ export type Contacto = { nombre: string; numero: string };
 export type Llamada = Contacto & { conversationId: string; error: string; contestoAt: number; confirmo: boolean | null };
 export type Alarma = { at: number; alarmId: string; hora: string; direccion: string; llamadas: Llamada[] };
 export const INICIADA_MAX_MS = 75_000;
+export const REPETIDA_MS = 10 * 60_000;
 const vacia = (): Alarma => ({ at: 0, alarmId: "", hora: "", direccion: "", llamadas: [] });
 
 // Si el operador rechaza la llamada, ElevenLabs la deja en "initiated" para siempre: pasado el timbre (45 s) + margen, es un fallo.
@@ -31,7 +32,8 @@ export class EstadoAlarma {
   }
   // "repetida": ya hubo una tanda para esta alarma · "espera": la última tanda fue hace menos del cooldown
   revisar(alarmId: string, now = Date.now()): "ok" | "repetida" | "espera" {
-    if (alarmId === this.ultima.alarmId) return "repetida";
+    // Mismo id solo cuenta como repetida dentro de 10 min: el id de la TV sale de performance.now() y se repite al recargar.
+    if (alarmId === this.ultima.alarmId && now - this.ultima.at < REPETIDA_MS) return "repetida";
     if (now - this.ultima.at < this.cooldownMs) return "espera";
     return "ok";
   }
