@@ -623,6 +623,17 @@ const DWELL_OPTIONS = [800,1000,1200,1500];
 // En el equipo del demo (localhost o el monitor MyoWare en 127.0.0.1:8766) se usan los servicios locales.
 // Desde la URL pública: WhatsApp y EMG simulados; el agente se sirve en /agente del mismo sitio.
 const LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
+// WhatsApp real en la URL pública: se abre una vez con ?wa_token=<WOKI_API_TOKEN> y queda en este navegador.
+// ?wa_token= (vacío) lo borra. Sin token, la URL pública sigue con WhatsApp simulado (la vista de los jueces).
+const WA_TOKEN = (()=>{ try{
+  const q=new URLSearchParams(location.search);
+  if(q.has('wa_token')){
+    const t=(q.get('wa_token')||'').trim();
+    if(t) localStorage.setItem('woki_wa_token', t); else localStorage.removeItem('woki_wa_token');
+    const u=new URL(location.href); u.searchParams.delete('wa_token'); history.replaceState(null,'',u);   // el token no queda en la barra
+  }
+  return localStorage.getItem('woki_wa_token')||'';
+}catch(_){ return ''; } })();
 const CFG = {
   // tiempo de mirada para elegir: 1200 ms por defecto (800 resultaba muy rápido con el iPhone);
   // la elección en Ajustes se recuerda en el navegador
@@ -635,7 +646,8 @@ const CFG = {
   doubleMs: 500, tapMs: 900, holdMs: 3000,
   SUGGEST_URL: '',       // endpoint opcional: POST {context} → {suggestions:[{text,tone,emo}]}
   EMG_WS: LOCAL ? 'ws://localhost:8765' : '', // puente EMG opcional: {"src":"ceja|mandibula","edge":"down|up"}
-  WA_URL: LOCAL ? 'http://localhost:8788' : '', // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  WA_URL: LOCAL ? 'http://localhost:8788' : (WA_TOKEN ? location.origin+'/wa' : ''), // woki-bridge (WhatsApp vía wapi). '' = mensajes simulados
+  WA_TOKEN,              // header X-Woki-Token hacia el puente (también lo usa woki-voz.js)
   EXPAND_URL: '',        // opcional (otro servicio): POST {initials, context, contactId} → {suggestions:[{text,tone,emo}]}
   WA_AI: true,           // en un chat, el puente pide respuestas y predicción por iniciales a Claude (/api/wa/suggest)
   magnet: true,          // imán: si la mirada cae en un hueco, el foco va al objetivo más probable cercano (tecla I)
@@ -911,7 +923,7 @@ function waMention(ev){
 const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
 
 async function waApi(path,opts={}){
-  const r=await fetch(CFG.WA_URL+path,{...opts, headers: opts.body? {'Content-Type':'application/json'} : {}});
+  const r=await fetch(CFG.WA_URL+path,{...opts, headers: { ...(opts.body? {'Content-Type':'application/json'} : {}), ...(CFG.WA_TOKEN? {'X-Woki-Token':CFG.WA_TOKEN} : {}) }});
   let j={}; try{ j=await r.json(); }catch(_){}
   if(!r.ok || j.ok===false) throw new Error(j.reason || ('HTTP '+r.status));
   return j;
@@ -979,7 +991,7 @@ function waIncoming(ev){
 }
 function waListen(){
   if(!CFG.WA_URL || !window.EventSource) return;
-  const es=new EventSource(CFG.WA_URL+'/api/wa/events');
+  const es=new EventSource(CFG.WA_URL+'/api/wa/events'+(CFG.WA_TOKEN? '?token='+encodeURIComponent(CFG.WA_TOKEN) : ''));   // EventSource no manda headers
   es.onopen=()=>{ WA.online=true; renderStatus(); waLoadFavs(); log('WhatsApp conectado'); };
   es.onerror=()=>{ if(WA.online) log('WhatsApp sin conexión'); WA.online=false; renderStatus(); };   // EventSource reintenta solo
   es.onmessage=m=>{ let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }

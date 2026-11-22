@@ -1,0 +1,19 @@
+[Unit]
+Description=wapi · api HTTP (127.0.0.1:3101)
+After=network-online.target postgresql.service redis-server.service wapi-gateway.service
+Wants=network-online.target wapi-gateway.service
+Requires=postgresql.service redis-server.service
+
+[Service]
+User=wapi
+WorkingDirectory=/opt/toki/wapi
+EnvironmentFile=/opt/toki/wapi.env
+Environment=PORT=3101
+ExecStart=/usr/local/bin/bun /opt/toki/wapi-local/api-local.ts
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
