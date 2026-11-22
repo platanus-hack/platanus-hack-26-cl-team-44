@@ -994,20 +994,52 @@ async function kbExpand(){
 
 // Mención en un grupo. Si el grupo tiene un disparador activo, el agente manda opciones y el grupo
 // se abre como un chat más: se responde con la misma confirmación de doble ceja. Si no, solo aviso.
+// El puente es la fuente de verdad: cada mención trae id y estado. La TV no repite una que ya mostró.
+WA.menciones={};   // id → mención (con estado: pendiente | respondida)
 function waMention(ev){
+  if(ev.id){ if(WA.menciones[ev.id]) return; WA.menciones[ev.id]=ev; }
+  if(ev.estado==='respondida') return;
   WA.mention={...ev, at:Date.now()};
   beep(988,140,.05); setTimeout(()=>beep(1318,160,.05),170);
   island('@',`${ev.from} te mencionó en «${ev.group}»: ${ev.resumen||ev.text}`,false,10000);
   log(`mención en «${ev.group}»${ev.opciones?' · el agente preparó respuestas':''}`); renderStatus();
   if(!(ev.opciones && ev.opciones.length && ev.groupJid)) return;
-  const g={id:'g:'+ev.groupJid, name:ev.group, relation:'grupo', phone:'', group:ev.groupJid, mention:ev.mentionJid||''};
+  const g={id:'g:'+ev.groupJid, name:ev.group, relation:'grupo', phone:'', group:ev.groupJid, mention:ev.mentionJid||'', mentionId:ev.id||''};
+  WA.mentionPend=g;   // si la TV está ocupada (calibración, alarma), se abre al terminar
   const mid='mention-'+WA.mention.at;
   WA.hist[g.id]=[{id:mid, dir:'in', text:`${ev.from}: ${ev.text}`, at:WA.mention.at}];
   WA.sug[g.id]={key:mid, list:ev.opciones};
   const busy=S.alarm || S.rest || $('#calib').classList.contains('on') || document.body.classList.contains('panel') || (S.screen==='agent' && S.agentPending);
   if(busy) return;                                                          // nunca interrumpe una alarma ni una confirmación en curso
-  waStart(g,{text:ev.text, key:mid});
+  waAbrirMencion(g);
+}
+function waAbrirMencion(g){
+  const ev=WA.menciones[g.mentionId]||WA.mention; WA.mentionPend=null;
+  if(ev && ev.estado==='respondida') return;
+  waStart(g,{text:ev.text, key:WA.sug[g.id]?.key});
   setCtx(`${ev.from} te mencionó en ${ev.group}`, initial(ev.from), ev.text, CTX0.ph, faceOf({name:ev.from}));
+}
+// Pide al puente las menciones de los últimos 10 minutos. Se llama al conectarse y al salir de la calibración.
+async function waRevisarMenciones(){
+  if(!CFG.WA_URL) return;
+  let lista=[]; try{ lista=(await waApi('/api/wa/mentions')).mentions||[]; }catch(e){ log('WhatsApp menciones: '+e.message); return; }
+  for(const m of lista) if(WA.menciones[m.id] && m.estado==='respondida' && WA.menciones[m.id].estado!=='respondida') waMencionRespondida(m.id);
+  // Solo cuenta la más reciente que esta TV no vio; las más viejas quedan como vistas (ya no vienen al caso).
+  const nuevas=lista.filter(m=>m.estado==='pendiente' && !WA.menciones[m.id]);
+  for(const m of nuevas.slice(1)) WA.menciones[m.id]=m;
+  if(nuevas[0] && (!WA.mentionPend || nuevas[0].at>(WA.menciones[WA.mentionPend.mentionId]?.at||0))){ waMention(nuevas[0]); return; }
+  const g=WA.mentionPend;
+  const busy=S.alarm || S.rest || $('#calib').classList.contains('on') || document.body.classList.contains('panel') || (S.screen==='agent' && S.agentPending);
+  if(g && !busy) waAbrirMencion(g);
+}
+// Otra TV respondió: esta la marca como respondida y no deja enviar otra vez.
+function waMencionRespondida(id){
+  const m=WA.menciones[id]; if(m) m.estado='respondida';
+  if(WA.mentionPend && WA.mentionPend.mentionId===id) WA.mentionPend=null;
+  if(!WA.to || WA.to.mentionId!==id || WA.sending) return;
+  WA.to.respondida=true;
+  island('✓',`Ya se respondió en «${WA.to.name}»`,false,5000); log('mención respondida desde otra pantalla');
+  if(S.screen==='agent' || S.screen==='talk'){ waReset(); go('home'); }
 }
 const CTX0={ label:'Sofía dice', av:'S', val:'¿Vienes a cenar el domingo?', ph:'El acompañante escribe y aprieta Enter' };
 
@@ -1060,15 +1092,21 @@ function openAgent(text){
 async function waSend(){
   const c=WA.to;
   if(!c){ island('⚠️','Primero elige a quién escribir',true); go('contacts'); return; }
+  if(c.respondida){ island('✓',`Ya se respondió en «${c.name}»`,false,4000); go('home'); return; }
   if(WA.sending) return; WA.sending=true;
   island('…',`Enviando a ${c.name}…`,false,0);
   try{
-    const msg = c.group ? {groupJid:c.group, mention:c.mention, text:WA.text, idemKey:WA.idem} : {contactId:c.id, text:WA.text, idemKey:WA.idem};
+    const msg = c.group ? {groupJid:c.group, mention:c.mention, mentionId:c.mentionId||undefined, text:WA.text, idemKey:WA.idem} : {contactId:c.id, text:WA.text, idemKey:WA.idem};
     const j=await waApi('/api/wa/send',{method:'POST',body:JSON.stringify(msg)});
     WA.lastMsg={id:j.msgId,name:c.name};
     island('✓', j.dry? `Enviado a ${c.name} (prueba)` : `Enviado a ${c.name}`); MEM.add(WA.text); log('WhatsApp → '+c.name);
+    if(c.mentionId && WA.menciones[c.mentionId]) WA.menciones[c.mentionId].estado='respondida';
     go('home');
-  }catch(e){ island('⚠️','No se envió: '+e.message,true,5000); log('WhatsApp error: '+e.message); }
+  }catch(e){
+    if(c.mentionId && /Ya se respondió|Otra pantalla/.test(e.message)){ c.respondida=true; island('✓',e.message,false,5000); go('home'); }
+    else island('⚠️','No se envió: '+e.message,true,5000);
+    log('WhatsApp error: '+e.message);
+  }
   finally{ WA.sending=false; }
 }
 function waIncoming(ev){
@@ -1084,7 +1122,7 @@ function waListen(){
   let revision=0;
   es.onopen=()=>{
     const current=++revision;
-    WA.online=true; WA.session=null; renderStatus(); waLoadFavs();
+    WA.online=true; WA.session=null; renderStatus(); waLoadFavs(); waRevisarMenciones();
     waApi('/api/wa/health').then(health=>{
       if(revision===current){ WA.session=health.session; renderStatus(); }
     }).catch(()=>{});
@@ -1093,6 +1131,7 @@ function waListen(){
   es.onmessage=m=>{ let ev; try{ ev=JSON.parse(m.data); }catch(_){ return; }
     if(ev.type==='chat' && ev.msg) waAddMsg(ev.contactId, ev.msg);
     if(ev.type==='mention') waMention(ev);
+    if(ev.type==='mention_estado' && ev.estado==='respondida') waMencionRespondida(ev.id);
     if(ev.type==='suggest' && ev.suggestions){ WA.sug[ev.contactId]={key:ev.key, list:ev.suggestions};
       if(S.screen==='talk' && WA.to && WA.to.id===ev.contactId && lastKey(ev.contactId)===ev.key) waApplyAi(ev.contactId, ev.suggestions); }
     if(ev.type==='incoming') waIncoming(ev);
@@ -1106,6 +1145,10 @@ function waListen(){
     }
   };
   tokiSSE(CFG.WA_URL+'/api/wa/events', CFG.WA_TOKEN? {'X-Myo-Token':CFG.WA_TOKEN} : {}, es);
+  // Al salir de la calibración (la cierran varios caminos): revisa si quedó una mención por responder.
+  let enCalib=$('#calib').classList.contains('on');
+  new MutationObserver(()=>{ const on=$('#calib').classList.contains('on'); if(enCalib && !on) setTimeout(waRevisarMenciones,400); enCalib=on; })
+    .observe($('#calib'),{attributes:true,attributeFilter:['class']});
 }
 
 /* ---- Panel del acompañante: elegir contactos principales ---- */

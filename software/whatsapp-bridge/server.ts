@@ -1,7 +1,7 @@
 // woki-bridge/server.ts
 import http from "node:http";
 import { readFileSync, writeFileSync, renameSync, existsSync, chmodSync } from "node:fs";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
 import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
 import { sugOn, suggestReplies, expandInitials, type Sug, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
@@ -84,6 +84,23 @@ const tvs = new Set<http.ServerResponse>();
 function emit(ev: Record<string, unknown>) {
   const line = `data: ${JSON.stringify(ev)}\n\n`;
   for (const r of tvs) r.write(line);
+}
+
+// ---------- menciones: fuente de verdad (solo en memoria, 10 min) ----------
+// El puente guarda cada mención con su estado. La TV la pide al conectarse o al salir de la calibración,
+// así no se pierde si no había una TV abierta. Una sola respuesta por mención: la primera TV que envía la
+// marca como respondida y las demás lo ven por SSE ("mention_estado") y no dejan enviar otra vez.
+type Mencion = { id: string; group: string; from: string; text: string; at: number; groupJid?: string; mentionJid?: string;
+  resumen?: string; ultimo?: unknown; opciones?: unknown; estado: "pendiente" | "enviando" | "respondida"; respondidaAt?: number };
+const MENCION_TTL_MS = 10 * 60_000;
+const menciones = new Map<string, Mencion>();
+function mencionesVigentes(): Mencion[] {
+  const limite = Date.now() - MENCION_TTL_MS;
+  for (const [id, m] of menciones) if (m.at < limite) menciones.delete(id);
+  return [...menciones.values()].sort((a, b) => b.at - a.at);
+}
+function mencionPublica(m: Mencion) {
+  return { ...m, estado: m.estado === "enviando" ? "pendiente" : m.estado };
 }
 
 // ---------- historial de chat (en disco: history.json, solo dueño, fuera de git) ----------
@@ -253,8 +270,8 @@ const server = http.createServer(async (req, res) => {
   // TV → enviar
   if (req.method === "POST" && url.pathname === "/api/wa/send") {
     if (MODE === "off") return json(res, 503, { ok: false, reason: "WhatsApp apagado" });
-    const { contactId, groupJid, mention, text, idemKey } = JSON.parse((await readBody(req)) || "{}");
-    if (groupJid) return sendGroup(res, String(groupJid), String(text ?? "").trim(), idemKey, mention ? String(mention) : "");
+    const { contactId, groupJid, mention, mentionId, text, idemKey } = JSON.parse((await readBody(req)) || "{}");
+    if (groupJid) return sendGroup(res, String(groupJid), String(text ?? "").trim(), idemKey, mention ? String(mention) : "", mentionId ? String(mentionId) : "");
     const c = byId.get(contactId);
     const body = String(text ?? "").trim();
     if (!c) return json(res, 403, { ok: false, reason: "Contacto fuera de la lista" });
@@ -359,6 +376,11 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { ok: true, source: list.length ? "claude" : "none", key: lastId(cid), suggestions: list });
   }
 
+  // TV ← menciones de los últimos 10 minutos, con su estado (al conectarse o al salir de la calibración)
+  if (req.method === "GET" && url.pathname === "/api/wa/mentions") {
+    return json(res, 200, { ok: true, ttlMs: MENCION_TTL_MS, mentions: mencionesVigentes().map(mencionPublica) });
+  }
+
   // TV ← eventos
   if (req.method === "GET" && url.pathname === "/api/wa/events") {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "Access-Control-Allow-Origin": ORIGIN });
@@ -454,27 +476,50 @@ async function handleGroup(key: any, m: any, pushName?: string) {
   const extra = r?.accion === "mencion"
     ? { groupJid: jid, mentionJid: participant, resumen: r.resumen, ultimo: r.ultimo_encuentro, opciones: r.opciones }
     : {};
-  emit({ type: "mention", group: r?.grupo_nombre || group, from, text: text.slice(0, 280), at: Date.now(), ...extra });
+  const men: Mencion = { id: String(key.id || randomUUID()), group: r?.grupo_nombre || group, from, text: text.slice(0, 280),
+    at: Date.now(), estado: "pendiente", ...extra };
+  mencionesVigentes(); menciones.set(men.id, men);
+  emit({ type: "mention", ...mencionPublica(men) });
 }
 
 // Responder en un grupo: solo si el agente tiene un disparador activo para ese grupo. Mismos límites que un chat.
-async function sendGroup(res: http.ServerResponse, jid: string, body: string, idemKey: string, mention: string) {
+async function sendGroup(res: http.ServerResponse, jid: string, body: string, idemKey: string, mention: string, mentionId: string) {
   if (!jid.endsWith("@g.us")) return json(res, 400, { ok: false, reason: "No es un grupo" });
-  if (!(await grupoActivo(jid))) return json(res, 403, { ok: false, reason: "Ese grupo no tiene un disparador activo" });
+  // Una sola respuesta por mención: se reserva antes de cualquier await, así dos TV no envían a la vez.
+  const m = mentionId ? menciones.get(mentionId) : undefined;
+  if (m && m.groupJid !== jid) return json(res, 400, { ok: false, reason: "La mención es de otro grupo" });
+  if (m?.estado === "respondida") return json(res, 409, { ok: false, reason: "Ya se respondió esa mención", respondida: true });
+  if (m?.estado === "enviando") return json(res, 409, { ok: false, reason: "Otra pantalla está respondiendo esa mención", respondida: true });
   if (!body || body.length > MAX_LEN) return json(res, 400, { ok: false, reason: "Texto vacío o muy largo" });
   if (!idemKey || usedIdem.has(idemKey)) return json(res, 409, { ok: false, reason: "Este mensaje ya se envió" });
-  const q = quotaOk(); if (q) return json(res, 429, { ok: false, reason: q });
+  if (m) m.estado = "enviando";
+  const liberar = () => { if (m && m.estado === "enviando") m.estado = "pendiente"; };
+  const marcar = () => {
+    if (!m) return;
+    // La respuesta cubre también las menciones anteriores del mismo grupo que seguían pendientes.
+    const t = Date.now();
+    for (const o of menciones.values()) if (o === m || (o.groupJid === jid && o.at <= m.at && o.estado === "pendiente")) {
+      o.estado = "respondida"; o.respondidaAt = t;
+      emit({ type: "mention_estado", id: o.id, estado: "respondida", respondidaAt: t });
+    }
+  };
+  if (!(await grupoActivo(jid))) { liberar(); return json(res, 403, { ok: false, reason: "Ese grupo no tiene un disparador activo" }); }
+  const q = quotaOk(); if (q) { liberar(); return json(res, 429, { ok: false, reason: q }); }
   usedIdem.add(idemKey); lastSendAt = Date.now(); sentToday++;
   if (MODE === "dry") {
     console.log(`[dry] → grupo: ${body.length} caracteres`);
+    marcar();
     return json(res, 200, { ok: true, msgId: -1, dry: true });
   }
   try {
     const sent = await wapi!.messages.send({ to: jid, text: body, ...(mention ? { mentions: [mention] } : {}) });
     console.log(`[send] grupo msgId=${sent.msgId}`);
+    marcar();
     return json(res, 200, { ok: true, msgId: sent.msgId });
   } catch (e: any) {
+    // Un error no prueba que no llegó: la mención vuelve a pendiente y la persona revisa el celular antes de reintentar.
     console.error("[send] grupo error", e?.status, e?.message);
+    liberar();
     return json(res, 502, { ok: false, reason: "wapi no confirmó el envío. Revisa el celular antes de reintentar" });
   }
 }
