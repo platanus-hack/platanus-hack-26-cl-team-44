@@ -41,7 +41,7 @@ TOKI_MAX_DIA=${TOKI_MAX_DIA:-300}
 EOF
 
 if [ ! -f "$BASE/agente.env" ]; then
-  echo "Falta $BASE/agente.env con CLAUDE_CODE_OAUTH_TOKEN (claude setup-token). El agente no va a responder hasta crearlo."
+  echo "Falta $BASE/agente.env. Uso personal: CLAUDE_CODE_OAUTH_TOKEN (claude setup-token). Servicio para otras personas: ANTHROPIC_API_KEY y TOKI_LLM=api. El agente no va a responder hasta crearlo."
   touch "$BASE/agente.env"
 fi
 chmod 600 "$BASE/agente.env"

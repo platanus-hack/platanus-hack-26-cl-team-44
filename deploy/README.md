@@ -36,12 +36,12 @@ Con la llave SSH del equipo (`ssh toki-vps`):
   - `/opt/toki/puente.env`: wapi, token, ElevenLabs, Twilio.
   - `/opt/toki/caddy.env`: token y hash de la contraseña.
   - `/opt/toki/equipo.clave`: contraseña de `/equipo/`.
-  - `/opt/toki/agente.env`: suscripción de Claude.
+  - `/opt/toki/agente.env`: suscripción de Claude o API key (`TOKI_LLM`, ver `software/agent/README.md`).
   - `/opt/toki/wapi.env`: base y cifrado de wapi.
 - El agente (`toki-agente`) usa `data/semilla.json` si existe y, si no, la semilla de ejemplo. Tope de 300 llamadas por día (`TOKI_MAX_DIA`).
 - Los logs del puente no guardan nombres ni texto de los mensajes.
 
-El token de la suscripción de Claude:
+El token de la suscripción de Claude (uso personal; para un servicio que atiende a otras personas, usa el modo `api` de `software/agent/README.md`):
 
 ```bash
 claude setup-token        # en el Mac; copia el token que imprime
