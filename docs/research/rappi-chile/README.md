@@ -1,10 +1,10 @@
 # Rappi Chile mediante Crafter Station
 
-Comprobado el 21 de noviembre de 2026. **La exploración accesible de Rappi Chile ya está implementada en Toki. El carrito con cuenta real y el pedido completo todavía no están validados ni habilitados como servicio terminado.**
+Comprobado el 21 de noviembre de 2026. **La exploración accesible de Rappi Chile ya está implementada en Myo. El carrito con cuenta real y el pedido completo todavía no están validados ni habilitados como servicio terminado.**
 
 ## Continuación implementada
 
-Abrir Toki en `http://127.0.0.1:8790/?start=apps` → Rappi → Probar app. Se puede elegir categoría, restaurante, producto y opciones reales con tarjetas. La interfaz muestra tres restaurantes/productos y dos opciones por página, con retroceso y descanso en el shell compartido. Sin cuenta se explora la ubicación predeterminada pública de Santiago; la cobertura de una dirección particular requiere la sesión.
+Abrir Myo en `http://127.0.0.1:8790/?start=apps` → Rappi → Probar app. Se puede elegir categoría, restaurante, producto y opciones reales con tarjetas. La interfaz muestra tres restaurantes/productos y dos opciones por página, con retroceso y descanso en el shell compartido. Sin cuenta se explora la ubicación predeterminada pública de Santiago; la cobertura de una dirección particular requiere la sesión.
 
 La prueba posterior al informe inicial descubrió el flujo de invitado de la web chilena: GET `/api/rocket/v2/guest/passport/`, POST `/api/rocket/v2/guest`. Con esa sesión temporal se comprobaron HTTP 200 en detalle de tienda y opciones de producto. Little Caesars devolvió tres grupos de acompañamientos, salsas y bebidas. El detalle de tienda contiene metadata, no su menú completo. Este hallazgo sustituye el bloqueo por 401 de esas consultas **sin ninguna sesión** en la matriz inicial.
 
@@ -40,13 +40,13 @@ La web chilena actual también expone en su JavaScript `createPreOrderCheckoutSe
 | Inicio de sesión Chile | Login oficial + captura local revisada | El comando original abre Colombia; falta adaptar y verificar el flujo actual de Chile | Pendiente |
 | Dirección, carrito y total | Servicios existentes del CLI | Cuenta chilena y dirección seleccionada; no ejecutados | Pendiente |
 | Comprar y seguir pedido | `placeOrder` / `getOrders` | No ejecutados; pago incompleto reportado por upstream | No habilitar todavía |
-| Mirada y confirmación muscular | Shell y controlador compartidos de Toki | No hay aún interfaz Rappi conectada ni prueba personal | Pendiente |
+| Mirada y confirmación muscular | Shell y controlador compartidos de Myo | No hay aún interfaz Rappi conectada ni prueba personal | Pendiente |
 
 La evidencia reducida está en [evidence-2026-11-21.json](./evidence-2026-11-21.json). Son datos públicos observados, no fixtures. El número de tiendas, stock y precios puede cambiar. La búsqueda incluso devuelve algunos importes decimales: para presentación usar CLP sin decimales y para cobrar utilizar el total confirmado por checkout, nunca calcularlo desde tarjetas.
 
 ## Repetir la comprobación sin cuenta
 
-Requiere Git y Bun. Ejecutar desde la raíz de Toki; usar un directorio nuevo fuera del repo. El script llama las funciones reales del checkout, valida la búsqueda con el esquema original y consulta catálogo, tienda y opciones. No llama carrito, direcciones, checkout ni pedidos. No lee sesiones locales de Rappi.
+Requiere Git y Bun. Ejecutar desde la raíz de Myo; usar un directorio nuevo fuera del repo. El script llama las funciones reales del checkout, valida la búsqueda con el esquema original y consulta catálogo, tienda y opciones. No llama carrito, direcciones, checkout ni pedidos. No lee sesiones locales de Rappi.
 
 ```sh
 git clone https://github.com/crafter-station/rappi-cli.git /tmp/rappi-chile-check
@@ -60,7 +60,7 @@ bun toki-chile-check.ts
 
 El informe se escribe como `toki-chile-evidence.json`. Se usa token vacío, no una credencial ficticia ni ajena. El parche **no bloquea** los demás comandos del CLI: el carácter de solo lectura corresponde a este script. No levantar su servidor HTTP para integrarlo directamente: el código auditado permite CORS genérico, no autentica al llamador y expone acciones de compra usando la sesión local.
 
-## Implementación siguiente en Toki
+## Implementación siguiente en Myo
 
 1. Reutilizar los servicios del CLI mediante un wrapper local con acciones y argumentos limitados. Configurar país explícito, timeout/cancelación y salida JSON; no pasar comandos de shell desde la interfaz ni exponer el servidor original.
 2. Adaptar el login a `www.rappi.cl/login`, comprobar el host y el flujo real de autenticación, guardar sesión local con permisos restringidos y no incluir token ni datos personales en logs o informes. Esa configuración asistida ocurre fuera del recorrido del paciente.

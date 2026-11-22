@@ -1,4 +1,4 @@
-// Pedido real en Rappi por el checkout OFICIAL de la web, con la sesión guardada en el perfil de Chrome de Toki.
+// Pedido real en Rappi por el checkout OFICIAL de la web, con la sesión guardada en el perfil de Chrome de Myo.
 // La web hace sola la huella antifraude (cybs-fp-id), el cobro y las verificaciones (CVV, 3DS). El CLI de Crafter
 // llamaba al endpoint directo y Rappi creaba el pedido sin cobrar (rappi-cli issue #2). Por eso aquí no se llama la API:
 // se pulsa el botón oficial (data-qa="place-order-button") una sola vez y se lee la respuesta de Rappi.

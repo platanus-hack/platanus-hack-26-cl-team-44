@@ -1,5 +1,5 @@
 [Unit]
-Description=Toki · puente de WhatsApp (software/whatsapp-bridge, 127.0.0.1:8788)
+Description=Myo · puente de WhatsApp (software/whatsapp-bridge, 127.0.0.1:8788)
 After=network-online.target wapi-api.service toki-agente.service
 Wants=network-online.target wapi-api.service
 

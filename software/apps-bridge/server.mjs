@@ -18,7 +18,7 @@ import {createMyoWareRoutes} from './myoware-routes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, '../toki-os');
-const defaultDir = join(homedir(), 'Library/Application Support/Toki/apps');
+const defaultDir = join(homedir(), 'Library/Application Support/Myo/apps');
 const phases = ['Integración encontrada', 'Interfaz preparada', 'Cuenta conectada', 'Funciones comprobadas', 'Prueba y revisión'];
 const fault = (message, code = 400) => Object.assign(new Error(message), {status: code});
 export {safeMessage, runSpogo, normalizeTracks} from './adapters/spotify.mjs';
@@ -74,7 +74,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
       if (!adapter) {
         const query = `${job.name} cli`;
         const timeout = AbortSignal.timeout(12000);
-        const response = await fetcher(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=4`, {headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'Toki-app-adapter'}, signal: AbortSignal.any([controller.signal, timeout])});
+        const response = await fetcher(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=4`, {headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'Myo-app-adapter'}, signal: AbortSignal.any([controller.signal, timeout])});
         if (!response.ok) throw fault('La búsqueda de integraciones no respondió. Reintenta más tarde.');
         const data = await response.json();
         if (!current()) return;
@@ -194,7 +194,7 @@ export function createAppsServer({stateDir = defaultDir, run, fetcher = fetch, i
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const port = Number(process.env.TOKI_APPS_PORT || 8790);
   const server = createAppsServer({stateDir: process.env.TOKI_APPS_STATE_DIR || defaultDir});
-  server.listen(port, '127.0.0.1', () => console.log(`Toki OS: http://127.0.0.1:${server.address().port}/`));
+  server.listen(port, '127.0.0.1', () => console.log(`Myo OS: http://127.0.0.1:${server.address().port}/`));
   server.on('error', e => { console.error(e.code === 'EADDRINUSE' ? 'El servicio Apps ya está usando ese puerto.' : e.message); process.exitCode = 1; });
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.close(); server.closeAllConnections(); });
 }

@@ -25,5 +25,5 @@ chmod 600 "$ENV_FILE"
 systemctl restart toki-puente
 sleep 3
 systemctl is-active toki-puente
-curl -s -H "X-Woki-Token: $WOKI_API_TOKEN" "http://127.0.0.1:${PORT:-8788}/api/wa/health" | sed -E 's/"contacts":\[[^]]*\]/"contacts":[…]/'
+curl -s -H "X-Myo-Token: $WOKI_API_TOKEN" "http://127.0.0.1:${PORT:-8788}/api/wa/health" | sed -E 's/"contacts":\[[^]]*\]/"contacts":[…]/'
 echo

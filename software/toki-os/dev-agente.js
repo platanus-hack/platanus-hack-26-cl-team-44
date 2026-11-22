@@ -1,10 +1,10 @@
-/* Modo dev del agente para Toki OS.
+/* Modo dev del agente para Myo OS.
  *
  * Se activa con ?dev=1 en la URL o con Shift+D. Se apaga con Shift+D.
  * Simula un mensaje (grupo de WhatsApp o voz en la sala), lo manda a software/agent/server.py
  * y muestra las 4 opciones del agente en la pantalla Hablar de siempre.
  *
- * No toca la lógica de la TV: usa window.WOKI.S y las funciones globales go(), renderCards() y log().
+ * No toca la lógica de la TV: usa window.MYO.S y las funciones globales go(), renderCards() y log().
  * El panel no tiene data-t, así que la mirada y la ceja no lo seleccionan.
  */
 (() => {
@@ -13,7 +13,7 @@
   const URL_AGENTE = localStorage.getItem('toki.dev.url') || REMOTO || (LOCAL ? 'http://127.0.0.1:8790' : location.origin + (location.pathname.startsWith('/equipo/') ? '/equipo/agente' : '/agente'));
   // Solo el escenario manda el token (viene de toki-config.js). En /equipo/ lo agrega Caddy; en local no hace falta.
   const TOKEN = (typeof CFG !== 'undefined' && CFG.WA_TOKEN) || '';
-  const hdr = (h = {}) => TOKEN ? { ...h, 'X-Woki-Token': TOKEN } : h;
+  const hdr = (h = {}) => TOKEN ? { ...h, 'X-Myo-Token': TOKEN } : h;
   const api = (path, opts = {}) => fetch(URL_AGENTE + path, { ...opts, headers: hdr(opts.headers) });
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
   let panel = null, sse = null;
@@ -104,7 +104,7 @@
   }
 
   function opciones(ev) {
-    const W = window.WOKI;
+    const W = window.MYO;
     W.S.cards = ev.opciones.map((o) => ({ text: o.text, tone: o.tone || o.origen, emo: EMOS.includes(o.emo) ? o.emo : 'seria' }));
     contexto(ev);
     $('#cards').classList.remove('loading');

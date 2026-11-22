@@ -23,7 +23,7 @@ window.addEventListener('load',()=>{
  const oldGo=go,oldActivate=activate;
  async function request(path,data={}){
   if(!token||!/^\d+$/.test(port||''))throw Error('No local bridge');
-  const r=await fetch(`http://127.0.0.1:${port}/${path}`,{method:'POST',headers:{'Content-Type':'application/json','X-Toki-Token':token},body:JSON.stringify(data),signal:AbortSignal.timeout(2000)});
+  const r=await fetch(`http://127.0.0.1:${port}/${path}`,{method:'POST',headers:{'Content-Type':'application/json','X-Myo-Token':token},body:JSON.stringify(data),signal:AbortSignal.timeout(2000)});
   if(!r.ok)throw Error('Bridge disconnected');return r.json();
  }
  async function check(){
@@ -35,8 +35,8 @@ window.addEventListener('load',()=>{
  }
  function controls(){if(tabletAccess||window.TOKI_OS_SHELL)return '<div class="external-controls"><span id="externalStatus" role="status"></span></div>';return `<div class="external-controls">${b('nose','Nariz')}${b('gaze','Mirada')}${b('calibrate','Calibrar')}${b('mouse','Mouse')}<span id="externalStatus"></span></div>`;}
  function updateStatus(){const e=document.querySelector('#externalStatus');if(!e)return;
-  if(tabletAccess||window.TOKI_OS_SHELL){const mode=tabletGameInput()?.mode || 'Mouse';e.textContent=launching?'Abriendo la partida…':frame && (surface || managed) && !connected?(bridgeError?'Control desconectado. Elige Reintentar.':'Conectando el control del juego…'):'Control de Toki · '+mode;return;}
-  e.textContent=connected?`Puente conectado · ${NOSE.label()}`:'Mouse disponible · Cámara: abrir sesión Toki';}
+  if(tabletAccess||window.TOKI_OS_SHELL){const mode=tabletGameInput()?.mode || 'Mouse';e.textContent=launching?'Abriendo la partida…':frame && (surface || managed) && !connected?(bridgeError?'Control desconectado. Elige Reintentar.':'Conectando el control del juego…'):'Control de Myo · '+mode;return;}
+  e.textContent=connected?`Puente conectado · ${NOSE.label()}`:'Mouse disponible · Cámara: abrir sesión Myo';}
  addEventListener('toki-tablet-control',()=>{
   updateStatus();
   if (frame && lastGame && Boolean(surface)!==usesSurface(tabletGameInput())) open(lastGame);
@@ -59,7 +59,7 @@ window.addEventListener('load',()=>{
   render(`<div class="game-heading"><h1>Eye Gaze Games</h1>${window.TOKI_OS_SHELL?'':b('help','Cómo jugar')}</div>${controls()}<div class="external-catalog">${games.map((g,i)=>`<button class="t external-card" data-t data-dwell="1200" data-act="external:play:${i}"><img src="${cover(g)}" alt=""><div><small>${g.tag}</small><strong>${g.name}</strong><span>${g.desc}</span></div></button>`).join('')}</div>`);
   check();
  }
- function help(){if(tabletAccess||window.TOKI_OS_SHELL){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Toki. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Toki.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Abre un juego. La primera vez, elige el idioma y crea tu perfil en Eye Gaze Games.</p><p>2. Usa Mouse, o abre la sesión Toki para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Toki. El juego puede necesitar además su propia configuración. El leaderboard compartido de Toki aún no está implementado.</p></div>`);}
+ function help(){if(tabletAccess||window.TOKI_OS_SHELL){render(`<div class="game-heading"><h1>Cómo jugar</h1>${b('catalog','← Juegos')}</div><p class="game-instruction">Elige un juego con el control de Myo. En la primera partida, Eye Gaze Games te pedirá el idioma y el perfil. Puedes cambiar tu forma de apuntar en Ajustes.</p>`);return;}render(`<div class="game-heading"><h1>Juegos originales, dentro de Myo.</h1>${b('catalog','← Juegos')}</div><div class="game-external"><p>1. Abre un juego. La primera vez, elige el idioma y crea tu perfil en Eye Gaze Games.</p><p>2. Usa Mouse, o abre la sesión Myo para que la mirada y la nariz controlen también el juego.</p><p>3. «Clic por permanencia» sirve para los menús. Si activas el control ocular propio del juego, apágalo para evitar dos confirmaciones.</p><p class="game-note">Para abrir la sesión con cámara, ejecuta en el proyecto:</p><code>node toki/software/browser-bridge/start.mjs</code><p class="game-note">La cámara se calibra en Myo. El juego puede necesitar además su propia configuración. El leaderboard compartido de Myo aún no está implementado.</p></div>`);}
  function open(game) {
   const g=games.find(item=>item.id===game);
   if (!g && !['setup','all'].includes(game)) return;
@@ -167,7 +167,7 @@ window.addEventListener('load',()=>{
   } else {
    if(!anchor || Math.hypot(x-anchor.x,y-anchor.y)>28){anchor={x,y,t:now};didClick=false;}
    const dwellEnabled = !localPlayer || shared?.camera || shared?.dwellEnabled;
-   const myowareConfirming = Boolean(window.WOKI?.myowareConfirming?.());
+   const myowareConfirming = Boolean(window.MYO?.myowareConfirming?.());
    if(autoClick && dwellEnabled && !myowareConfirming && !shared?.confirming && !shared?.muscle && !didClick && now-anchor.t >= (shared?.dwellMs || 1200)){type='click';didClick=true;}
    if(type==='move' && lastPoint && Math.hypot(x-lastPoint.x,y-lastPoint.y)<.7) return;
    lastPoint={x,y};pointerInGame=true;

@@ -22,7 +22,7 @@ export function parseBioBioImages(text) {
 }
 async function biobioImages(fetcher, signal) {
   const timeout = AbortSignal.any([signal, AbortSignal.timeout(6000)]);
-  const response = await fetcher(BIOBIO_IMAGES, {signal:timeout, redirect:'error', headers:{Accept:'application/json', 'User-Agent':'Toki-accessible-reader/1.0'}});
+  const response = await fetcher(BIOBIO_IMAGES, {signal:timeout, redirect:'error', headers:{Accept:'application/json', 'User-Agent':'Myo-accessible-reader/1.0'}});
   if (!response.ok) return null;
   return parseBioBioImages(await limitedText(response, timeout, 3_000_000));
 }

@@ -4,7 +4,7 @@ Estado: primera y segunda rondas aceptadas por Jhomar. En Q6 añadió una barra 
 
 ## Base acordada
 
-Según `CREADOR-APPS-ELA.md`, la creación bajo demanda es central: la persona o su ayudante solicita una app; Toki investiga y produce una adaptación conectada a sus funciones reales. El vocabulario vigente está en `../../GLOSSARY.md`.
+Según `CREADOR-APPS-ELA.md`, la creación bajo demanda es central: la persona o su ayudante solicita una app; Myo investiga y produce una adaptación conectada a sus funciones reales. El vocabulario vigente está en `../../GLOSSARY.md`.
 
 ## Primera ronda — recomendaciones aceptadas
 
@@ -35,7 +35,7 @@ Según `CREADOR-APPS-ELA.md`, la creación bajo demanda es central: la persona o
 
 ## Segunda ronda — recomendaciones aceptadas
 
-6. **Entorno inicial:** recomendar navegador de escritorio en el computador del usuario, con el generador ejecutándose localmente en el computador del equipo durante la primera versión. La adaptación se usa desde Toki; ampliar despliegue después.
+6. **Entorno inicial:** recomendar navegador de escritorio en el computador del usuario, con el generador ejecutándose localmente en el computador del equipo durante la primera versión. La adaptación se usa desde Myo; ampliar despliegue después.
 7. **Preparación del perfil:** recomendar configuración inicial asistida por persona de apoyo, con participación de la persona usuaria; esta debe conservar acceso directo a pausa y ajustes de interacción.
 8. **Cuenta y sesión:** recomendar cuenta propia del usuario, inicio de sesión en el servicio original, sesión conservada en su equipo y desconexión disponible; sin entregar contraseñas al generador. El mecanismo concreto depende de los requisitos del servicio.
 9. **Aceptación:** recomendar dos condiciones antes de habilitar: revisión funcional del equipo y prueba de las tareas por la persona con su método de acceso. Una prueba del equipo queda identificada como demo técnica.
@@ -47,10 +47,10 @@ Jhomar pidió que aparezca una barra de progreso mientras se prepara la app. Se 
 
 ## Tercera ronda — pendiente
 
-11. **Espera y recuperación:** recomendar que se pueda volver al inicio de Toki durante la preparación, consultar avance y cancelar; si falla, conservar trabajo aprovechable y ofrecer reintento explícito, sin ciclos ilimitados. Mostrar «pendiente de revisión/prueba» hasta cumplir las condiciones de habilitación.
+11. **Espera y recuperación:** recomendar que se pueda volver al inicio de Myo durante la preparación, consultar avance y cancelar; si falla, conservar trabajo aprovechable y ofrecer reintento explícito, sin ciclos ilimitados. Mostrar «pendiente de revisión/prueba» hasta cumplir las condiciones de habilitación.
 12. **Primer piloto Spotify:** recomendar piloto privado con cuenta Premium autorizada. No se presupone que Jhomar tenga esa cuenta; se comprobará durante la conexión. Publicación a terceros queda fuera de esta primera prueba y requiere revisar acceso del servicio.
-13. **Salida de audio:** recomendar reproducir en el computador de Toki mediante SDK, con preparación inicial asistida si el navegador requiere activación. Verificar posteriormente que el control accesible funciona sin esa ayuda.
-14. **Entrada inicial:** recomendar que la primera adaptación use el control de mirada/nariz y permanencia ya explorado en Toki, con clic alternativo. Para Spotify, búsqueda de canciones mediante teclado accesible, resultados grandes y reproducción/pausa; navegación por playlists en una ampliación posterior. Pendiente validación del método con la persona.
+13. **Salida de audio:** recomendar reproducir en el computador de Myo mediante SDK, con preparación inicial asistida si el navegador requiere activación. Verificar posteriormente que el control accesible funciona sin esa ayuda.
+14. **Entrada inicial:** recomendar que la primera adaptación use el control de mirada/nariz y permanencia ya explorado en Myo, con clic alternativo. Para Spotify, búsqueda de canciones mediante teclado accesible, resultados grandes y reproducción/pausa; navegación por playlists en una ampliación posterior. Pendiente validación del método con la persona.
 
 ### Aclaración de Q12: reutilizar CLIs existentes
 
@@ -58,11 +58,11 @@ Jhomar acepta el piloto Premium y propone buscar un CLI de Spotify ya construido
 
 Candidato verificado por documentación, todavía sin instalación ni prueba: [spogo](https://github.com/openclaw/spogo), proyecto comunitario con búsqueda, play/pause, estado, dispositivos y salida JSON. Ofrece OAuth para Web API y cookies de sesión para endpoints internos; el modo AppleScript controla Spotify.app en macOS. Fuentes: https://spogo.sh/auth.html y https://spogo.sh/engines.html.
 
-Enfoque confirmado por Jhomar al preguntar si sería una búsqueda en GitHub cuando ya existe: investigar primero conectores/CLIs existentes para cada app y reutilizar el que supere pruebas reales; desarrollar solo las capacidades faltantes. REA pasa a ser una herramienta opcional de investigación. La UI accesible, el perfil individual y la comprobación siguen siendo responsabilidad de Toki. No se ha demostrado que spogo reproduzca audio por sí mismo ni que cualquier cuenta pueda ejecutar todas sus funciones. Q13 debe considerar controlar Spotify.app en el mismo computador, además del SDK dentro del navegador.
+Enfoque confirmado por Jhomar al preguntar si sería una búsqueda en GitHub cuando ya existe: investigar primero conectores/CLIs existentes para cada app y reutilizar el que supere pruebas reales; desarrollar solo las capacidades faltantes. REA pasa a ser una herramienta opcional de investigación. La UI accesible, el perfil individual y la comprobación siguen siendo responsabilidad de Myo. No se ha demostrado que spogo reproduzca audio por sí mismo ni que cualquier cuenta pueda ejecutar todas sus funciones. Q13 debe considerar controlar Spotify.app en el mismo computador, además del SDK dentro del navegador.
 
 ### Siguiente paso de diseño
 
-Q13 aceptada en su formulación revisada: Spotify.app como reproductor en el computador del usuario, controlado desde Toki mediante un puente local, si la prueba del CLI confirma esa ruta. Esto es distinto del generador que se ejecuta en el computador del equipo (Q6). El navegador de Toki no invoca un binario local directamente. También se aceptaron Q11 (espera/recuperación) y Q14 (entrada/búsqueda).
+Q13 aceptada en su formulación revisada: Spotify.app como reproductor en el computador del usuario, controlado desde Myo mediante un puente local, si la prueba del CLI confirma esa ruta. Esto es distinto del generador que se ejecuta en el computador del equipo (Q6). El navegador de Myo no invoca un binario local directamente. También se aceptaron Q11 (espera/recuperación) y Q14 (entrada/búsqueda).
 
 ### Entrada tipo tienda de apps
 
@@ -74,7 +74,7 @@ La propuesta de navegación no resolvía por sí sola espera, reproductor local 
 
 ## Preparación para la primera demo visible
 
-Inspección local: `spogo` no está en PATH; Node y Bun están disponibles. Toki se sirve como HTML/JS/CSS con un servidor local. `prototype-motion.html` contiene el control de cámara/permanencia; `prototype-lobby.html` es una vista separada cuya cabecera indica prueba táctil/teclado. No dar por existente la integración entre ambas vistas.
+Inspección local: `spogo` no está en PATH; Node y Bun están disponibles. Myo se sirve como HTML/JS/CSS con un servidor local. `prototype-motion.html` contiene el control de cámara/permanencia; `prototype-lobby.html` es una vista separada cuya cabecera indica prueba táctil/teclado. No dar por existente la integración entre ambas vistas.
 
 Trabajo pendiente para mostrar el recorrido acordado:
 

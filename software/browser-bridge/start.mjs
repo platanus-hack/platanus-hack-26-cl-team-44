@@ -15,7 +15,7 @@ const sessionLock=await claimSession(process.env.TOKI_BRIDGE_SESSION_DIR || join
  await cdp('Target.activateTarget',{targetId});
  await cdp('Page.bringToFront',{},sessionId);
 });
-if(!sessionLock){ console.log('Reutilizando la ventana de Toki que ya estaba abierta.');process.exit(0);}
+if(!sessionLock){ console.log('Reutilizando la ventana de Myo que ya estaba abierta.');process.exit(0);}
 const token=randomBytes(32).toString('hex');
 const chrome=process.env.TOKI_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile=mkdtempSync(join(tmpdir(),'toki-browser-'));
@@ -57,7 +57,7 @@ const server=http.createServer(async(req,res)=>{
   busy=true;
   const info=await cdp('Target.getTargetInfo',{targetId});
   const page=new URL(info.targetInfo.url);
-  if(page.origin!==origin || page.pathname!=='/prototype-motion.html')throw Error('Toki tab navigated away');
+  if(page.origin!==origin || page.pathname!=='/prototype-motion.html')throw Error('Myo tab navigated away');
   await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y},sessionId);
   if(p.type==='click'){
    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,x:p.x,y:p.y},sessionId);
@@ -78,6 +78,6 @@ await cdp('Target.activateTarget',{targetId});
 await cdp('Page.bringToFront',{},sessionId);
 for(const target of initialTargets){if(target.type==='page'&&['about:blank','chrome://newtab/'].includes(target.url))await cdp('Target.closeTarget',{targetId:target.targetId});}
 readyResolve();
-console.log('Toki abierto en Chrome dedicado. El puente de mirada/nariz está listo. Ctrl+C cierra esta sesión.');
+console.log('Myo abierto en Chrome dedicado. El puente de mirada/nariz está listo. Ctrl+C cierra esta sesión.');
 }catch(e){console.error(e.message);process.exitCode=1;shutdown();}
 export {cdp,sessionId,targetId,server,child,shutdown};

@@ -7,7 +7,7 @@
   // CFG es un const de woki-os.html: no vive en window, por eso typeof. Sin puente (URL pública sin token) → '' y la voz queda apagada.
   const cfg = () => (typeof CFG !== 'undefined' ? CFG : null);
   const base = () => { const c = cfg(); return c ? (c.VOZ_URL ?? c.WA_URL) : 'http://localhost:8788'; };
-  const hdr = (h={}) => { const t = cfg() && cfg().WA_TOKEN; return t ? { ...h, 'X-Woki-Token': t } : h; };
+  const hdr = (h={}) => { const t = cfg() && cfg().WA_TOKEN; return t ? { ...h, 'X-Myo-Token': t } : h; };
   const V = { on:false, llamadaLista:false, actual:null, opciones:[], audio:null, cache:new Map(), PREFETCH:true };
 
   async function api(path, body){

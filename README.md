@@ -1,4 +1,4 @@
-# Toki · Interfaz accesible con señales musculares
+# Myo · Interfaz accesible con señales musculares
 
 **Nombre provisional · Track: 🔧 Hardware · team-44 · Platanus Hack 26: Santiago ft. Buk**
 
@@ -11,18 +11,18 @@
 
 > Explorar cómo una acción muscular voluntaria puede convertirse en una entrada para comunicarse y controlar una interfaz.
 
-Toki reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir el control enfocado, incluido **Volver**. La acción SOS normal intenta llamar al contacto de emergencia si está configurado. El SOS de la rueda de cuidados es solo una prueba simulada: no llama ni envía mensajes. Toki no es un dispositivo médico ni una alarma de emergencia validada.
+Myo reúne un **MVP de SO accesible** y un **banco de pruebas EMG**. Puedes explorar la interacción por mouse, cabeza, mirada y gestos musculares calibrados. La mandíbula abre una rueda de atajos y la ceja permite elegir el control enfocado, incluido **Volver**. La acción SOS normal intenta llamar al contacto de emergencia si está configurado. El SOS de la rueda de cuidados es solo una prueba simulada: no llama ni envía mensajes. Myo no es un dispositivo médico ni una alarma de emergencia validada.
 
 ## Probarlo
 
-**Toki OS** es la interfaz oficial. Su inicio reúne seis tarjetas, entre ellas Juegos y Apps. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
+**Myo OS** es la interfaz oficial. Su inicio reúne seis tarjetas, entre ellas Juegos y Apps. Desde la raíz del repositorio, con Node 22 o posterior, ejecuta:
 
 ```bash
 npm ci --prefix software/apps-bridge
 npm start --prefix software/apps-bridge
 ```
 
-Abre [Toki OS en tu equipo](http://127.0.0.1:8790/). En la bienvenida puedes calibrar la mirada o la nariz, conectar la mirada con iPhone o usar el mouse. Desarrolla las pantallas del SO en [software/toki-os/woki-os.html](software/toki-os/woki-os.html) y sus módulos.
+Abre [Myo OS en tu equipo](http://127.0.0.1:8790/). En la bienvenida puedes calibrar la mirada o la nariz, conectar la mirada con iPhone o usar el mouse. Desarrolla las pantallas del SO en [software/toki-os/woki-os.html](software/toki-os/woki-os.html) y sus módulos.
 
 Los juegos del catálogo forman parte de Eye Gaze Games, una plataforma de SpecialEffect desarrollada junto a Sun & Moon Studios y Earth Interactive. [Jugar en el sitio oficial](https://www.eyegazegames.com/) · [Créditos de SpecialEffect](https://www.specialeffect.org.uk/how-we-can-help/eye-gaze-games).
 
@@ -77,7 +77,7 @@ El Cable Shield es una pieza diferente y no participa en este montaje directo. C
 
 | Carpeta | Contenido |
 |---|---|
-| [software/](software/) | Toki OS, demo de eye-tracking con iPhone, monitor muscular y puente WhatsApp |
+| [software/](software/) | Myo OS, demo de eye-tracking con iPhone, monitor muscular y puente WhatsApp |
 | [firmware/](firmware/) | Programa del Arduino UNO |
 | [hardware/](hardware/) | Conexiones, esquemas, Raspberry e impresión 3D |
 | [docs/](docs/) | Guías, planes, investigación y requisitos del concurso |
@@ -97,9 +97,9 @@ Las imágenes son ilustraciones generadas, no planos eléctricos ni fotos del mo
 
 Se conservan en la raíz los archivos esperados por el organizador:
 
-- [`platanus-hack-project.jsonc`](platanus-hack-project.jsonc): mismas claves y comentarios; nombre provisional Toki. URL de despliegue pendiente.
+- [`platanus-hack-project.jsonc`](platanus-hack-project.jsonc): mismas claves y comentarios; nombre provisional Myo. URL de despliegue pendiente.
 - [`project-description.md`](project-description.md): descripción del alcance actual.
-- [`project-logo.png`](project-logo.png): original conservado, pendiente de identidad Toki.
+- [`project-logo.png`](project-logo.png): original conservado, pendiente de identidad Myo.
 
 El organizador solicita un logo PNG de **1000 × 1000 y máximo 500 KB**, y recomienda desplegar mediante un repositorio personal espejo. No se creó un espejo ni se modificaron remotos de despliegue. [Requisitos completos y plantilla original](docs/competition/README.md).
 

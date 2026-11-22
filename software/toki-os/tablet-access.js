@@ -245,7 +245,7 @@
   function currentPoint(continuous = false) {
     if(pointing==='Mouse') return pointer;
     const w=frame?.contentWindow, n=w?.NOSE;
-    if(!n?.on || !n.raw || w.WOKI.S.gazeLost || w.performance.now()-n.lastFace>240) return null;
+    if(!n?.on || !n.raw || w.MYO.S.gazeLost || w.performance.now()-n.lastFace>240) return null;
     if(n.mode==='gaze' && !w.GAZE.hasPoint(w.performance.now())) return null;
     if(continuous && n.mode==='gaze' && w.GAZE.webActive){
       const p=w.GAZE.point(w.performance.now(),false);
@@ -253,7 +253,7 @@
     }
     const stage=w.document.querySelector('#stage');
     if (!stage) return null;
-    const r=stage.getBoundingClientRect(), p=w.WOKI.gz;
+    const r=stage.getBoundingClientRect(), p=w.MYO.gz;
     if (!r.width || !r.height) return null;
     return {x:Math.max(1,Math.min(innerWidth-2,(p.x-r.left)/r.width*innerWidth)),y:Math.max(1,Math.min(innerHeight-2,(p.y-r.top)/r.height*innerHeight))};
   }

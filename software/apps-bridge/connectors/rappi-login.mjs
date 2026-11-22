@@ -7,7 +7,7 @@ import {perfilChrome} from './rappi-checkout.mjs';
 
 // Only the official user-auth response of the configured country can yield a session. No credentials
 // are returned to the UI, copied to the clipboard, or printed to the terminal.
-// Sin 'launch' (uso real) abre el perfil de Chrome de Toki: la sesión web queda guardada para el checkout oficial.
+// Sin 'launch' (uso real) abre el perfil de Chrome de Myo: la sesión web queda guardada para el checkout oficial.
 export function createRappiLogin({sessionStore,request=createRappiClient(),launch,stateDir}={}){
  let browser=null,pending=null,state='idle',timer=null,checking=false,generation=0,captureTask=Promise.resolve();
  async function close(){clearTimeout(timer);timer=null;const current=browser;browser=null;await current?.close().catch(()=>{});}
@@ -56,7 +56,7 @@ export function createRappiLogin({sessionStore,request=createRappiClient(),launc
  return {start:async()=>{if(browser)return {state};return start();},status:()=>({state}),async close(){generation++;state='closed';await close();await captureTask;}};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
- const stateDir=process.env.TOKI_APPS_STATE_DIR||resolve(homedir(),'Library/Application Support/Toki/apps');
+ const stateDir=process.env.TOKI_APPS_STATE_DIR||resolve(homedir(),'Library/Application Support/Myo/apps');
  const login=createRappiLogin({sessionStore:createRappiSession(stateDir),stateDir});
  const result=await login.start();console.log(JSON.stringify({rappiLogin:result.state,message:`Inicia sesión en la ventana oficial de ${RAPPI_PAIS.nombre}. No compartas contraseña ni código por el chat.`}));
  const interval=setInterval(()=>{const {state}=login.status();if(!['opening','waiting'].includes(state)){console.log(JSON.stringify({rappiLogin:state}));clearInterval(interval);void login.close();}},1000);

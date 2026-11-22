@@ -28,7 +28,7 @@ Confirmar ATmega328P/UNO R3 antes de cargar; no usar este destino para UNO R4. C
    python3 software/myoware-monitor/server.py --ble-jaw MyoWareMandibula --ble-brow MyoWareCeja
    ```
 
-4. Abre http://127.0.0.1:8766, verifica ambas señales y sigue la [calibración de Toki](../toki-os/README.md#gestos-con-myoware-usb-o-ble). Si macOS pide acceso a Bluetooth, concédelo a la app desde la que ejecutas Python.
+4. Abre http://127.0.0.1:8766, verifica ambas señales y sigue la [calibración de Myo](../toki-os/README.md#gestos-con-myoware-usb-o-ble). Si macOS pide acceso a Bluetooth, concédelo a la app desde la que ejecutas Python.
 
 El modo BLE recibe números ASCII `0–4095` en la característica ENV del sketch (~20 Hz por dispositivo), los escala a `0–1023` y solo entrega pares recientes. En el panel A0 representa mandíbula y A3 ceja, aunque no hay Arduino UNO en este montaje.
 
@@ -46,7 +46,7 @@ Confirma que ambos selectores físicos estén en ENV. El servidor no configura n
 
 Para distinguir gestos, usa **Prueba de gestos** con A0 en la mandíbula y A3 en la frente. Calibra ambos y observa el último gesto y los contadores: A3 solo cuenta como ceja; A0, aun cuando A3 también se active, cuenta como mandíbula. Esto no activa ni envía acciones.
 
-Selecciona **Abrir Woki OS con esta calibración** en el monitor. En escenario, Woki conserva el origen y su configuración de voz y servicios; el monitor pide los archivos de WebEyeTrack al Apps Bridge local. Si abriste el monitor independiente en `8766` sin configuración de escenario, el enlace transfiere el perfil al Woki de `8790`. En la bienvenida, elige **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
+Selecciona **Abrir Myo OS con esta calibración** en el monitor. En escenario, Myo conserva el origen y su configuración de voz y servicios; el monitor pide los archivos de WebEyeTrack al Apps Bridge local. Si abriste el monitor independiente en `8766` sin configuración de escenario, el enlace transfiere el perfil al Myo de `8790`. En la bienvenida, elige **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Con otro puntero, actívalo primero y abre **⌃** para pulsar **Activar gestos**. Los umbrales manuales del gráfico no se usan para clasificar gestos.
 
 ## Diagnóstico
 

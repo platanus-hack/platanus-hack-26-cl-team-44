@@ -1,6 +1,6 @@
 const sampleInterval = .08; // Video time is in seconds.
 const maxCandidates = 16;
-const inlierRadius = .06; // Screen widths, with Woki's 16:9 aspect.
+const inlierRadius = .06; // Screen widths, with Myo's 16:9 aspect.
 
 function median(values) {
   values.sort((a, b) => a - b);

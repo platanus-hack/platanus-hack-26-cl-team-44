@@ -1,4 +1,4 @@
-# Impresión 3D de Toki
+# Impresión 3D de Myo
 
 ## Consola de mesa
 
@@ -18,7 +18,7 @@ python3 -m http.server 8267 --bind 127.0.0.1 --directory hardware/3d/consola-7
 
 Abrir [el visor local](http://127.0.0.1:8267/). Para regenerar el visor tras editar el STL, desde su carpeta con Three.js 0.187.0 y esbuild 0.28.2 instalados, ejecutar `esbuild app.js --bundle --loader:.stl=binary --minify --outfile=visor.js`.
 
-## Brazalete Toki para Arduino Uno y Xiaomi PB2067
+## Brazalete Myo para Arduino Uno y Xiaomi PB2067
 
 Imprimir una unidad de cada STL. Importar en milímetros, a escala del 100 % y en la orientación guardada.
 

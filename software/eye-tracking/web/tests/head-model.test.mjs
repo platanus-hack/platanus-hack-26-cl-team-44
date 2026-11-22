@@ -148,7 +148,7 @@ test("por defecto: modelo plano; con fase de movimiento suma corrección de cabe
 });
 
 test("headCorrection:false nunca añade corrección de cabeza, aunque haya fase de movimiento", () => {
-  // Contrato de Toki OS: integra la mirada con iPhone SIN movimiento de cabeza.
+  // Contrato de Myo OS: integra la mirada con iPhone SIN movimiento de cabeza.
   const rand = rng(31);
   const withMotion = calibSamples({ rand, motion: true }).map((x) => (x.pointId >= 50 ? { ...x, motion: true } : x));
   const a = fitBest(withMotion, { metersPerPx: SCREEN.s, headCorrection: false });

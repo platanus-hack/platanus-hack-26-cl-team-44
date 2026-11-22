@@ -15,7 +15,7 @@ const PORT = Number(process.env.PORT ?? 8787);
 const ORIGINS = (process.env.ALLOWED_ORIGIN ?? "http://localhost:8000").split(",").map((o) => o.trim()).filter(Boolean);
 const corsOf = (req: http.IncomingMessage) => { const o = String(req.headers.origin ?? ""); return ORIGINS.includes(o) ? o : ORIGINS[0]; };
 const SECRET = process.env.WAPI_WEBHOOK_SECRET ?? "";
-const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Woki-Token
+const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Myo-Token
 // Dominio público detrás de Caddy (/wa/* → este puerto), p. ej. 179-66-157-161.sslip.io. Acepta ese Host y el tráfico
 // reenviado por el proxy, siempre con token. Vacío = solo local, como antes.
 const PUBLIC_HOST = (process.env.PUBLIC_HOST ?? "").trim().toLowerCase();
@@ -218,7 +218,7 @@ const server = http.createServer(async (req, res) => {
   (res as any).cors = ORIGIN;
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
+    res.writeHead(204, { Vary: "Origin", "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Myo-Token" });
     return res.end();
   }
 
@@ -237,7 +237,7 @@ const server = http.createServer(async (req, res) => {
     const h = req.headers;
     if (!PUBLIC_HOST && (h["cf-connecting-ip"] || h["cf-ray"] || h["x-forwarded-for"] || h["x-forwarded-host"] || h["ngrok-trace-id"]))
       return json(res, 403, { ok: false, reason: "api solo local" });
-    // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Woki-Token.
+    // 2) Token compartido opcional (recomendado): si WOKI_API_TOKEN está en .env, la app debe mandar X-Myo-Token.
     if (API_TOKEN) {
       const tok = String(h["x-woki-token"] ?? "");   // solo header: el token nunca va en la URL (la TV usa toki-sse.js)
       if (!tok || !safeEqual(tok, API_TOKEN)) return json(res, 401, { ok: false, reason: "token inválido" });

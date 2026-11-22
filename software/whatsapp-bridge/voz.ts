@@ -247,7 +247,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     }
 
     // Herramientas del agente durante la llamada (GET: ElevenLabs no manda Origin). Exigen el id de una llamada activa,
-    // que no se puede adivinar, y en el VPS además el token (X-Woki-Token, guardado como secreto en ElevenLabs).
+    // que no se puede adivinar, y en el VPS además el token (X-Myo-Token, guardado como secreto en ElevenLabs).
     // protocolo: qué decirle a quien contestó · confirmar: si viene o no (la TV se entera al instante)
     if (req.method === "GET" && p === "/api/emergencia/protocolo") {
       const conv = clean(url.searchParams.get("conv"), 80);

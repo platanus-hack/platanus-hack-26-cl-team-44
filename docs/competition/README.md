@@ -7,7 +7,7 @@ Mantener en raíz:
 - `project-logo.png`: PNG de 1000×1000 y máximo 500 KB.
 - `README.md`: presentación clara del proyecto.
 
-El logo original cumple dimensiones y peso (65.601 bytes). El nombre provisional es Toki; identidad visual definitiva y `deploy-url` siguen pendientes.
+El logo original cumple dimensiones y peso (65.601 bytes). El nombre provisional es Myo; identidad visual definitiva y `deploy-url` siguen pendientes.
 
 La plantilla recomienda un repositorio personal espejo para conectar Vercel/Render/Netlify. No se configuró espejo ni despliegue.
 

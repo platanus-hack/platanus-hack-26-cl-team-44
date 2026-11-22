@@ -31,7 +31,7 @@ for (const line of readFileSync(src, "utf8").split(/\r?\n/)) {
 }
 if (rows.length < 1000) throw new Error(`Muy pocas palabras válidas (${rows.length}): ¿es la lista correcta?`);
 
-const out = `/* Diccionario base de la predicción de Toki OS (${rows.length} palabras, por frecuencia).
+const out = `/* Diccionario base de la predicción de Myo OS (${rows.length} palabras, por frecuencia).
  * Datos: hermitdave/FrequencyWords (OpenSubtitles 2018), CC BY-SA 4.0
  * https://github.com/hermitdave/FrequencyWords · Este archivo derivado se distribuye bajo CC BY-SA 4.0.
  * Generado con software/toki-os/tools/build-lexicon.mjs (sin palabras ofensivas en las sugerencias). */

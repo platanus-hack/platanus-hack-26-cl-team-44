@@ -1,4 +1,4 @@
-// Contrato de la integración "Mirada con iPhone" en Toki OS. Ejecutar desde la raíz: node tests/test_os_iphone.mjs
+// Contrato de la integración "Mirada con iPhone" en Myo OS. Ejecutar desde la raíz: node tests/test_os_iphone.mjs
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { runInNewContext } from "node:vm";
@@ -67,4 +67,4 @@ const res = fitBest(samples, { metersPerPx: screen.s, headCorrection: false, kin
 assert.equal(res.model.head, undefined, "sin corrección de cabeza");
 assert.equal(res.model.kind, "planeLinear", "solo el plano lineal (sin 3D ni cuadrático)");
 
-console.log("iPhone en Toki OS: opción al inicio y en Ajustes, motor compartido, sin movimiento de cabeza.");
+console.log("iPhone en Myo OS: opción al inicio y en Ajustes, motor compartido, sin movimiento de cabeza.");

@@ -1,6 +1,6 @@
 // Eventos del servidor (SSE) leídos con fetch, para mandar el token en un header y nunca en la URL.
 // EventSource no admite headers; esto sí. Reconecta solo a los 3 s si se corta.
-//   const s = tokiSSE(url, { 'X-Woki-Token': t }, { onopen, onerror, onmessage: (data) => ... });  s.close();
+//   const s = tokiSSE(url, { 'X-Myo-Token': t }, { onopen, onerror, onmessage: (data) => ... });  s.close();
 (function () {
   window.tokiSSE = function (url, headers, h) {
     let cerrado = false, ctrl = null;

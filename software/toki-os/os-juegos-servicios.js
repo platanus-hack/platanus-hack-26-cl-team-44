@@ -1,5 +1,5 @@
 /* =========================================================
-   Juegos y Servicios dentro de Toki OS (woki-os.html)
+   Juegos y Servicios dentro de Myo OS (woki-os.html)
 
    Reutiliza los módulos del equipo sin copiarlos:
    - prototype-games.js            pantalla de Juegos y bloqueo de selección al perder el seguimiento

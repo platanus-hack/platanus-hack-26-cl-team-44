@@ -32,7 +32,7 @@ const secretId = previo?.secret_id ?? (await call("POST", "/v1/convai/secrets", 
 
 // 2) Herramientas (GET: el puente no exige Origin en GET; sí exige el token y el id de una llamada activa).
 const conv = { conv: { type: "string", dynamic_variable: "system__conversation_id" } };
-const headers = { "X-Woki-Token": { secret_id: secretId } };
+const headers = { "X-Myo-Token": { secret_id: secretId } };
 const protocolo = await call("POST", "/v1/convai/tools", { tool_config: {
   type: "webhook", name: "protocolo_emergencia",
   description: "Llámala apenas la persona responda al saludo. Devuelve 'mensaje': el aviso exacto que debes decir, según si esta persona fue la primera en contestar o si otra ya respondió.",

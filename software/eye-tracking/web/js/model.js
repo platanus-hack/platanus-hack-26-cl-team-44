@@ -184,7 +184,7 @@ function lopoError(rows, lambda) {
 export function fitBest(rawSamples, { metersPerPx = null, head3d = false, fixed = null, kinds = KINDS, lambdas = LAMBDAS, headCorrection = true } = {}) {
   const samples = cleanSamples(rawSamples);
   if (samples.length < 30) throw new Error("Muy pocas muestras útiles: revisa que el iPhone vea bien tu cara");
-  // headCorrection:false = solo modelo plano, sin aprender nada del movimiento de cabeza (Toki OS).
+  // headCorrection:false = solo modelo plano, sin aprender nada del movimiento de cabeza (Myo OS).
   const finish = (base) => (headCorrection ? withHeadCorrection(base, samples) : base);
   if (fixed) return refitFixed(samples, fixed, metersPerPx, finish);
   // El modelo base se elige y ajusta con la cabeza QUIETA; la fase de movimiento solo alimenta la

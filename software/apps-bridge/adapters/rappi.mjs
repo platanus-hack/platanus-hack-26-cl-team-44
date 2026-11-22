@@ -155,7 +155,7 @@ export function createRappiAdapter({stateDir,fetcher=fetch,sessionStore=createRa
     if(chosen.length!==payload.options.length||chosen.some(t=>!t.available)||selection.groups.some(g=>{const n=g.items.filter(t=>payload.options.includes(t.id)).length;return n<g.min||n>g.max;}))throw fault('Completa las opciones requeridas del producto.');
     const loc=await location(session,ctx.signal);if(loc.id!==s.location.id)throw fault('La dirección cambió. Vuelve a seleccionar el producto.',409);
     const existing=await cart(session,ctx.signal);
-    if(existing.stores.some(store=>store.items.length))throw fault('Ya tienes un carrito en Rappi. Revísalo antes de preparar uno nuevo desde Toki.',409);
+    if(existing.stores.some(store=>store.items.length))throw fault('Ya tienes un carrito en Rappi. Revísalo antes de preparar uno nuevo desde Myo.',409);
     if(existing.stores.some(store=>store.items.some(p=>p.id===`${selection.store.id}_${selection.product.id}`||p.id===String(selection.product.id))))throw fault('Este producto ya está en tu carrito. Revísalo antes de añadir otra vez.',409);
     selection.attempted=true;
     const p=selection.product;

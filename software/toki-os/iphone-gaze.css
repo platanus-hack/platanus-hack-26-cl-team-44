@@ -1,4 +1,4 @@
-/* Toki OS · puntero con la mirada usando el iPhone (Face ID). Ver iphone-gaze.js. */
+/* Myo OS · puntero con la mirada usando el iPhone (Face ID). Ver iphone-gaze.js. */
 
 /* El OS no tiene una regla global para [hidden]: sin esto, display:flex/grid le gana al atributo. */
 .ip-cal[hidden], .ip-cal [hidden], .cal-iphone[hidden], .cal-iphone [hidden] { display: none !important; }

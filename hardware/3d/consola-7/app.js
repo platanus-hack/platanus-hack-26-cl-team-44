@@ -20,7 +20,7 @@ for(const x of [-78.45,78.45])for(const y of [10.52,125.48]){
  const bolt=mesh(panel,new T.CylinderGeometry(2.5,2.5,1.2,20),0xabb8bd,[x,y,6.3]);bolt.rotation.x=Math.PI/2;
 }
 const screen=document.createElement('canvas');screen.width=1024;screen.height=600;const ctx=screen.getContext('2d');
-ctx.fillStyle='#192f32';ctx.fillRect(0,0,1024,600);ctx.fillStyle='#eef3e7';ctx.font='bold 43px sans-serif';ctx.fillText('Toki',46,64);
+ctx.fillStyle='#192f32';ctx.fillRect(0,0,1024,600);ctx.fillStyle='#eef3e7';ctx.font='bold 43px sans-serif';ctx.fillText('Myo',46,64);
 ['Sí','No','Agua','Ayuda'].forEach((t,i)=>{let x=40+(i%2)*480,y=100+Math.floor(i/2)*240;ctx.fillStyle=['#c5eadb','#ffdabd','#c4ddf2','#f2e7ab'][i];ctx.beginPath();ctx.roundRect(x,y,455,212,18);ctx.fill();ctx.fillStyle='#1d3635';ctx.font='bold 68px sans-serif';ctx.fillText(t,x+38,y+126)});
 const tex=new T.CanvasTexture(screen);tex.colorSpace=T.SRGBColorSpace;
 const display=new T.Mesh(new T.PlaneGeometry(154.21,85.92),new T.MeshBasicMaterial({map:tex}));panel.add(display);display.position.set(0,68,10.1);

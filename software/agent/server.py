@@ -16,7 +16,7 @@ Modo dev de la TV:
   POST /api/simular    {texto, persona?, canal?: "grupo" | "voz"} → 202, resultado por SSE
 
 Solo escucha en 127.0.0.1. Un POST con un Origin que no está en TOKI_ORIGENES se rechaza (CSRF).
-Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Woki-Token.
+Con TOKI_TOKEN, lo que llega por el proxy (trae X-Forwarded-For) exige el header X-Myo-Token.
 Nunca en la URL: la TV lee el SSE con fetch (toki-sse.js). El puente local entra sin token.
 """
 from __future__ import annotations
@@ -127,7 +127,7 @@ def autorizado(headers, path: str, token: str = TOKEN) -> bool:
     """Sin token configurado, o pedido local directo (sin proxy): pasa. Por el proxy: exige el token."""
     if not token or not headers.get("X-Forwarded-For"):
         return True
-    dado = headers.get("X-Woki-Token", "")   # solo header: el token nunca va en la URL
+    dado = headers.get("X-Myo-Token", "")   # solo header: el token nunca va en la URL
     return hmac.compare_digest(dado.encode(), token.encode())
 
 
@@ -160,7 +160,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self._cors()
         self.send_header("Access-Control-Allow-Methods", "GET, POST")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Woki-Token")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Myo-Token")
         self.end_headers()
 
     def do_GET(self):

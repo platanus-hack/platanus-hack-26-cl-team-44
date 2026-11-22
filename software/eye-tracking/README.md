@@ -1,6 +1,6 @@
 # Demo de eye-tracking con iPhone (TrueDepth → Mac)
 
-> En este repo la demo vive en `software/eye-tracking/`. Su motor (`web/js/`) también lo usa **Toki OS** como puntero "Mirada con iPhone", sin movimiento de cabeza: ver [software/toki-os](../toki-os/README.md#mirada-con-iphone-face-id).
+> En este repo la demo vive en `software/eye-tracking/`. Su motor (`web/js/`) también lo usa **Myo OS** como puntero "Mirada con iPhone", sin movimiento de cabeza: ver [software/toki-os](../toki-os/README.md#mirada-con-iphone-face-id).
 
 El iPhone funciona **solo como sensor**: corre ARKit Face Tracking (infrarrojo + profundidad + cámara frontal), sin dibujar nada, y envía 192 bytes por cuadro a 60 fps. El Mac hace todo lo demás en el navegador: calibración, selección automática del mejor modelo, suavizado y la demo.
 

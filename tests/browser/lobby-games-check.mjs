@@ -34,20 +34,20 @@ site.on('request',(req,res)=>{
   res.setHeader('Content-Type','text/html');
   res.end(`<style>*{margin:0}#stage{width:100vw;height:100vh}</style><div id="stage"></div><script>
     const mode=new URLSearchParams(location.search).get('metodo')==='nose'?'Nariz':'Mirada';
-    window.WOKI={S:{gazeLost:false},gz:{x:1,y:1}};
+    window.MYO={S:{gazeLost:false},gz:{x:1,y:1}};
     window.NOSE={on:true,mode:mode==='Nariz'?'nose':'gaze',raw:{},cal:{n:{dx:0,dy:0},L:1,R:1,U:1,D:1},stop(){this.on=false}};
     window.GAZE={cur:{blink:false},model:{wx:[1]}};
     addEventListener('load',()=>parent.postMessage({type:'toki-control-ready',mode},location.origin));
     let target='';
     setInterval(async()=>{target=await(await fetch('/test-aim')).text()},80);
     function feed(){
-      NOSE.lastFace=performance.now(); WOKI.S.gazeLost=target==='lost';
+      NOSE.lastFace=performance.now(); MYO.S.gazeLost=target==='lost';
       const f=parent.document.querySelector('.catalog-frame'), doc=f?.contentDocument;
       const game=doc?.querySelector('#externalGame');
       const el=game || (target==='catalog' && doc?.querySelector('[data-act="external:play:1"]'));
       if(el && target!=='idle') {
         const g=el.getBoundingClientRect(),r=f.getBoundingClientRect();
-        WOKI.gz={x:(r.left+g.left+g.width*(target==="other" ? .32 : .65))*innerWidth/parent.innerWidth,y:(r.top+g.top+g.height*.38)*innerHeight/parent.innerHeight};
+        MYO.gz={x:(r.left+g.left+g.width*(target==="other" ? .32 : .65))*innerWidth/parent.innerWidth,y:(r.top+g.top+g.height*.38)*innerHeight/parent.innerHeight};
       }
       requestAnimationFrame(feed);
     } feed();

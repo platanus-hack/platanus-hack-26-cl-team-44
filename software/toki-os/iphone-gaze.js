@@ -1,5 +1,5 @@
 /**
- * Toki OS · puntero con la mirada usando el iPhone (Face ID) como sensor.
+ * Myo OS · puntero con la mirada usando el iPhone (Face ID) como sensor.
  *
  * El iPhone corre la app Myo (software/eye-tracking/ios) y envía la geometría de los ojos
  * por WebSocket (:8788). Este módulo usa el MISMO motor que la demo (./eye-engine es un enlace a
@@ -9,7 +9,7 @@
  * cabeza quieta y el modelo se ajusta con headCorrection:false y solo el plano lineal, la opción
  * más estable con datos reales (2,9° de media y 5,3° en el peor caso, en 24 calibraciones).
  *
- * Integración con el OS (woki-os.html): escribe en WOKI.mouse como los otros punteros; si se
+ * Integración con el OS (woki-os.html): escribe en MYO.mouse como los otros punteros; si se
  * pierde la cara o la señal 1,5 s activa el escaneo con EMG (setGazeLost), igual que la nariz.
  */
 import { createConnection, toSocketUrl } from "./eye-engine/connection.js";
@@ -34,7 +34,7 @@ const FACE_WAIT_MS = 3000;
 const LEVEL_GREEN = 0.08;
 const LEVEL_AMBER = 0.14;
 
-const W = window.WOKI;
+const W = window.MYO;
 const $ = (s) => document.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -199,7 +199,7 @@ const IPHONE = {
       }
       const fixed = { kind: first.model.kind, source: first.model.source, lambda: first.model.lambda };
       const final = await fitBestAsync([...train.samples, ...valid.samples], { ...FIT_OPTS, fixed }).catch(() => first);
-      if (final.model.head || final.model.kind === "head3d") throw new Error("modelo con movimiento de cabeza: no permitido en Toki OS");
+      if (final.model.head || final.model.kind === "head3d") throw new Error("modelo con movimiento de cabeza: no permitido en Myo OS");
       this.model = final.model;
       this.viewport = viewport;
       writeStore({ host: this.host, model: this.model, viewport, at: new Date().toISOString() });

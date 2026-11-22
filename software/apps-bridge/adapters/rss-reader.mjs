@@ -109,7 +109,7 @@ export function inspectRssFeed(xml) {
 }
 export async function downloadRss(spec, fetcher, signal) {
   const timeout=AbortSignal.any([signal,AbortSignal.timeout(12000)]);
-  const response=await fetcher(spec.feedUrl,{signal:timeout,redirect:'error',headers:{Accept:'application/rss+xml, application/xml, text/xml','User-Agent':'Toki-accessible-reader/1.0'}});
+  const response=await fetcher(spec.feedUrl,{signal:timeout,redirect:'error',headers:{Accept:'application/rss+xml, application/xml, text/xml','User-Agent':'Myo-accessible-reader/1.0'}});
   if(!response.ok)throw fault('El medio no respondió. Puedes volver a intentarlo.');
   const xml=await limitedText(response,timeout);timeout.throwIfAborted();return xml;
 }

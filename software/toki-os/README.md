@@ -1,4 +1,4 @@
-# Toki OS
+# Myo OS
 
 La interfaz oficial es [woki-os.html](woki-os.html). Su inicio tiene siete tarjetas e incluye Juegos, Apps y Ajustes. Integra las nuevas pantallas en este SO y sus módulos para mantener una sola interfaz de producto.
 
@@ -9,13 +9,13 @@ npm ci --prefix software/apps-bridge
 npm start --prefix software/apps-bridge
 ```
 
-[Abrir Toki OS](http://127.0.0.1:8790/)
+[Abrir Myo OS](http://127.0.0.1:8790/)
 
-**Mirada** usa WebEyeTrack con la webcam si pasa la comprobación de la calibración habitual. Si no está disponible o no pasa, se usa el rastreador anterior si pasó su comprobación. Si ya tenías una calibración, vuelve a elegir **Mirada** para probar WebEyeTrack. El puntero se estabiliza al mirar fijo y responde más rápido al saltar entre tarjetas. Con el imán habilitado (`I` en Woki), también gana alcance en los bordes y esquinas. El procesamiento es local; solo se guardan los parámetros de calibración para esa cámara. La primera carga de sus modelos requiere conexión.
+**Mirada** usa WebEyeTrack con la webcam si pasa la comprobación de la calibración habitual. Si no está disponible o no pasa, se usa el rastreador anterior si pasó su comprobación. Si ya tenías una calibración, vuelve a elegir **Mirada** para probar WebEyeTrack. El puntero se estabiliza al mirar fijo y responde más rápido al saltar entre tarjetas. Con el imán habilitado (`I` en Myo), también gana alcance en los bordes y esquinas. El procesamiento es local; solo se guardan los parámetros de calibración para esa cámara. La primera carga de sus modelos requiere conexión.
 
-En la instalación por etapas, el monitor Python reenvía solo los archivos fijos del modelo WebEyeTrack al Apps Bridge local indicado por `TOKI_APPS_URL`. La conexión del sensor, el perfil y los tokens de etapa se mantienen en su mismo origen. Si Apps Bridge no está disponible, se usa MediaPipe. La integración en `:8790` y la transferencia sin configuración entre el monitor independiente (`:8766`) y Woki siguen funcionando.
+En la instalación por etapas, el monitor Python reenvía solo los archivos fijos del modelo WebEyeTrack al Apps Bridge local indicado por `TOKI_APPS_URL`. La conexión del sensor, el perfil y los tokens de etapa se mantienen en su mismo origen. Si Apps Bridge no está disponible, se usa MediaPipe. La integración en `:8790` y la transferencia sin configuración entre el monitor independiente (`:8766`) y Myo siguen funcionando.
 
-Para usar la calibración ampliada, elige **Calibrar con la mirada** en Woki: sigue 15 puntos, incluidos los bordes y las esquinas, y después 6 puntos distintos de comprobación. Toma unos 45 segundos sin reintentos. Los perfiles anteriores siguen disponibles, pero no incorporan los puntos nuevos hasta que vuelvas a calibrar.
+Para usar la calibración ampliada, elige **Calibrar con la mirada** en Myo: sigue 15 puntos, incluidos los bordes y las esquinas, y después 6 puntos distintos de comprobación. Toma unos 45 segundos sin reintentos. Los perfiles anteriores siguen disponibles, pero no incorporan los puntos nuevos hasta que vuelvas a calibrar.
 
 WebEyeTrack usa tres fotogramas estables y separados por punto. Si no hay tres muestras que coincidan, repite ese punto una vez. No se alarga la toma de cada punto, aunque ajustar el modelo puede tardar unos segundos más. Los perfiles guardados siguen funcionando; vuelve a calibrar para usar las nuevas muestras.
 
@@ -31,15 +31,15 @@ WebEyeTrack usa tres fotogramas estables y separados por punto. Si no hay tres m
 
 ### Comparar mirada por webcam
 
-Desde la raíz, ejecuta `node software/toki-os/tools/gaze-benchmark.mjs` y abre [la prueba local](http://127.0.0.1:8791/) en Chrome. Cierra otras pestañas que estén usando la cámara. Con la misma postura y el mismo tamaño de ventana, completa la calibración de Toki, la de WebEyeTrack y sus rondas de 12 recuadros grandes y pequeños. Solo mira el centro de cada objetivo.
+Desde la raíz, ejecuta `node software/toki-os/tools/gaze-benchmark.mjs` y abre [la prueba local](http://127.0.0.1:8791/) en Chrome. Cierra otras pestañas que estén usando la cámara. Con la misma postura y el mismo tamaño de ventana, completa la calibración de Myo, la de WebEyeTrack y sus rondas de 12 recuadros grandes y pequeños. Solo mira el centro de cada objetivo.
 
-La tabla compara aciertos, objetivos sin señal y tiempo mediano hasta acertar. La prueba usa los punteros con sus filtros propios, sin imán ni clic automático. No cambia el puntero normal de Toki ni guarda el video o las mediciones. La primera carga requiere Internet para descargar el modelo de [WebEyeTrack 0.0.2](https://github.com/RedForestAI/WebEyeTrack/tree/main/js) y MediaPipe. El servidor escucha solo en el equipo local.
+La tabla compara aciertos, objetivos sin señal y tiempo mediano hasta acertar. La prueba usa los punteros con sus filtros propios, sin imán ni clic automático. No cambia el puntero normal de Myo ni guarda el video o las mediciones. La primera carga requiere Internet para descargar el modelo de [WebEyeTrack 0.0.2](https://github.com/RedForestAI/WebEyeTrack/tree/main/js) y MediaPipe. El servidor escucha solo en el equipo local.
 
-Si WebEyeTrack no responde, puedes reintentar solo ese modelo sin repetir Toki mientras no recargues ni cambies el tamaño de la ventana.
+Si WebEyeTrack no responde, puedes reintentar solo ese modelo sin repetir Myo mientras no recargues ni cambies el tamaño de la ventana.
 
-**Ensayar la demo con WebEyeTrack** hace una ronda aparte en las tarjetas reales de Inicio, sin activar ninguna acción. Mira el punto blanco de cada tarjeta indicada: cuenta la primera tarjeta sobre la que el puntero permanece 180 ms dentro de los 2 s de cada intento. La meta para el ensayo es **10 de 12**. El resultado incluye los fallos por tarjeta, el tiempo de procesamiento por fotograma y la dispersión del puntero al mirar fijo. No se cambia el puntero normal de Toki.
+**Ensayar la demo con WebEyeTrack** hace una ronda aparte en las tarjetas reales de Inicio, sin activar ninguna acción. Mira el punto blanco de cada tarjeta indicada: cuenta la primera tarjeta sobre la que el puntero permanece 180 ms dentro de los 2 s de cada intento. La meta para el ensayo es **10 de 12**. El resultado incluye los fallos por tarjeta, el tiempo de procesamiento por fotograma y la dispersión del puntero al mirar fijo. No se cambia el puntero normal de Myo.
 
-**Comparar calibraciones en Woki** prueba los dos métodos de WebEyeTrack (el último fotograma frente a tres muestras estables por punto). Las rondas usan la misma cámara, los mismos 15 puntos y las tarjetas que tenga el Inicio real de Woki. No hace falta hacer clic ni confirmar con la ceja. Compara aciertos al primer intento, falta de señal, tiempo de adquisición y dispersión p90 al mirar fijo al centro. Mide el modelo sin imán ni suavizado y no reemplaza tu perfil guardado.
+**Comparar calibraciones en Myo** prueba los dos métodos de WebEyeTrack (el último fotograma frente a tres muestras estables por punto). Las rondas usan la misma cámara, los mismos 15 puntos y las tarjetas que tenga el Inicio real de Myo. No hace falta hacer clic ni confirmar con la ceja. Compara aciertos al primer intento, falta de señal, tiempo de adquisición y dispersión p90 al mirar fijo al centro. Mide el modelo sin imán ni suavizado y no reemplaza tu perfil guardado.
 
 ### Demo sin sensor
 
@@ -55,7 +55,7 @@ Abrir http://localhost:8000/woki-os.html y elegir **Usar mouse (demo)**. Enfoca 
 
 1. Inicia el [monitor MyoWare](../myoware-monitor/README.md) con dos sensores en ENV: **mandíbula y ceja**, por USB (A0/A3) o BLE (dos Wireless Shield). Con electrodos puestos, sigue las precauciones de alimentación del montaje elegido.
 2. En el [calibrador integrado](http://127.0.0.1:8790/myoware/), pulsa **Calibrar gestos**. Sigue los avisos: hablar y parpadear normalmente, cinco levantadas de ceja y cinco contracciones suaves de mandíbula. Pulsa **Probar gestos** para confirmar las etiquetas antes de usar el clic.
-3. Selecciona **Abrir Woki OS con esta calibración**. En la bienvenida, pulsa **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Woki reutiliza la calibración guardada de la mirada si está disponible. El enlace del monitor anterior (`8766`) conserva su calibración al pasar a Woki. Si entras directamente a Woki, puedes activar o calibrar los gestos desde **⌃** abajo a la derecha.
+3. Selecciona **Abrir Myo OS con esta calibración**. En la bienvenida, pulsa **Usar mirada + MyoWare** para apuntar con la webcam y confirmar con la ceja, o **Usar mouse + gestos MyoWare**. Myo reutiliza la calibración guardada de la mirada si está disponible. El enlace del monitor anterior (`8766`) conserva su calibración al pasar a Myo. Si entras directamente a Myo, puedes activar o calibrar los gestos desde **⌃** abajo a la derecha.
 4. Enfoca una opción y levanta la ceja para elegir. **‹ Volver**, arriba a la izquierda, vuelve un nivel sin borrar el borrador y admite ceja o clic.
 
 Con MyoWare, apuntar solo enfoca la opción: no hay barra que llenar ni selección por permanencia. La ceja solo hace clic, al detectarse y sin esperar a que la sueltes. Una contracción de mandíbula hace **Volver** fuera de Inicio, sin apuntar ni añadir una espera. En Inicio abre la **Rueda de cuidados**. Con la webcam, mira hacia arriba, derecha, abajo o izquierda para resaltar un sector sin apuntar justo al botón. Si miras al centro o se pierde la señal, la rueda resalta y lee las opciones por turno. Suelta la mandíbula y usa la ceja para elegir; otra contracción cierra la rueda o vuelve al menú principal. **Cuidados**, en la barra inferior, también abre la rueda con mouse o teclado.
@@ -64,7 +64,7 @@ La rueda incluye **Ayuda urgente**, **Avisar a mi cuidador**, **Frases rápidas*
 
 Si ya calibraste la ceja en este navegador, **Calibrar con la mirada** y **Usar la calibración guardada** también activan MyoWare al terminar la preparación de la webcam, salvo si elegiste **Solo mirada**.
 
-La calibración de banco acepta al menos tres detecciones por gesto y rechaza activaciones en reposo, confusiones o repeticiones. El detector da prioridad a la mandíbula cuando contamina la señal de ceja para evitar clics falsos. Si la señal se corta, Woki cancela el gesto pendiente y reintenta por su cuenta. Cuando vuelve la señal de la misma conexión, relaja la cara antes del siguiente clic. Si cambió la conexión del sensor, vuelve a calibrar los gestos.
+La calibración de banco acepta al menos tres detecciones por gesto y rechaza activaciones en reposo, confusiones o repeticiones. El detector da prioridad a la mandíbula cuando contamina la señal de ceja para evitar clics falsos. Si la señal se corta, Myo cancela el gesto pendiente y reintenta por su cuenta. Cuando vuelve la señal de la misma conexión, relaja la cara antes del siguiente clic. Si cambió la conexión del sensor, vuelve a calibrar los gestos.
 
 La detección se pausa cuando la página está oculta; al regresar requiere relajar la cara. La calibración se conserva en el mismo navegador y dirección mientras no cambie la conexión del sensor. Si recolocas los electrodos, desactiva los gestos antes de moverlos y vuelve a calibrar. No es un sistema de emergencia validado.
 
@@ -127,7 +127,7 @@ Para probar Juegos y Apps, ábrelo desde el servidor de apps: `npm start --prefi
 - **Inicio.** La primera fila reúne Hablar, Escribir y Mensajes. La segunda contiene Apps, Juegos y Ajustes. **SOS** y **Descansar** comparten una fila al pie de la pantalla. **Descansar** pausa la selección. **Volver** reanuda en el mismo lugar. Para escuchar música, elige **Apps → Spotify**.
 - **Juegos** abre las seis portadas de Eye Gaze Games de SpecialEffect. Al elegir una, la partida se amplía a la ventana y la cámara sigue activa si se usa para apuntar. El botón **← Juegos** vuelve al catálogo. Con la mirada, nariz o iPhone, el servidor de Apps transmite la partida en la misma pantalla y recibe la posición del puntero. Mantenerlo sobre una opción o confirmar con la ceja o Espacio envía el clic. Con mouse, se interactúa directamente con el juego.
 - **Apps:** Spotify, BioBioChile, YouTube, Rappi y Mercado Libre, con el módulo `toki-apps.js` y `apps-bridge`.
-- **Spotify necesita `spogo`:** Toki controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
+- **Spotify necesita `spogo`:** Myo controla la app de escritorio de Spotify con el programa [`spogo`](https://github.com/steipete/spogo), que hay que instalar una vez en el computador (macOS). Sin él, Spotify no carga: el servidor marca el error "El conector de Spotify todavía no está instalado en este computador".
 
   ```bash
   brew install steipete/tap/spogo

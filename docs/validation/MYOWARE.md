@@ -4,7 +4,7 @@ Fecha: 2026-11-21.
 La foto identifica un MyoWare 2.0 Arduino Shield DEV-18426. No demuestra funcionamiento ni permite inspeccionar los pines inferiores. No se detectó un UNO conectado al preparar esta guía. Las instrucciones y compilación apuntan al UNO R3/ATmega328P; confirmar revisión antes de cargar.
 
 ## Para qué sirve
-El shield distribuye alimentación y lleva las señales de hasta seis sensores a A0–A5 del UNO. El UNO digitaliza y envía datos por USB. No mide músculos por sí solo. Para Toki permite depurar señal, calibrar una contracción voluntaria y luego convertirla en confirmación/clic de una interfaz. No identifica intenciones ni mueve el cursor sin software adicional.
+El shield distribuye alimentación y lleva las señales de hasta seis sensores a A0–A5 del UNO. El UNO digitaliza y envía datos por USB. No mide músculos por sí solo. Para Myo permite depurar señal, calibrar una contracción voluntaria y luego convertirla en confirmación/clic de una interfaz. No identifica intenciones ni mueve el cursor sin software adicional.
 Con el inventario actual hay dos Link Shields y dos cables TRS: dos canales cableados simultáneos. Para comenzar basta uno. El wearable inalámbrico final no necesita llevar el UNO encima.
 
 ## Montaje de un canal

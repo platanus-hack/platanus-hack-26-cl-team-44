@@ -1,4 +1,4 @@
-# Agente y memoria de Toki
+# Agente y memoria de Myo
 
 Pasos 1 y 2 de `docs/product/ALCANCE-AGENTE.md`. Este paso trae 3 piezas:
 
