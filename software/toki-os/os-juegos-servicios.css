@@ -93,7 +93,8 @@
 .external-playing .external-frame-wrap { border-radius: var(--r-sm); }
 
 /* ---------- Servicios (toki-apps.js) ---------- */
-#s-apps { padding-bottom: 28px; }
+.official-os #s-apps { padding: 28px 48px; }
+.official-os #s-apps .status { height: 78px; }
 #appsContent { flex: 1; min-height: 0; height: auto; background: none; border: 0; border-radius: 0; }
 #s-apps .toki-apps { padding: 0 !important; gap: 18px; grid-template-rows: minmax(0, 1fr) auto auto; color: var(--txt); }
 /* el foco agranda la tarjeta (como en todo el SO): que no la recorten los contenedores de Servicios */

@@ -48,8 +48,17 @@ try {
   await page.waitForTimeout(3300);
   assert.ok(await flag.isVisible(),'tracking loss must cancel dwell');
 
+  // Global actions stay side by side below the player, including during a game.
+  const footer=page.locator('#s-games .global-actions');
+  const sos=footer.locator('.sos-nav');
+  const rest=footer.locator('.rest-nav');
+  const [sosBox,restBox,gameBox]=await Promise.all([sos.boundingBox(),rest.boundingBox(),page.locator('#externalGame').boundingBox()]);
+  assert.ok(sosBox && restBox && gameBox);
+  assert.ok(sosBox.x+sosBox.width < restBox.x,'the actions need a gap for gaze selection');
+  assert.ok(Math.abs(sosBox.y-restBox.y)<1,'both actions share a row');
+  assert.ok(gameBox.y+gameBox.height <= sosBox.y+1,'the game stays above the actions');
+
   // Pause and resume the same player, then select with tracked input.
-  const rest=page.locator('#s-games .rest-nav');
   await rest.click();
   assert.ok(await page.evaluate(()=>S.rest && tabletGameInput().blocked));
   assert.ok(await flag.isVisible());

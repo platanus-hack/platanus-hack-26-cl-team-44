@@ -72,13 +72,13 @@ html,body{margin:0;height:100%;background:#000;color:var(--txt);overflow:hidden;
 .status-signal.flash::before{background:var(--blue);border-color:var(--blue)}
 .status-mention{max-width:180px;text-overflow:ellipsis;overflow:hidden}
 .status .clock{margin-left:auto;font-size:26px;font-weight:550;font-variant-numeric:tabular-nums;color:var(--txt2)}
-.status .nav-action{height:78px;min-width:152px;display:inline-flex;align-items:center;justify-content:center;gap:13px;padding:0 26px;border-radius:22px;
+.nav-action{height:78px;min-width:152px;display:inline-flex;align-items:center;justify-content:center;gap:13px;padding:0 26px;border-radius:22px;
   flex:none;color:var(--txt);font:inherit;font-size:29px;font-weight:650;cursor:pointer}
 .status .rest-nav{min-width:215px}
 .nav-action .nav-icon{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .rest-nav .nav-icon{color:var(--purple)}
 .sos-nav .nav-icon{color:var(--red)}
-.status .nav-action:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
+.nav-action:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
 
 /* ---------- objetivos de mirada ---------- */
 /* Sin backdrop-filter en los objetivos: al agrandarse con el foco, Chrome difumina toda la zona de la
@@ -1188,9 +1188,14 @@ function initStatus(bar){
   const screen=bar.closest('.screen');
   const home=screen.id==='s-home' ? '' : '<button type="button" class="t nav-action home-nav" data-t data-act="go:home">‹ Inicio</button>';
   bar.innerHTML=home+`<span class="screen-name">${esc(screen.dataset.title)}</span>
-    <time class="clock"></time>
-    <button type="button" class="t nav-action sos-nav" data-t data-act="sos" data-dwell="2000" aria-controls="alarm"><svg class="nav-icon" aria-hidden="true"><use href="#i-alert"/></svg>SOS</button>
+    <time class="clock"></time>`;
+  const actions=`<button type="button" class="t nav-action sos-nav" data-t data-act="sos" data-dwell="2000" aria-controls="alarm"><svg class="nav-icon" aria-hidden="true"><use href="#i-alert"/></svg>SOS</button>
     <button type="button" class="t nav-action rest-nav" data-t data-act="rest" aria-controls="rest"><svg class="nav-icon" aria-hidden="true"><use href="#i-moon"/></svg>Descansar</button>`;
+  if(document.body.classList.contains('official-os')){
+    screen.insertAdjacentHTML('beforeend',`<div class="global-actions" role="group" aria-label="Acciones globales">${actions}</div>`);
+  }else{
+    bar.insertAdjacentHTML('beforeend',actions);
+  }
 }
 const emgChannels=new Set();
 function statusGroup(label,value,hint=''){
@@ -1978,7 +1983,7 @@ function tick(now){
         const tabletProgress = window.frameElement && window.parent.TokiAccess?.dwellProgress;
         const p = insideDwell && tabletProgress ? tabletProgress(elapsed, target) : Math.min(1, elapsed / target);
         f.style.setProperty('--p',p);
-        const cardEdge=f.matches('#tiles .tile,.status .nav-action');
+        const cardEdge=f.matches('#tiles .tile,.nav-action');
         const showEdge=insideDwell ? dwellElapsed>=0 : cardEdge;
         menuOutline.paint(showEdge ? f : null, p);
         if(p>=1 && S.blocked!==f && (!insideDwell || inside)){
