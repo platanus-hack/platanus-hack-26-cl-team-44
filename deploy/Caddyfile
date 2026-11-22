@@ -68,10 +68,24 @@
 			}
 		}
 		redir / /equipo/woki-os.html 302
+		# TV v2 del equipo (apps/tv): /equipo/v2/ usa el mismo /equipo/wa y /equipo/agente con el token de Caddy
+		redir /v2 /equipo/v2/ 302
+		handle_path /v2/* {
+			root * /opt/toki/repo/apps/tv/dist
+			file_server
+		}
 		handle {
 			root * /opt/toki/repo/software/toki-os
 			file_server
 		}
+	}
+
+	# TV v2 pública (apps/tv, React): convive con la TV actual hasta probar la paridad (apps/tv/PARIDAD.md).
+	# Rutas relativas (Vite base './'): la misma build sirve aquí y en /equipo/v2/.
+	redir /v2 /v2/ 302
+	handle_path /v2/* {
+		root * /opt/toki/repo/apps/tv/dist
+		file_server
 	}
 
 	# La raíz abre la TV pública (jueces): WhatsApp simulado, sin datos de la usuaria

@@ -1,0 +1,55 @@
+/* =========================================================
+   Colores de fondo de Myo OS (Ajustes › Tema y color)
+   "Noche" es el fondo de siempre (sin atributo). Los demás cambian solo el degradado del
+   lienzo; las tarjetas, el texto y los focos mantienen el contraste del tema claro u oscuro.
+   ========================================================= */
+:root[data-palette="bosque"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(216, 241, 151, .16), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(70, 150, 140, .26), transparent 60%),
+              linear-gradient(135deg, #0d1d29, #172d38);
+}
+:root[data-palette="oceano"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(10, 132, 255, .30), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(100, 210, 255, .18), transparent 60%),
+              linear-gradient(135deg, #040d1c, #0b1d35);
+}
+:root[data-palette="atardecer"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(255, 140, 90, .24), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(200, 60, 120, .22), transparent 60%),
+              linear-gradient(135deg, #150a10, #2a1420);
+}
+:root[data-palette="lavanda"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(191, 90, 242, .26), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(94, 92, 230, .24), transparent 60%),
+              linear-gradient(135deg, #0b0a1a, #19163a);
+}
+
+/* tema claro: el mismo color, en suave */
+:root[data-theme="light"][data-palette="bosque"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(140, 190, 60, .22), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(70, 160, 140, .18), transparent 60%), #EEF3EE;
+}
+:root[data-theme="light"][data-palette="oceano"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(0, 122, 255, .18), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(90, 200, 250, .20), transparent 60%), #EEF4FB;
+}
+:root[data-theme="light"][data-palette="atardecer"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(255, 149, 0, .18), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(255, 45, 85, .14), transparent 60%), #FBF2EC;
+}
+:root[data-theme="light"][data-palette="lavanda"] #stage {
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(175, 82, 222, .18), transparent 60%),
+              radial-gradient(1000px 700px at 100% 110%, rgba(88, 86, 214, .16), transparent 60%), #F3F1FB;
+}
+
+/* tarjetas de Ajustes › Tema y color: muestra del color */
+.set .swatch { display: block; width: 120px; height: 120px; margin: 6px auto; border-radius: 50%; border: 3px solid var(--hair-hi); }
+.set.span3 { grid-column: span 3; }
+.swatch-noche     { background: linear-gradient(135deg, #0A84FF, #BF5AF2 60%, #050507); }
+.swatch-bosque    { background: linear-gradient(135deg, #d8f197, #46968c 55%, #0d1d29); }
+.swatch-oceano    { background: linear-gradient(135deg, #64d2ff, #0a84ff 55%, #040d1c); }
+.swatch-atardecer { background: linear-gradient(135deg, #ff8c5a, #c83c78 55%, #150a10); }
+.swatch-lavanda   { background: linear-gradient(135deg, #d2b0ff, #5e5ce6 55%, #0b0a1a); }
+.swatch-oscuro    { background: linear-gradient(135deg, #2c2c2e, #050507); }
+.swatch-claro     { background: linear-gradient(135deg, #ffffff, #e5e5ea); }
+.set.chosen { box-shadow: inset 0 0 0 4px var(--blue); }

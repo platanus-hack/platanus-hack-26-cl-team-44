@@ -1,0 +1,44 @@
+/* =========================================================
+   Myo OS v2 · solo lo que no viene de la TV actual.
+   El resto del CSS es copia fiel de software/toki-os (base.css = estilos de woki-os.html).
+   ========================================================= */
+
+/* Apps y Juegos: fondo blanco de os-juegos-servicios.css:9. La TV actual pinta logos y portadas;
+   la v2 todavía usa el ícono, en trazo oscuro para que se vea sobre el blanco. */
+.g-white { background: linear-gradient(160deg, #ffffff, #dfe3ea); }
+.g-white svg { stroke: #1c1c1e !important; }
+
+/* Pantallas que todavía no están en la v2 */
+.pending-screen { flex: 1; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; min-height: 0; }
+.pending-screen .pending-msg { border-radius: var(--r-lg); padding: 56px; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+.pending-screen .pending-msg strong { font-size: 60px; letter-spacing: -.025em; }
+.pending-screen .pending-msg p { margin: 0; font-size: 34px; color: var(--txt2); line-height: 1.35; }
+
+/* Línea de meta del panel dev bajo el contexto (dev-agente.js:39) */
+#devMeta { font-size: 22px; color: var(--txt2, #aaa); margin-top: 6px; }
+
+/* Panel dev del agente (dev-agente.js:21-39) */
+#tokiDev { position: fixed; right: 16px; bottom: 16px; z-index: 9999; width: 380px; max-height: 86vh; overflow: auto;
+  background: rgba(20,20,24,.94); color: #eee; border: 1px solid rgba(255,255,255,.15); border-radius: 14px;
+  font: 13px/1.4 -apple-system, system-ui, sans-serif; padding: 12px 14px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+#tokiDev h3 { margin: 0 0 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+#tokiDev .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #888; margin-right: 6px; }
+#tokiDev .dot.ok { background: #30d158; } #tokiDev .dot.ko { background: #ff453a; }
+#tokiDev label, #tokiDev .dev-label { display: block; margin: 6px 0 2px; color: #aaa; font-size: 11px; }
+#tokiDev select, #tokiDev input { width: 100%; box-sizing: border-box; background: #111; color: #eee; border: 1px solid #333; border-radius: 8px; padding: 6px 8px; font: inherit; }
+#tokiDev button { margin-top: 8px; width: 100%; padding: 8px; border: 0; border-radius: 8px; background: #0a84ff; color: #fff; font-weight: 600; cursor: pointer; }
+#tokiDev button:disabled { opacity: .5; cursor: default; }
+#tokiDev button:focus-visible, #tokiDev .ej button:focus-visible { outline: 2px solid #64d2ff; outline-offset: 2px; }
+#tokiDev .ej { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+#tokiDev .ej button { width: auto; margin: 0; background: #222; border: 1px solid #333; border-radius: 20px; padding: 2px 8px; cursor: pointer; font-size: 11px; font-weight: 400; color: #eee; }
+#tokiDev pre { white-space: pre-wrap; background: #0b0b0d; border-radius: 8px; padding: 8px; margin: 8px 0 0; font-size: 11px; color: #cfcfcf; max-height: 260px; overflow: auto; }
+#tokiDev .disp { display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #111; border: 1px solid #333; border-radius: 8px; padding: 6px 8px; margin-top: 4px; }
+#tokiDev .disp button { width: auto; margin: 0; padding: 4px 8px; font-size: 11px; }
+#tokiDev .est { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: #333; }
+#tokiDev .est.activo { background: #30d158; color: #000; } #tokiDev .est.pendiente { background: #ff9f0a; color: #000; }
+
+/* Etiqueta del contexto sin campo asociado: mismo aspecto que `.ctx label` (base.css) */
+.ctx .ctx-label { font-size: 30px; font-weight: 600; color: var(--txt2); white-space: nowrap; }
+
+/* Aviso de versión: la v2 convive con la TV actual */
+.v2-tag { font-size: 12px; color: var(--txt3); padding: 0 6px; }

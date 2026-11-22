@@ -1,0 +1,331 @@
+/* =========================================================
+   Myo OS · tarjetas grandes y modo "solo mirada" (iPhone)
+
+   Criterio de tamaño (datos del equipo, 24 calibraciones con iPhone): error medio 2,9°
+   (≈2,5 cm a 50 cm), peor caso 5,3°. Para acertar de forma fiable, cada tarjeta mide al
+   menos ~2× el error: ≥ 6 cm por lado (≈ 7°), es decir ≥ ~380 px del lienzo de 1920×1080
+   en un portátil de 13–14". Ninguna tarjeta queda por debajo de eso.
+   ========================================================= */
+
+/* ---------- más espacio para las tarjetas en todas las pantallas ---------- */
+.screen { padding: 28px 48px; gap: 20px; }
+.status { height: 60px; }
+.official-os .status { height: 78px; }
+.official-os #s-home .status { height: 60px; }
+.global-actions {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 64px;
+  flex: none; margin-top: auto; padding-top: 18px; border-top: 2px solid var(--hair);
+}
+.global-actions .sos-nav { --action-accent: #ff8b83; }
+.global-actions .rest-nav { --action-accent: #c6acff; }
+:root[data-theme="light"] .global-actions .sos-nav { --action-accent: #ac302f; }
+:root[data-theme="light"] .global-actions .rest-nav { --action-accent: #6743a0; }
+.global-actions .nav-action {
+  height: 132px; gap: .58em; border-radius: .58em;
+  background-color: color-mix(in srgb, var(--action-accent) 7%, var(--glass));
+  border-color: color-mix(in srgb, var(--action-accent) 25%, var(--hair));
+  font-size: 38px; line-height: 1.1;
+}
+.global-actions .nav-icon {
+  flex: none; width: 1.9em; height: 1.9em; padding: .37em; border-radius: 50%;
+  color: var(--action-accent); background: color-mix(in srgb, currentColor 13%, transparent);
+}
+/* Botón Inicio deslizable (homeDock en woki-os.html): escondido bajo el borde, solo asoma una rayita;
+   sube cuando la mirada llega al centro de abajo. No ocupa espacio en ninguna pantalla. */
+.home-dock {
+  position: absolute; left: 50%; bottom: 0; z-index: 40; display: grid; justify-items: center; gap: 10px;
+  transform: translate(-50%, calc(100% - 18px)); transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s;
+  pointer-events: none;
+}
+.home-dock.open { transform: translate(-50%, -28px); pointer-events: auto; }
+.home-dock.off { opacity: 0; transform: translate(-50%, 100%); }
+.home-dock-hint { width: 160px; height: 8px; border-radius: 4px; background: var(--txt2); opacity: .45; transition: opacity .2s; }
+.home-dock.open .home-dock-hint { opacity: 0; }
+.home-dock .home-orb {
+  width: 148px; height: 148px; min-width: 0; padding: 0; border-radius: 50%; font-size: 38px;
+  color: var(--blue); background-color: color-mix(in srgb, var(--blue) 12%, var(--glass-hi));
+  border: 2px solid color-mix(in srgb, var(--blue) 35%, var(--hair));
+  box-shadow: 0 22px 48px -16px rgba(0,0,0,.55); backdrop-filter: blur(18px);
+}
+.home-dock .home-orb .nav-icon { width: 2.3em; height: 2.3em; stroke-width: 2.2; color: var(--blue); }
+@media (prefers-reduced-motion: reduce) { .home-dock, .home-dock-hint { transition: none; } }
+.grid4x2, .grid2x2 { gap: 20px; }
+.grid3x2 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+.grid5x2 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+
+/* inicio */
+.app { width: 176px; height: 176px; border-radius: 46px; }
+.app svg { width: 92px; height: 92px; }
+.tile .lb { font-size: 58px; }
+.tile .sb { font-size: 30px; }
+
+.official-os { --card-focus: #71b7ff; --card-ready: #73d596; }
+:root[data-theme="light"] .official-os { --card-focus: #005eb8; --card-ready: #167943; }
+
+/* Inicio oficial: tres acciones de comunicación y tres destinos en la segunda fila. */
+.official-os #s-home { gap: 28px; }
+.official-os.external-playing #s-games .status { margin: 8px 20px 0; }
+.official-os.external-playing #s-games .global-actions { margin: auto 20px 8px; }
+.official-os #tiles { grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: repeat(2,minmax(0,1fr)); gap: 32px; }   /* 8 tarjetas: incluye SOS y Descansar */
+.official-os #tiles > .tile { gap: 22px; padding: 24px; border-radius: 32px; font: inherit; color: var(--txt); cursor: pointer; animation: none; }
+.official-os #tiles .app { width: 152px; height: 152px; border-radius: 38px; box-shadow: none; }
+.official-os #tiles .app svg { width: 80px; height: 80px; }
+.official-os #tiles .home-mosaic img { box-shadow: none; }
+.official-os #tiles .lb { font-size: 54px; line-height: 1.08; }
+.official-os #tiles .sb { margin-top: -10px; font-size: 28px; line-height: 1.22; }
+.official-os #s-home .hint span { padding: 4px 12px; background: none; border: 0; }
+/* El lienzo se escala completo. En pantallas pequeñas se reserva altura para apuntar
+   a las acciones, con iconos de Inicio cuadrados en el espacio que queda. */
+@media (max-width:660px), (max-height:560px) {
+  .global-actions { gap: 96px; }
+  .global-actions .nav-action { height: 224px; font-size: 64px; }
+  .official-os #tiles > .tile { gap: 12px; padding: 12px; }
+  .official-os #tiles .app { flex: none; width: 112px; height: 112px; border-radius: 28px; }
+  .official-os #tiles .app svg { width: 66px; height: 66px; }
+  .official-os #tiles .home-mosaic { width: 88px; height: 88px; gap: 7px; }
+}
+@media (max-width:420px), (max-height:420px) {
+  .global-actions .nav-action { height: 280px; font-size: 82px; }
+}
+.official-os :is(#tiles .tile,.nav-action) {
+  box-shadow: none; transform: none;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.official-os :is(#tiles .tile,.nav-action)::before,
+.official-os.iphone-hold :is(#tiles .tile,.nav-action)::after { display: none; }
+.official-os :is(#tiles .tile,.nav-action).focus { border-color: var(--card-focus); background-color: var(--glass-hi); }
+.official-os :is(#tiles .tile,.nav-action).armed { border-color: var(--card-ready); }
+.official-os :is(#tiles .tile,.nav-action).pressed { background-color: color-mix(in srgb,var(--blue) 16%,var(--glass-hi)); }
+.official-os :is(#tiles .tile,.nav-action):focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.official-os :is(#tiles,.status,.global-actions) .dwell-outline > rect:last-child { stroke: var(--card-focus); }
+.official-os :is(#tiles,.status,.global-actions) .armed .dwell-outline > rect:last-child { stroke: var(--card-ready); }
+.official-os #tiles .badge { top: 18px; right: 20px; left: auto; bottom: auto; transform: none; font-size: 20px; padding: 5px 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .official-os :is(#tiles .tile,.nav-action) { transition: none !important; }
+}
+@media (forced-colors: active) {
+  .official-os :is(#tiles,.status,.global-actions) .dwell-outline > rect:last-child { stroke: Highlight; }
+}
+
+/* hablar: 4 frases grandes + columna con Escribir y Volver */
+.talkgrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr 400px; grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+.card { padding: 36px 310px 36px 44px; }
+.card .ph { font-size: 60px; }
+/* el emoji es un objetivo propio (cambiar emoción): una franja de toda la altura a la derecha,
+   separada del texto. Medido: ~4,2 × 6 cm en un portátil (antes 2,4 cm: inalcanzable con la mirada) */
+.emo { top: 0 !important; right: 0 !important; bottom: 0; width: 270px !important; height: auto !important;
+  border-radius: 0 var(--r-lg) var(--r-lg) 0 !important; font-size: 110px !important; border-left: 1.5px solid var(--hair) !important; }
+.emo .ring { right: 18px; bottom: 18px; width: 52px; height: 52px; }
+.emo.focus { transform: none; }
+.side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; font-size: 46px; font-weight: 700; letter-spacing: -.02em; }
+.side svg { width: 76px; height: 76px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.side small { font-size: 26px; font-weight: 550; color: var(--txt2); letter-spacing: 0; }
+.ctx { min-height: 112px; padding: 14px 36px; }
+
+/* escribir: grupos y acciones del mismo tamaño */
+.msgline { min-height: 128px; padding: 16px 40px; gap: 6px; }
+.msgline .txt { font-size: 66px; min-height: 76px; }
+.key { font-size: 72px; }
+.key.small { font-size: 46px; }
+.key.pred { font-size: 46px; letter-spacing: -.01em; background: rgba(48, 209, 88, .12); }
+.key.pred small { display: block; font-size: 24px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+.key.ghost { opacity: .35; }
+
+/* reacciones: 4 por página + Más + Volver */
+.react { font-size: 64px; flex-direction: column; gap: 10px; }
+.react span:not(.badge) { font-size: 120px; }
+
+/* ajustes */
+.set .val { font-size: 60px; }
+
+/* anillo de emociones → cuadrícula: frase + 6 emociones + Volver */
+#emoRing .c { width: 1808px; height: 960px; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 24px; transform: scale(.97); }
+#emoRing .mid { position: relative; inset: auto; border-radius: var(--r-lg); padding: 36px; font-size: 40px; line-height: 1.3; }
+#emoRing .t { position: relative; width: auto; height: auto; margin: 0; font-size: 48px; gap: 10px; }
+#emoRing .t span:not(.badge) { font-size: 112px; }
+
+/* Descanso: dos objetivos estables y una sola indicación de uso. */
+.rest-actions { margin-top:36px; display:grid; grid-template-columns:530px 410px; gap:56px; }
+.rest-actions .t {
+  position:relative; display:grid; grid-template-columns:60px auto; grid-template-rows:auto auto;
+  align-content:center; justify-content:center; align-items:center; gap:6px 24px;
+  min-height:204px; padding:20px 32px; overflow:hidden; border-radius:32px;
+  color:var(--txt); font:inherit; cursor:pointer; transform:none; box-shadow:none;
+}
+.rest-actions svg { grid-row:span 2; width:58px; height:58px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.rest-actions strong,.rest-actions small { text-align:left; }
+.rest-actions strong { font-size:54px; line-height:1.1; }
+.rest-actions small { font-size:29px; color:var(--txt2); }
+.rest-actions .rest-sos { background:color-mix(in srgb,var(--red) 7%,var(--glass)); border-color:color-mix(in srgb,var(--red) 45%,var(--hair)); }
+.rest-sos svg { color:var(--red); }
+.rest-actions .t.focus,.rest-actions .t:focus-visible { outline:4px solid var(--card-focus,var(--blue)); outline-offset:5px; transform:none; box-shadow:none; }
+.rest-actions .fill { position:absolute; bottom:0; left:0; width:100%; height:7px; background:var(--card-focus,var(--blue)); transform:scaleX(var(--p,0)); transform-origin:left; }
+.rest-actions .badge,.rest-actions .ring { display:none; }
+.rest-hint { margin:10px 0 0; color:var(--txt2); font-size:26px; }
+/* ---------- modo solo mirada (iPhone): sin gestos de ceja ni mandíbula ---------- */
+/* las pistas de gestos no aplican: se ocultan y las tarjetas ganan esa altura */
+body.iphone-hold .hint { display: none; }
+/* relleno de fondo mientras se mantiene la mirada (como en la demo): más visible que el anillo */
+body.iphone-hold .t.focus::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: rgba(10, 132, 255, .2); transform: scaleX(var(--p, 0)); transform-origin: left;
+}
+:root[data-theme="light"] body.iphone-hold .t.focus::after { background: rgba(0, 122, 255, .14); }
+body.iphone-hold .badge { display: none; }
+
+/* iPhone focus is a static highlight, not a selection timer. */
+:is(body.iphone-pointer:not(.iphone-hold), body.myoware-confirm:not(.iphone-pointer)) :is(.ring, .badge, .rest-actions .fill, .rest-dwell-label) { display: none; }
+body:not(.myoware-confirm) #myoware-shortcuts, body.iphone-pointer #myoware-shortcuts { display: none; }
+
+#care-wheel {
+  color: #f1f6ff;
+  background: #172131;
+  border: 1px solid #526379;
+  border-radius: 24px;
+  padding: clamp(16px, 3vmin, 28px);
+  width: min(680px, calc(100% - 32px));
+  max-height: calc(100% - 24px);
+  box-sizing: border-box;
+  text-align: center;
+  font: 500 16px/1.4 system-ui, sans-serif;
+}
+#care-open { min-height: 44px; }
+#care-open[hidden] { display: none; }
+#care-wheel::backdrop { background: rgb(7 13 25 / .76); }
+#care-wheel h2 { margin: 0; font-size: clamp(1.4rem, 4vmin, 2rem); }
+#care-wheel p { margin: 6px auto 14px; color: #c6d2e2; }
+#care-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(64px, 1fr));
+  grid-template-areas: ". north ." "west center east" ". south .";
+  gap: 8px;
+  padding: 10px;
+  min-height: clamp(215px, 45vmin, 330px);
+  background: radial-gradient(circle closest-side, transparent 68%, #526379 69% 70%, #243248 71% 98%, transparent 99%);
+}
+#care-choices[data-view="urgent"] {
+  grid-template-rows: repeat(2, minmax(64px, auto));
+  grid-template-areas: ". north ." ". center .";
+  min-height: 0;
+  background: none;
+}
+#care-wheel button {
+  border: 1px solid #63768e;
+  border-radius: 14px;
+  color: #f1f6ff;
+  background: #23344b;
+  font: 650 clamp(1rem, 2.5vmin, 1.25rem)/1.25 system-ui, sans-serif;
+  text-wrap: balance;
+  cursor: pointer;
+  padding: 8px;
+}
+#care-choices [data-slot="north"] { grid-area: north; }
+#care-choices [data-slot="east"] { grid-area: east; }
+#care-choices [data-slot="south"] { grid-area: south; }
+#care-choices [data-slot="west"] { grid-area: west; }
+#care-choices [data-slot="center"] { grid-area: center; }
+#care-choices:not([data-view="phrases"]) [data-slot="north"]:not([data-scanned]) { background: #542e3a; }
+#care-choices [data-scanned] { color: #102231; background: #d8f197; border-color: #d8f197; outline: 2px solid #d8f197; outline-offset: 2px; }
+#care-wheel button:focus-visible { outline: 3px solid #a8d6ff; outline-offset: 4px; }
+#care-wheel footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+#care-wheel footer button { min-height: 44px; font-size: .875rem; }
+#care-current { text-align: start; color: #d8f197; }
+@media (max-width: 520px) {
+  #care-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "north east" "west south" "center center";
+    background: none;
+  }
+  #care-choices[data-view="urgent"] { grid-template-areas: "north north" "center center"; }
+}
+body.iphone-pointer:not(.iphone-hold) .t.focus { transform: none; }
+body.iphone-pointer:not(.iphone-hold) .t.focus::before { opacity: 0; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  body.iphone-hold .t.focus::after { transform: none; opacity: var(--p, 0); }
+}
+
+/* escribir (opción A): fila fija de sugerencias + letras + acciones, en una sola cuadrícula de 20 columnas
+   (4 tarjetas por fila = 5 columnas cada una; 5 grupos de letras = 4 columnas cada uno) */
+/* filas de arriba y abajo (bordes de la pantalla) algo más altas que la del medio (centro, más preciso) */
+.kbrows { flex: 1; display: grid; grid-template-rows: 1.05fr .95fr 1fr; gap: 20px; min-height: 0; }
+.kbrow { display: grid; gap: 20px; min-height: 0; }
+.kbrow.c4 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.kbrow.c5 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
+.kbrows .key { font-size: 64px; }
+.kbrows .key.small { font-size: 44px; }
+.key.sug { font-size: 56px; letter-spacing: -.02em; background: rgba(48, 209, 88, .12); }
+.key.sug.best { box-shadow: inset 0 0 0 3px rgba(48, 209, 88, .55); }
+.key.sug.ghost { background: transparent; border-style: dashed; font-size: 30px; color: var(--txt3); }
+:root[data-theme="light"] .key.sug { background: rgba(52, 199, 89, .12); }
+/* con la fila fija, la línea "Sugerencias: …" bajo el texto sobra: más alto para las tarjetas */
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline { min-height: 96px; padding: 10px 40px; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .pred { display: none; }
+#s-keyboard[data-level="1"][data-sug="fila"] .msgline .txt { min-height: 0; }
+
+/* ---------- bordes más grandes ----------
+   Error de la mirada por zona (27 calibraciones reales, plano lineal): centro 2,2°, bordes ~2,7°,
+   esquinas 5,2° (×2,3). Por eso las columnas de los extremos son más anchas que las del centro:
+   crecen sobre todo las tarjetas de las esquinas, sin que las del centro bajen de lo necesario. */
+:root { --edge: 1.2fr; }
+.grid4x2 { grid-template-columns: var(--edge) 1fr 1fr var(--edge); }
+.grid5x2 { grid-template-columns: var(--edge) 1fr 1fr 1fr var(--edge); }
+.grid3x2 { grid-template-columns: 1.15fr 1fr 1.15fr; }
+/* subtítulo de las teclas (p. ej. "Borrar · sigue mirando: palabra") */
+.key small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; color: var(--txt2); letter-spacing: 0; }
+
+/* Elección inicial de control. La calibración conserva su espacio para los puntos. */
+.official-os .cal-card.choose-control {
+  width: 1032px; padding: 48px; border-radius: 36px; text-align: left; transition: none;
+  background: var(--panel, #181c24);
+}
+:root[data-theme="light"] .official-os .cal-card.choose-control { background: #f7f8fb; }
+.official-os .choose-control .cal-title { font-size: 50px; line-height: 1.1; letter-spacing: -.035em; }
+.official-os .choose-control .cal-steps, .official-os .cal-text:empty { display: none; }
+.official-os .choose-control .cal-text { margin: 16px 0 0; font-size: 27px; }
+.official-os .choose-control .cal-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 32px; align-items: stretch; }
+.official-os .control-option {
+  min-width: 0; height: auto; min-height: 124px; padding: 22px 24px; border-radius: 22px;
+  display: flex; align-items: center; gap: 20px; text-align: left; background: var(--glass); color: var(--txt);
+}
+.official-os .control-option strong, .official-os .control-option small { display: block; }
+.official-os .control-option strong { font-size: 34px; line-height: 1.1; letter-spacing: -.02em; }
+.official-os .control-option small { font-size: 23px; font-weight: 450; line-height: 1.25; color: var(--txt2); margin-top: 6px; }
+.official-os .control-option svg { flex: none; width: 56px; height: 56px; padding: 10px; border-radius: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; background: color-mix(in srgb, currentColor 12%, transparent); }
+.official-os .control-option[data-c="start"] svg { color: var(--green); }
+.official-os .control-option[data-c="gaze"] svg { color: var(--blue); }
+.official-os .control-option[data-c="iphone"] svg { color: var(--purple); }
+.official-os .control-option[data-c="mouse"] svg { color: var(--txt2); }
+.official-os .choose-control .resume-control { grid-column: 1/-1; border-radius: 16px; min-width: 0; height: 76px; font-size: 28px; }
+.official-os .choose-control .cbtn:hover, .official-os .choose-control .cbtn:focus-visible { border-color: var(--blue); outline: 3px solid var(--blue); outline-offset: 2px; }
+@media (max-width:700px), (max-height:500px) {
+  body.official-os:has(#calib.on .choose-control) #wrap { inset: 0 !important; transform: none !important; z-index: 125; }
+  body.official-os:has(#calib.on .choose-control) #stage { width: 100%; height: 100%; }
+  .official-os #calib.on:has(.choose-control) { display: flex; padding: 12px; overflow: auto; }
+  .official-os .cal-card.choose-control { position: static; margin: auto; transform: none; width: min(100%,440px); padding: 18px; border-radius: 20px; }
+  .official-os .choose-control .cal-title { font-size: 27px; }
+  .official-os .choose-control .cal-text { font-size: 16px; }
+  .official-os .choose-control .cal-btns { margin-top: 18px; gap: 10px; }
+  .official-os .control-option { min-height: 108px; gap: 7px; padding: 12px; flex-direction: column; align-items: flex-start; border-radius: 14px; }
+  .official-os .control-option svg { width: 30px; height: 30px; padding: 4px; border-radius: 7px; }
+  .official-os .control-option strong { font-size: 18px; } .official-os .control-option small { font-size: 13px; margin-top: 3px; }
+  .official-os .choose-control .resume-control { height: 48px; font-size: 16px; }
+}
+
+/* chat de WhatsApp: tarjetas más angostas → franja del emoji más angosta y el texto con su espacio (antes se tapaban) */
+#s-talk.chatmode .card { padding: 22px 134px 22px 30px !important; }
+#s-talk.chatmode .card.plain { padding-right: 30px !important; }
+#s-talk.chatmode .emo { width: 112px !important; font-size: 58px !important; }
+#s-talk.chatmode .emo .ring { right: 10px; bottom: 10px; width: 36px; height: 36px; }
+
+/* «✨ Completar» con la frase más probable (teclado de primera letra): 2 líneas como máximo */
+.key.completar { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px 64px !important; }
+.key.completar small { margin: 0; white-space: normal; line-height: 1.2; max-height: 2.4em; overflow: hidden; font-size: 28px; color: var(--txt); text-align: center; }
+.key.completar:not(.best) small { font-size: 22px; color: var(--txt2); }
+
+/* Modo dev (Shift+D): de dónde sale cada tarjeta. Ocupa el lugar de la línea de tono, abajo de la frase. */
+body.myo-dev .card .tone { display: none; }
+body.myo-dev .card .traza { margin-top: 10px; padding: 6px 12px; border-radius: 12px; background: rgba(10,132,255,.9); color: #fff;
+  font: 600 22px/1.25 system-ui; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
