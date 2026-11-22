@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Myo OS · v2</title>
+    <!-- Tema antes de pintar, sin parpadeo: oscuro por defecto, claro si se eligió (woki-os.html:433-434) -->
+    <script>
+      try {
+        if (localStorage.getItem('woki.theme') === 'light') document.documentElement.dataset.theme = 'light';
+        const p = localStorage.getItem('woki.palette');
+        if (['bosque', 'oceano', 'atardecer', 'lavanda'].indexOf(p) >= 0) document.documentElement.dataset.palette = p;
+      } catch (_) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>

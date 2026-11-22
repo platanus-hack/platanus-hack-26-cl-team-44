@@ -1,0 +1,111 @@
+/* =========================================================
+   Myo OS · tema claro y controles de desarrollo
+   - Tema claro: se activa con <html data-theme="light"> (interruptor ☀︎/☾ o tecla T).
+     Solo redefine tokens y los pocos colores fijos del CSS original; el diseño es el mismo.
+   - Barra de desarrollo: interruptor de tema + pestaña ⌃ que muestra u oculta los atajos.
+   ========================================================= */
+
+/* ---------- tokens del tema claro (variantes claras de los colores del sistema de Apple) ---------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F2F2F7;
+  --glass: rgba(255, 255, 255, .72);
+  --glass-hi: rgba(255, 255, 255, .95);
+  --hair: rgba(0, 0, 0, .09);
+  --hair-hi: rgba(0, 0, 0, .2);
+  --txt: #1C1C1E; --txt2: rgba(60, 60, 67, .72); --txt3: rgba(60, 60, 67, .45);
+  --blue: #007AFF; --green: #34C759; --orange: #FF9500; --red: #FF3B30; --purple: #AF52DE; --pink: #FF2D55; --indigo: #5856D6; --yellow: #FFCC00;
+}
+:root[data-theme="light"],
+:root[data-theme="light"] body { background: #E5E5EA; }
+:root[data-theme="light"] #stage {
+  background:
+    radial-gradient(1200px 800px at 12% -10%, rgba(0, 122, 255, .14), transparent 60%),
+    radial-gradient(1000px 700px at 100% 110%, rgba(175, 82, 222, .12), transparent 60%),
+    radial-gradient(800px 600px at 60% 40%, rgba(52, 199, 89, .05), transparent 70%),
+    #F2F2F7;
+  box-shadow: 0 0 0 2px #D1D1D6;
+}
+:root[data-theme="light"] .glass { box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .9), 0 10px 30px -18px rgba(0, 0, 0, .25); }
+:root[data-theme="light"] .t { box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .9), 0 10px 30px -20px rgba(0, 0, 0, .3); }
+:root[data-theme="light"] .t::before { background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(0, 122, 255, .08), transparent 55%); }
+:root[data-theme="light"] .t.focus { box-shadow: inset 0 1.5px 0 #fff, 0 30px 60px -22px rgba(0, 0, 0, .35), 0 0 0 3px rgba(0, 122, 255, .6); }
+:root[data-theme="light"] .t.armed { box-shadow: inset 0 1.5px 0 #fff, 0 30px 60px -22px rgba(0, 0, 0, .35), 0 0 0 4px rgba(52, 199, 89, .9), 0 0 60px -10px rgba(52, 199, 89, .45); }
+:root[data-theme="light"] .t.blocked { box-shadow: inset 0 1.5px 0 #fff, 0 20px 40px -20px rgba(0, 0, 0, .3), 0 0 0 3px rgba(0, 0, 0, .12); }
+:root[data-theme="light"] .ring .bg { stroke: rgba(0, 0, 0, .1); }
+:root[data-theme="light"] .badge { background: rgba(52, 199, 89, .16); color: #1B7F3B; }
+:root[data-theme="light"] .emo { background: rgba(0, 0, 0, .05) !important; }
+:root[data-theme="light"] .hint span { background: rgba(0, 0, 0, .04); border-color: rgba(0, 0, 0, .06); }
+:root[data-theme="light"] .typing, :root[data-theme="light"] .msgline .pred b { color: var(--blue); }
+:root[data-theme="light"] .typing i, :root[data-theme="light"] .wave i { background: var(--blue); }
+:root[data-theme="light"] .key.act { background: rgba(0, 122, 255, .08); }
+:root[data-theme="light"] .step .n { background: rgba(0, 0, 0, .06); }
+:root[data-theme="light"] #emoRing { background: rgba(242, 242, 247, .7); }
+:root[data-theme="light"] #rest { background: rgba(242, 242, 247, .92); }
+:root[data-theme="light"] #rest .big { color: rgba(60, 60, 67, .55); }
+:root[data-theme="light"] #rest .sub { color: rgba(60, 60, 67, .45); }
+:root[data-theme="light"] #calib { background: radial-gradient(1200px 800px at 50% 30%, rgba(0, 122, 255, .12), rgba(242, 242, 247, .94) 70%); }
+:root[data-theme="light"] .cal-steps span { background: rgba(0, 0, 0, .05); }
+:root[data-theme="light"] .cal-steps span.on { background: rgba(0, 122, 255, .15); color: #0058C2; }
+:root[data-theme="light"] .cal-steps span.done { background: rgba(52, 199, 89, .15); color: #1B7F3B; }
+/* solo los secundarios: los principales (.pri) conservan su color sólido (antes quedaban grises por especificidad) */
+:root[data-theme="light"] .cbtn:not(.pri) { background: #fff; border-color: rgba(0, 0, 0, .14); box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .35); }
+:root[data-theme="light"] .cbtn.pri { color: #fff; box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .45); }
+:root[data-theme="light"] .cal-foot kbd { background: rgba(0, 0, 0, .06); }
+:root[data-theme="light"] .cal-dot .bg { stroke: rgba(0, 0, 0, .12); }
+:root[data-theme="light"] .cal-dot i { background: #1C1C1E; box-shadow: 0 0 24px rgba(0, 122, 255, .6); }
+:root[data-theme="light"] #island { background: #fff; border-color: rgba(0, 0, 0, .1); box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .3); }
+:root[data-theme="light"] #island.warn { border-color: rgba(255, 149, 0, .7); color: #A15C00; }
+:root[data-theme="light"] #speaking { background: rgba(0, 122, 255, .12); border-color: rgba(0, 122, 255, .4); }
+:root[data-theme="light"] #gaze {
+  background: radial-gradient(circle, rgba(0, 122, 255, .45), rgba(0, 122, 255, .12) 60%, transparent 70%);
+  box-shadow: 0 0 0 1.5px rgba(0, 122, 255, .55); mix-blend-mode: normal;
+}
+/* panel de desarrollo */
+:root[data-theme="light"] #legend { background: #fff; border-top-color: #D1D1D6; color: #636366; }
+:root[data-theme="light"] #legend h3 { color: #1C1C1E; }
+:root[data-theme="light"] #legend kbd { background: #F2F2F7; border-color: #C7C7CC; color: #1C1C1E; }
+:root[data-theme="light"] #evlog { color: #0058C2; }
+/* calibración del iPhone */
+:root[data-theme="light"] .ip-cal { background: radial-gradient(1200px 800px at 50% 40%, rgba(0, 122, 255, .1), transparent 70%), #F2F2F7; }
+:root[data-theme="light"] .ip-cal .target .track { stroke: rgba(0, 0, 0, .14); }
+:root[data-theme="light"] .ip-cal .target .core { fill: #1C1C1E; }
+:root[data-theme="light"] .ip-warn { background: rgba(255, 149, 0, .16); color: #A15C00; }
+:root[data-theme="light"] .ip-form input { background: rgba(0, 0, 0, .04); }
+:root[data-theme="light"] .ip-status.ok { color: #1B7F3B; }
+:root[data-theme="light"] .ip-status.err { color: #C4251D; }
+
+/* ---------- barra de desarrollo: interruptor de tema + pestaña de atajos ---------- */
+body.legend-off #legend { display: none; }
+#devbar {
+  position: fixed; right: 12px; bottom: calc(var(--panel-height, 150px) + 8px); z-index: 120; display: flex; gap: 8px; align-items: center;
+  transition: bottom 220ms cubic-bezier(.23, 1, .32, 1);
+}
+body.legend-off #devbar { bottom: 12px; }
+.dbtn {
+  height: 36px; min-width: 36px; padding: 0 10px; border-radius: 18px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(28, 28, 30, .86); color: #F2F2F7;
+  font: 600 13px -apple-system, system-ui, sans-serif;
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  transition: transform 140ms cubic-bezier(.23, 1, .32, 1), background-color 160ms ease;
+}
+.dbtn:hover { background: rgba(44, 44, 46, .92); }
+.dbtn:active { transform: scale(.94); }
+.dbtn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+:root[data-theme="light"] .dbtn { border-color: rgba(0, 0, 0, .12); background: rgba(255, 255, 255, .9); color: #1C1C1E; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .3); }
+:root[data-theme="light"] .dbtn:hover { background: #fff; }
+.dbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
+/* abierto: la flecha apunta hacia abajo (cerrar); cerrado: hacia arriba (abrir) */
+#legendToggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* interruptor ☀︎ / ☾ */
+#themeToggle { padding: 0 6px; gap: 0; }
+#themeToggle .track { position: relative; width: 52px; height: 26px; border-radius: 13px; background: rgba(255, 255, 255, .14); display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 12px; }
+#themeToggle .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #F2F2F7; transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
+#themeToggle[aria-checked="true"] .knob { transform: translateX(26px); background: #FFCC00; }
+:root[data-theme="light"] #themeToggle .track { background: rgba(0, 0, 0, .08); }
+
+@media (prefers-reduced-motion: reduce) {
+  #devbar, .dbtn, .dbtn svg, #themeToggle .knob { transition: none; }
+}
