@@ -17,13 +17,32 @@ VISIBLE = {
 }
 
 
+def _palabras(texto: str) -> list[tuple[str, bool]]:
+    """(palabra normalizada, es nombre propio). Nombre propio = mayúscula que no abre una oración («Platanus»)."""
+    out, inicio = [], True
+    for m in re.finditer(r"[^\W_]+|[.!?¿¡]", texto):
+        w = m.group(0)
+        if w in ".!?¿¡":
+            inicio = True
+            continue
+        out.append((re.sub(r"[^a-z0-9ñ]", "", store.norm(w)), w[0].isupper() and not inicio))
+        inicio = False
+    return out
+
+
 def temas_de_texto(texto: str, temas: dict[str, list[str]]) -> set[str]:
-    """Temas cuyas palabras aparecen en el texto (palabra completa o prefijo de 5+ letras)."""
+    """Temas cuyas palabras aparecen en el texto: palabra completa, o comienzo de palabra («endocrin» → endocrinología).
+    Un nombre propio solo calza completo: «plata» no marca «Platanus» como dinero, pero «Mounjaro» sí es salud."""
     t = re.sub(r"[^a-z0-9ñ ]", " ", store.norm(texto))
+    palabras_txt = _palabras(texto)
     encontrados = set()
     for tema, palabras in temas.items():
         for w in palabras:
-            if re.search(rf"\b{re.escape(w)}", t):
+            if " " in w:
+                hit = re.search(rf"\b{re.escape(w)}", t) is not None
+            else:
+                hit = any(p == w or (p.startswith(w) and not propio) for p, propio in palabras_txt)
+            if hit:
                 encontrados.add(tema)
                 break
     return encontrados

@@ -32,7 +32,9 @@
   const EMOS = ['ironica', 'alegre', 'carinosa', 'susurro', 'seria', 'entusiasta'];
   const MAX_TURNOS = 8;
 
-  const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0, usuaria: '' };
+  const E = { on: false, turnos: [], personas: [], hablantes: {}, req: 0, ultimoTurno: 0, usuaria: '',
+              pool: [], pag: 0, pidiendoMas: false, ini: { ini: '', p: null, list: null } };
+  const SALA_MS = 15 * 60 * 1000;   // modo sala: hubo un turno escuchado en los últimos 15 min
   try { E.hablantes = JSON.parse(sessionStorage.getItem('myo.hablantes') || '{}'); } catch (_) {}
 
   // ---------- interfaz: botón y barra de voces (para el acompañante) ----------
@@ -99,6 +101,7 @@
     const id = ++E.req;
     const pid = personaDe(t);
     setCtx(etiqueta(t) + ' dice', etiqueta(t).slice(0, 1).toUpperCase(), t.texto, 'Escuchando la sala…', pid ? '' : 'rgba(255,255,255,.18)');
+    E.pool = []; E.pag = 0;   // nada del turno anterior mientras llega lo nuevo
     if (W.S.screen === 'home') go('talk');
     const base = cuerpo(t);
     // 1) Tarjetas por tema: al instante.
@@ -109,20 +112,128 @@
       pintarBarra(r);
       tarjetas = (r.tarjetas || []).map((c) => ({ text: c.texto, tone: 'Tarjeta · ' + (r.tema ? r.tema.nombre : 'tema'), emo: 'seria',
         tarjeta: { id: c.id, tema: c.tema, persona: r.persona || null } }));
-      if (tarjetas.length) { W.S.cards = tarjetas.slice(0, 4); if (W.S.screen === 'talk') renderCards(); }
+      if (tarjetas.length) ponerPool(tarjetas);
     } catch (e) { say('tarjetas: ' + e.message); }
-    // 2) Opciones del agente (con memoria): 3 del agente + la mejor tarjeta del tema.
+    // 2) Opciones del agente (con memoria) primero; las tarjetas del tema quedan detrás, en «Más».
     document.getElementById('cards')?.classList.add('loading');
     try {
       const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
       const r = await post(URL_AGENTE, '/api/sugerir', { ...base, modo: 'voz', historial: hist });
       if (id !== E.req) return;
-      const ops = (r.opciones || []).map((o) => ({ text: o.text, tone: o.tone || o.origen, emo: EMOS.includes(o.emo) ? o.emo : 'seria' }));
-      const extra = tarjetas.find((c) => !ops.some((o) => o.text.toLowerCase() === c.text.toLowerCase()));
-      W.S.cards = [...ops.slice(0, extra ? 3 : 4), ...(extra ? [extra] : [])];
+      ponerPool([...aCartas(r.opciones), ...tarjetas]);
     } catch (e) { say('agente: ' + e.message); }
     document.getElementById('cards')?.classList.remove('loading');
-    if (id === E.req && W.S.screen === 'talk') renderCards();
+  }
+
+  // ---------- Tres formas de comunicarse en la sala ----------
+  // Plantillas con contexto (3 a la vez + «Más»), primera letra de cada palabra (con contexto) y letra por letra.
+  const enSala = () => !enChat() && E.turnos.length > 0 && Date.now() - E.ultimoTurno < SALA_MS;
+  const aCartas = (ops) => (ops || []).map((o) => ({ text: o.text, tone: o.tone || o.origen || 'sugerida', emo: EMOS.includes(o.emo) ? o.emo : 'seria', ai: true }));
+  const MAS = { text: 'Más', tone: 'otras respuestas', emo: 'seria', plain: true, mas: true };
+
+  function ponerPool(cartas) {
+    const vistos = new Set(), pool = [];
+    for (const c of cartas) { const k = c.text.toLowerCase().trim(); if (k && !vistos.has(k)) { vistos.add(k); pool.push(c); } }
+    E.pool = pool; E.pag = 0;
+    pagina();
+  }
+  function pagina() {
+    const n = Math.max(1, Math.ceil(E.pool.length / 3));
+    W.S.cards = [...E.pool.slice((E.pag % n) * 3, (E.pag % n) * 3 + 3), MAS];
+    if (W.S.screen === 'talk') renderCards();
+  }
+  async function mas() {
+    if ((E.pag + 1) * 3 < E.pool.length) { E.pag++; pagina(); return; }
+    const t = E.turnos[E.turnos.length - 1];
+    if (!t || E.pidiendoMas) { E.pag = 0; pagina(); return; }
+    E.pidiendoMas = true;
+    document.getElementById('cards')?.classList.add('loading');
+    try {   // se acabaron: el agente propone otras, sin repetir las que ya vio
+      const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
+      const r = await post(URL_AGENTE, '/api/sugerir', { ...cuerpo(t), modo: 'voz', historial: hist, excluir: E.pool.map((c) => c.text) });
+      const nuevas = aCartas(r.opciones).filter((c) => !E.pool.some((x) => x.text.toLowerCase() === c.text.toLowerCase()));
+      if (nuevas.length) { const desde = E.pool.length; E.pool.push(...nuevas); E.pag = Math.floor(desde / 3); } else E.pag = 0;
+    } catch (e) { say('más: ' + e.message); E.pag = 0; }
+    E.pidiendoMas = false;
+    document.getElementById('cards')?.classList.remove('loading');
+    pagina();
+  }
+
+  // Hablar en modo sala: la 4.ª tarjeta es «Más», «Escribir» pasa a primera letra y «Volver» a letra por letra
+  // (Inicio y Volver siguen en la barra de arriba).
+  if (typeof window.renderCards === 'function') {
+    const origRender = window.renderCards;
+    window.renderCards = function () {
+      const r = origRender.apply(this, arguments);
+      if (!enSala()) return r;
+      const g = document.getElementById('cards');
+      const m = g.querySelector('[data-act="say:3"]');
+      if (m && (W.S.cards[3] || {}).mas) {
+        m.dataset.act = 'escuchaMas';
+        m.querySelector('.ph').textContent = E.pidiendoMas ? 'Buscando…' : 'Más ▸';
+        m.querySelector('.tone').textContent = (E.pag + 1) * 3 < E.pool.length ? 'otras respuestas' : 'pedir otras nuevas';
+      }
+      const esc = g.querySelector('.side[data-act="go:keyboard"]');
+      if (esc) { esc.dataset.act = 'waKb'; esc.innerHTML = '<svg><use href="#i-keys"/></svg>Primera letra<small>con lo que te dijeron</small>'; }
+      const vol = g.querySelector('.side[data-act="go:home"]');
+      if (vol) { vol.dataset.act = 'go:keyboard'; vol.innerHTML = '<svg><use href="#i-keys"/></svg>Letra por letra<small>máxima precisión</small>'; }
+      return r;
+    };
+  }
+  if (typeof window.activate === 'function') {
+    const origAct = window.activate;
+    window.activate = function (el) {
+      if (el && el.dataset && el.dataset.act === 'escuchaMas') { try { press(el); } catch (_) {} mas(); return; }
+      return origAct.apply(this, arguments);
+    };
+  }
+
+  // Primera letra con contexto: con cada letra se le pide al agente frases que respeten las iniciales y respondan
+  // a lo que le dijeron (persona, privacidad y memoria). «Completar» las muestra en Hablar, también con «Más».
+  function pedirIniciales(ini) {
+    if (E.ini.ini === ini && E.ini.p) return E.ini.p;
+    const t = E.turnos[E.turnos.length - 1] || { texto: '' };
+    const hist = E.turnos.slice(-MAX_TURNOS, -1).map((x) => etiqueta(x) + ': ' + x.texto);
+    const e = E.ini = { ini, list: null, p: null };
+    e.p = post(URL_AGENTE, '/api/iniciales', { ...cuerpo(t), iniciales: ini, historial: hist })
+      .then((r) => { e.list = (r.suggestions || []).map((x) => ({ text: x.text, tone: x.tone || 'por iniciales', emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: true })); return e.list; })
+      .catch((err) => { say('iniciales: ' + err.message); e.list = []; return []; });
+    return e.p;
+  }
+  if (typeof window.iniAsk === 'function') {
+    const origAsk = window.iniAsk;
+    let tmr = null;
+    window.iniAsk = function () {
+      if (!enSala()) return origAsk.apply(this, arguments);
+      const ini = (W.S.kb && W.S.kb.ini) || '';
+      clearTimeout(tmr);
+      if (!ini) { W.S.kb.ai = null; return; }
+      tmr = setTimeout(() => {
+        const ai = W.S.kb.ai = { ini, list: null, p: null };
+        ai.p = pedirIniciales(ini).then((l) => { ai.list = l; }).finally(() => {
+          if (W.S.screen === 'keyboard' && W.S.kb.mode === 'ini' && W.S.kb.ai === ai) { try { renderKbText(); markLikelyKeys(); } catch (_) {} }
+        });
+      }, 300);
+    };
+  }
+  if (typeof window.kbExpand === 'function') {
+    const origExp = window.kbExpand;
+    window.kbExpand = async function () {
+      if (!enSala()) return origExp.apply(this, arguments);
+      const ini = (W.S.kb && W.S.kb.ini) || '';
+      if (!ini) { try { island('🔤', 'Elige al menos una letra', true); } catch (_) {} return; }
+      try { island('✨', 'Completando con lo que te dijeron…', false, 0); } catch (_) {}
+      await Promise.race([pedirIniciales(ini), new Promise((r) => setTimeout(r, 20000))]);
+      let out = [];
+      try { out = iniCandidates().slice(0, 9).map((x) => ({ text: x.text, tone: x.tone, emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: x.ai })); } catch (_) { out = E.ini.list || []; }
+      if (E.ini.ini === ini && E.ini.list) out = [...E.ini.list, ...out];
+      try { island('✨', 'Listo', false, 600); } catch (_) {}
+      W.S.kb.mode = 'text';
+      E.ultimoTurno = Date.now();
+      go('talk');
+      ponerPool(out);
+      say('iniciales ' + ini.toUpperCase() + ' → ' + out.length + ' frases');
+    };
   }
 
   function turno(texto, meta = {}) {
@@ -136,13 +247,17 @@
     mostrar(t);
   }
 
-  // Al pasar de Inicio a Hablar, la TV genera sus propias sugerencias (genSuggestions). Si un turno escuchado
-  // acaba de llegar, Hablar muestra las tarjetas de ese turno. Lo que escribe el acompañante sigue igual.
+  // En modo sala, Hablar muestra lo de la conversación escuchada, no las sugerencias genéricas de la TV
+  // (genSuggestions corre al entrar a Hablar). Si el acompañante escribe otra cosa y aprieta Enter, cuenta como turno.
   if (typeof window.genSuggestions === 'function') {
     const origGen = window.genSuggestions;
     window.genSuggestions = function () {
-      if (Date.now() - E.ultimoTurno < 3000 && !enChat()) { if (W.S.screen === 'talk') renderCards(); return Promise.resolve(); }
-      return origGen.apply(this, arguments);
+      if (!enSala()) return origGen.apply(this, arguments);
+      const escrito = (document.getElementById('ctxIn') || {}).value || '';
+      const ult = E.turnos[E.turnos.length - 1];
+      if (escrito.trim() && ult && escrito.trim() !== ult.texto) { turno(escrito, {}); return Promise.resolve(); }
+      if (E.pool.length) pagina(); else if (W.S.screen === 'talk') renderCards();
+      return Promise.resolve();
     };
   }
 
@@ -277,5 +392,6 @@
   getJ(URL_AGENTE, '/api/personas').then((p) => { E.personas = p; pintarBarra(); }).catch(() => {});
 
   // Para probar sin micrófono: MYO_ESCUCHA.turno("¿Le duele la espalda?", {hablante: "S2"}); MYO_ESCUCHA.asignar("S2", "juan")
-  window.MYO_ESCUCHA = { encender, apagar, turno, asignar, estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes } }) };
+  window.MYO_ESCUCHA = { encender, apagar, turno, asignar, mas, enSala,
+    estado: () => ({ on: E.on, turnos: E.turnos.slice(), hablantes: { ...E.hablantes }, pool: E.pool.map((c) => c.text), pag: E.pag }) };
 })();
