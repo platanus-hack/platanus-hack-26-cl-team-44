@@ -11,7 +11,10 @@ import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente co
 type Mode = "off" | "dry" | "sandbox" | "live";
 const MODE = (process.env.WA_MODE ?? "dry") as Mode;
 const PORT = Number(process.env.PORT ?? 8787);
-const ORIGIN = process.env.ALLOWED_ORIGIN ?? "http://localhost:8000";
+// Uno o varios orígenes separados por coma (p. ej. la TV en :8000 y Toki OS en :8790). Se responde con el del pedido si está en la lista.
+const ORIGINS = (process.env.ALLOWED_ORIGIN ?? "http://localhost:8000").split(",").map((o) => o.trim()).filter(Boolean);
+const ORIGIN = ORIGINS[0];
+const corsFor = (o?: string) => (o && ORIGINS.includes(o) ? o : ORIGIN);
 const SECRET = process.env.WAPI_WEBHOOK_SECRET ?? "";
 const API_TOKEN = process.env.WOKI_API_TOKEN ?? ""; // opcional: si existe, /api/* exige el header X-Woki-Token
 const MAX_PER_DAY = 30;
@@ -198,7 +201,7 @@ function trackStatus(msgId: number, contactId: string) {
 const readBody = (req: http.IncomingMessage) =>
   new Promise<string>((ok, ko) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => ok(b)); req.on("error", ko); });
 function json(res: http.ServerResponse, code: number, body: unknown) {
-  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": ORIGIN });
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": (res as any).corsOrigin ?? ORIGIN, Vary: "Origin" });
   res.end(JSON.stringify(body));
 }
 const safeEqual = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
@@ -207,10 +210,11 @@ const verify = (raw: string, sig?: string) =>
 
 // ---------- rutas ----------
 const server = http.createServer(async (req, res) => {
+  const cors = corsFor(req.headers.origin); (res as any).corsOrigin = cors;
   const url = new URL(req.url ?? "/", "http://x");
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
+    res.writeHead(204, { "Access-Control-Allow-Origin": cors, Vary: "Origin", "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type, X-Woki-Token" });
     return res.end();
   }
 
@@ -235,7 +239,7 @@ const server = http.createServer(async (req, res) => {
     // 3) POST: solo JSON (fuerza preflight CORS) y desde el Origin exacto de la app.
     if (req.method === "POST") {
       const ctype = String(h["content-type"] ?? "").split(";")[0].trim();
-      if (h.origin !== ORIGIN || ctype !== "application/json")
+      if (!ORIGINS.includes(String(h.origin)) || ctype !== "application/json")
         return json(res, 403, { ok: false, reason: "origen o content-type no permitido" });
     }
   }
@@ -351,7 +355,7 @@ const server = http.createServer(async (req, res) => {
 
   // TV ← eventos
   if (req.method === "GET" && url.pathname === "/api/wa/events") {
-    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "Access-Control-Allow-Origin": ORIGIN });
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "Access-Control-Allow-Origin": cors, Vary: "Origin" });
     res.write(`data: ${JSON.stringify({ type: "hello", mode: MODE })}\n\n`);
     tvs.add(res); req.on("close", () => tvs.delete(res));
     return;
@@ -374,7 +378,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ElevenLabs (/api/voz/*, /api/emergencia/*): ya pasó por las comprobaciones de /api/* de arriba
-  if (await handleVoz(req, res, url, ORIGIN)) return;
+  if (await handleVoz(req, res, url, cors)) return;
 
   res.writeHead(404); res.end();
 });
