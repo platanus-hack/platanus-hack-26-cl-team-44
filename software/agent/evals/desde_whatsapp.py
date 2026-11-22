@@ -107,6 +107,10 @@ def main() -> None:
         random.shuffle(candidatos)
         candidatos.sort(key=lambda p: sum(1 for e in elegidos if e["q"]["ini"].strftime("%Y-%m") == p["q"]["ini"].strftime("%Y-%m")))
         elegidos += candidatos[:round(a.n * frac)]
+    if len(elegidos) < a.n:   # un tipo con pocos pares (afecto): se completa con el resto, al azar
+        resto = [p for p in pares if p not in elegidos]
+        random.shuffle(resto)
+        elegidos += resto[:a.n - len(elegidos)]
     elegidos.sort(key=lambda p: p["q"]["ini"])
     with open(a.salida, "w", encoding="utf-8") as f:
         for j, p in enumerate(elegidos[:a.n]):

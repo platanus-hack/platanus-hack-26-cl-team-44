@@ -3,6 +3,7 @@
     python3 software/agent/evals/correr.py                       # dry run: capas 1-3, sin modelo y sin costo
     python3 software/agent/evals/correr.py --agente              # también la capa 4 (llama al agente: usa la suscripción)
     python3 software/agent/evals/correr.py --casos data/evals.jsonl --db data/memoria.db --tarjetas data/tarjetas.json
+    ... --agente --votos 3 --paralelo 4    # juez por mayoría de 3 y 4 casos a la vez (necesita --db)
                                                                  # casos, memoria y tarjetas reales
 
 Cada caso (JSONL):
@@ -24,6 +25,7 @@ Los casos reales (con memorias de la usuaria) van en data/, fuera de git.
 from __future__ import annotations
 
 import argparse
+import collections
 import os
 import difflib
 import json
@@ -46,6 +48,9 @@ JUEZ_ESQUEMA = {"type": "object", "additionalProperties": False, "required": ["c
                 "properties": {"calza": {"type": "boolean"}, "cual": {"type": "integer"}, "contenido": {"type": "boolean"}}}
 
 
+VOTOS = 1   # --votos: veces que juzga cada caso; manda la mayoría (baja el ruido del juez)
+
+
 def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[bool, int, bool]:
     """¿Alguna opción tiene la misma intención que alguna respuesta aceptable? No exige los mismos datos: exigirlos premiaba
     las opciones específicas (auditoría con llamadas reales). Devuelve (misma intención, índice, mismo contenido):
@@ -60,10 +65,17 @@ def juzgar(pregunta: str, opciones: list[str], aceptables: list[str]) -> tuple[b
               + "\n\n¿Alguna opción tiene la misma intención que alguna aceptable? No hace falta que traiga los mismos datos; el estilo puede cambiar. "
               "calza = true o false; cual = índice de la mejor (o -1). "
               "Aparte, solo como dato: contenido = true si alguna además trae los mismos datos.")
-    datos, _ = asyncio.run(llm.consultar("Eres un evaluador estricto y breve. Respondes solo con el JSON pedido.",
-                                         prompt, JUEZ_ESQUEMA, JUEZ))
-    r = datos or {}
-    return bool(r.get("calza")), int(r.get("cual", -1)), bool(r.get("calza")) and bool(r.get("contenido"))
+    async def todos():
+        return await asyncio.gather(*(llm.consultar("Eres un evaluador estricto y breve. Respondes solo con el JSON pedido.",
+                                                    prompt, JUEZ_ESQUEMA, JUEZ) for _ in range(VOTOS)), return_exceptions=True)
+    vs = [v[0] for v in asyncio.run(todos()) if isinstance(v, tuple) and v[0]]
+    if not vs:
+        return False, -1, False
+    si = [v for v in vs if v.get("calza")]
+    calza = len(si) * 2 > len(vs)
+    cual = collections.Counter(int(v.get("cual", -1)) for v in si).most_common(1)[0][0] if calza else -1
+    contenido = calza and sum(bool(v.get("contenido")) for v in si) * 2 > len(vs)
+    return calza, cual, contenido
 
 
 def norm(s: str) -> str:
@@ -138,19 +150,29 @@ def main() -> None:
     ap.add_argument("--agente", action="store_true", help="también las capas 4 y 5 (llama al agente y al juez)")
     ap.add_argument("--tarjetas", default="", help="tarjetas propias de la usuaria (data/tarjetas.json)")
     ap.add_argument("--salida", default="", help="guarda el detalle en JSON")
+    ap.add_argument("--votos", type=int, default=1, help="veces que juzga cada respuesta; manda la mayoría (usa 3)")
+    ap.add_argument("--paralelo", type=int, default=1, help="casos a la vez (con --db; cada hilo abre su conexión)")
     a = ap.parse_args()
-    if a.db:
-        c = store.conectar(a.db)
-    else:
+    global VOTOS
+    VOTOS = max(1, a.votos)
+
+    def conectar():
+        if a.db:
+            return store.conectar(a.db)
         c = store.conectar(":memory:")
         store.cargar_semilla(c, json.loads((AGENT / "ejemplos" / "semilla.example.json").read_text(encoding="utf-8")))
+        return c
     casos = [json.loads(l) for l in Path(a.casos).read_text(encoding="utf-8").splitlines() if l.strip()]
     pt = Path(a.tarjetas) if a.tarjetas else Path("/nonexistent")
-    res = []
-    for x in casos:
-        res.append(evaluar(c, x, a.agente, pt))
+
+    def uno(x):
+        r = evaluar(conectar(), x, a.agente, pt)
         if a.agente:
             print(f"  · {x['id']} listo", flush=True)
+        return r
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max(1, a.paralelo)) as ex:
+        res = list(ex.map(uno, casos))
 
     print(f"{'caso':26} {'1 privacidad':14} {'2 memorias':12} {'fugas':6} {'3 tema':14} {'tarjeta':8} {'4 agente':10} {'5 iniciales':12}")
     for r in res:
