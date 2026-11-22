@@ -5,6 +5,8 @@ const exec = promisify(execFile);
 const fault = (message, status = 400) => Object.assign(new Error(message), {status});
 export function safeMessage(error) {
   const raw = `${error.stderr || ''} ${error.message || ''}`;
+  // -1743: macOS no dio permiso de Automatización (antes caía en el filtro de 'auth' y pedía conectar la sesión)
+  if (/-1743|not authorized to send apple events/i.test(raw)) return 'macOS no dio permiso para controlar Spotify. Ajustes › Privacidad y seguridad › Automatización › Terminal › activa Spotify.';
   if (/cookie|keychain|auth|token|login|401|403/i.test(raw)) return 'Conecta tu sesión de Spotify. Si macOS pide acceso al llavero, revisa el diálogo en tu computador.';
   if (/ENOENT/i.test(raw)) return 'El conector de Spotify todavía no está instalado en este computador.';
   if (/429|rate.limit/i.test(raw)) return 'Spotify pide esperar. Vuelve a intentarlo más tarde.';

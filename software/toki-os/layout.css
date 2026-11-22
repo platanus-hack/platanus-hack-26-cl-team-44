@@ -294,3 +294,9 @@ body.iphone-pointer:not(.iphone-hold) .t.focus::before { opacity: 0; }
   .official-os .control-option strong { font-size: 18px; } .official-os .control-option small { font-size: 13px; margin-top: 3px; }
   .official-os .choose-control .resume-control { height: 48px; font-size: 16px; }
 }
+
+/* chat de WhatsApp: tarjetas más angostas → franja del emoji más angosta y el texto con su espacio (antes se tapaban) */
+#s-talk.chatmode .card { padding: 22px 134px 22px 30px !important; }
+#s-talk.chatmode .card.plain { padding-right: 30px !important; }
+#s-talk.chatmode .emo { width: 112px !important; font-size: 58px !important; }
+#s-talk.chatmode .emo .ring { right: 10px; bottom: 10px; width: 36px; height: 36px; }

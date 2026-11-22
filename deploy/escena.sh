@@ -30,11 +30,15 @@ echo
 # 1) Sensor: argumentos dados, o el primer puerto USB que aparezca
 ARGS=("$@")
 if [ ${#ARGS[@]} -eq 0 ]; then
-  PUERTOS=(/dev/cu.usbmodem* /dev/ttyACM* /dev/ttyUSB*)
+  PUERTOS=(/dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.usbmodem* /dev/ttyACM* /dev/ttyUSB*)   # UNO original: usbmodem; clones: usbserial/wchusbserial
   SERIAL=""
   for p in "${PUERTOS[@]}"; do [ -e "$p" ] && { SERIAL="$p"; break; }; done
   if [ -n "$SERIAL" ]; then ARGS=(--serial-port "$SERIAL"); ok "MyoWare por USB: $SERIAL"
-  else ko "No encuentro el MyoWare por USB. Revisa el cable o usa: bash deploy/escena.sh --ble-jaw … --ble-brow …"; fin; fi
+  else
+    # Sin USB: intenta los MyoWare por Bluetooth. Si tampoco están, la TV sigue funcionando con teclado y mouse.
+    ARGS=(--ble-jaw "${TOKI_BLE_JAW:-MyoWareMandibula}" --ble-brow "${TOKI_BLE_BROW:-MyoWareCeja}")
+    ko "Sin MyoWare por USB: intento Bluetooth (${ARGS[1]}, ${ARGS[3]}). Sin sensor: Espacio = ceja, J = mandíbula"
+  fi
 fi
 
 # 2) Token del puente: del entorno, o de la VPS por SSH
@@ -47,6 +51,12 @@ wa=$(curl -s -m 8 -H "X-Woki-Token: $TOKEN" "$REMOTO/wa/api/wa/health" || true)
 case "$wa" in *'"session":"connected"'*) ok "WhatsApp conectado en la VPS";; *) ko "WhatsApp no responde en $REMOTO (la TV va a mostrar 'sin conexión')";; esac
 ag=$(curl -s -m 8 -H "X-Woki-Token: $TOKEN" "$REMOTO/agente/api/salud" || true)
 case "$ag" in *'"ok": true'*) ok "Agente con memoria en la VPS";; *) ko "El agente no responde en $REMOTO";; esac
+
+# Spotify: macOS pide permiso de Automatización la primera vez. El aviso solo sale desde una terminal en primer plano.
+if [ -d /Applications/Spotify.app ]; then
+  if osascript -e 'tell application "Spotify" to player state' >/dev/null 2>&1; then ok "Spotify: permiso para controlarlo"
+  else ko "Spotify: falta permiso. Acepta el aviso de macOS, o Ajustes › Privacidad y seguridad › Automatización › Terminal › Spotify"; fi
+fi
 
 # 4) apps-bridge local: Rappi (arma el carrito con la cuenta conectada; no paga) y los demás servicios
 APPS=""
@@ -73,7 +83,7 @@ for _ in $(seq 1 30); do
 done
 if [ -n "$listo" ]; then ok "Monitor en http://127.0.0.1:$PUERTO"; else ko "El monitor no arrancó (¿el puerto $PUERTO está ocupado?)"; fin; fi
 sleep 1
-case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected": true'*|*'"connected":true'*) ok "Sensor enviando datos";; *) ko "El sensor no manda datos todavía (revisa que estén en modo ENV)";; esac
+case "$(curl -s -m 3 "http://127.0.0.1:$PUERTO/data" || true)" in *'"connected": true'*|*'"connected":true'*) ok "Sensor enviando datos";; *) ko "El sensor no manda datos: sin MyoWare, usa Espacio = ceja y J = mandíbula (si es Bluetooth, revisa Ajustes › Privacidad › Bluetooth)";; esac
 
 # 6) Chrome con su propio perfil (guarda la calibración entre ensayos) y en pantalla completa
 URL="http://127.0.0.1:$PUERTO/woki-os.html"

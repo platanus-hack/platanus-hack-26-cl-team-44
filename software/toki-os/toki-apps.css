@@ -158,3 +158,29 @@ body.apps-open #content{padding:0!important;overflow:hidden!important}
 /* categorías de comida: ícono grande sobre el nombre */
 .food-cat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .food-cat-icon{font-size:clamp(40px,5vw,72px);line-height:1}
+/* Rappi · pago en 3 pasos y seguimiento */
+.pay-steps{display:flex;gap:10px;list-style:none;margin:0 0 6px;padding:0;counter-reset:none}
+.pay-steps li{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:var(--ta-surface,rgba(255,255,255,.06));color:var(--ta-muted);font-size:clamp(15px,1.4vw,20px);font-weight:700}
+.pay-steps li span{font-weight:600}
+.pay-steps li.now{background:var(--ta-accent,#2b8a5e);color:#10210f}
+.pay-steps li.done{color:var(--ta-text,#fff)}
+.pay-tips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pay-tip strong{font-size:clamp(24px,2.6vw,38px)}
+.pay-box{display:flex;flex-direction:column;gap:8px;padding:16px 20px;border-radius:18px;background:var(--ta-surface,rgba(255,255,255,.06))}
+.pay-row{display:flex;justify-content:space-between;align-items:baseline;font-size:clamp(18px,1.8vw,26px)}
+.pay-row b{font-variant-numeric:tabular-nums}
+.pay-total{border-top:1px solid rgba(255,255,255,.18);padding-top:10px;margin-top:4px;font-size:clamp(24px,2.4vw,36px)}
+.pay-now{font-size:clamp(22px,2.2vw,32px)}
+.pay-confirm{outline:4px solid #f5b400;outline-offset:2px}
+.pay-cancel{font-size:clamp(20px,2vw,28px);color:#ff8a80;margin:0}
+.track-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;list-style:none;margin:0;padding:0}
+.track-steps li{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;background:var(--ta-surface,rgba(255,255,255,.06));color:var(--ta-muted);font-size:clamp(16px,1.6vw,22px);font-weight:700;text-align:center}
+.track-steps li i{font-style:normal;font-size:clamp(22px,2.2vw,32px)}
+.track-steps li.now{background:var(--ta-accent,#2b8a5e);color:#10210f}
+.track-steps li.done{color:var(--ta-text,#fff)}
+.track-courier{font-size:clamp(20px,2vw,28px);margin:0;font-weight:700}
+.track-msg{margin:0;font-size:clamp(16px,1.5vw,22px)}
+@media(max-width:700px){.pay-steps li span{display:none}.track-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ta-button.pay-now{background:#1f9d5c!important;color:#fff!important;border-color:#1f9d5c!important}
+.ta-button.pay-now.pay-confirm{background:#f5b400!important;color:#1b1400!important;border-color:#f5b400!important;outline:none}
+.ta-button.pay-tip.ta-selected{background:#1f9d5c!important;color:#fff!important;border-color:#1f9d5c!important}
