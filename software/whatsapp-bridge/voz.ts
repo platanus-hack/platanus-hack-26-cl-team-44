@@ -214,7 +214,10 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
     // Alarma de emergencia → un agente de ElevenLabs llama a todos los contactos de emergencia en paralelo.
     // { alarmId } · una tanda por alarma, y como mucho una por minuto.
     if (req.method === "POST" && p === "/api/emergencia/llamar") {
-      const { alarmId, motivo } = JSON.parse((await readBody(req, 2_000)) || "{}");
+      const { alarmId, motivo, solo } = JSON.parse((await readBody(req, 2_000)) || "{}");
+      // solo: nombre de UN contacto, para probar la llamada sin despertar a todos (solo nombres de la lista)
+      const destinos = solo ? CONTACTOS.filter((c) => c.nombre.toLowerCase() === String(solo).toLowerCase()) : CONTACTOS;
+      if (solo && !destinos.length) { json(400, { ok: false, reason: "Ese contacto no está en EMERGENCY_CONTACTS" }); return true; }
       if (!AGENT_ID || !PHONE_ID || !CONTACTOS.length) { json(503, { ok: false, reason: "Llamada no configurada (agente, número o contactos)" }); return true; }
       const id = clean(alarmId, 64);
       if (!id) { json(400, { ok: false, reason: "Falta alarmId" }); return true; }
@@ -223,7 +226,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
       const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false });
       lastCall = { at: Date.now(), alarmId: id, hora, direccion: DIRECCION || "la casa", llamadas: [] };
       const vars = { persona: PERSONA, direccion: DIRECCION || "la casa", hora, motivo: clean(motivo, 80) || "activó la alarma de emergencia", emergencias: NUM_EMERGENCIAS };
-      const res2 = await Promise.allSettled(CONTACTOS.map((c) => xiJson("/v1/convai/twilio/outbound-call", {
+      const res2 = await Promise.allSettled(destinos.map((c) => xiJson("/v1/convai/twilio/outbound-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -232,7 +235,7 @@ export async function handleVoz(req: http.IncomingMessage, res: http.ServerRespo
           telephony_call_config: { ringing_timeout_secs: 45 },
         }),
       })));
-      lastCall.llamadas = CONTACTOS.map((c, n) => {
+      lastCall.llamadas = destinos.map((c, n) => {
         const r = res2[n];
         const j: any = r.status === "fulfilled" ? r.value : null;
         const error = !j ? String((r as PromiseRejectedResult).reason?.message ?? "error") : j.success ? "" : String(j.message ?? "no se pudo llamar");
