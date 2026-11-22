@@ -4,7 +4,8 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createAppsServer} from '../../software/apps-bridge/server.mjs';
-import {createBioBioAdapter,parseBioBioFeed,BIOBIO_FEED} from '../../software/apps-bridge/adapters/biobio.mjs';
+import {createBioBioAdapter,parseBioBioFeed,parseBioBioImages,BIOBIO_FEED,BIOBIO_IMAGES} from '../../software/apps-bridge/adapters/biobio.mjs';
+import {imageURL,parseRssFeed} from '../../software/apps-bridge/adapters/rss-reader.mjs';
 import {createAdapterRegistry} from '../../software/apps-bridge/adapters/registry.mjs';
 import {newsFixture} from './news-fixture.mjs';
 async function fixture(t,options={}){
@@ -60,7 +61,8 @@ test('RSS strips markup, rejects foreign URLs/entities/oversize and exposes sour
  assert.throws(()=>parseBioBioFeed('x'.repeat(2_000_001)));
  assert.throws(()=>parseBioBioFeed('<html>unavailable</html>'));
  let calls=0;const ctx={signal:new AbortController().signal,evidence:()=>{},report:()=>{}};
- const a=createBioBioAdapter({fetcher:async(url,options)=>{calls++;assert.equal(url,BIOBIO_FEED);assert.equal(options.redirect,'error');return new Response(newsFixture.replace(/<lastBuildDate>.*?<\/lastBuildDate>/,'<lastBuildDate>Mon, 01 Jan 2001 00:00:00 GMT</lastBuildDate>'));}});
+ // The image index (BIOBIO_IMAGES) is a separate, optional request; only feed downloads count for the cache.
+ const a=createBioBioAdapter({fetcher:async(url,options)=>{assert.equal(options.redirect,'error');if(url===BIOBIO_IMAGES)return new Response('',{status:404});calls++;assert.equal(url,BIOBIO_FEED);return new Response(newsFixture.replace(/<lastBuildDate>.*?<\/lastBuildDate>/,'<lastBuildDate>Mon, 01 Jan 2001 00:00:00 GMT</lastBuildDate>'));}});
  assert.equal((await a.execute('list',{},ctx)).stale,true);await a.execute('list',{},ctx);assert.equal(calls,1);
 });
 test('network failures stay recoverable and do not fabricate articles or readiness',async t=>{
@@ -68,4 +70,39 @@ test('network failures stay recoverable and do not fabricate articles or readine
  const j=(await api('jobs',{name:'BioBioChile'})).job,result=await settle(api,j.id);
  assert.equal(result.status,'error');assert.ok(!result.message.includes('private-token'));
  assert.equal((await api(`jobs/${j.id}/review`,{functional:true,personal:true})).status,409);
+});
+test('thumbnail URLs: only public https, no credentials, ports, emoji or odd schemes',()=>{
+ assert.equal(imageURL('https://cdn.example.org/a.jpg?w=750&amp;h=400#x'),'https://cdn.example.org/a.jpg?w=750&h=400');
+ for(const bad of ['http://cdn.example.org/a.jpg','javascript:alert(1)','data:image/png;base64,AAAA','https://user:pw@cdn.example.org/a.jpg','https://cdn.example.org:8443/a.jpg','https://127.0.0.1/a.jpg','https://localhost/a.jpg','https://s.w.org/images/core/emoji/14.0.0/72x72/1f680.png','//cdn.example.org/a.jpg','https://cdn.example.org/'+'a'.repeat(2100)])assert.equal(imageURL(bad),null,bad);
+ assert.equal(imageURL('https://cdn.example.org/a.jpg',['media.biobiochile.cl']),null);
+});
+test('RSS thumbnail comes from enclosure, media:content, media:thumbnail or the first non-emoji <img>',()=>{
+ const spec={id:'demo',name:'Demo',channelTitle:'Demo',feedUrl:'https://news.example.org/rss',articleHosts:['news.example.org'],articlePathPrefix:'/'};
+ const item=(n,extra)=>`<item><title>Nota ${n}</title><link>https://news.example.org/${n}</link>${extra}</item>`;
+ const xml=`<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Demo</title>${[
+  item(1,'<enclosure url="https://cdn.example.org/1.jpg" type="image/jpeg" length="1"/>'),
+  item(2,'<media:content url="https://cdn.example.org/2.jpg" medium="image"/>'),
+  item(3,'<media:thumbnail url="https://cdn.example.org/3.jpg"/>'),
+  item(4,'<description><![CDATA[<p><img class="wp-smiley" src="https://s.w.org/images/core/emoji/14.0.0/72x72/1f680.png"><img src="https://cdn.example.org/4.jpg"> Texto</p>]]></description>'),
+  item(5,'<enclosure url="https://cdn.example.org/5.mp3" type="audio/mpeg"/><description>&lt;img src=&quot;javascript:alert(1)&quot;&gt; sin imagen</description>'),
+  item(6,'<media:thumbnail url="http://cdn.example.org/6.jpg"/>'),
+  item(7,'<description><![CDATA[<img src="https://cdn.example.org/7.jpg" onerror="alert(1)">"]]></description>')
+ ].join('')}</channel></rss>`;
+ const images=parseRssFeed(xml,spec).items.map(i=>i.image);
+ assert.deepEqual(images,['https://cdn.example.org/1.jpg','https://cdn.example.org/2.jpg','https://cdn.example.org/3.jpg','https://cdn.example.org/4.jpg',null,null,'https://cdn.example.org/7.jpg']);
+ assert.ok(parseRssFeed(xml,{...spec,imageHosts:['media.example.org']}).items.every(i=>i.image===null));
+});
+test('BioBioChile thumbnails come from the publisher JSON list; its failure keeps the news',async()=>{
+ const index=parseBioBioImages(JSON.stringify([
+  {post_URL:'https://www.biobiochile.cl/noticias/prueba/1.shtml',post_image:{URL:'2026/11/a.png',thumbnails:{medium:{URL:'2026/11/a-750x400.png'}}}},
+  {post_URL:'https://www.biobiochile.cl/noticias/prueba/2.shtml',post_image:{URL:'../../etc/passwd'}},
+  {post_URL:'https://www.biobiochile.cl/noticias/prueba/3.shtml',post_image:{URL:'https://evil.test/x.png'}}]));
+ assert.deepEqual([...index],[['https://www.biobiochile.cl/noticias/prueba/1.shtml','https://media.biobiochile.cl/wp-content/uploads/2026/11/a-750x400.png']]);
+ const ctx={signal:new AbortController().signal,evidence:()=>{}};
+ const json=JSON.stringify([{post_URL:'https://www.biobiochile.cl/noticias/prueba/1.shtml',post_image:{thumbnails:{medium:{URL:'2026/11/a-750x400.png'}}}}]);
+ const ok=createBioBioAdapter({fetcher:async url=>new Response(url===BIOBIO_IMAGES?json:newsFixture)});
+ const items=(await ok.execute('list',{},ctx)).items;
+ assert.equal(items[0].image,'https://media.biobiochile.cl/wp-content/uploads/2026/11/a-750x400.png');assert.equal(items[1].image,null);
+ const broken=createBioBioAdapter({fetcher:async url=>{if(url===BIOBIO_IMAGES)throw Error('offline');return new Response(newsFixture);}});
+ const list=await broken.execute('list',{},ctx);assert.equal(list.items.length,8);assert.ok(list.items.every(i=>i.image===null));
 });
