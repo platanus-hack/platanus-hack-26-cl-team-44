@@ -331,14 +331,13 @@
 
   // Registrar una voz: lo hace el acompañante con la persona presente. Se graba 20 s leyendo un texto, la VPS guarda
   // solo la huella (no el audio) y el consentimiento con la fecha. «Borrar» la elimina.
-  const LECTURA = 'Hola, soy yo. Estoy aquí con Emmy. Hoy hablamos de lo que hicimos en la semana, de la familia, de la comida ' +
-    'y de los planes para el domingo. Myo, esta es mi voz: cuando me escuches, ya sabes quién te habla.';
+  // El texto de lectura viene de la VPS (software/voces: voces-config.json o un texto neutro), no del código.
   const reg = document.createElement('div');
   reg.id = 'vozReg'; reg.hidden = true; reg.setAttribute('role', 'dialog'); reg.setAttribute('aria-label', 'Registrar voz');
   reg.innerHTML = `<div class="vr-c"><h2>Registrar voz</h2>
     <label>¿Quién habla? <select id="vrPersona"></select></label>
     <label class="vr-ok"><input type="checkbox" id="vrAcepta"> Esta persona acepta que Myo guarde la huella de su voz (256 números, sin el audio) para reconocerla en la sala. La puede borrar cuando quiera.</label>
-    <p class="vr-leer">Lee en voz alta, a ritmo normal:<br><b>${LECTURA}</b></p>
+    <p class="vr-leer">Lee en voz alta, a ritmo normal:<br><b id="vrTexto">…</b></p>
     <p id="vrEstado" aria-live="polite"></p>
     <div class="vr-b"><button type="button" id="vrGrabar">Grabar 20 s</button><button type="button" id="vrBorrar">Borrar su voz</button><button type="button" id="vrCerrar">Cerrar</button></div>
     <p id="vrLista" class="vr-lista"></p></div>`;
@@ -369,6 +368,7 @@
   }
   async function abrirReg() {
     if (!E.personas.length) E.personas = await getJ(URL_AGENTE, '/api/personas').catch(() => []);
+    getJ(URL_AGENTE, '/api/voces/config').then((c) => { $r('vrTexto').textContent = c.lectura || ''; }).catch(() => {});
     await cargarVoces(); $r('vrEstado').textContent = ''; $r('vrAcepta').checked = false; pintarReg(); reg.hidden = false;
   }
   async function grabar20() {

@@ -201,7 +201,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(*a_voces("GET", self.path))
         if self.path == "/api/salud":
             c = store.conectar(DB)
-            body = {"ok": True, "usuaria": store.usuaria(c), "personas": len(store.personas(c)), "modelo": MODELO,
+            body = {"ok": True, "usuaria": store.usuaria(c), "genero": store.meta(c, "genero", ""), "personas": len(store.personas(c)), "modelo": MODELO,
                     "uso_hoy": _uso["n"], "tope_dia": MAX_DIA or None,
                     "modos": list(MODOS), "disparadores": [{k: d.get(k) for k in ("id", "grupo_nombre", "estado")}
                                                           for d in DISPARADORES.listar()]}
@@ -320,7 +320,11 @@ class Handler(BaseHTTPRequestHandler):
             c = store.conectar(DB)
             try:
                 contar()
-                r = pedido.plan(c, para=str(body.get("para") or "juan")[:40], ocasion=str(body.get("ocasion") or "aniversario"),
+                para = str(body.get("para") or store.meta(c, "pedido_para", ""))[:40]
+                if not para:
+                    return self._json(400, {"error": "falta para quién es el pedido (ajuste pedido_para en la memoria)"})
+                ocasion = str(body.get("ocasion") or store.meta(c, "pedido_ocasion", "") or "una ocasión especial")
+                r = pedido.plan(c, para=para, ocasion=ocasion,
                                 presupuesto=int(body["presupuesto"]) if str(body.get("presupuesto") or "").isdigit() else None)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})

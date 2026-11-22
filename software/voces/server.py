@@ -31,6 +31,17 @@ RATE = 16000
 UMBRAL = float(os.environ.get("VOCES_UMBRAL", "0.75"))   # parecido mínimo para decir un nombre
 MARGEN = float(os.environ.get("VOCES_MARGEN", "0.05"))   # ventaja mínima sobre la segunda persona
 MIN_REGISTRO_S, MIN_QUIEN_S = 8.0, 0.8
+# Texto que se lee al registrar una voz. Lo particular (nombres, frases propias) va en voces-config.json, junto a voces.json.
+CONFIG = DATOS.with_name("voces-config.json")
+LECTURA = ("Voy a leer este texto a mi ritmo normal para que Myo reconozca mi voz. Hablo de lo que hice esta semana, "
+           "de la comida que me gusta, del clima y de los planes para el fin de semana. Cuando me escuches, ya sabes quién habla.")
+
+
+def config() -> dict:
+    try:
+        return {"lectura": LECTURA, **json.loads(CONFIG.read_text(encoding="utf-8"))}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"lectura": LECTURA}
 
 _lock = threading.Lock()
 _encoder = None
@@ -110,6 +121,8 @@ class Handler(BaseHTTPRequestHandler):
             d = leer()
             return self._json(200, {"ok": True, "personas": [{"persona": p, "fecha": v.get("fecha"), "muestras": v.get("muestras", 1),
                                                               "segundos": v.get("segundos")} for p, v in d.items()]})
+        if self.path == "/api/voces/config":
+            return self._json(200, {"ok": True, "lectura": str(config().get("lectura", LECTURA))[:600]})
         if self.path == "/api/voces/salud":
             return self._json(200, {"ok": True, "registradas": len(leer()), "umbral": UMBRAL})
         self._json(404, {"error": "no existe"})

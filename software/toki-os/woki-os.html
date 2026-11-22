@@ -477,7 +477,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="ctx glass">
       <div class="avatar">S</div><label>Sofía dice</label>
       <input id="ctxIn" placeholder="El acompañante escribe y aprieta Enter" value="¿Vienes a cenar el domingo?">
-      <div class="typing" id="typing"><i></i><i></i><i></i>Emmy está escribiendo</div>
+      <div class="typing" id="typing"><i></i><i></i><i></i><span id="typingWho">Escribiendo</span></div>
     </div>
     <div class="talkbody">
       <div class="chat glass" id="chat" aria-live="polite"><div class="chat-h" id="chatH"></div><div class="chat-list" id="chatList"></div></div>
@@ -660,7 +660,7 @@ if (new URLSearchParams(location.search).get('entrada') === 'teclado') {
     <div class="wap-head">
       <div>
         <h2 id="wapTitle">Contactos principales</h2>
-        <p>Elige hasta 6 personas. Emmy solo podrá escribirles a ellas y solo verá en la TV los mensajes que ellas manden. La relación ayuda a que las frases suenen distinto con cada una.</p>
+        <p>Elige hasta 6 personas. Solo se les podrá escribir a ellas y solo verá en la TV los mensajes que ellas manden. La relación ayuda a que las frases suenen distinto con cada una.</p>
       </div>
       <button class="wap-x" id="wapClose" aria-label="Cerrar">✕</button>
     </div>
@@ -720,7 +720,12 @@ const CFG = {
   magnetR: .09,          // radio de captura: 9 % del lado menor de la pantalla (~3° de ángulo visual en la TV)
   magnetPull: .3         // cuánto se acerca el cursor visible al centro del objetivo (débil: la gente lo prefiere así)
 };
-CFG.emoDwellMs=CFG.dwellMs;   // el emoji usa el mismo tiempo de mirada que el resto
+CFG.emoDwellMs=CFG.dwellMs;
+// Nombre de la usuaria: viene de la memoria del agente (/api/salud), no del código. Sin agente, los textos quedan neutros.
+let USUARIA='';
+if(CFG.AGENTE_URL) fetch(CFG.AGENTE_URL+'/api/salud',{headers:WA_TOKEN?{'X-Myo-Token':WA_TOKEN}:{}}).then(r=>r.ok?r.json():{}).then(j=>{
+  USUARIA=j.usuaria||''; const t=document.getElementById('typingWho'); if(t && USUARIA) t.textContent=USUARIA+' está escribiendo';
+}).catch(()=>{});   // el emoji usa el mismo tiempo de mirada que el resto
 // Sugerencias del teclado: 'fila' = 3 fijas arriba a 1 mirada (más rápido, tarjetas de ~4 cm de alto)
 // · 'lista' = una tecla que abre la lista (2 miradas, tarjetas más grandes). Ajustes › Teclado.
 CFG.sugMode=(()=>{ try{ return localStorage.getItem('woki.sugmode')==='lista'? 'lista' : 'fila'; }catch(_){ return 'fila'; } })();
@@ -2216,7 +2221,7 @@ function updateLCD(){
   const t=new Date().toTimeString().slice(0,5); const A=S.alarm; let l1,l2,led='g';
   if(A && A.level==='emergencia'){ const s=Math.floor((performance.now()-A.t0)/1000);
     if(A.ack){ l1='AYUDA EN CAMINO'; l2='RESPONDIO '+Math.round((A.ack-A.t0)/1000)+'s'; led='a'; } else { l1='EMERGENCIA '+s+'s'; l2='FALTA CONFIRMAR'; led='r'; } }
-  else if(A){ l1='ATENCION'; l2=A.ack?'AYUDA EN CAMINO':'EMMY LLAMA'; led='a'; }
+  else if(A){ l1='ATENCION'; l2=A.ack?'AYUDA EN CAMINO':(USUARIA? USUARIA.toUpperCase()+' LLAMA' : 'PIDE AYUDA'); led='a'; }
   else if(S.gazeLost){ l1='OK'.padEnd(11)+t; l2='MIRADA: SIN CARA'; led='a'; }
   else { l1='OK'.padEnd(11)+t; l2='SENSORES OK'; }
   $('#lcd').textContent=pad(l1)+'\n'+pad(l2);

@@ -37,8 +37,11 @@ def cargar_semilla(c: sqlite3.Connection, semilla: dict) -> dict:
     with c:
         for t in ("limites", "memorias", "temas", "personas", "meta"):
             c.execute(f"DELETE FROM {t}")
-        for clave, defecto in (("usuaria", "Emmy"), ("variante", "español latino neutro, con tuteo"), ("genero", "femenino")):
+        for clave, defecto in (("usuaria", "la usuaria"), ("variante", "español latino neutro, con tuteo"), ("genero", "femenino")):
             c.execute("INSERT INTO meta (clave, valor) VALUES (?, ?)", (clave, semilla.get(clave, defecto)))
+        # Ajustes propios de cada usuaria (por ejemplo pedido_para, pedido_ocasion): datos, no código.
+        for clave, valor in (semilla.get("ajustes") or {}).items():
+            c.execute("INSERT OR REPLACE INTO meta (clave, valor) VALUES (?, ?)", (str(clave), str(valor)))
         for p in semilla.get("personas", []):
             c.execute(
                 "INSERT INTO personas (id, nombre, relacion, apodos, tipo_interlocutor, telefono, trato) VALUES (?,?,?,?,?,?,?)",
@@ -109,4 +112,4 @@ def meta(c: sqlite3.Connection, clave: str, defecto: str = "") -> str:
 
 
 def usuaria(c: sqlite3.Connection) -> str:
-    return meta(c, "usuaria", "Emmy")
+    return meta(c, "usuaria", "la usuaria")

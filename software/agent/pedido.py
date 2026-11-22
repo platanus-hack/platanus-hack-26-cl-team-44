@@ -1,6 +1,8 @@
 """Pedido proactivo: con la memoria, el agente propone qué pedir por Rappi para una ocasión.
 
-    plan(c, para="juan", ocasion="aniversario", presupuesto=None)
+    plan(c, para, ocasion="una ocasión especial", presupuesto=None)
+
+Para quién y la ocasión vienen del pedido o de los ajustes de la memoria (meta pedido_para, pedido_ocasion).
     → {mensaje, query, preferir, evitar, presupuesto, nota, fuentes, origen, meta}
 
 El código arma el contexto con la memoria visible para esa persona (mismos filtros de privacidad).
@@ -68,7 +70,7 @@ async def _consultar(sistema: str, prompt: str) -> tuple[dict | None, dict]:
     return datos, meta
 
 
-def plan(c: sqlite3.Connection, para: str = "juan", ocasion: str = "aniversario",
+def plan(c: sqlite3.Connection, para: str, ocasion: str = "una ocasión especial",
          presupuesto: int | None = None) -> dict:
     persona = store.persona(c, para)
     if not persona:
