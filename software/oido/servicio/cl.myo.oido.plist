@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Oído de Myo en macOS. Cambiar RUTA_REPO por la ruta del repo. Llave en software/oido/.env (fuera de git).
+     launchctl load ~/Library/LaunchAgents/cl.myo.oido.plist   ·   launchctl unload … para detenerlo -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>cl.myo.oido</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string><string>-c</string>
+    <string>cd RUTA_REPO/software/oido &amp;&amp; set -a &amp;&amp; . ./.env &amp;&amp; set +a &amp;&amp; exec .venv/bin/python server.py</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>3</integer>
+  <key>StandardOutPath</key><string>/tmp/myo-oido.log</string>
+  <key>StandardErrorPath</key><string>/tmp/myo-oido.log</string>
+</dict>
+</plist>
