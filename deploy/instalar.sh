@@ -134,6 +134,17 @@ printf 'TOKI_TOKEN=%s\n' "$(grep '^WOKI_API_TOKEN=' "$PUENTE_ENV" | cut -d= -f2-
 chmod 600 "$BASE/toki.env"
 
 cp "$BASE/repo/deploy/toki-agente.service" /etc/systemd/system/toki-agente.service
+# Huellas de voz (software/voces): Python 3.12 aparte, porque torch no tiene ruedas para el 3.14 del sistema.
+# torch solo CPU (1,3 GB; la versión con GPU pesa 5 GB) y webrtcvad ya compilado (la VPS no tiene compilador de C).
+export PATH="/root/.local/bin:$PATH"
+command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null
+if [ ! -x "$BASE/voces-venv/bin/python" ] || ! "$BASE/voces-venv/bin/python" -c "import resemblyzer" 2>/dev/null; then
+  uv venv -q --python 3.12 "$BASE/voces-venv"
+  uv pip install -q --python "$BASE/voces-venv/bin/python" --index-url https://download.pytorch.org/whl/cpu "torch==2.*"
+  uv pip install -q --python "$BASE/voces-venv/bin/python" webrtcvad-wheels numpy scipy librosa
+  uv pip install -q --python "$BASE/voces-venv/bin/python" --no-deps resemblyzer==0.1.4
+fi
+cp "$BASE/repo/deploy/toki-voces.service" /etc/systemd/system/toki-voces.service
 # /equipo/: contraseña del equipo (se crea una vez; verla con: cat /opt/toki/equipo.clave) y token para Caddy
 if [ ! -s "$BASE/equipo.clave" ]; then ( umask 077; openssl rand -base64 18 | tr -d '/+=' > "$BASE/equipo.clave" ); fi
 ( umask 077; {
@@ -147,6 +158,8 @@ cp "$BASE/repo/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable -q --now toki-agente
 systemctl restart toki-agente
+systemctl enable -q toki-voces
+systemctl restart toki-voces
 # wapi solo se reinicia si está apagado o con TOKI_REINICIAR_WAPI=1: reiniciar el gateway corta WhatsApp unos segundos
 # y la TV muestra "WhatsApp se desconectó". Un deploy de Myo no cambia wapi.
 for u in wapi-gateway wapi-api wapi-worker; do
@@ -176,6 +189,6 @@ systemctl enable -q caddy
 systemctl restart caddy
 
 sleep 3
-echo "agente: $(systemctl is-active toki-agente) · caddy: $(systemctl is-active caddy)"
+echo "agente: $(systemctl is-active toki-agente) · voces: $(systemctl is-active toki-voces) · caddy: $(systemctl is-active caddy)"
 echo "wapi: gateway $(systemctl is-active wapi-gateway) · api $(systemctl is-active wapi-api) · worker $(systemctl is-active wapi-worker) · puente: $(systemctl is-active toki-puente) ($(grep '^WA_MODE=' "$PUENTE_ENV" | cut -d= -f2))"
 echo "URL: https://$DOMINIO"

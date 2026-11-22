@@ -99,7 +99,8 @@
     for (const h of voces) {
       const pid = E.hablantes[h];
       const chip = Object.assign(document.createElement('span'), { className: 'voz' + (pid ? '' : ' anon') });
-      chip.append('Voz ' + h.replace(/^S/, ''));
+      chip.append('Voz ' + h.replace(/^S/, '') + (VOCES.auto[h] && VOCES.auto[h] === pid ? ' ✓' : ''));
+      if (VOCES.auto[h] && VOCES.auto[h] === pid) chip.title = 'Reconocida por su voz registrada';
       const sel = document.createElement('select');
       sel.setAttribute('aria-label', '¿De quién es la voz ' + h.replace(/^S/, '') + '?');
       sel.add(new Option('¿Quién es?', ''));
@@ -306,6 +307,111 @@
     };
   }
 
+  // ---------- reconocer la voz (huellas en la VPS, con consentimiento) ----------
+  // Si la voz de un turno no tiene nombre, se pregunta a la VPS quién es antes de mostrar el turno: así el agente
+  // recibe la persona correcta en el primer pedido (un pedido, no dos). Tope de 1,5 s: si no responde, sigue sin nombre.
+  const VOCES = { registradas: [], auto: {} };   // auto: voz → persona reconocida por la huella
+  const cargarVoces = () => getJ(URL_AGENTE, '/api/voces/lista').then((r) => { VOCES.registradas = r.personas || []; }).catch(() => {});
+  async function turnoConVoz(texto, meta, rango) {
+    const h = meta.hablante;
+    const yaTiene = h ? !!E.hablantes[h] : false;
+    const audio = !yaTiene && VOCES.registradas.length && rango ? recorte(rango[0], rango[1]) : null;
+    if (audio) {
+      try {
+        const r = await Promise.race([post(URL_AGENTE, '/api/voces/quien', { audio }), new Promise((_, no) => setTimeout(() => no(new Error('tarde')), 1500))]);
+        say(`voz ${h || '?'}: ${r.persona ? 'reconocida' : 'sin nombre'} (parecido ${r.score})`);
+        if (r.persona) {
+          if (h) { E.hablantes[h] = r.persona; VOCES.auto[h] = r.persona; try { sessionStorage.setItem('myo.hablantes', JSON.stringify(E.hablantes)); } catch (_) {} }
+          else meta = { ...meta, persona: r.persona };
+        }
+      } catch (e) { say('reconocer voz: ' + e.message); }
+    }
+    turno(texto, meta);
+  }
+
+  // Registrar una voz: lo hace el acompañante con la persona presente. Se graba 20 s leyendo un texto, la VPS guarda
+  // solo la huella (no el audio) y el consentimiento con la fecha. «Borrar» la elimina.
+  const LECTURA = 'Hola, soy yo. Estoy aquí con Emmy. Hoy hablamos de lo que hicimos en la semana, de la familia, de la comida ' +
+    'y de los planes para el domingo. Myo, esta es mi voz: cuando me escuches, ya sabes quién te habla.';
+  const reg = document.createElement('div');
+  reg.id = 'vozReg'; reg.hidden = true; reg.setAttribute('role', 'dialog'); reg.setAttribute('aria-label', 'Registrar voz');
+  reg.innerHTML = `<div class="vr-c"><h2>Registrar voz</h2>
+    <label>¿Quién habla? <select id="vrPersona"></select></label>
+    <label class="vr-ok"><input type="checkbox" id="vrAcepta"> Esta persona acepta que Myo guarde la huella de su voz (256 números, sin el audio) para reconocerla en la sala. La puede borrar cuando quiera.</label>
+    <p class="vr-leer">Lee en voz alta, a ritmo normal:<br><b>${LECTURA}</b></p>
+    <p id="vrEstado" aria-live="polite"></p>
+    <div class="vr-b"><button type="button" id="vrGrabar">Grabar 20 s</button><button type="button" id="vrBorrar">Borrar su voz</button><button type="button" id="vrCerrar">Cerrar</button></div>
+    <p id="vrLista" class="vr-lista"></p></div>`;
+  document.body.appendChild(reg);
+  document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+  #vozReg{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+  #vozReg[hidden]{display:none}
+  #vozReg .vr-c{width:min(760px,92vw);padding:28px 32px;border-radius:24px;background:#16181d;border:1px solid rgba(255,255,255,.14);color:#f2f2f7;font:20px/1.4 system-ui;display:grid;gap:14px}
+  #vozReg h2{margin:0;font-size:28px}
+  #vozReg select{font:inherit;background:#0e0f12;color:#fff;border:1px solid #444;border-radius:10px;padding:6px 10px;margin-left:8px}
+  #vozReg .vr-ok{display:flex;gap:10px;align-items:flex-start;font-size:18px}
+  #vozReg .vr-ok input{width:22px;height:22px;margin-top:3px}
+  #vozReg .vr-leer{margin:0;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.06);font-size:18px}
+  #vozReg .vr-leer b{display:block;margin-top:6px;font-size:22px;line-height:1.45}
+  #vozReg .vr-b{display:flex;gap:10px;flex-wrap:wrap}
+  #vozReg button{font:600 18px system-ui;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
+  #vozReg #vrGrabar{background:#0a84ff;border-color:#0a84ff}
+  #vozReg #vrGrabar:disabled{opacity:.5}
+  #vozReg .vr-lista{margin:0;font-size:16px;opacity:.8}
+  #vozRegBtn{min-height:44px;padding:0 14px}` }));
+  const $r = (id) => document.getElementById(id);
+  function pintarReg() {
+    const sel = $r('vrPersona'), val = sel.value;
+    sel.replaceChildren(...E.personas.map((p) => new Option(p.nombre + (p.relacion ? ' (' + p.relacion + ')' : ''), p.id)));
+    if (val) sel.value = val;
+    const nombres = VOCES.registradas.map((v) => (nombreDe(v.persona) || v.persona) + ` (${v.muestras} muestra${v.muestras > 1 ? 's' : ''})`);
+    $r('vrLista').textContent = nombres.length ? 'Voces registradas: ' + nombres.join(', ') : 'Todavía no hay voces registradas.';
+  }
+  async function abrirReg() {
+    if (!E.personas.length) E.personas = await getJ(URL_AGENTE, '/api/personas').catch(() => []);
+    await cargarVoces(); $r('vrEstado').textContent = ''; $r('vrAcepta').checked = false; pintarReg(); reg.hidden = false;
+  }
+  async function grabar20() {
+    const persona = $r('vrPersona').value, est = $r('vrEstado');
+    if (!persona) { est.textContent = 'Elige quién habla.'; return; }
+    if (!$r('vrAcepta').checked) { est.textContent = 'Falta el consentimiento de la persona.'; return; }
+    $r('vrGrabar').disabled = true;
+    let s = null, c = null;
+    try {
+      s = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      c = new AudioContext({ sampleRate: RATE });
+      const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
+      await c.audioWorklet.addModule(url); URL.revokeObjectURL(url);
+      const n = new AudioWorkletNode(c, 'myo-captura'), partes = [];
+      n.port.onmessage = (ev) => partes.push(ev.data);
+      c.createMediaStreamSource(s).connect(n);
+      for (let i = 20; i > 0; i--) { est.textContent = `Grabando… ${i} s`; await new Promise((r) => setTimeout(r, 1000)); }
+      n.disconnect();
+      const largo = partes.reduce((a, p) => a + p.length, 0), f = new Float32Array(largo); let o = 0;
+      for (const p of partes) { f.set(p, o); o += p.length; }
+      const i16 = new Int16Array(f.length); for (let i = 0; i < f.length; i++) i16[i] = Math.max(-1, Math.min(1, f[i])) * 0x7fff;
+      est.textContent = 'Guardando la huella…';
+      const r = await post(URL_AGENTE, '/api/voces/registrar', { persona, audio: b64(i16),
+        consentimiento: { acepta: true, texto: 'Acepta que Myo guarde la huella de su voz (sin audio) para reconocerla en la sala.' } });
+      est.textContent = `Listo: ${nombreDe(persona) || persona} quedó registrada (${r.segundos} s de voz, ${r.muestras} muestra${r.muestras > 1 ? 's' : ''}). Otra muestra mejora el reconocimiento.`;
+      await cargarVoces(); pintarReg();
+    } catch (e) { est.textContent = 'No se pudo registrar: ' + e.message; }
+    finally { s && s.getTracks().forEach((t) => t.stop()); c && c.close(); $r('vrGrabar').disabled = false; }
+  }
+  $r('vrGrabar').addEventListener('click', grabar20);
+  $r('vrCerrar').addEventListener('click', () => { reg.hidden = true; });
+  $r('vrBorrar').addEventListener('click', async () => {
+    const persona = $r('vrPersona').value; if (!persona) return;
+    try { const r = await post(URL_AGENTE, '/api/voces/borrar', { persona }); $r('vrEstado').textContent = r.borrada ? 'Huella borrada.' : 'Esa persona no tenía una voz registrada.'; }
+    catch (e) { $r('vrEstado').textContent = 'No se pudo borrar: ' + e.message; }
+    for (const [h, p] of Object.entries(VOCES.auto)) if (p === persona) { delete VOCES.auto[h]; delete E.hablantes[h]; }
+    await cargarVoces(); pintarReg(); pintarBarra();
+  });
+  const regBtn = Object.assign(document.createElement('button'), { id: 'vozRegBtn', type: 'button', className: 'dbtn', textContent: 'Registrar voz', title: 'Registrar la voz de alguien para que Myo lo reconozca (lo usa el acompañante)' });
+  regBtn.addEventListener('click', abrirReg);
+  if (devbar) ind.after(regBtn);
+  cargarVoces();
+
   // ---------- Scribe v3 Live ----------
   const WS_URL = 'wss://api.elevenlabs.io/v1/speech-to-text/realtime';
   const RATE = 16000, CHUNK = RATE / 10, DIAR_ESPERA_MS = 1500;
@@ -337,7 +443,24 @@
     V.recientes.push(rms > Math.max(V.piso * 3, 0.012)); if (V.recientes.length > 5) V.recientes.shift();
     return V.recientes.filter(Boolean).length >= 3;   // 300 ms de voz en los últimos 500 ms
   }
+  // Anillo con los últimos 30 s del micrófono (solo en memoria del navegador): de aquí sale el audio de cada frase
+  // para reconocer la voz. Mientras Myo habla se guarda silencio, igual que lo que va a ElevenLabs.
+  const ANILLO = new Float32Array(RATE * 30);
+  let total = 0, segIni = 0, inicioSesion = 0;
+  function alAnillo(f32, mudo) {
+    for (let i = 0; i < f32.length; i++) ANILLO[(total + i) % ANILLO.length] = mudo ? 0 : f32[i];
+    total += f32.length;
+  }
+  function recorte(ini, fin) {
+    ini = Math.max(Math.round(ini), total - ANILLO.length + 1, 0); fin = Math.min(Math.round(fin), total);
+    if (fin - ini > RATE * 8) ini = fin - RATE * 8;   // con 8 s alcanza para la huella
+    if (fin - ini < RATE * 0.8) return null;
+    const out = new Int16Array(fin - ini);
+    for (let i = ini; i < fin; i++) out[i - ini] = Math.max(-1, Math.min(1, ANILLO[i % ANILLO.length])) * 0x7fff;
+    return b64(out);
+  }
   function audio(f32) {
+    alAnillo(f32, callado());
     const j = new Float32Array(buf.length + f32.length); j.set(buf); j.set(f32, buf.length); buf = j;
     while (buf.length >= CHUNK) {
       const bloque = buf.subarray(0, CHUNK), mudo = callado();
@@ -361,10 +484,12 @@
     const out = [];
     for (const w of words || []) {
       const spk = w.type === 'word' ? w.speaker_id : null, last = out[out.length - 1];
-      if (!last || (spk != null && last.spk != null && spk !== last.spk)) out.push({ spk, t: w.text });
-      else { last.t += w.text; if (last.spk == null) last.spk = spk; }
+      const ini = typeof w.start === 'number' ? w.start : null, fin = typeof w.end === 'number' ? w.end : null;
+      if (!last || (spk != null && last.spk != null && spk !== last.spk)) out.push({ spk, t: w.text, ini, fin });
+      else { last.t += w.text; if (last.spk == null) last.spk = spk; if (last.ini == null) last.ini = ini; if (fin != null) last.fin = fin; }
     }
-    return out.map((x) => ({ hablante: etq(x.spk), texto: x.t.trim() })).filter((x) => x.texto);
+    return out.map((x) => ({ hablante: etq(x.spk), texto: x.t.trim(),
+      rango: x.ini != null && x.fin != null ? [inicioSesion + x.ini * RATE, inicioSesion + x.fin * RATE] : null })).filter((x) => x.texto);
   }
 
   function mensaje(m) {
@@ -374,7 +499,8 @@
       case 'committed_transcript': {
         if (!(m.text || '').trim()) break;
         const idx = m.segment_index;
-        pendientes.set(idx, { texto: m.text, timer: setTimeout(() => { pendientes.delete(idx); turno(m.text, {}); }, DIAR_ESPERA_MS) });
+        const rango = [segIni, total - RATE * 0.6]; segIni = total;   // la frase: desde el corte anterior hasta antes del silencio
+        pendientes.set(idx, { texto: m.text, rango, timer: setTimeout(() => { pendientes.delete(idx); turnoConVoz(m.text, {}, rango); }, DIAR_ESPERA_MS) });
         break;
       }
       case 'diarized_transcript': {
@@ -382,7 +508,8 @@
         if (!p) break;
         clearTimeout(p.timer); pendientes.delete(m.segment_index);
         const ts = tramos(m.words);
-        if (!ts.length) turno(p.texto, {}); else ts.forEach((x) => turno(x.texto, x.hablante ? { hablante: x.hablante } : {}));
+        if (!ts.length) turnoConVoz(p.texto, {}, p.rango);
+        else ts.forEach((x) => turnoConVoz(x.texto, x.hablante ? { hablante: x.hablante } : {}, x.rango || (ts.length === 1 ? p.rango : null)));
         break;
       }
       case 'speakers_merged': {   // Scribe juntó dos voces: los turnos de una pasan a la otra
@@ -415,6 +542,7 @@
     const yo = ws = new WebSocket(WS_URL + '?' + q);
     yo.onopen = () => {
       ST.sesiones += 1; ST.desde = Date.now(); say(`sesión ${ST.sesiones} abierta (${modo})`);
+      inicioSesion = segIni = total - V.previo.length * CHUNK;
       for (const m of V.previo.splice(0)) yo.send(m);   // modo «voz»: el inicio de la frase no se pierde
       pintarInd();
     };
