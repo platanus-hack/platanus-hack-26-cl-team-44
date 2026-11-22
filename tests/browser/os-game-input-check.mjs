@@ -23,8 +23,13 @@ const site=createAppsServer({stateDir:profile,renderGame:settings=>renderGame(se
 const browser=await chromium.launch({channel:'chrome'});
 try {
   await new Promise(resolve=>site.listen(0,'127.0.0.1',resolve));
+  const origin=`http://127.0.0.1:${site.address().port}`;
   const page=await browser.newPage({viewport:{width:1400,height:880}});
-  await page.goto('http://127.0.0.1:'+site.address().port+'/woki-os.html#games');
+  if(!live){
+    await page.route('**/*',route=>new URL(route.request().url()).origin===origin ? route.continue() : route.abort());
+    await page.routeWebSocket('**/*',socket=>socket.close());
+  }
+  await page.goto(`${origin}/woki-os.html?escucha=manual#games`);
   await page.locator('[data-c="mouse"]').click();
   const catalog=page.locator('#s-games');
   assert.equal(await catalog.locator('.external-card').count(),6);
@@ -93,30 +98,28 @@ try {
       if(request.url().endsWith('/api/games/input') && request.postDataJSON()?.type==='click') clicks.push(request);
     });
     await page.waitForFunction(()=>Boolean(TOKI_EXTERNAL.capturePoint()));
-    await page.keyboard.press('Space');
     await page.evaluate(()=>{window.tracking=false; NOSE.lastFace=0;});
-    await page.waitForFunction(()=>!G.tap);
-    assert.equal(clicks.length,0,'a pending key press must be canceled if tracking is lost');
+    await page.waitForFunction(()=>!TOKI_EXTERNAL.capturePoint());
+    await page.keyboard.press('Space');
+    assert.equal(clicks.length,0,'a confirmation with stale tracking must not click');
 
     await page.evaluate(()=>{window.tracking=true;});
     await page.waitForFunction(()=>Boolean(TOKI_EXTERNAL.capturePoint()));
     const pause=page.locator('[data-act="external:pause"]');
-    // Pause in the same task as key release, before the double-tap timer can fire.
-    await page.keyboard.down('Space');
-    await page.evaluate(()=>addEventListener('keyup',()=>{
-      document.querySelector('[data-act="external:pause"]').click();
-    },{once:true}));
-    await page.keyboard.up('Space');
-    await page.waitForFunction(()=>!G.tap);
-    assert.equal(clicks.length,0,'a pending key press must be canceled while the game control is paused');
+    await pause.click();
+    await page.locator('#externalCurtain').waitFor();
+    await page.evaluate(()=>document.activeElement?.blur());
+    await page.keyboard.press('Space');
+    assert.equal(clicks.length,0,'a confirmation while the game control is paused must not click');
     await pause.click();
     await page.waitForFunction(()=>Boolean(TOKI_EXTERNAL.capturePoint()));
 
-    // A brow movement can displace the pointer during the double-gesture window.
-    // Move beyond the flag after confirmation so only the original coordinates can select it.
-    await page.keyboard.press('Space');
+    // Explicit confirmation clicks on the down edge, not release or later pointer movement.
+    await page.evaluate(()=>document.activeElement?.blur());
+    await page.keyboard.down('Space');
     await page.evaluate(()=>{MYO.mouse.x+=90;});
     await flag.waitFor({state:'hidden',timeout:2200}); // Before the 3 s dwell.
+    await page.keyboard.up('Space');
     assert.equal(clicks.length,1,'one explicit confirmation must produce exactly one click');
   }
   await flag.waitFor({state:'hidden',timeout:12000});

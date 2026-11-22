@@ -132,7 +132,7 @@ test('jaw is available at its original detection edge and a clean brow still con
 });
 
 test('confirmation only accepts available focus on the current layer', () => {
-  const html = readFileSync('software/toki-os/woki-os.html', 'utf8');
+  const html = readFileSync('software/toki-os/os-shell.js', 'utf8');
   const functions = html.slice(html.indexOf('function targetLayer('), html.indexOf('/* Clic directo'));
   const element = { dataset: { act: 'go:settings' }, classList: { add() {} } };
   const S = { focus: element, armed: true, blocked: null };

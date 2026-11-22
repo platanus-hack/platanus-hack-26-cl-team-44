@@ -4,8 +4,9 @@ import { readFileSync, writeFileSync, renameSync, existsSync, chmodSync } from "
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { WapiClient } from "./wapi-sdk/index.ts";
 import { handleVoz, vozHealth } from "./voz.ts"; // ElevenLabs: voz, clonación y llamada de emergencia
-import { sugOn, suggestReplies, expandInitials, type Sug, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
+import { sugOn, suggestReplies, expandInitials, type Line } from "./sugerir.ts"; // Claude: respuestas y predicción
 import { agenteChat, agenteGrupo, grupoActivo } from "./agente.ts"; // agente con memoria (software/agent); si no está, sigue sugerir.ts
+import { createSuggestions } from "./suggestions.ts";
 
 // ---------- configuración ----------
 type Mode = "off" | "dry" | "sandbox" | "live";
@@ -132,28 +133,20 @@ function pushHist(cid: string, m: ChatMsg) {
 }
 
 // ---------- sugerencias con Claude (adelantadas al llegar un mensaje) ----------
-const sugCache = new Map<string, { at: number; list: Sug[] }>();
-const sugBusy = new Map<string, Promise<Sug[]>>();
 const linesOf = (cid: string): Line[] => (history.get(cid) ?? []).map(({ dir, text }) => ({ dir, text }));
 const lastId = (cid: string) => (history.get(cid) ?? []).at(-1)?.id ?? "-";
-function suggestFor(cid: string, ini = "", extra = ""): Promise<Sug[]> {
-  const c = byId.get(cid); if (!c || !sugOn) return Promise.resolve([]);
-  const k = `${cid}|${lastId(cid)}|${ini}|${extra}`;
-  const hit = sugCache.get(k); if (hit && Date.now() - hit.at < 10 * 60_000) return Promise.resolve(hit.list);
-  if (sugBusy.has(k)) return sugBusy.get(k)!;
-  // Primero el agente con memoria; si no está o no respondió, suggestReplies de siempre. Con contexto del acompañante, directo a sugerir.ts.
-  const replies = () => extra ? suggestReplies(c.name, c.relation, linesOf(cid), extra)
-    : agenteChat(c.phone, c.name, linesOf(cid)).then((l) => l.length ? l : suggestReplies(c.name, c.relation, linesOf(cid), extra));
-  const p = (ini ? expandInitials(c.name, c.relation, linesOf(cid), ini) : replies())
-    .then((list) => { if (list.length) sugCache.set(k, { at: Date.now(), list }); if (sugCache.size > 200) sugCache.delete(sugCache.keys().next().value!); return list; })
-    .catch((e) => { console.log(`[sugerir] sin respuesta de Claude (${e.message})`); return [] as Sug[]; })
-    .finally(() => sugBusy.delete(k));
-  sugBusy.set(k, p); return p;
-}
-function prefetchSuggest(cid: string) {
-  const key = lastId(cid);
-  suggestFor(cid).then((list) => { if (list.length) emit({ type: "suggest", contactId: cid, key, suggestions: list }); });
-}
+// Mantiene la caché y el fallback aislados del servidor; sus dependencias son las del runtime real.
+const { suggestFor, prefetch: prefetchSuggest } = createSuggestions({
+  getContact: (cid) => byId.get(cid),
+  getLines: linesOf,
+  lastId,
+  enabled: sugOn,
+  expandInitials,
+  suggestReplies,
+  agenteChat,
+  emit,
+  logError: (message) => console.log(message),
+});
 const textOf = (m: any): string =>
   String(m?.conversation ?? m?.extendedTextMessage?.text ?? m?.imageMessage?.caption ?? m?.videoMessage?.caption ?? "");
 const contextOf = (m: any): any => {

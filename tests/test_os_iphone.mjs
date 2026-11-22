@@ -5,12 +5,14 @@ import { runInNewContext } from "node:vm";
 
 const OS = "software/toki-os";
 const html = readFileSync(`${OS}/woki-os.html`, "utf8");
+const shell = readFileSync(`${OS}/os-shell.js`, "utf8");
+const keyboard = readFileSync(`${OS}/os-keyboard.js`, "utf8");
 const adapter = readFileSync(`${OS}/iphone-gaze.js`, "utf8");
 
 // 1. El OS carga el adaptador y ofrece la opción al inicio.
 assert.ok(html.includes('<script type="module" src="iphone-gaze.js"></script>'), "woki-os.html carga iphone-gaze.js");
 assert.ok(html.includes('data-c="iphone"'), "botón 'Mirada con iPhone' en la pantalla de inicio");
-assert.ok(html.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhone");
+assert.ok(shell.includes("pointerLabel()"), "Ajustes › Puntero incluye el iPhone");
 assert.ok(/W\.CFG\.mode = window\.iphoneConfirm\?\.\(\) === "dwell" \? "dwell" : "click";/.test(adapter), "el iPhone elige con ceja por defecto y usa permanencia solo si se selecciona");
 assert.ok(/W\.enableMyoWare\?\.\(\)/.test(adapter), "al activar el iPhone se reutiliza la calibración MyoWare guardada");
 assert.ok(html.includes('id="themeToggle"') && html.includes('id="legendToggle"'), "interruptor de tema y pestaña de atajos");
@@ -18,23 +20,28 @@ assert.ok(!/class="ring"/.test(adapter), "el círculo de calibración no usa la 
 assert.ok(/!Number\.isFinite\(validation\.meanPx\)/.test(adapter), "una calibración sin precisión medible (NaN) se rechaza");
 
 // 1b. Modo iPhone: la mirada enfoca, la ceja elige y todas las pantallas tienen salida.
-const fn = (name) => { const i = html.indexOf(`function ${name}(`); assert.ok(i >= 0, `existe ${name}`); return html.slice(i, html.indexOf("\n}", i)); };
+const fn = (name, source = shell, indent = "") => {
+  const i = source.indexOf(`function ${name}(`);
+  assert.ok(i >= 0, `existe ${name}`);
+  return source.slice(i, source.indexOf(`\n${indent}}`, i));
+};
 assert.ok(/data-act="go:home"/.test(fn("renderCards")), "Hablar tiene 'Volver'");
 assert.ok(/data-act="go:keyboard"/.test(fn("renderCards")), "Hablar tiene 'Escribir' (antes solo con ceja ×2)");
-assert.ok(/data-act="go:home"/.test(fn("renderKeys")) && /kb:back/.test(fn("renderKeys")), "Escribir tiene 'Volver' en ambos niveles");
-assert.ok(/kb:sug/.test(fn("renderKeys")) && /data-act="sug:\$\{i\}"/.test(fn("renderKeys")), "las sugerencias son objetivos seleccionables");
-assert.ok(/kb\.level===3[\s\S]*kb:back/.test(fn("renderKeys")), "la pantalla de sugerencias tiene 'Volver'");
-assert.ok(/CFG\.sugMode==='lista'/.test(fn("renderKeys")) && /set:sugmode/.test(fn("renderSettings")), "Ajustes › Teclado elige sugerencias fijas o en lista");
+const renderKeys = fn("renderKeys", keyboard, "  ");
+assert.ok(/data-act="go:home"/.test(renderKeys) && /kb:back/.test(renderKeys), "Escribir tiene 'Volver' en ambos niveles");
+assert.ok(/kb:sug/.test(renderKeys) && /data-act="sug:\$\{i\}"/.test(renderKeys), "las sugerencias son objetivos seleccionables");
+assert.ok(/kb\.level===3[\s\S]*kb:back/.test(renderKeys), "la pantalla de sugerencias tiene 'Volver'");
+assert.ok(/CFG\.sugMode==='lista'/.test(renderKeys) && /set:sugmode/.test(fn("renderSettings")), "Ajustes › Teclado elige sugerencias fijas o en lista");
 assert.ok(/set:theme/.test(fn("renderSettings")), "el tema también se cambia desde Ajustes (con la mirada)");
 const layoutCss = readFileSync(`${OS}/layout.css`, "utf8");
 assert.ok(/--edge: 1\.2fr/.test(layoutCss) && /grid4x2 \{ grid-template-columns: var\(--edge\)/.test(layoutCss), "columnas de los extremos más anchas (esquinas: más error)");
 assert.ok(/data-act="go:home"/.test(fn("renderReacts")) && /reactMore/.test(fn("renderReacts")), "Reacciones tiene 'Más' y 'Volver'");
 assert.ok(/data-act="emoBack"/.test(fn("openEmoRing")), "el selector de emociones tiene 'Volver'");
 assert.ok(html.includes('id="restWake"'), "el descanso tiene un objetivo Volver");
-assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(html), "Ajustes permite elegir y conserva la preferencia del iPhone");
+assert.ok(/localStorage\.setItem\('woki\.iphone\.confirm',CFG\.mode\)/.test(shell), "Ajustes permite elegir y conserva la preferencia del iPhone");
 assert.ok(/document\.body\.classList\.add\("iphone-pointer"\)/.test(adapter) && /document\.body\.classList\.remove\("iphone-pointer", "iphone-hold"\)/.test(adapter), "la apariencia del foco queda limitada al modo iPhone");
 assert.ok(/body\.iphone-pointer:not\(\.iphone-hold\).* :is\(\.ring, \.badge, \.rest-actions \.fill, \.rest-dwell-label\) \{ display: none; \}/.test(layoutCss), "el modo Ceja oculta los indicadores de carga");
-const confirmSource = html.match(/^window\.iphoneConfirm = .*$/m)?.[0];
+const confirmSource = shell.match(/^window\.iphoneConfirm = .*$/m)?.[0];
 assert.ok(confirmSource);
 for (const [saved, expected] of [[null, "click"], ["click", "click"], ["dwell", "dwell"]]) {
   assert.equal(runInNewContext(`${confirmSource}\nwindow.iphoneConfirm()`, { window: {}, localStorage: { getItem: () => saved } }), expected);

@@ -1,7 +1,7 @@
 const fs=require('node:fs'), vm=require('node:vm'), assert=require('node:assert/strict');
-const html=fs.readFileSync('software/toki-os/woki-os.html','utf8');
-const code=html.slice(html.indexOf('function targetLayer('),html.indexOf('function confirmFocus('))+
-  html.slice(html.indexOf('function handleDirectClick('),html.indexOf("document.addEventListener('click',handleDirectClick)"));
+const shell=fs.readFileSync('software/toki-os/os-shell.js','utf8');
+const code=shell.slice(shell.indexOf('function targetLayer('),shell.indexOf('function confirmFocus('))+
+  shell.slice(shell.indexOf('function handleDirectClick('),shell.indexOf("document.addEventListener('click',handleDirectClick)"));
 let calls=[],flags={calib:false,alarm:false},inside=true;
 const el={classList:{add(){}},dataset:{act:'go:reactions'}};
 const state={rest:false,emoRingFor:null};
