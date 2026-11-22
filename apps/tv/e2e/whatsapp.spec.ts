@@ -26,7 +26,10 @@ function stubs(extra: Partial<Stubs> = {}): Stubs {
         ok: true,
         messages: [{ id: 'h1', dir: 'in', text: '¿Vienes hoy?', at: Date.UTC(2026, 10, 22, 15, 0) }],
       },
-      '/api/wa/suggest': SUGGEST,
+      '/api/wa/suggest': (c: Call) =>
+        (c.body as { initials?: string }).initials
+          ? { ok: true, key: 'ini', suggestions: [{ text: 'Sí, claro.', tone: 'breve', emo: 'seria' }] }
+          : SUGGEST,
       '/api/wa/send': { ok: true, msgId: 'm1', dry: true },
       '/api/wa/contacts': { ok: true, contacts: [ANA, BETO, CARLA] },
       ...extra.wa,
@@ -73,6 +76,29 @@ for (const tv of TVS) {
       const send = waCalls.find((c) => c.path === '/api/wa/send');
       expect(send?.body).toMatchObject({ contactId: 'c1', text: 'Claro, nos vemos. 😄' });
       expect(String((send?.body as { idemKey?: string }).idemKey)).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    test('K8 · teclado por iniciales en un chat con «✨ Completar» de Claude', async ({ page }) => {
+      const { waCalls } = await openTv(page, tv, stubs());
+      await target(page, '#tiles', 'go:contacts').click();
+      await target(page, '#people', 'waTo:0').click();
+      await expect(page.locator('#cards [data-act="say:0"] .ph')).toHaveText('Claro, nos vemos.');
+      await page.locator('#cards [data-act="waKb"]').click();
+      await expectScreen(page, 'keyboard');
+      await expect(page.locator('#kbTxt')).toContainText('Primera letra de cada palabra');
+      await expect(page.locator('#kbHint')).toContainText('frases con Claude');
+      await target(page, '#keys', 'grp:3').click();
+      await target(page, '#keys', 'chr:S').click();
+      await expect(page.locator('#kbTxt .ini-letters')).toHaveText('S');
+      await expect(page.locator('#keys .completar small')).toHaveText('Sí, claro.');
+      expect(waCalls.find((c) => (c.body as { initials?: string })?.initials)?.body).toEqual({
+        contactId: 'c1',
+        initials: 's',
+      });
+      await target(page, '#keys', 'kb:expand').click();
+      await expectScreen(page, 'talk');
+      await expect(page.locator('#cards [data-act="say:0"] .ph')).toHaveText('Sí, claro.');
+      await expect(page.locator('#cards [data-act="say:0"] .tone')).toContainText('✨');
     });
 
     test('W5 · sin la segunda ceja en 3 s no se envía', async ({ page }) => {
