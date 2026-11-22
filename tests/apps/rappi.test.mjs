@@ -40,8 +40,9 @@ test('Rappi guest exploration is real-shaped, scoped to job/generation and never
  await assert.rejects(adapter.execute('products',{...payload,storeId:456},{...ctx,generation:2}));
  await assert.rejects(adapter.execute('search',{...payload,category:'; shell command'},ctx),/categoría/);
  await assert.rejects(adapter.execute('cart',payload,ctx),/cuenta/);
- await assert.rejects(adapter.execute('order',payload,ctx),/no están habilitados/);
- assert.ok(!adapter.manifest.actions.some(a=>a.id==='order'));assert.ok(adapter.manifest.requiredEvidence.includes('order'));
+ // Pedir exige cuenta conectada y la confirmación de importes (ticket de 'quote'); sin eso, se rechaza.
+ await assert.rejects(adapter.execute('order',payload,ctx),/Falta conectar|Vuelve a revisar/);
+ assert.ok(adapter.manifest.actions.some(a=>a.id==='order'&&a.mutates&&a.requiresAccount));assert.ok(adapter.manifest.requiredEvidence.includes('order'));
  assert.ok(calls.every(c=>new URL(c.url).origin==='https://services.rappi.cl'));
  assert.ok(calls.every(c=>!c.init.headers.authorization||c.init.headers.authorization==='Bearer guest-test-only'));
  assert.equal(selected.groups.length,1);
