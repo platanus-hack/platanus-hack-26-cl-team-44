@@ -137,7 +137,7 @@ window.addEventListener('load',()=>{
  }
  function confirmPoint(start){
   const point=capturePoint();
-  // The eyebrow can move the pointer. Confirm where the gesture began, after the double-tap window.
+   // Use the captured point only while the same game still owns the input.
   if(point && point.frame===start.frame && document.elementFromPoint(start.x,start.y)===frame) clickGame(start.x,start.y);
  }
  async function tickExternal(now){

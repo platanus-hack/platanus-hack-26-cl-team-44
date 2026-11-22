@@ -3,6 +3,7 @@
 const fs = require("node:fs"), vm = require("node:vm"), assert = require("node:assert/strict");
 const dir = "software/toki-os/";
 const html = fs.readFileSync(dir + "woki-os.html", "utf8");
+const shell = fs.readFileSync(dir + "os-shell.js", "utf8");
 const glue = fs.readFileSync(dir + "os-juegos-servicios.js", "utf8");
 const games = fs.readFileSync(dir + "prototype-games.js", "utf8");
 const external = fs.readFileSync(dir + "prototype-external-games.js", "utf8");
@@ -15,7 +16,7 @@ assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos prime
 
 // 2. El SO declara seis tarjetas y el SOS global.
 {
-  const tilesSrc = html.slice(html.indexOf("const TILES = ["), html.indexOf("];", html.indexOf("const TILES = [")) + 2);
+  const tilesSrc = shell.slice(shell.indexOf("const TILES = ["), shell.indexOf("];", shell.indexOf("const TILES = [")) + 2);
   const tiles = vm.runInNewContext(tilesSrc + " TILES");
   // SOS y Descansar son tarjetas grandes de Inicio (no una franja fija en todas las pantallas).
   assert.deepEqual(Array.from(tiles, ([action]) => action), [
@@ -28,10 +29,10 @@ assert.deepEqual([...order].sort((a, b) => a - b), order, "orden: módulos prime
 }
 
 // 3. Juegos abre el catálogo externo directamente. La partida permite volver al catálogo.
-assert.match(html, /home-nav" data-t data-act="go:home"/);
-assert.match(html, /sos-nav" data-t data-act="sos" data-dwell="2000"/);
+assert.match(shell, /home-nav" data-t data-act="go:home"/);
+assert.match(shell, /sos-nav" data-t data-act="sos" data-dwell="2000"/);
 assert.match(html, /rest-sos" data-t data-act="sos" data-dwell="2000"/);
-assert.match(html, /rest-nav" data-t data-act="rest"/);
+assert.match(shell, /rest-nav" data-t data-act="rest"/);
 assert.match(external, /if\(name==='games'\)catalog\(\)/);
 assert.match(external, /b\('catalog','← Juegos'\)/);
 assert.doesNotMatch(external, /external:toki|b\('toki'/);
@@ -46,7 +47,7 @@ assert.match(external, /if\(tabletAccess\|\|window\.TOKI_OS_SHELL\)return/);
 assert.match(glue, /if \(iphoneDwell\(\)\) S\.lockUntil = performance\.now\(\) \+ LOCKOUT_MS;/);
 assert.match(glue, /return innerActivate\(el, calibrate, immediate\)/);
 assert.match(external, /oldActivate\(el,calibrate,immediate\)/, "el control externo conserva activación inmediata");
-assert.match(glue, /confirming: Boolean\(G\.brow\)/, "la confirmación usa el estado de ceja vigente");
+assert.match(glue, /confirming: isBrowHeld\(\)/, "la confirmación usa el estado de ceja vigente");
 assert.match(glue, /careWheel\?\.active/, "la rueda de cuidado suspende el control del juego");
 assert.match(glue, /controlPointFresh\(now\)/, "la entrada de cámara solo usa puntos frescos");
 assert.match(external, /!shared\?\.confirming && !shared\?\.muscle/, "la ceja o el modo MyoWare desactivan el clic automático");
@@ -79,8 +80,8 @@ for (const p of ["bosque", "oceano", "atardecer", "lavanda"]) {
   assert.match(colors, new RegExp(`:root\\[data-palette="${p}"\\] #stage`), `falta ${p} oscuro`);
   assert.match(colors, new RegExp(`:root\\[data-theme="light"\\]\\[data-palette="${p}"\\] #stage`), `falta ${p} claro`);
 }
-assert.match(html, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océano'\],\['atardecer','Atardecer'\],\['lavanda','Lavanda'\]/);
+assert.match(shell, /\['noche','Noche'\],\['bosque','Bosque'\],\['oceano','Océano'\],\['atardecer','Atardecer'\],\['lavanda','Lavanda'\]/);
 assert.match(html, /localStorage\.getItem\('woki\.palette'\)/, "el color se aplica antes de pintar");
-assert.match(html, /case 'look':/);
+assert.match(shell, /case 'look':/);
 
 console.log("Juegos y Servicios en Myo OS: módulos del equipo, 6 tarjetas y SOS y descanso globales, salidas grandes, sin elección en cadena y colores.");

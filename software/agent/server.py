@@ -54,6 +54,7 @@ sys.path.insert(0, str(AGENT))
 import grupos  # noqa: E402
 import llm  # noqa: E402
 import pedido  # noqa: E402
+import solicitudes  # noqa: E402
 import tarjetas  # noqa: E402
 from agente import MODELO, MODOS, run_agent  # noqa: E402
 from memoria import store  # noqa: E402
@@ -288,16 +289,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(*a_voces("POST", self.path, body))
 
         if self.path == "/api/sugerir":
-            texto = str(body.get("texto", "")).strip()[:2000]
+            texto = solicitudes.texto(body, 2000)
             modo = body.get("modo") if body.get("modo") in MODOS else "chat"
             if not texto:
                 return self._json(400, {"error": "falta el texto"})
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
+            historial = solicitudes.historial(body)
             c = store.conectar(DB)
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))   # sin persona = desconocido (lo más restringido)
-                excluir = [str(x)[:200] for x in (body.get("excluir") or [])][:20]
-                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=excluir, traza=body.get("traza") is True)
+                no_incluir = solicitudes.excluir(body)
+                r = ejecutar(c, p, texto, historial=historial, modo=modo, excluir=no_incluir, traza=body.get("traza") is True)
             except TopeDiario as e:
                 return self._json(429, {"error": str(e)})
             finally:
@@ -307,8 +308,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, r)
 
         if self.path == "/api/tarjetas":
-            texto = str(body.get("texto", "")).strip()[:2000]
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-3:]
+            texto = solicitudes.texto(body, 2000)
+            historial = solicitudes.historial(body, 3)
             c = store.conectar(DB)
             try:
                 p, efectivo = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
@@ -321,11 +322,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {**r, "tipo_interlocutor": efectivo, "persona": (p or {}).get("id")})
 
         if self.path == "/api/iniciales":
-            ini = "".join(ch for ch in str(body.get("iniciales", "")).lower() if ch.isalnum())[:16]
-            texto = str(body.get("texto", "")).strip()[:2000]
+            ini = solicitudes.iniciales(body)
+            texto = solicitudes.texto(body, 2000)
             if not ini:
                 return self._json(400, {"error": "faltan las iniciales"})
-            historial = [str(h)[:500] for h in (body.get("historial") or [])][-30:]
+            historial = solicitudes.historial(body)
             c = store.conectar(DB)
             try:
                 p, _ = hablantes.audiencia(c, body, hablantes.persona_escucha(c, body, resolver_persona))
@@ -407,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, d)
 
         if self.path == "/api/simular":
-            texto = str(body.get("texto", "")).strip()[:1000]
+            texto = solicitudes.texto(body, 1000)
             canal = body.get("canal") if body.get("canal") in CANALES else "grupo"
             if not texto:
                 return self._json(400, {"error": "falta el texto"})

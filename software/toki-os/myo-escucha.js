@@ -10,7 +10,7 @@
  *   cuenta como desconocido.
  * - Mientras Myo habla, al micrófono se le manda silencio: no se transcribe su propia voz.
  *
- * No toca la lógica de la TV: usa window.MYO.S, CFG y las funciones globales go(), setCtx(), renderCards(), log().
+ * Room context and initials are integrated through window.MYO.conversation.
  * Medido (pruebas con voces sintéticas): sin ruido de fondo, 100 % de turnos con el hablante correcto y ~0,65 s de
  * latencia; con la TV del cuarto a volumen medio o alto los turnos se atrasan 8-14 s. Aviso de privacidad: en el plan
  * actual de ElevenLabs (no Enterprise) el audio queda registrado en sus servidores.
@@ -18,6 +18,7 @@
 (() => {
   const W = window.MYO;
   if (!W || !document.getElementById('s-talk')) return;
+  const conversation = W.conversation;
   const C = (typeof CFG !== 'undefined' && CFG) || {};
   const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
   const EQUIPO = location.pathname.startsWith('/equipo/');
@@ -135,7 +136,7 @@
     if (enChat()) return;   // en un chat de WhatsApp las tarjetas son las del chat
     const id = ++E.req;
     const pid = personaDe(t);
-    setCtx(etiqueta(t) + ' dice', etiqueta(t).slice(0, 1).toUpperCase(), t.texto, 'Escuchando la sala…', pid ? '' : 'rgba(255,255,255,.18)');
+    conversation.setContext(etiqueta(t) + ' dice', etiqueta(t).slice(0, 1).toUpperCase(), t.texto, 'Escuchando la sala…', pid ? '' : 'rgba(255,255,255,.18)');
     E.pool = []; E.inicio = 0;   // nada del turno anterior mientras llega lo nuevo
     if (W.S.screen === 'home') go('talk');
     const base = cuerpo(t);
@@ -240,32 +241,30 @@
       .catch((err) => { say('iniciales: ' + err.message); e.list = []; return []; });
     return e.p;
   }
-  if (typeof window.iniAsk === 'function') {
-    const origAsk = window.iniAsk;
-    let tmr = null;
-    window.iniAsk = function () {
-      if (!enSala()) return origAsk.apply(this, arguments);
+  let tmr = null;
+  conversation.registerRoomInitials({
+    isActive: enSala,
+    ask() {
       const ini = (W.S.kb && W.S.kb.ini) || '';
       clearTimeout(tmr);
       if (!ini) { W.S.kb.ai = null; return; }
       tmr = setTimeout(() => {
         const ai = W.S.kb.ai = { ini, list: null, p: null };
         ai.p = pedirIniciales(ini).then((l) => { ai.list = l; }).finally(() => {
-          if (W.S.screen === 'keyboard' && W.S.kb.mode === 'ini' && W.S.kb.ai === ai) { try { renderKbText(); markLikelyKeys(); } catch (_) {} }
+          if (W.S.screen === 'keyboard' && W.S.kb.mode === 'ini' && W.S.kb.ai === ai) {
+            conversation.renderKbText();
+            conversation.markLikelyKeys();
+          }
         });
       }, 300);
-    };
-  }
-  if (typeof window.kbExpand === 'function') {
-    const origExp = window.kbExpand;
-    window.kbExpand = async function () {
-      if (!enSala()) return origExp.apply(this, arguments);
+    },
+    async expand() {
       const ini = (W.S.kb && W.S.kb.ini) || '';
       if (!ini) { try { island('🔤', 'Elige al menos una letra', true); } catch (_) {} return; }
       try { island('✨', 'Completando con lo que te dijeron…', false, 0); } catch (_) {}
       await Promise.race([pedirIniciales(ini), new Promise((r) => setTimeout(r, 20000))]);
       let out = [];
-      try { out = iniCandidates().slice(0, 9).map((x) => ({ text: x.text, tone: x.tone, emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: x.ai })); } catch (_) { out = E.ini.list || []; }
+      try { out = conversation.iniCandidates().slice(0, 9).map((x) => ({ text: x.text, tone: x.tone, emo: EMOS.includes(x.emo) ? x.emo : 'seria', ai: x.ai })); } catch (_) { out = E.ini.list || []; }
       if (E.ini.ini === ini && E.ini.list) out = [...E.ini.list, ...out];
       try { island('✨', 'Listo', false, 600); } catch (_) {}
       W.S.kb.mode = 'text';
@@ -273,8 +272,8 @@
       go('talk');
       ponerPool(out);
       say('iniciales ' + ini.toUpperCase() + ' → ' + out.length + ' frases');
-    };
-  }
+    },
+  });
 
   function turno(texto, meta = {}) {
     texto = String(texto || '').trim();
@@ -284,7 +283,7 @@
     E.turnos.push(t);
     E.turnos = E.turnos.slice(-MAX_TURNOS);
     pintarBarra();
-    mostrar(t);
+    return mostrar(t);
   }
 
   // En modo sala, Hablar muestra lo de la conversación escuchada, no las sugerencias genéricas de la TV

@@ -66,6 +66,15 @@ class MonitorTest(unittest.TestCase):
             for route, content_type, marker in [
                 ('/woki-os.html','text/html','Calibrar gestos'),
                 ('/woki-os.html?iphone=sim','text/html','Mirada con iPhone'),
+                ('/os-base.css','text/css','#stage'),
+                ('/os-shell.js','text/javascript','window.MYO'),
+                ('/os-webcam.js','text/javascript','createMyoWareHandoff'),
+                ('/os-myoware.js','text/javascript','setupMyoWareGestures'),
+                ('/os-gestures.js','text/javascript','createMyoGestureController'),
+                ('/os-care.js','text/javascript','createMyoCare'),
+                ('/os-keyboard.js','text/javascript','createMyoKeyboard'),
+                ('/os-messaging.js','text/javascript','createMyoMessaging'),
+                ('/os-navigation.js','text/javascript','createMyoNavigation'),
                 ('/myoware-click.js','text/javascript','setupMyoWareGestures'),
                 ('/iphone-gaze.js','text/javascript','window.IPHONE'),
                 ('/layout.css','text/css','.rest-actions'),
@@ -103,6 +112,21 @@ class MonitorTest(unittest.TestCase):
             process.terminate();process.wait(timeout=3)
             if master is not None:os.close(master)
             os.close(slave)
+
+
+class RuntimeImportTest(unittest.TestCase):
+    def test_server_import_does_not_parse_args_or_start_runtime(self):
+        runtime = ROOT / 'software/myoware-monitor'
+        result = subprocess.run(
+            [sys.executable, '-c', 'import server'],
+            cwd=runtime,
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, '')
+
 
 class TokiConfigTest(unittest.TestCase):
     """/toki-config.js entrega TOKI_REMOTO y TOKI_WA_TOKEN solo a la propia TV."""

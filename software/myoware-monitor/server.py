@@ -1,207 +1,31 @@
-import os, termios, threading, time, json, re, argparse, select, asyncio
-from collections import deque
-from http.client import HTTPConnection, HTTPException
-from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+"""Import-safe CLI entrypoint for the local MyoWare monitor."""
+
+import os
 from pathlib import Path
-from uuid import uuid4
-parser=argparse.ArgumentParser(description='Panel local MyoWare (macOS/Linux, Python 3.10+)')
-parser.add_argument('--serial-port', help='Puerto del UNO; consultar arduino-cli board list')
-parser.add_argument('--ble-jaw', help='Nombre anunciado o identificador del MyoWare BLE de la mandíbula')
-parser.add_argument('--ble-brow', help='Nombre anunciado o identificador del MyoWare BLE de la ceja')
-parser.add_argument('--http-port', type=int, default=8766)
-args=parser.parse_args()
-if args.serial_port:
-    if args.ble_jaw or args.ble_brow:
-        parser.error('Usa --serial-port o ambos --ble-jaw y --ble-brow, no los tres.')
-elif not args.ble_jaw or not args.ble_brow or args.ble_jaw.lower()==args.ble_brow.lower():
-    parser.error('Indica --serial-port o dos periféricos distintos con --ble-jaw y --ble-brow.')
-else:
-    try:
-        import bleak
-    except ImportError:
-        parser.error('Instala Bleak en el entorno Python para usar los MyoWare BLE.')
-    from ble_input import read_ble
-PORT=args.serial_port
-state={'connected':False,'error':'','last':0,'received':0,'unrecognized':0}
-samples=deque(maxlen=6000)
-gesture_frames=deque(maxlen=128)
-lock=threading.Lock()
-source=None
-toki_dir=Path(__file__).resolve().parent.parent/'toki-os'
-apps_loopback=re.fullmatch(r'http://(?:127\.0\.0\.1|localhost):([0-9]{1,5})/?', os.environ.get('TOKI_APPS_URL',''), re.ASCII)
-webeyetrack_assets={
-    '/web/tracker.js':'text/javascript',
-    '/web/index.js.LICENSE.txt':'text/plain',
-    '/web/model.json':'application/json',
-    '/web/group1-shard1of1.bin':'application/octet-stream',
-}
-toki_assets={
-    '/woki-os.html':'text/html',
-    **{f'/{name}.js':'text/javascript' for name in (
-        'myoware-click','iphone-gaze','iphone-presets','predict','lexicon-es',
-        'magnetic-pointer','tablet-keyboard','gaze-calibration','care-wheel',
-        'woki-voz','dev-agente',   # voz ElevenLabs (PR #7) y panel dev del agente (PR #4)
-        'toki-sse',               # eventos del puente y del agente con el token en un header
-        'toki-apps',              # Servicios: Rappi, Spotify, noticias (apps-bridge)
-    )},
-    **{f'/{name}.css':'text/css' for name in ('iphone-gaze','theme','layout','magnetic-pointer','tablet-keyboard','toki-apps')},
-}
-dual_sample=re.compile(r'A0:(\d{1,4}),A3:(\d{1,4})', re.ASCII)
-legacy_sample=re.compile(r'(?:ENV:)?(\d{1,4})', re.ASCII)
+import threading
 
-def connected():
-    global source
-    with lock:
-        state.update(connected=True,error='',last=0)
-        source=uuid4().hex
-        gesture_frames.clear()
+from config import parse_config
+from http_server import serve
+from sample_state import SampleState
+from transports import read_ble, read_serial
 
-def disconnected(error):
-    with lock:
-        state.update(connected=False,error=error)
 
-def record(a0,a3):
-    with lock:
-        if not state['connected']:
-            return
-        now=time.time(); samples.append([now,a0,a3]);state['last']=now;state['received']+=1
-        gesture_frames.append([time.monotonic_ns()//1_000_000,a0,a3])
+def main(argv=None):
+    config = parse_config(argv)
+    monitor_dir = Path(__file__).resolve().parent
+    toki_dir = monitor_dir.parent / 'toki-os'
+    samples = SampleState()
+    apps_url = os.environ.get('TOKI_APPS_URL', '')
 
-def parse_sample(line):
-    if match := dual_sample.fullmatch(line):
-        a0,a3=map(int,match.groups())
-        if a0<=1023 and a3<=1023:
-            return a0,a3
-    elif match := legacy_sample.fullmatch(line):
-        a0=int(match[1])
-        if a0<=1023:
-            return a0,None
-    return None
+    reader = (
+        (lambda: read_serial(config.serial_port, samples))
+        if config.serial_port
+        else (lambda: read_ble(config.ble_jaw, config.ble_brow, samples))
+    )
+    threading.Thread(target=reader, daemon=True).start()
+    print(f'Panel local: http://127.0.0.1:{config.http_port}', flush=True)
+    serve(config, samples, monitor_dir, toki_dir, apps_url)
 
-def reader():
-    while True:
-        fd=None
-        try:
-            fd=os.open(PORT,os.O_RDONLY|os.O_NOCTTY|os.O_NONBLOCK)
-            a=termios.tcgetattr(fd); a[0]=0; a[1]=0; a[2]=termios.CS8|termios.CREAD|termios.CLOCAL; a[3]=0
-            a[4]=a[5]=termios.B115200; a[6][termios.VMIN]=0; a[6][termios.VTIME]=0
-            termios.tcsetattr(fd,termios.TCSANOW,a)
-            connected()
-            buf=b''
-            while True:
-                ready,_,_=select.select([fd],[],[],.1)
-                if not ready: continue
-                try: chunk=os.read(fd,4096)
-                except BlockingIOError: continue
-                if not chunk: raise OSError('Puerto serie desconectado')
-                if chunk:
-                    buf=(buf+chunk)[-8192:]
-                    while b'\n' in buf:
-                        line,buf=buf.split(b'\n',1)
-                        s=line.decode('ascii',errors='replace').strip()
-                        sample=parse_sample(s)
-                        if sample is not None:
-                            record(*sample)
-                        else:
-                            with lock: state['unrecognized']+=1
-                if not os.path.exists(PORT): raise OSError('Arduino desconectado')
-                time.sleep(.01)
-        except Exception as e:
-            disconnected(str(e))
-            time.sleep(1)
-        finally:
-            if fd is not None:os.close(fd)
-class Handler(SimpleHTTPRequestHandler):
-    def send_body(self, body, content_type):
-        self.send_response(200)
-        self.send_header('Content-Type',content_type)
-        self.send_header('Cache-Control','no-store')
-        self.end_headers()
-        self.wfile.write(body)
 
-    def send_toki_asset(self, path, content_type):
-        directory=(toki_dir/path.parent).resolve()
-        asset=(directory/path.name).resolve()
-        if asset.parent!=directory or not asset.is_file():
-            self.send_error(404)
-            return
-        self.send_body(asset.read_bytes(),f'{content_type}; charset=utf-8')
-
-    def send_webeyetrack_asset(self, path):
-        port=int(apps_loopback[1]) if apps_loopback else 0
-        if not 0 < port <= 65535 or port==args.http_port:
-            return self.send_error(404)
-        conn=HTTPConnection('127.0.0.1',port,timeout=18)
-        try:
-            # Only fixed model assets; never forward headers, redirects or stage credentials.
-            conn.request('GET',path)
-            response=conn.getresponse()
-            if response.status!=200:
-                return self.send_error(502)
-            limit=8*1024*1024
-            body=response.read(limit+1)
-            if len(body)>limit:
-                return self.send_error(502)
-        except (OSError,HTTPException):
-            return self.send_error(502)
-        finally:
-            conn.close()
-        self.send_body(body,webeyetrack_assets[path])
-
-    def do_GET(self):
-        path=self.path.partition('?')[0]
-        if self.path in ('/data','/data?seconds=60'):
-            with lock:
-                now=time.time()
-                recent=list(samples)
-                if self.path=='/data':
-                    recent=recent[-1500:]
-                else:
-                    recent=[sample for sample in recent if sample[0] >= now-60]
-                payload={**state,'samples':recent,'now':now,'transport':'serial' if PORT else 'ble'}
-            self.send_body(json.dumps(payload).encode(),'application/json')
-        elif self.path=='/emg/gestures':
-            with lock:
-                frames=list(gesture_frames)
-                now=time.monotonic_ns()//1_000_000
-                payload={'source':source,'sequence':state['received'],
-                         'age':now-frames[-1][0] if frames and state['connected'] else None,
-                         'frames':frames}
-            self.send_body(json.dumps(payload).encode(),'application/json')
-        elif path=='/toki-config.js':
-            # Escenario: WhatsApp y agente en la VPS. Sale de variables de entorno (TOKI_REMOTO, TOKI_WA_TOKEN).
-            # Solo para la propia TV: un <script src> de otro sitio no puede leer el token.
-            local=self.headers.get('Host','') in (f'127.0.0.1:{args.http_port}',f'localhost:{args.http_port}')
-            if not local or self.headers.get('Sec-Fetch-Site','same-origin')!='same-origin':
-                return self.send_error(403)
-            cfg={'remoto':os.environ.get('TOKI_REMOTO','').rstrip('/'),'waToken':os.environ.get('TOKI_WA_TOKEN',''),
-                 'apps':os.environ.get('TOKI_APPS_URL','').rstrip('/')}   # apps-bridge local (Rappi, Spotify…)
-            self.send_body(('window.TOKI_ENV='+json.dumps(cfg)+';').encode(),'text/javascript')
-        elif path in toki_assets:
-            self.send_toki_asset(Path(path[1:]),toki_assets[path])
-        elif path in webeyetrack_assets:
-            self.send_webeyetrack_asset(path)
-        elif re.fullmatch(r'/eye-engine/[\w-]+\.js',path,re.ASCII):
-            self.send_toki_asset(Path(path[1:]),'text/javascript')
-        elif re.fullmatch(r'/[\w-]+\.(js|css)',path,re.ASCII) and (toki_dir/path[1:]).is_file():
-            # Todo .js/.css de primer nivel de software/toki-os: la TV suma archivos (juegos, servicios) y no deben faltar en escena
-            self.send_toki_asset(Path(path[1:]),'text/javascript' if path.endswith('.js') else 'text/css')
-        elif re.fullmatch(r'/game-covers/[a-z]+\.webp',path,re.ASCII):
-            self.send_toki_asset(Path(path[1:]),'image/webp')
-        elif re.fullmatch(r'/brands/[\w-]+\.svg',path,re.ASCII):
-            self.send_toki_asset(Path(path[1:]),'image/svg+xml')
-        elif re.fullmatch(r'/presets/[\w-]+\.json',path,re.ASCII):
-            self.send_toki_asset(Path(path[1:]),'application/json')
-        elif path in ('/myoware','/myoware/'):
-            self.send_response(302)
-            self.send_header('Location','/')
-            self.end_headers()
-        elif self.path in ('/', '/index.html'):super().do_GET()
-        else:self.send_error(404)
-    def log_message(self,*args):pass
-os.chdir(Path(__file__).parent)
-def ble_reader():
-    asyncio.run(read_ble(args.ble_jaw,args.ble_brow,connected,record,disconnected))
-threading.Thread(target=reader if PORT else ble_reader,daemon=True).start()
-print(f'Panel local: http://127.0.0.1:{args.http_port}',flush=True)
-ThreadingHTTPServer(('127.0.0.1',args.http_port),Handler).serve_forever()
+if __name__ == '__main__':
+    main()
