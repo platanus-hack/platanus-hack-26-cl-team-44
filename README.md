@@ -31,6 +31,10 @@ Con la ELA, una persona lo siente todo, pero pierde poco a poco la voz y el movi
 
 Con eso, Myo OS, un sistema hecho para la mirada, permite hablar con su propia voz, responder WhatsApp, elegir qué comer, ver o escuchar, y pedir ayuda. **Myo no devuelve la movilidad. Devuelve las decisiones.**
 
+![Persona con dos sensores MyoWare conectados a un Arduino en una habitación de cuidados. En la laptop se ve una respuesta sugerida por el asistente y, abajo, la vista de cámara con indicadores en los ojos y la nariz.](docs/myo-en-habitacion.png)
+
+*Escena simulada. El asistente de Myo propone «Sí, agua por favor» y la persona apunta a la respuesta con la mirada.*
+
 ## Qué hace
 
 | | |
@@ -97,18 +101,18 @@ Cada servicio se adaptó para usarse sin mouse. La skill [`adapt-app`](.agents/s
 
 ## Hardware
 
-<img src="hardware/schematics/myoware-conexion-uno-ref.png" alt="MyoWare conectado al Arduino UNO, con el electrodo REF separado y unido al sensor por un cable negro" width="420" align="right" />
-
-- **Sensor muscular:** MyoWare 2.0 con Link Shield, sobre un Arduino UNO por USB (A0), o dos MyoWare inalámbricos por BLE.
+- **Sensor muscular:** dos MyoWare 2.0 con Link Shield y cables TRS a las entradas A0 y A3 del Arduino Shield, sobre un Arduino UNO R3 conectado por USB. También hay una variante inalámbrica por BLE.
 - **Consola de mesa:** soporte impreso en 3D para un panel de 7″ con webcam centrada y una Raspberry Pi 4. [STL y montaje](hardware/3d/README.md#consola-de-mesa).
 - **Brazalete:** dos piezas impresas para el Arduino y la batería. [STL y guía](hardware/3d/README.md#brazalete-myo-para-arduino-uno-y-xiaomi-pb2067).
 - **Sensor de mirada:** cualquier iPhone con Face ID, acostado bajo la pantalla, a 40–60 cm de la cara.
 
 **Seguridad eléctrica:** con electrodos sobre el cuerpo, el computador debe estar solo a batería, sin cargador, dock ni monitor conectado a la red. Desconecta el USB antes de cambiar conexiones. [Guía de conexión y prueba](docs/validation/MYOWARE.md).
 
-<br clear="right" />
+![Ilustración conceptual de una persona con un sensor MyoWare y un Link Shield en cada sien, dos electrodos REF juntos en el centro de la frente, y dos cables TRS hasta el Arduino Shield sobre el UNO](hardware/schematics/myoware-rostro-dos-canales.png)
 
-[Capturas del conector y cable REF](hardware/schematics/README.md#conector-y-cable-ref) · [registro real del canal A0](docs/validation/MYOWARE.md#registro-real-del-canal-a0) · [ejemplo simulado de contracciones](docs/validation/MYOWARE.md#ejemplo-simulado-de-contracciones).
+*Ilustración del prototipo. La colocación en las sienes y la frente queda por validar en una prueba física.* [Guía avanzada de MyoWare 2.0](https://myoware.com/wp-content/uploads/2022/03/MyoWare_v2_AdvancedGuide-Updated.pdf).
+
+[Diagrama de un canal](hardware/schematics/myoware-conexion-uno-ref.png) · [capturas del conector y cable REF](hardware/schematics/README.md#conector-y-cable-ref) · [registro real del canal A0](docs/validation/MYOWARE.md#registro-real-del-canal-a0) · [ejemplo simulado de contracciones](docs/validation/MYOWARE.md#ejemplo-simulado-de-contracciones).
 
 ## Estado del prototipo
 
